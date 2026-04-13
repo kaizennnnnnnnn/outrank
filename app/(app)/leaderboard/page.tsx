@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
             className={cn(
               'px-4 py-2 rounded-lg text-xs font-medium transition-all',
               period === p.value
-                ? 'bg-blue-600 text-white'
+                ? 'bg-red-600 text-white'
                 : 'text-slate-500 hover:text-white'
             )}
           >
@@ -64,7 +64,7 @@ export default function LeaderboardPage() {
             className={cn(
               'flex items-center gap-1.5 px-3 py-2 rounded-xl border whitespace-nowrap text-xs transition-all shrink-0',
               selectedCategory === cat.slug
-                ? 'border-blue-500 bg-blue-500/10 text-white'
+                ? 'border-red-500 bg-red-500/10 text-white'
                 : 'border-[#1e1e30] text-slate-500 hover:text-white hover:border-[#2d2d45]'
             )}
           >
@@ -98,7 +98,7 @@ export default function LeaderboardPage() {
                   transition={{ delay: i * 0.05 }}
                   className={cn(
                     'flex items-center gap-4 px-4 py-3',
-                    isMe && 'bg-blue-500/5'
+                    isMe && 'bg-red-500/5'
                   )}
                 >
                   <span className={cn(
@@ -110,7 +110,7 @@ export default function LeaderboardPage() {
                   <Link href={`/profile/${entry.username}`} className="flex items-center gap-3 flex-1 min-w-0">
                     <Avatar src={entry.avatarUrl} alt={entry.username} size="sm" />
                     <div className="min-w-0">
-                      <p className={cn('text-sm font-medium truncate', isMe ? 'text-cyan-400' : 'text-white')}>
+                      <p className={cn('text-sm font-medium truncate', isMe ? 'text-orange-400' : 'text-white')}>
                         {entry.username} {isMe && '(you)'}
                       </p>
                     </div>

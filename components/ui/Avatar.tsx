@@ -40,7 +40,7 @@ export function Avatar({ src, alt = 'User', size = 'md', online, className, leve
           <circle
             cx="18" cy="18" r="16"
             fill="none"
-            stroke="#2563eb"
+            stroke="#dc2626"
             strokeWidth="2"
             strokeDasharray={`${Math.min(level, 100)} 100`}
             strokeLinecap="round"

@@ -15,7 +15,7 @@ export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsS
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#10101a] to-[#08080f] border border-[#1e1e30] p-8">
       {/* Background glow effects */}
-      <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-blue-600/5 to-transparent" />
+      <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-red-600/5 to-transparent" />
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-600/5 to-transparent" />
 
       <p className="text-center text-xs text-slate-500 mb-6">{title}</p>
@@ -29,7 +29,7 @@ export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsS
           className="flex flex-col items-center gap-3"
         >
           <Avatar src={player1.avatarUrl} alt={player1.username} size="xl" />
-          <p className="text-sm font-bold text-cyan-400">{player1.username}</p>
+          <p className="text-sm font-bold text-orange-400">{player1.username}</p>
           <p className="font-mono text-4xl font-bold text-white">{player1.score}</p>
         </motion.div>
 
@@ -66,7 +66,7 @@ export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsS
       <div className="mt-8">
         <div className="w-full h-2 bg-[#18182a] rounded-full overflow-hidden flex">
           <div
-            className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-l-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-red-600 to-orange-400 rounded-l-full transition-all duration-500"
             style={{
               width: `${player1.score + player2.score > 0
                 ? (player1.score / (player1.score + player2.score)) * 100

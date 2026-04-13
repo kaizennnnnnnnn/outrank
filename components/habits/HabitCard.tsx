@@ -21,7 +21,7 @@ export function HabitCard({ habit, isLoggedToday, onLog }: HabitCardProps) {
         'flex items-center gap-4 rounded-xl border p-4 transition-all cursor-pointer',
         isLoggedToday
           ? 'bg-emerald-500/5 border-emerald-500/20'
-          : 'bg-[#10101a] border-[#1e1e30] hover:border-blue-500/20 glow-hover'
+          : 'bg-[#10101a] border-[#1e1e30] hover:border-red-500/20 glow-hover'
       )}
       onClick={!isLoggedToday ? onLog : undefined}
     >
@@ -47,7 +47,7 @@ export function HabitCard({ habit, isLoggedToday, onLog }: HabitCardProps) {
         ) : (
           <motion.button
             whileTap={{ scale: 0.9 }}
-            className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm hover:bg-blue-500 transition-colors"
+            className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white text-sm hover:bg-red-500 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onLog();

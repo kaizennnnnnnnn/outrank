@@ -100,7 +100,7 @@ export default function SettingsPage() {
             onChange={(e) => setBio(e.target.value)}
             maxLength={160}
             rows={3}
-            className="w-full rounded-xl bg-[#10101a] border border-[#1e1e30] px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+            className="w-full rounded-xl bg-[#10101a] border border-[#1e1e30] px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
             placeholder="Tell others about yourself..."
           />
           <p className="text-xs text-slate-600 mt-1">{bio.length}/160</p>
@@ -188,7 +188,7 @@ export default function SettingsPage() {
                 addToast({ type: 'info', message: `${item.label} ${current ? 'disabled' : 'enabled'}` });
               }}
               className={`w-12 h-6 rounded-full transition-colors ${
-                (user.settings?.notifications?.[item.key] ?? true) ? 'bg-blue-600' : 'bg-[#18182a]'
+                (user.settings?.notifications?.[item.key] ?? true) ? 'bg-red-600' : 'bg-[#18182a]'
               }`}
             >
               <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
@@ -212,7 +212,7 @@ export default function SettingsPage() {
               await updateDocument('users', user.uid, { isPublic: !user.isPublic });
               addToast({ type: 'info', message: user.isPublic ? 'Profile set to private' : 'Profile set to public' });
             }}
-            className={`w-12 h-6 rounded-full transition-colors ${user.isPublic ? 'bg-blue-600' : 'bg-[#18182a]'}`}
+            className={`w-12 h-6 rounded-full transition-colors ${user.isPublic ? 'bg-red-600' : 'bg-[#18182a]'}`}
           >
             <div className={`w-5 h-5 rounded-full bg-white transition-transform ${user.isPublic ? 'translate-x-6' : 'translate-x-0.5'}`} />
           </button>
@@ -231,7 +231,7 @@ export default function SettingsPage() {
               addToast({ type: 'info', message: current ? 'Hidden from leaderboards' : 'Visible on leaderboards' });
             }}
             className={`w-12 h-6 rounded-full transition-colors ${
-              (user.settings?.privacy?.showOnLeaderboards ?? true) ? 'bg-blue-600' : 'bg-[#18182a]'
+              (user.settings?.privacy?.showOnLeaderboards ?? true) ? 'bg-red-600' : 'bg-[#18182a]'
             }`}
           >
             <div className={`w-5 h-5 rounded-full bg-white transition-transform ${

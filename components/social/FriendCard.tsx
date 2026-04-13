@@ -22,7 +22,7 @@ export function FriendCard({ user, status = 'none', onAdd, onAccept, onRemove }:
       </Link>
       <div className="flex-1 min-w-0">
         <Link href={`/profile/${user.username}`}>
-          <p className="text-sm font-semibold text-white hover:text-cyan-400 truncate">
+          <p className="text-sm font-semibold text-white hover:text-orange-400 truncate">
             {user.username}
           </p>
         </Link>

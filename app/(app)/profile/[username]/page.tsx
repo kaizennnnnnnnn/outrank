@@ -89,10 +89,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={<BoltFullIcon size={24} className="text-cyan-400" />} value={profile.totalXP.toLocaleString()} label="Total XP" />
-        <StatCard icon={<UsersFullIcon size={24} className="text-blue-400" />} value={profile.friendCount.toString()} label="Friends" />
+        <StatCard icon={<BoltFullIcon size={24} className="text-orange-400" />} value={profile.totalXP.toLocaleString()} label="Total XP" />
+        <StatCard icon={<UsersFullIcon size={24} className="text-red-400" />} value={profile.friendCount.toString()} label="Friends" />
         <StatCard icon={<FireIcon size={24} className="text-orange-400" />} value={`${profile.weeklyXP}`} label="Weekly XP" />
-        <StatCard icon={<ChartBarIcon size={24} className="text-blue-400" />} value={`${profile.monthlyXP}`} label="Monthly XP" />
+        <StatCard icon={<ChartBarIcon size={24} className="text-red-400" />} value={`${profile.monthlyXP}`} label="Monthly XP" />
       </div>
 
       {/* Badges */}

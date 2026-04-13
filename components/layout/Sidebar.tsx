@@ -51,18 +51,18 @@ export function Sidebar() {
                 className={cn(
                   'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                   isActive
-                    ? 'text-white bg-blue-600/10'
+                    ? 'text-white bg-red-600/10'
                     : 'text-slate-400 hover:text-white hover:bg-[#1e1e30]'
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-active"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-blue-500"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-red-500"
                     transition={{ type: 'spring', duration: 0.3 }}
                   />
                 )}
-                <span className={cn(isActive && 'text-cyan-400')}>{item.icon}</span>
+                <span className={cn(isActive && 'text-orange-400')}>{item.icon}</span>
                 <span>{item.label}</span>
               </div>
             </Link>
@@ -80,11 +80,11 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                   isActive
-                    ? 'text-white bg-blue-600/10'
+                    ? 'text-white bg-red-600/10'
                     : 'text-slate-400 hover:text-white hover:bg-[#1e1e30]'
                 )}
               >
-                <span className={cn(isActive && 'text-cyan-400')}>{item.icon}</span>
+                <span className={cn(isActive && 'text-orange-400')}>{item.icon}</span>
                 <span>{item.label}</span>
               </div>
             </Link>
@@ -99,7 +99,7 @@ export function Sidebar() {
             <Avatar src={user.avatarUrl} alt={user.username} size="md" level={xpProgress?.percentage} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-white truncate">{user.username}</p>
-              <p className="text-xs text-cyan-400">
+              <p className="text-xs text-orange-400">
                 Lv.{level?.level} {level?.title}
               </p>
             </div>

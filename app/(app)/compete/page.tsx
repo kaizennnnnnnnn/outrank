@@ -56,7 +56,7 @@ export default function CompetePage() {
                       <Avatar src={me.avatarUrl} alt={me.username} size="md" />
                       <div>
                         <p className="text-sm font-bold text-white">{me.username}</p>
-                        <p className="font-mono text-lg text-cyan-400">{me.score}</p>
+                        <p className="font-mono text-lg text-orange-400">{me.score}</p>
                       </div>
                     </div>
                     <div className="text-center">

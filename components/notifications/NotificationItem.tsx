@@ -41,7 +41,7 @@ export function NotificationItemCard({ notification, onMarkRead, index }: Notifi
         'w-full flex items-start gap-3 p-4 rounded-xl text-left transition-all',
         notification.isRead
           ? 'bg-transparent hover:bg-[#10101a]'
-          : 'bg-blue-500/5 border border-blue-500/10 hover:bg-blue-500/10'
+          : 'bg-red-500/5 border border-red-500/10 hover:bg-red-500/10'
       )}
     >
       <span className="text-xl mt-0.5 shrink-0">
@@ -67,7 +67,7 @@ export function NotificationItemCard({ notification, onMarkRead, index }: Notifi
       </div>
 
       {!notification.isRead && (
-        <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0" />
+        <span className="w-2 h-2 rounded-full bg-red-500 mt-2 shrink-0" />
       )}
     </motion.button>
   );

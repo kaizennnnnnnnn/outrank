@@ -23,7 +23,7 @@ export function FeedItemCard({ item, currentUserId, onReact }: FeedItemProps) {
         </Link>
         <div className="flex-1 min-w-0">
           <Link href={`/profile/${item.actorUsername}`}>
-            <p className="text-sm font-semibold text-white hover:text-cyan-400 transition-colors">
+            <p className="text-sm font-semibold text-white hover:text-orange-400 transition-colors">
               {item.actorUsername}
             </p>
           </Link>

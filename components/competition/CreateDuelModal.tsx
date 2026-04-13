@@ -103,7 +103,7 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
                 className={cn(
                   'flex flex-col items-center gap-1 p-2 rounded-xl border transition-all',
                   selectedCategory === cat.slug
-                    ? 'border-blue-500 bg-blue-500/10'
+                    ? 'border-red-500 bg-red-500/10'
                     : 'border-[#1e1e30] hover:border-[#2d2d45]'
                 )}
               >
@@ -125,7 +125,7 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
                 className={cn(
                   'flex-1 px-3 py-2 rounded-xl border text-xs font-medium transition-all',
                   selectedDuration === d.days
-                    ? 'border-blue-500 bg-blue-500/10 text-white'
+                    ? 'border-red-500 bg-red-500/10 text-white'
                     : 'border-[#1e1e30] text-slate-500 hover:text-white'
                 )}
               >

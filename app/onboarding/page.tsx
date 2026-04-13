@@ -133,7 +133,7 @@ export default function OnboardingPage() {
           </div>
           <div className="w-full h-1.5 bg-[#18182a] rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full"
+              className="h-full bg-gradient-to-r from-red-600 to-orange-400 rounded-full"
               animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
               transition={{ duration: 0.3 }}
             />
@@ -196,7 +196,7 @@ export default function OnboardingPage() {
                   <span className="text-5xl mb-4 block">🎯</span>
                   <h1 className="font-heading text-2xl font-bold text-white mb-2">Choose Your Arenas</h1>
                   <p className="text-slate-500">Pick at least 3 categories to track. You can add more later.</p>
-                  <p className="text-xs text-cyan-400 mt-1">{selectedCategories.length}/5 selected</p>
+                  <p className="text-xs text-orange-400 mt-1">{selectedCategories.length}/5 selected</p>
                 </div>
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
                   {CATEGORY_SECTIONS.map((section) => (

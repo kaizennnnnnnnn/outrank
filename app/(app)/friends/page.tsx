@@ -140,7 +140,7 @@ export default function FriendsPage() {
           </div>
         ) : friends.length === 0 ? (
           <EmptyState
-            icon={<UsersFullIcon size={40} className="text-blue-400" />}
+            icon={<UsersFullIcon size={40} className="text-red-400" />}
             title="No friends yet"
             description="Search for friends by username to start competing together."
           />

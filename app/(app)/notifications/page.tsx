@@ -54,7 +54,7 @@ export default function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white font-heading">Notifications</h1>
           {unreadCount > 0 && (
-            <p className="text-sm text-cyan-400">{unreadCount} unread</p>
+            <p className="text-sm text-orange-400">{unreadCount} unread</p>
           )}
         </div>
         {unreadCount > 0 && (
@@ -66,7 +66,7 @@ export default function NotificationsPage() {
 
       {notifications.length === 0 ? (
         <EmptyState
-          icon={<span className="text-cyan-400"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>}
+          icon={<span className="text-orange-400"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></span>}
           title="No notifications"
           description="You're all caught up!"
         />
@@ -80,7 +80,7 @@ export default function NotificationsPage() {
                 'w-full flex items-start gap-3 p-4 rounded-xl text-left transition-all',
                 notif.isRead
                   ? 'bg-transparent hover:bg-[#10101a]'
-                  : 'bg-blue-500/5 border border-blue-500/10 hover:bg-blue-500/10'
+                  : 'bg-red-500/5 border border-red-500/10 hover:bg-red-500/10'
               )}
             >
               <span className="text-xl mt-0.5">{typeIcons[notif.type] || '🔔'}</span>
@@ -96,7 +96,7 @@ export default function NotificationsPage() {
                 </p>
               </div>
               {!notif.isRead && (
-                <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-red-500 mt-2 shrink-0" />
               )}
             </button>
           ))}

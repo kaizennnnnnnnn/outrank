@@ -46,12 +46,12 @@ export default function FeedPage() {
         </div>
       ) : items.length === 0 ? (
         <EmptyState
-          icon={<ActivityIcon size={40} className="text-blue-400" />}
+          icon={<ActivityIcon size={40} className="text-red-400" />}
           title="No activity yet"
           description="Add friends to see their progress in your feed."
           action={
             <Link href="/friends">
-              <span className="text-cyan-400 hover:underline text-sm">Find Friends</span>
+              <span className="text-orange-400 hover:underline text-sm">Find Friends</span>
             </Link>
           }
         />
@@ -66,7 +66,7 @@ export default function FeedPage() {
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link href={`/profile/${item.actorUsername}`}>
-                    <p className="text-sm font-semibold text-white hover:text-cyan-400">{item.actorUsername}</p>
+                    <p className="text-sm font-semibold text-white hover:text-orange-400">{item.actorUsername}</p>
                   </Link>
                   <p className="text-xs text-slate-600">
                     {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
@@ -90,8 +90,8 @@ export default function FeedPage() {
                       className={cn(
                         'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all',
                         reacted
-                          ? 'bg-blue-500/20 border border-blue-500/30'
-                          : 'bg-[#18182a] border border-[#2d2d45] hover:border-blue-500/20'
+                          ? 'bg-red-500/20 border border-red-500/30'
+                          : 'bg-[#18182a] border border-[#2d2d45] hover:border-red-500/20'
                       )}
                     >
                       <span>{emoji}</span>

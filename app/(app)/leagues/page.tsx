@@ -75,7 +75,7 @@ export default function LeaguesPage() {
         </div>
       ) : leagues.length === 0 ? (
         <EmptyState
-          icon={<FlagIcon size={40} className="text-blue-400" />}
+          icon={<FlagIcon size={40} className="text-red-400" />}
           title="No leagues yet"
           description="Create a league and invite friends to compete as a group."
           action={<Button onClick={() => setShowCreate(true)}>Create League</Button>}
@@ -86,8 +86,8 @@ export default function LeaguesPage() {
             <Link key={league.id} href={`/leagues/${league.id}`}>
               <div className="glass-card rounded-2xl p-4 glow-hover transition-all h-full">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center">
-                    <FlagIcon size={20} className="text-blue-400" />
+                  <div className="w-10 h-10 rounded-xl bg-red-600/20 flex items-center justify-center">
+                    <FlagIcon size={20} className="text-red-400" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-white">{league.name}</p>
@@ -118,7 +118,7 @@ export default function LeaguesPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full rounded-xl bg-[#10101a] border border-[#1e1e30] px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+              className="w-full rounded-xl bg-[#10101a] border border-[#1e1e30] px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
               placeholder="What's this league about?"
             />
           </div>

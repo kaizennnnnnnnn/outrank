@@ -51,8 +51,8 @@ export default function LeagueDetailPage({ params }: { params: Promise<{ id: str
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="glass-card rounded-2xl p-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600/20 flex items-center justify-center">
-            <FlagIcon size={28} className="text-blue-400" />
+          <div className="w-14 h-14 rounded-2xl bg-red-600/20 flex items-center justify-center">
+            <FlagIcon size={28} className="text-red-400" />
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-white font-heading">{league.name}</h1>
@@ -81,14 +81,14 @@ export default function LeagueDetailPage({ params }: { params: Promise<{ id: str
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
           </div>
         ) : members.length === 0 ? (
-          <EmptyState icon={<UsersFullIcon size={40} className="text-blue-400" />} title="No members yet" />
+          <EmptyState icon={<UsersFullIcon size={40} className="text-red-400" />} title="No members yet" />
         ) : (
           <div className="divide-y divide-[#1e1e30]">
             {members.map((member, i) => {
               const rank = i + 1;
               const isMe = member.userId === user?.uid;
               return (
-                <div key={member.userId} className={cn('flex items-center gap-4 px-4 py-3', isMe && 'bg-blue-500/5')}>
+                <div key={member.userId} className={cn('flex items-center gap-4 px-4 py-3', isMe && 'bg-red-500/5')}>
                   <span className={cn(
                     'font-mono text-lg font-bold w-8 text-center',
                     rank === 1 && 'text-yellow-400',
@@ -100,7 +100,7 @@ export default function LeagueDetailPage({ params }: { params: Promise<{ id: str
                   </span>
                   <Avatar src={member.avatarUrl} alt={member.username || 'User'} size="sm" />
                   <div className="flex-1 min-w-0">
-                    <p className={cn('text-sm font-medium truncate', isMe ? 'text-cyan-400' : 'text-white')}>
+                    <p className={cn('text-sm font-medium truncate', isMe ? 'text-orange-400' : 'text-white')}>
                       {member.username || member.userId} {isMe && '(you)'}
                     </p>
                     <p className="text-xs text-slate-600">
@@ -120,7 +120,7 @@ export default function LeagueDetailPage({ params }: { params: Promise<{ id: str
       <div className="glass-card rounded-2xl p-4">
         <p className="text-xs text-slate-500 mb-2">Invite Code</p>
         <div className="flex items-center gap-2">
-          <code className="flex-1 bg-[#18182a] rounded-xl px-4 py-2.5 font-mono text-cyan-400 text-sm">
+          <code className="flex-1 bg-[#18182a] rounded-xl px-4 py-2.5 font-mono text-orange-400 text-sm">
             {league.inviteCode}
           </code>
           <Button size="sm" onClick={copyInvite}>Copy Link</Button>

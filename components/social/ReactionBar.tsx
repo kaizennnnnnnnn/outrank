@@ -28,8 +28,8 @@ export function ReactionBar({ reactions, currentUserId, onReact }: ReactionBarPr
             className={cn(
               'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all',
               reacted
-                ? 'bg-blue-500/20 border border-blue-500/30'
-                : 'bg-[#18182a] border border-[#2d2d45] hover:border-blue-500/20'
+                ? 'bg-red-500/20 border border-red-500/30'
+                : 'bg-[#18182a] border border-[#2d2d45] hover:border-red-500/20'
             )}
           >
             <motion.span

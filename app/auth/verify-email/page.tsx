@@ -49,7 +49,7 @@ export default function VerifyEmailPage() {
           </Button>
         </div>
 
-        <Link href="/auth/login" className="text-sm text-cyan-400 hover:text-cyan-300">
+        <Link href="/auth/login" className="text-sm text-orange-400 hover:text-orange-300">
           Back to Login
         </Link>
       </motion.div>

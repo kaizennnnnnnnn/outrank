@@ -15,7 +15,7 @@ const icons: Record<ToastType['type'], string> = {
 const colors: Record<ToastType['type'], string> = {
   success: 'border-emerald-500/30 bg-emerald-500/10',
   error: 'border-red-500/30 bg-red-500/10',
-  info: 'border-blue-500/30 bg-blue-500/10',
+  info: 'border-red-500/30 bg-red-500/10',
   warning: 'border-yellow-500/30 bg-yellow-500/10',
 };
 

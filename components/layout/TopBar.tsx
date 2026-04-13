@@ -29,10 +29,10 @@ export function TopBar() {
         {/* XP Bar (Desktop) */}
         <div className="hidden lg:flex items-center gap-3 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-cyan-400 font-bold">Lv.{level.level}</span>
+            <span className="text-xs font-mono text-orange-400 font-bold">Lv.{level.level}</span>
             <div className="w-48 h-2 bg-[#18182a] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-red-600 to-orange-400 rounded-full transition-all duration-500"
                 style={{ width: `${xp.percentage}%` }}
               />
             </div>

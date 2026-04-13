@@ -71,8 +71,8 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard icon={<FireIcon size={24} className="text-orange-400" />} value={`${habit.currentStreak}d`} label="Current Streak" />
           <StatCard icon={<TrophyIconFull size={24} className="text-yellow-400" />} value={`${habit.longestStreak}d`} label="Best Streak" />
-          <StatCard icon={<ChartBarIcon size={24} className="text-blue-400" />} value={habit.totalLogs.toString()} label="Total Logs" />
-          <StatCard icon={<TargetFullIcon size={24} className="text-cyan-400" />} value={`${habit.goal} ${habit.unit}`} label="Daily Goal" />
+          <StatCard icon={<ChartBarIcon size={24} className="text-red-400" />} value={habit.totalLogs.toString()} label="Total Logs" />
+          <StatCard icon={<TargetFullIcon size={24} className="text-orange-400" />} value={`${habit.goal} ${habit.unit}`} label="Daily Goal" />
         </div>
       ) : (
         <div className="glass-card rounded-2xl p-6 text-center">
@@ -91,7 +91,7 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
                 onClick={() => setPeriod(p.value)}
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                  period === p.value ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'
+                  period === p.value ? 'bg-red-600 text-white' : 'text-slate-500 hover:text-white'
                 )}
               >
                 {p.label}

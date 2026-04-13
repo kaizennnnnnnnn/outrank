@@ -13,8 +13,8 @@ const features: { icon: ReactNode; title: string; desc: string }[] = [
   { icon: <FireIcon size={28} className="text-orange-400" />, title: 'Daily Streaks', desc: 'Build unbreakable habits with streak tracking that keeps you accountable.' },
   { icon: <SwordsCrossIcon size={28} className="text-red-400" />, title: '1v1 Duels', desc: 'Challenge friends to head-to-head competitions in any category.' },
   { icon: <TrophyIconFull size={28} className="text-yellow-400" />, title: 'Live Leaderboards', desc: 'Compete on weekly, monthly, and all-time rankings across 50+ categories.' },
-  { icon: <FlagIcon size={28} className="text-blue-400" />, title: 'Leagues', desc: 'Create private groups, set challenges, and crown weekly champions.' },
-  { icon: <MedalIcon size={28} className="text-cyan-400" />, title: 'Badges & XP', desc: 'Earn 40+ badges across 4 rarity tiers. Level up from Rookie to GOAT.' },
+  { icon: <FlagIcon size={28} className="text-red-400" />, title: 'Leagues', desc: 'Create private groups, set challenges, and crown weekly champions.' },
+  { icon: <MedalIcon size={28} className="text-orange-400" />, title: 'Badges & XP', desc: 'Earn 40+ badges across 4 rarity tiers. Level up from Rookie to GOAT.' },
   { icon: <ActivityIcon size={28} className="text-emerald-400" />, title: 'Social Feed', desc: "See friends' progress in real-time. React, motivate, compete." },
 ];
 
@@ -49,13 +49,13 @@ export default function LandingPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600/10 border border-blue-600/20 text-cyan-400 text-sm mb-6">
-              <RocketIcon size={16} className="text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-600/10 border border-red-600/20 text-orange-400 text-sm mb-6">
+              <RocketIcon size={16} className="text-orange-400" />
               <span>Self-improvement just got competitive</span>
             </div>
             <h1 className="font-heading text-4xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6">
               Stop Improving{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600">
                 Alone
               </span>
             </h1>
@@ -155,7 +155,7 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
-                <p className="font-heading text-3xl sm:text-4xl font-bold text-cyan-400 mb-1">
+                <p className="font-heading text-3xl sm:text-4xl font-bold text-orange-400 mb-1">
                   {stat.value}
                 </p>
                 <p className="text-sm text-slate-500">{stat.label}</p>

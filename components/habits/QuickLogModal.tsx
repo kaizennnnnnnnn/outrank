@@ -112,7 +112,7 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
                   <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="font-heading text-2xl font-bold text-cyan-400"
+                    className="font-heading text-2xl font-bold text-orange-400"
                   >
                     +{xpAmount} XP
                   </motion.p>

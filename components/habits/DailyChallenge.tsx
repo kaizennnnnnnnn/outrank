@@ -69,10 +69,10 @@ export function DailyChallenge() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-blue-500/20 bg-gradient-to-r from-blue-600/5 to-[#10101a] p-4"
+      className="rounded-2xl border border-red-500/20 bg-gradient-to-r from-red-600/5 to-[#10101a] p-4"
     >
       <div className="flex items-center gap-1 mb-2">
-        <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Daily Challenge</span>
+        <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">Daily Challenge</span>
         <span className="text-xs text-slate-600">&bull; +{challenge.bonus} bonus XP</span>
       </div>
       <div className="flex items-center gap-3">

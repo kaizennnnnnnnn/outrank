@@ -97,7 +97,7 @@ export default function AdminPage() {
             onClick={() => setTab(t)}
             className={cn(
               'px-4 py-2 rounded-lg text-xs font-medium capitalize transition-all',
-              tab === t ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'
+              tab === t ? 'bg-red-600 text-white' : 'text-slate-500 hover:text-white'
             )}
           >
             {t}
@@ -206,7 +206,7 @@ export default function AdminPage() {
       {tab === 'stats' && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="glass-card rounded-xl p-6 text-center">
-            <p className="text-3xl font-heading font-bold text-cyan-400">--</p>
+            <p className="text-3xl font-heading font-bold text-orange-400">--</p>
             <p className="text-xs text-slate-500 mt-1">Total Users</p>
           </div>
           <div className="glass-card rounded-xl p-6 text-center">
@@ -224,7 +224,7 @@ export default function AdminPage() {
             <p className="text-xs text-slate-500 mt-1">Pending Reports</p>
           </div>
           <div className="glass-card rounded-xl p-6 text-center">
-            <p className="text-3xl font-heading font-bold text-blue-400">--</p>
+            <p className="text-3xl font-heading font-bold text-red-400">--</p>
             <p className="text-xs text-slate-500 mt-1">Total Leagues</p>
           </div>
           <div className="glass-card rounded-xl p-6 text-center">

@@ -36,10 +36,10 @@ function getWeeks(): Date[][] {
 
 function getIntensity(count: number): string {
   if (count === 0) return 'bg-[#18182a]';
-  if (count === 1) return 'bg-blue-900/60';
-  if (count <= 3) return 'bg-blue-700/70';
-  if (count <= 5) return 'bg-blue-600/80';
-  return 'bg-blue-500';
+  if (count === 1) return 'bg-red-900/60';
+  if (count <= 3) return 'bg-red-700/70';
+  if (count <= 5) return 'bg-red-600/80';
+  return 'bg-red-500';
 }
 
 export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
@@ -101,10 +101,10 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
       <div className="flex items-center gap-1 mt-2 text-[10px] text-slate-600">
         <span>Less</span>
         <div className="w-[11px] h-[11px] rounded-[2px] bg-[#18182a]" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-blue-900/60" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-blue-700/70" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-blue-600/80" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-blue-500" />
+        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-900/60" />
+        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-700/70" />
+        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-600/80" />
+        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-500" />
         <span>More</span>
       </div>
     </div>

@@ -11,11 +11,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-500/30',
+  primary: 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20 hover:shadow-red-500/30',
   secondary: 'bg-[#18182a] hover:bg-[#1e1e30] text-white border border-[#2d2d45]',
   ghost: 'bg-transparent hover:bg-[#1e1e30] text-slate-300',
   danger: 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/20',
-  outline: 'bg-transparent border border-blue-600 text-cyan-400 hover:bg-blue-600/10',
+  outline: 'bg-transparent border border-red-600 text-orange-400 hover:bg-red-600/10',
 };
 
 const sizes = {
@@ -32,7 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         whileTap={{ scale: 0.97 }}
         whileHover={{ scale: 1.02 }}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 disabled:pointer-events-none',
+          'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 disabled:opacity-50 disabled:pointer-events-none',
           variants[variant],
           sizes[size],
           className

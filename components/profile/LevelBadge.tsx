@@ -50,8 +50,8 @@ export function LevelBadge({ totalXP, size = 'md' }: LevelBadgeProps) {
         />
         <defs>
           <linearGradient id="levelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#2563eb" />
-            <stop offset="100%" stopColor="#06b6d4" />
+            <stop offset="0%" stopColor="#dc2626" />
+            <stop offset="100%" stopColor="#ef4444" />
           </linearGradient>
         </defs>
       </svg>

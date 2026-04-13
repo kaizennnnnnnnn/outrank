@@ -35,7 +35,7 @@ export function LeaderboardRow({ rank, username, avatarUrl, score, delta, isCurr
       transition={{ delay: index * 0.04 }}
       className={cn(
         'flex items-center gap-4 px-4 py-3 hover:bg-[#1e1e30]/50 transition-colors',
-        isCurrentUser && 'bg-blue-500/5 border-l-2 border-blue-500'
+        isCurrentUser && 'bg-red-500/5 border-l-2 border-red-500'
       )}
     >
       {/* Rank */}
@@ -51,7 +51,7 @@ export function LeaderboardRow({ rank, username, avatarUrl, score, delta, isCurr
         <Avatar src={avatarUrl} alt={username} size="sm" />
         <p className={cn(
           'text-sm font-medium truncate',
-          isCurrentUser ? 'text-cyan-400' : 'text-white'
+          isCurrentUser ? 'text-orange-400' : 'text-white'
         )}>
           {username} {isCurrentUser && '(you)'}
         </p>

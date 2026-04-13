@@ -81,7 +81,7 @@ export default function HabitsPage() {
         </div>
       ) : habits.length === 0 ? (
         <div className="text-center py-20">
-          <div className="flex justify-center"><TargetFullIcon size={48} className="text-cyan-400 mb-4" /></div>
+          <div className="flex justify-center"><TargetFullIcon size={48} className="text-orange-400 mb-4" /></div>
           <h2 className="text-xl font-bold text-white mb-2">No habits yet</h2>
           <p className="text-slate-500 mb-6">Choose from 52 categories to start tracking.</p>
           <Button onClick={() => setShowBrowser(true)}>Browse Categories</Button>
@@ -99,7 +99,7 @@ export default function HabitsPage() {
                   <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="md" slug={habit.categorySlug} />
                   <div>
                     <Link href={`/habits/${habit.categorySlug}`}>
-                      <p className="text-sm font-bold text-white hover:text-cyan-400">{habit.categoryName}</p>
+                      <p className="text-sm font-bold text-white hover:text-orange-400">{habit.categoryName}</p>
                     </Link>
                     <p className="text-xs text-slate-500">
                       Goal: {habit.goal} {habit.unit}/{habit.goalPeriod}
@@ -146,7 +146,7 @@ export default function HabitsPage() {
                         'flex items-center gap-2 p-3 rounded-xl border text-left transition-all',
                         isSubscribed
                           ? 'border-emerald-500/20 bg-emerald-500/5 opacity-60'
-                          : 'border-[#1e1e30] bg-[#10101a] hover:border-blue-500/30 hover:bg-blue-500/5'
+                          : 'border-[#1e1e30] bg-[#10101a] hover:border-red-500/30 hover:bg-red-500/5'
                       )}
                     >
                       <CategoryIcon icon={cat.icon} color={cat.color} size="sm" slug={cat.slug} />

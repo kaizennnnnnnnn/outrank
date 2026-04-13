@@ -18,8 +18,8 @@ function getFlameColor(streak: number): string {
 const flameGradients: Record<string, string> = {
   orange: 'from-yellow-400 via-orange-400 to-orange-600',
   red: 'from-orange-400 via-red-500 to-red-700',
-  purple: 'from-red-500 via-blue-500 to-blue-700',
-  rainbow: 'from-yellow-400 via-red-500 to-blue-600',
+  purple: 'from-red-500 via-red-500 to-red-700',
+  rainbow: 'from-yellow-400 via-red-500 to-red-600',
 };
 
 const sizeMap = {

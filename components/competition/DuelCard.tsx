@@ -41,7 +41,7 @@ export function DuelCard({ competition, currentUserId }: DuelCardProps) {
           <div className="flex items-center gap-3">
             <Avatar src={me.avatarUrl} alt={me.username} size="md" />
             <div>
-              <p className="text-sm font-bold text-cyan-400">{me.username}</p>
+              <p className="text-sm font-bold text-orange-400">{me.username}</p>
               <p className="font-mono text-xl font-bold text-white">{me.score}</p>
             </div>
           </div>

@@ -44,7 +44,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">
-            Welcome back, <span className="text-cyan-400">{user.username}</span>
+            Welcome back, <span className="text-orange-400">{user.username}</span>
           </h1>
           <p className="text-sm text-slate-500">
             Lv.{level.level} {level.title} &bull; {user.totalXP.toLocaleString()} XP
@@ -66,7 +66,7 @@ export default function DashboardPage() {
         </div>
         <div className="w-full h-3 bg-[#18182a] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 rounded-full"
+            className="h-full bg-gradient-to-r from-red-600 via-red-500 to-orange-400 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${xpProgress.percentage}%` }}
             transition={{ duration: 1, ease: 'easeOut' }}
@@ -93,7 +93,7 @@ export default function DashboardPage() {
             </div>
           ) : habits.length === 0 ? (
             <EmptyState
-              icon={<TargetFullIcon size={40} className="text-cyan-400" />}
+              icon={<TargetFullIcon size={40} className="text-orange-400" />}
               title="No habits yet"
               description="Add your first habit to start tracking and competing."
               action={
@@ -131,7 +131,7 @@ export default function DashboardPage() {
             </div>
           ) : feedItems.length === 0 ? (
             <EmptyState
-              icon={<UsersFullIcon size={40} className="text-blue-400" />}
+              icon={<UsersFullIcon size={40} className="text-red-400" />}
               title="No activity yet"
               description="Add friends to see their progress here."
               action={

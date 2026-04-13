@@ -26,12 +26,12 @@ export function MobileNav() {
             <Link key={item.href} href={item.href} className="flex-1">
               <div className={cn(
                 'flex flex-col items-center gap-0.5 py-1 transition-all',
-                isActive ? 'text-cyan-400' : 'text-slate-500'
+                isActive ? 'text-orange-400' : 'text-slate-500'
               )}>
                 {item.icon}
                 <span className="text-[10px] font-medium">{item.label}</span>
                 {isActive && (
-                  <div className="w-1 h-1 rounded-full bg-blue-500 mt-0.5" />
+                  <div className="w-1 h-1 rounded-full bg-red-500 mt-0.5" />
                 )}
               </div>
             </Link>

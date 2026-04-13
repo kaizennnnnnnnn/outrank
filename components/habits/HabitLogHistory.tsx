@@ -48,7 +48,7 @@ export function HabitLogHistory({ userId, habitId }: HabitLogHistoryProps) {
           </div>
           <div className="flex items-center gap-2">
             {log.proofImageUrl && <span className="text-xs text-slate-500">📷</span>}
-            <span className="text-xs font-mono text-cyan-400">+{log.xpEarned} XP</span>
+            <span className="text-xs font-mono text-orange-400">+{log.xpEarned} XP</span>
           </div>
         </div>
       ))}

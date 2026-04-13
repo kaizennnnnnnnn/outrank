@@ -26,7 +26,7 @@ export function LevelUpOverlay() {
         particleCount: 150,
         spread: 100,
         origin: { y: 0.5 },
-        colors: ['#2563eb', '#06b6d4', '#f97316', '#f59e0b', '#10b981'],
+        colors: ['#dc2626', '#ef4444', '#f97316', '#fbbf24', '#991b1b'],
       });
 
       setTimeout(() => setShow(false), 4000);
@@ -56,7 +56,7 @@ export function LevelUpOverlay() {
               initial={{ scale: 0, opacity: 0.8 }}
               animate={{ scale: 3, opacity: 0 }}
               transition={{ duration: 1.2 }}
-              className="absolute inset-0 m-auto w-32 h-32 rounded-full bg-blue-600/30"
+              className="absolute inset-0 m-auto w-32 h-32 rounded-full bg-red-600/30"
             />
 
             <motion.div
@@ -72,7 +72,7 @@ export function LevelUpOverlay() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="font-heading text-sm text-cyan-400 uppercase tracking-widest mb-2"
+              className="font-heading text-sm text-orange-400 uppercase tracking-widest mb-2"
             >
               Level Up!
             </motion.p>
@@ -90,7 +90,7 @@ export function LevelUpOverlay() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="font-heading text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600"
+              className="font-heading text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600"
             >
               {levelInfo.title}
             </motion.p>
