@@ -6,18 +6,6 @@ const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-  {
-    key: 'Content-Security-Policy',
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.firebaseapp.com *.googleapis.com accounts.google.com apis.google.com",
-      "style-src 'self' 'unsafe-inline' fonts.googleapis.com accounts.google.com",
-      "font-src 'self' fonts.gstatic.com",
-      "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com firebasestorage.googleapis.com placehold.co",
-      "connect-src 'self' *.firebaseio.com *.googleapis.com identitytoolkit.googleapis.com securetoken.googleapis.com accounts.google.com",
-      "frame-src 'self' *.firebaseapp.com accounts.google.com",
-    ].join('; ')
-  }
 ];
 
 const nextConfig: NextConfig = {
