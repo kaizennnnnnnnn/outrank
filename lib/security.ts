@@ -1,7 +1,13 @@
-import DOMPurify from 'isomorphic-dompurify';
+// Lightweight sanitization — strips all HTML tags
+// No dependency on isomorphic-dompurify/canvas (which breaks on Vercel)
 
 export const sanitize = (input: string): string => {
-  return DOMPurify.sanitize(input.trim(), { ALLOWED_TAGS: [] });
+  return input
+    .trim()
+    .replace(/<[^>]*>/g, '')       // Strip HTML tags
+    .replace(/&[a-z]+;/gi, '')     // Strip HTML entities
+    .replace(/javascript:/gi, '')   // Strip JS protocol
+    .replace(/on\w+\s*=/gi, '');   // Strip event handlers
 };
 
 export const sanitizeUsername = (username: string): string => {
