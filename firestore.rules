@@ -1,0 +1,185 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isNotBanned() {
+      return !exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isBanned != true;
+    }
+
+    function isVerifiedUser() {
+      return isAuthenticated() && isNotBanned() && request.auth.token.email_verified == true;
+    }
+
+    function isFriend(userId) {
+      return exists(/databases/$(database)/documents/friendships/$(request.auth.uid)/friends/$(userId))
+        && get(/databases/$(database)/documents/friendships/$(request.auth.uid)/friends/$(userId)).data.status == 'accepted';
+    }
+
+    function isLeagueMember(leagueId) {
+      return exists(/databases/$(database)/documents/leagues/$(leagueId)/members/$(request.auth.uid));
+    }
+
+    function isLeagueAdmin(leagueId) {
+      return isLeagueMember(leagueId)
+        && get(/databases/$(database)/documents/leagues/$(leagueId)/members/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isValidUsername(username) {
+      return username.matches('^[a-zA-Z0-9_]{3,20}$');
+    }
+
+    // USERS
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (
+        isOwner(userId) ||
+        resource.data.isPublic == true ||
+        isFriend(userId)
+      );
+      allow create: if isAuthenticated() && isOwner(userId)
+        && request.resource.data.keys().hasAll(['uid','username','email','createdAt'])
+        && isValidUsername(request.resource.data.username);
+      allow update: if isOwner(userId) && isNotBanned()
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['uid', 'email', 'isBanned', 'isPremium', 'level', 'totalXP', 'isVerified']);
+      allow delete: if false;
+    }
+
+    // USERNAME UNIQUENESS INDEX
+    match /usernames/{username} {
+      allow read: if true;
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid
+        && isValidUsername(username);
+      allow delete: if isAuthenticated()
+        && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+
+    // FRIENDSHIPS
+    match /friendships/{userId}/friends/{friendId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isVerifiedUser()
+        && request.resource.data.status == 'pending';
+      allow update: if (isOwner(userId) || isOwner(friendId))
+        && isVerifiedUser();
+      allow delete: if isOwner(userId) || isOwner(friendId);
+    }
+
+    // HABITS
+    match /habits/{userId}/userHabits/{habitId} {
+      allow read: if isOwner(userId) || (
+        isFriend(userId) &&
+        resource.data.isPublic == true
+      );
+      allow create: if isOwner(userId) && isVerifiedUser();
+      allow update: if isOwner(userId) && isNotBanned()
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['totalLogs', 'currentStreak', 'longestStreak', 'lastLogDate']);
+      allow delete: if isOwner(userId);
+    }
+
+    // LOGS (append-only, immutable)
+    match /logs/{userId}/habitLogs/{logId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isVerifiedUser() && isNotBanned();
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // LEADERBOARDS (read-only, Cloud Functions write)
+    match /leaderboards/{categorySlug}/{period}/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // LEAGUES
+    match /leagues/{leagueId} {
+      allow read: if isAuthenticated() && (
+        !resource.data.isPrivate || isLeagueMember(leagueId)
+      );
+      allow create: if isVerifiedUser();
+      allow update: if isLeagueAdmin(leagueId);
+      allow delete: if isLeagueAdmin(leagueId);
+    }
+
+    match /leagues/{leagueId}/members/{userId} {
+      allow read: if isLeagueMember(leagueId);
+      allow create: if isOwner(userId) && isVerifiedUser();
+      allow delete: if isOwner(userId) || isLeagueAdmin(leagueId);
+      allow update: if isLeagueAdmin(leagueId);
+    }
+
+    // COMPETITIONS
+    match /competitions/{competitionId} {
+      allow read: if isAuthenticated();
+      allow create: if isVerifiedUser();
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // FEED
+    match /feed/{userId}/items/{itemId} {
+      allow read: if isOwner(userId) || isFriend(userId);
+      allow create: if false;
+      allow update: if isAuthenticated()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+      allow delete: if false;
+    }
+
+    // NOTIFICATIONS
+    match /notifications/{userId}/items/{notificationId} {
+      allow read: if isOwner(userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // BADGES (read-only catalog)
+    match /badges/{badgeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /userBadges/{userId}/earned/{badgeId} {
+      allow read: if isOwner(userId) || isFriend(userId);
+      allow write: if false;
+    }
+
+    // REPORTS
+    match /reports/{reportId} {
+      allow create: if isVerifiedUser();
+      allow read: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // TOURNAMENTS
+    match /tournaments/{tournamentId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // AUDIT LOGS
+    match /auditLogs/{logId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    // CATEGORIES
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

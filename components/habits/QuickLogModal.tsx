@@ -1,0 +1,196 @@
+'use client';
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { ProofUploader } from './ProofUploader';
+import { UserHabit } from '@/types/habit';
+import { createDocument, Timestamp } from '@/lib/firestore';
+import { uploadProofImage } from '@/lib/storage';
+import { validateLogValue, sanitizeNote } from '@/lib/security';
+import { getGoalConfig } from '@/constants/categories';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { useUIStore } from '@/store/uiStore';
+
+interface QuickLogModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  habit: UserHabit | null;
+  userId: string;
+}
+
+export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalProps) {
+  const addToast = useUIStore((s) => s.addToast);
+  const [value, setValue] = useState(1);
+  const [note, setNote] = useState('');
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [logging, setLogging] = useState(false);
+  const [showXP, setShowXP] = useState(false);
+
+  const config = habit ? getGoalConfig(habit.categorySlug) : null;
+
+  const resetForm = () => {
+    setValue(habit?.goal || 1);
+    setNote('');
+    setProofFile(null);
+    setShowXP(false);
+  };
+
+  const handleLog = async () => {
+    if (!habit) return;
+    if (!validateLogValue(value)) {
+      addToast({ type: 'error', message: 'Invalid value' });
+      return;
+    }
+
+    setLogging(true);
+    try {
+      let proofUrl = '';
+      const tempLogId = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+      if (proofFile) {
+        proofUrl = await uploadProofImage(userId, tempLogId, proofFile);
+      }
+
+      await createDocument(`logs/${userId}/habitLogs`, {
+        habitId: habit.categorySlug,
+        categoryId: habit.categoryId,
+        categorySlug: habit.categorySlug,
+        value,
+        note: sanitizeNote(note),
+        proofImageUrl: proofUrl,
+        verified: !!proofUrl,
+        loggedAt: Timestamp.now(),
+        xpEarned: proofUrl ? 15 : 10, // Bonus XP for proof
+      });
+
+      setShowXP(true);
+      setTimeout(() => {
+        setShowXP(false);
+        onClose();
+        resetForm();
+        addToast({ type: 'success', message: `${habit.categoryIcon} Logged! +${proofUrl ? 15 : 10} XP` });
+      }, 1200);
+    } catch {
+      addToast({ type: 'error', message: 'Failed to log. Try again.' });
+    } finally {
+      setLogging(false);
+    }
+  };
+
+  // Reset value when habit changes
+  if (habit && value !== habit.goal && !logging) {
+    setValue(habit.goal);
+  }
+
+  const xpAmount = proofFile ? 15 : 10;
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={`Log ${habit?.categoryName || ''}`}>
+      {habit && config && (
+        <div className="space-y-5 relative">
+          {/* XP Animation Overlay */}
+          <AnimatePresence>
+            {showXP && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.5, y: -50 }}
+                transition={{ duration: 0.8 }}
+                className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
+              >
+                <div className="text-center">
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [0, 1.3, 1] }}
+                    className="text-5xl block mb-2"
+                  >
+                    ⚡
+                  </motion.span>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="font-heading text-2xl font-bold text-cyan-400"
+                  >
+                    +{xpAmount} XP
+                  </motion.p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Icon */}
+          <div className="flex items-center justify-center">
+            <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
+          </div>
+
+          {/* Value Stepper */}
+          <div className="flex items-center justify-center gap-6">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setValue(Math.max(config.min, value - config.step))}
+              className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
+            >
+              -
+            </motion.button>
+            <div className="text-center min-w-[80px]">
+              <span className="font-mono text-5xl font-bold text-white">{value.toLocaleString()}</span>
+              <p className="text-xs text-slate-500 mt-1">{config.dailyLabel}</p>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setValue(Math.min(config.max, value + config.step))}
+              className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
+            >
+              +
+            </motion.button>
+          </div>
+
+          {/* Proof Upload — PROMINENT */}
+          <div className="rounded-xl border border-[#1e1e30] bg-[#0c0c16] p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">📸</span>
+                <span className="text-xs font-medium text-white">Add proof photo</span>
+              </div>
+              {proofFile ? (
+                <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                  ✓ Verified (+5 bonus XP)
+                </span>
+              ) : (
+                <span className="text-xs text-slate-600">+5 bonus XP</span>
+              )}
+            </div>
+            <ProofUploader file={proofFile} onFileChange={setProofFile} />
+          </div>
+
+          {/* Note */}
+          <Input
+            placeholder="Add a note (optional)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={280}
+          />
+
+          {/* Submit */}
+          <Button
+            className="w-full text-lg py-3"
+            onClick={handleLog}
+            loading={logging}
+            disabled={showXP}
+          >
+            {proofFile ? `Log +${xpAmount} XP ✓ Verified` : `Log +${xpAmount} XP ⚡`}
+          </Button>
+
+          {!proofFile && (
+            <p className="text-center text-[10px] text-slate-600">
+              Logs without proof show ⚠️ on leaderboards
+            </p>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
