@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { getMaxHabits, getNextSlotUnlock } from '@/constants/progression';
+import { getLevelForXP } from '@/constants/levels';
 import { setDocument, Timestamp, removeDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
@@ -23,9 +25,18 @@ export default function HabitsPage() {
   const [adding, setAdding] = useState<string | null>(null);
 
   const subscribedSlugs = habits.map((h) => h.categorySlug);
+  const level = user ? getLevelForXP(user.totalXP) : { level: 1 };
+  const maxHabits = getMaxHabits(level.level);
+  const nextUnlock = getNextSlotUnlock(level.level);
+  const slotsUsed = habits.length;
+  const slotsFull = slotsUsed >= maxHabits;
 
   const addHabit = async (slug: string) => {
     if (!user) return;
+    if (slotsFull) {
+      addToast({ type: 'error', message: `All ${maxHabits} habit slots used. Level up to unlock more!` });
+      return;
+    }
     const cat = CATEGORIES.find((c) => c.slug === slug);
     if (!cat) return;
 
@@ -70,9 +81,18 @@ export default function HabitsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white font-heading">My Habits</h1>
-          <p className="text-sm text-slate-500">{habits.length} habits tracked</p>
+          <p className="text-sm text-slate-500">
+            {slotsUsed}/{maxHabits} slots used
+            {nextUnlock && (
+              <span className="text-orange-400 ml-1">
+                &bull; +{nextUnlock.slots - maxHabits} at Lv.{nextUnlock.level}
+              </span>
+            )}
+          </p>
         </div>
-        <Button onClick={() => setShowBrowser(true)}>+ Add Habit</Button>
+        <Button onClick={() => setShowBrowser(true)} disabled={slotsFull}>
+          {slotsFull ? 'Slots Full' : '+ Add Habit'}
+        </Button>
       </div>
 
       {loading ? (

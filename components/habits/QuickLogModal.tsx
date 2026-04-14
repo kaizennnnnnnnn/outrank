@@ -113,13 +113,13 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
                 className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
               >
                 <div className="text-center">
-                  <motion.span
+                  <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: [0, 1.3, 1] }}
-                    className="text-5xl block mb-2"
+                    className="flex justify-center mb-2"
                   >
-                    ⚡
-                  </motion.span>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-400"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  </motion.div>
                   <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -219,7 +219,7 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
             loading={logging}
             disabled={showXP}
           >
-            {proofFile ? `Log +${xpAmount} XP ✓ Verified` : `Log +${xpAmount} XP ⚡`}
+            {proofFile ? `Log +${xpAmount} XP ✓ Verified` : `Log +${xpAmount} XP`}
           </Button>
 
           {!proofFile && (

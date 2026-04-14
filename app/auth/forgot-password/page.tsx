@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useUIStore } from '@/store/uiStore';
 import { Logo } from '@/components/ui/Logo';
+import { MailFullIcon } from '@/components/ui/AppIcons';
 
 export default function ForgotPasswordPage() {
   const addToast = useUIStore((s) => s.addToast);
@@ -57,7 +58,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-[#10101a] border border-[#1e1e30] rounded-2xl p-6">
           {sent ? (
             <div className="text-center space-y-4">
-              <div className="text-5xl">📬</div>
+              <div className="flex justify-center"><MailFullIcon size={48} className="text-orange-400" /></div>
               <p className="text-slate-300">Check your email for a password reset link.</p>
               <Link href="/auth/login">
                 <Button variant="secondary" className="w-full mt-4">

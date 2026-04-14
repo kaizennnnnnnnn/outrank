@@ -4,45 +4,34 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { CATEGORIES } from '@/constants/categories';
+import { getTodaysChallenge } from '@/constants/progression';
 import { useAuth } from '@/hooks/useAuth';
+import { useHabits } from '@/hooks/useHabits';
 import { logHabit } from '@/lib/logHabit';
 import { useUIStore } from '@/store/uiStore';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
-const DAILY_CHALLENGES = [
-  { category: 'gym', value: 1, text: 'Hit the gym today', bonus: 25 },
-  { category: 'running', value: 3, text: 'Run at least 3km', bonus: 25 },
-  { category: 'meditation', value: 15, text: 'Meditate for 15 minutes', bonus: 25 },
-  { category: 'water', value: 3, text: 'Drink at least 3 liters of water', bonus: 25 },
-  { category: 'books', value: 1, text: 'Read for 30 minutes', bonus: 25 },
-  { category: 'cold-shower', value: 1, text: 'Take a cold shower', bonus: 25 },
-  { category: 'journaling', value: 1, text: 'Write a journal entry', bonus: 25 },
-  { category: 'coding', value: 3, text: 'Solve 3 coding problems', bonus: 25 },
-  { category: 'deep-work', value: 2, text: 'Do 2 hours of deep work', bonus: 25 },
-  { category: 'gratitude', value: 1, text: 'Write 3 things you are grateful for', bonus: 25 },
-  { category: 'yoga', value: 20, text: 'Do 20 minutes of yoga', bonus: 25 },
-  { category: 'early-wake', value: 1, text: 'Wake up before 6 AM', bonus: 25 },
-  { category: 'no-social', value: 1, text: 'Stay off social media today', bonus: 25 },
-  { category: 'stretch', value: 15, text: 'Stretch for 15 minutes', bonus: 25 },
-];
-
-function getTodaysChallenge() {
-  const today = new Date();
-  const dayOfYear = Math.floor(
-    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  return DAILY_CHALLENGES[dayOfYear % DAILY_CHALLENGES.length];
-}
-
 export function DailyChallenge() {
   const { user } = useAuth();
+  const { habits } = useHabits();
   const addToast = useUIStore((s) => s.addToast);
   const [completing, setCompleting] = useState(false);
-  const challenge = getTodaysChallenge();
-  const cat = CATEGORIES.find((c) => c.slug === challenge.category);
+  const [completed, setCompleted] = useState(false);
+
+  // Check if already completed today (localStorage)
+  useEffect(() => {
+    const key = `dc_${new Date().toDateString()}`;
+    if (localStorage.getItem(key) === 'done') {
+      setCompleted(true);
+    }
+  }, []);
+
+  const userHabitSlugs = habits.map((h) => h.categorySlug);
+  const challenge = getTodaysChallenge(userHabitSlugs);
+  const cat = challenge ? CATEGORIES.find((c) => c.slug === challenge.category) : null;
 
   const handleComplete = async () => {
-    if (!user || !cat) return;
+    if (!user || !challenge || !cat) return;
     setCompleting(true);
     try {
       const result = await logHabit({
@@ -55,6 +44,12 @@ export function DailyChallenge() {
         username: user.username,
         avatarUrl: user.avatarUrl || '',
       });
+
+      // Mark as completed in localStorage
+      const key = `dc_${new Date().toDateString()}`;
+      localStorage.setItem(key, 'done');
+      setCompleted(true);
+
       addToast({ type: 'success', message: `Daily challenge complete! +${result.xpEarned} XP` });
     } catch {
       addToast({ type: 'error', message: 'Failed to complete challenge' });
@@ -63,7 +58,8 @@ export function DailyChallenge() {
     }
   };
 
-  if (!cat) return null;
+  if (!cat || !challenge) return null;
+  if (completed) return null; // Hide after completion
 
   return (
     <motion.div
@@ -73,7 +69,7 @@ export function DailyChallenge() {
     >
       <div className="flex items-center gap-1 mb-2">
         <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">Daily Challenge</span>
-        <span className="text-xs text-slate-600">&bull; +{challenge.bonus} bonus XP</span>
+        <span className="text-xs text-slate-600">&bull; +{challenge.bonusXP} bonus XP</span>
       </div>
       <div className="flex items-center gap-3">
         <CategoryIcon icon={cat.icon} color={cat.color} size="md" slug={cat.slug} />

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { resendVerificationEmail } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { useUIStore } from '@/store/uiStore';
+import { MailFullIcon } from '@/components/ui/AppIcons';
 
 export default function VerifyEmailPage() {
   const addToast = useUIStore((s) => s.addToast);
@@ -30,7 +31,7 @@ export default function VerifyEmailPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md text-center space-y-6"
       >
-        <div className="text-6xl">📧</div>
+        <div className="flex justify-center"><MailFullIcon size={56} className="text-orange-400" /></div>
         <h1 className="text-2xl font-bold text-white font-heading">Check Your Email</h1>
         <p className="text-slate-400">
           We&apos;ve sent a verification link to your email address. Click the link to verify your account and unlock all features.

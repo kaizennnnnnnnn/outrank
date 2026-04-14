@@ -5,24 +5,28 @@ import { Avatar } from '@/components/ui/Avatar';
 import { NotificationItem as NotifType } from '@/types/notification';
 import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { UsersFullIcon, HandshakeIcon, SwordsCrossIcon, CheckCircleFullIcon, StarIcon, TrophyIconFull, ChartBarIcon, FireIcon, MedalIcon, ArrowUpIcon, FlagIcon, CrownIcon, ClockIcon } from '@/components/ui/AppIcons';
+import { ReactNode } from 'react';
 
-const typeIcons: Record<string, string> = {
-  friend_request: '👋',
-  friend_accepted: '🤝',
-  duel_challenge: '⚔️',
-  duel_accepted: '✅',
-  duel_declined: '❌',
-  duel_ended: '🏆',
-  leaderboard_overtaken: '📉',
-  streak_at_risk: '⚠️',
-  streak_broken: '💔',
-  badge_earned: '🎖️',
-  level_up: '⬆️',
-  tournament_starting: '🏟️',
-  weekly_recap: '📊',
-  league_winner: '👑',
-  friend_logged: '📝',
+const typeIconMap: Record<string, ReactNode> = {
+  friend_request: <UsersFullIcon size={18} className="text-blue-400" />,
+  friend_accepted: <HandshakeIcon size={18} className="text-emerald-400" />,
+  duel_challenge: <SwordsCrossIcon size={18} className="text-red-400" />,
+  duel_accepted: <CheckCircleFullIcon size={18} className="text-emerald-400" />,
+  duel_declined: <SwordsCrossIcon size={18} className="text-slate-500" />,
+  duel_ended: <TrophyIconFull size={18} className="text-yellow-400" />,
+  leaderboard_overtaken: <ChartBarIcon size={18} className="text-orange-400" />,
+  streak_at_risk: <FireIcon size={18} className="text-yellow-400" />,
+  streak_broken: <FireIcon size={18} className="text-slate-500" />,
+  badge_earned: <MedalIcon size={18} className="text-orange-400" />,
+  level_up: <ArrowUpIcon size={18} className="text-orange-400" />,
+  tournament_starting: <FlagIcon size={18} className="text-blue-400" />,
+  weekly_recap: <ChartBarIcon size={18} className="text-orange-400" />,
+  league_winner: <CrownIcon size={18} className="text-yellow-400" />,
+  friend_logged: <ClockIcon size={18} className="text-slate-400" />,
 };
+
+const defaultIcon = <StarIcon size={18} className="text-slate-500" />;
 
 interface NotificationItemProps {
   notification: NotifType;
@@ -44,8 +48,8 @@ export function NotificationItemCard({ notification, onMarkRead, index }: Notifi
           : 'bg-red-500/5 border border-red-500/10 hover:bg-red-500/10'
       )}
     >
-      <span className="text-xl mt-0.5 shrink-0">
-        {typeIcons[notification.type] || '🔔'}
+      <span className="mt-0.5 shrink-0">
+        {typeIconMap[notification.type] || defaultIcon}
       </span>
 
       {notification.actorAvatar && (

@@ -9,25 +9,28 @@ import { updateDocument } from '@/lib/firestore';
 import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import { UsersFullIcon, HandshakeIcon, SwordsCrossIcon, CheckCircleFullIcon, StarIcon, TrophyIconFull, ChartBarIcon, FireIcon, HeartFullIcon, MedalIcon, ArrowUpIcon, FlagIcon, CrownIcon, ClockIcon } from '@/components/ui/AppIcons';
+import React, { ReactNode } from 'react';
 
-const typeIcons: Record<string, string> = {
-  friend_request: '👋',
-  friend_accepted: '🤝',
-  duel_challenge: '⚔️',
-  duel_accepted: '✅',
-  duel_declined: '❌',
-  duel_ended: '🏆',
-  leaderboard_overtaken: '📉',
-  streak_at_risk: '⚠️',
-  streak_broken: '💔',
-  badge_earned: '🎖️',
-  level_up: '⬆️',
-  tournament_starting: '🏟️',
-  weekly_recap: '📊',
-  league_winner: '👑',
-  friend_logged: '📝',
+const typeIconMap: Record<string, ReactNode> = {
+  friend_request: <UsersFullIcon size={20} className="text-blue-400" />,
+  friend_accepted: <HandshakeIcon size={20} className="text-emerald-400" />,
+  duel_challenge: <SwordsCrossIcon size={20} className="text-red-400" />,
+  duel_accepted: <CheckCircleFullIcon size={20} className="text-emerald-400" />,
+  duel_declined: <SwordsCrossIcon size={20} className="text-slate-500" />,
+  duel_ended: <TrophyIconFull size={20} className="text-yellow-400" />,
+  leaderboard_overtaken: <ChartBarIcon size={20} className="text-orange-400" />,
+  streak_at_risk: <FireIcon size={20} className="text-yellow-400" />,
+  streak_broken: <FireIcon size={20} className="text-slate-500" />,
+  badge_earned: <MedalIcon size={20} className="text-orange-400" />,
+  level_up: <ArrowUpIcon size={20} className="text-orange-400" />,
+  tournament_starting: <FlagIcon size={20} className="text-blue-400" />,
+  weekly_recap: <ChartBarIcon size={20} className="text-orange-400" />,
+  league_winner: <CrownIcon size={20} className="text-yellow-400" />,
+  friend_logged: <ClockIcon size={20} className="text-slate-400" />,
 };
+
+const defaultIcon = <StarIcon size={20} className="text-slate-500" />;
 
 export default function NotificationsPage() {
   const { user } = useAuth();
@@ -95,7 +98,7 @@ export default function NotificationsPage() {
                   : 'bg-red-500/5 border border-red-500/10 hover:bg-red-500/10'
               )}
             >
-              <span className="text-xl mt-0.5">{typeIcons[notif.type] || '🔔'}</span>
+              <span className="mt-0.5 shrink-0">{typeIconMap[notif.type] || defaultIcon}</span>
               <div className="flex-1 min-w-0">
                 <p className={cn(
                   'text-sm',

@@ -14,6 +14,7 @@ import { db } from '@/lib/firebase';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { RocketIcon } from '@/components/ui/AppIcons';
 
 const STEPS = ['Username', 'Categories', 'Goals', 'Friends', 'Tutorial'];
 
@@ -384,20 +385,19 @@ export default function OnboardingPage() {
                 className="space-y-6"
               >
                 <div className="text-center">
-                  <span className="text-5xl mb-4 block">🚀</span>
+                  <div className="flex justify-center mb-4"><RocketIcon size={48} className="text-orange-400" /></div>
                   <h1 className="font-heading text-2xl font-bold text-white mb-2">You&apos;re Ready!</h1>
                   <p className="text-slate-500">Here&apos;s how Outrank works:</p>
                 </div>
                 <div className="space-y-3">
                   {[
-                    { icon: '✅', title: 'Log daily', desc: 'Tap the log button to record your habits each day.' },
-                    { icon: '🔥', title: 'Build streaks', desc: 'Consecutive days build your streak. Don\'t break it!' },
-                    { icon: '⚡', title: 'Earn XP', desc: 'Every log earns XP. Level up to unlock titles and badges.' },
-                    { icon: '⚔️', title: 'Challenge friends', desc: 'Start duels to see who can outperform in any category.' },
-                    { icon: '🏆', title: 'Climb ranks', desc: 'Compete on weekly leaderboards across all categories.' },
+                    { title: 'Log daily', desc: 'Tap the log button to record your habits each day.' },
+                    { title: 'Build streaks', desc: 'Consecutive days build your streak. Don\'t break it!' },
+                    { title: 'Earn XP', desc: 'Every log earns XP. Level up to unlock titles and badges.' },
+                    { title: 'Challenge friends', desc: 'Start duels to see who can outperform in any category.' },
+                    { title: 'Climb ranks', desc: 'Compete on weekly leaderboards across all categories.' },
                   ].map((item) => (
                     <div key={item.title} className="flex items-start gap-3 bg-[#10101a] border border-[#1e1e30] rounded-xl p-4">
-                      <span className="text-xl mt-0.5">{item.icon}</span>
                       <div>
                         <p className="text-sm font-semibold text-white">{item.title}</p>
                         <p className="text-xs text-slate-500">{item.desc}</p>
