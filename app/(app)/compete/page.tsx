@@ -18,14 +18,19 @@ export default function CompetePage() {
   const { competitions, loading } = useCompetitions();
   const addToast = useUIStore((s) => s.addToast);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [localUpdates, setLocalUpdates] = useState<Record<string, string>>({});
 
-  const activeComps = competitions.filter((c) => c.status === 'active');
-  // Pending challenges where I'm NOT the creator (I need to respond)
-  const incomingChallenges = competitions.filter(
+  // Apply local status overrides for instant UI updates
+  const comps = competitions.map((c) => ({
+    ...c,
+    status: localUpdates[c.id || ''] || c.status,
+  }));
+
+  const activeComps = comps.filter((c) => c.status === 'active');
+  const incomingChallenges = comps.filter(
     (c) => c.status === 'pending' && c.creatorId !== user?.uid
   );
-  // Challenges I sent that are waiting
-  const sentChallenges = competitions.filter(
+  const sentChallenges = comps.filter(
     (c) => c.status === 'pending' && c.creatorId === user?.uid
   );
 
@@ -33,6 +38,7 @@ export default function CompetePage() {
     setProcessing(compId);
     try {
       await updateDocument('competitions', compId, { status: 'active' });
+      setLocalUpdates((prev) => ({ ...prev, [compId]: 'active' }));
       addToast({ type: 'success', message: 'Duel accepted! Game on!' });
     } catch {
       addToast({ type: 'error', message: 'Failed to accept duel' });
@@ -45,6 +51,7 @@ export default function CompetePage() {
     setProcessing(compId);
     try {
       await updateDocument('competitions', compId, { status: 'completed' });
+      setLocalUpdates((prev) => ({ ...prev, [compId]: 'completed' }));
       addToast({ type: 'info', message: 'Duel declined' });
     } catch {
       addToast({ type: 'error', message: 'Failed to decline duel' });
