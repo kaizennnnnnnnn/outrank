@@ -57,7 +57,7 @@ export default function FeedPage() {
         />
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {items.filter((item) => item.actorId !== user?.uid).map((item) => (
             <div key={item.id} className="glass-card rounded-2xl p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center gap-3">

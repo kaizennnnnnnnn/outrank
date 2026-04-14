@@ -1,13 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
-import { CATEGORIES } from '@/constants/categories';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { CATEGORIES, CATEGORY_SECTIONS } from '@/constants/categories';
 import { createDocument, Timestamp } from '@/lib/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
+import { SwordsCrossIcon } from '@/components/ui/AppIcons';
 import { cn } from '@/lib/utils';
 
 interface CreateDuelModalProps {
@@ -48,30 +51,18 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
         type: 'duel',
         categoryId: selectedCategory,
         categorySlug: selectedCategory,
-        title: `${cat.icon} ${cat.name} Duel`,
+        title: `${cat.name} Duel`,
         creatorId: user.uid,
         startDate,
         endDate,
         status: 'pending',
         participants: [
-          {
-            userId: user.uid,
-            username: user.username,
-            avatarUrl: user.avatarUrl || '',
-            score: 0,
-            rank: 0,
-          },
-          {
-            userId: opponentId,
-            username: opponentUsername,
-            avatarUrl: opponentAvatar,
-            score: 0,
-            rank: 0,
-          },
+          { userId: user.uid, username: user.username, avatarUrl: user.avatarUrl || '', score: 0, rank: 0 },
+          { userId: opponentId, username: opponentUsername, avatarUrl: opponentAvatar, score: 0, rank: 0 },
         ],
       });
 
-      addToast({ type: 'success', message: `Duel challenge sent to ${opponentUsername}! ⚔️` });
+      addToast({ type: 'success', message: `Duel sent to ${opponentUsername}!` });
       onClose();
     } catch {
       addToast({ type: 'error', message: 'Failed to create duel' });
@@ -80,38 +71,66 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
     }
   };
 
+  const selectedCat = CATEGORIES.find((c) => c.slug === selectedCategory);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Challenge to a Duel" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Challenge to a Duel" size="lg">
       <div className="space-y-5">
-        {/* Opponent */}
-        <div className="flex items-center gap-3 bg-[#18182a] rounded-xl p-3">
-          <Avatar src={opponentAvatar} alt={opponentUsername} size="md" />
-          <div>
-            <p className="text-sm font-bold text-white">{opponentUsername}</p>
-            <p className="text-xs text-slate-500">Your opponent</p>
+        {/* VS Header */}
+        <div className="flex items-center justify-between bg-[#0c0c16] rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <Avatar src={user?.avatarUrl} alt={user?.username || ''} size="md" />
+            <span className="text-sm font-bold text-white">{user?.username}</span>
+          </div>
+          <div className="text-center">
+            <SwordsCrossIcon size={24} className="text-red-400 mx-auto" />
+            <span className="text-[10px] text-slate-600">VS</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-bold text-white">{opponentUsername}</span>
+            <Avatar src={opponentAvatar} alt={opponentUsername} size="md" />
           </div>
         </div>
 
-        {/* Category */}
+        {/* Category — ALL categories grouped by section */}
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">Pick a category</label>
-          <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
-            {CATEGORIES.slice(0, 24).map((cat) => (
-              <button
-                key={cat.slug}
-                onClick={() => setSelectedCategory(cat.slug)}
-                className={cn(
-                  'flex flex-col items-center gap-1 p-2 rounded-xl border transition-all',
-                  selectedCategory === cat.slug
-                    ? 'border-red-500 bg-red-500/10'
-                    : 'border-[#1e1e30] hover:border-[#2d2d45]'
-                )}
-              >
-                <span className="text-xl">{cat.icon}</span>
-                <span className="text-[9px] text-slate-400 text-center leading-tight">{cat.name}</span>
-              </button>
+          <div className="max-h-[40vh] overflow-y-auto pr-1 space-y-4">
+            {CATEGORY_SECTIONS.map((section) => (
+              <div key={section}>
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">{section}</p>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+                  {CATEGORIES.filter((c) => c.section === section).map((cat) => (
+                    <motion.button
+                      key={cat.slug}
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => setSelectedCategory(cat.slug)}
+                      className={cn(
+                        'flex flex-col items-center gap-1 p-2 rounded-xl border transition-all',
+                        selectedCategory === cat.slug
+                          ? 'border-red-500 bg-red-500/10 shadow-md shadow-red-500/10'
+                          : 'border-[#1e1e30] bg-[#0c0c16] hover:border-[#2d2d45]'
+                      )}
+                    >
+                      <CategoryIcon icon={cat.icon} color={cat.color} size="sm" slug={cat.slug} selected={selectedCategory === cat.slug} />
+                      <span className={cn(
+                        'text-[8px] leading-tight text-center',
+                        selectedCategory === cat.slug ? 'text-white font-medium' : 'text-slate-500'
+                      )}>
+                        {cat.name}
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
+          {selectedCat && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-orange-400">
+              <CategoryIcon icon={selectedCat.icon} color={selectedCat.color} size="sm" slug={selectedCat.slug} />
+              <span className="font-medium">{selectedCat.name}</span> selected
+            </div>
+          )}
         </div>
 
         {/* Duration */}
@@ -123,7 +142,7 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
                 key={d.days}
                 onClick={() => setSelectedDuration(d.days)}
                 className={cn(
-                  'flex-1 px-3 py-2 rounded-xl border text-xs font-medium transition-all',
+                  'flex-1 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all',
                   selectedDuration === d.days
                     ? 'border-red-500 bg-red-500/10 text-white'
                     : 'border-[#1e1e30] text-slate-500 hover:text-white'
@@ -141,7 +160,8 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
           loading={creating}
           disabled={!selectedCategory}
         >
-          Send Challenge ⚔️
+          <SwordsCrossIcon size={16} />
+          Send Challenge
         </Button>
       </div>
     </Modal>

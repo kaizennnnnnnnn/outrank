@@ -18,6 +18,7 @@ import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { useUIStore } from '@/store/uiStore';
 import { UserHabit } from '@/types/habit';
+import { OverallProgressGraph } from '@/components/habits/OverallProgressGraph';
 import { formatRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -95,6 +96,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Weekly Overview Graph */}
+      <OverallProgressGraph />
+
       {/* Daily Challenge */}
       <DailyChallenge />
 
@@ -163,7 +167,7 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="space-y-2">
-              {feedItems.slice(0, 10).map((item) => (
+              {feedItems.filter((item) => item.actorId !== user.uid).slice(0, 10).map((item) => (
                 <div key={item.id} className="glass-card rounded-xl p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     <Avatar src={item.actorAvatar} alt={item.actorUsername} size="sm" />

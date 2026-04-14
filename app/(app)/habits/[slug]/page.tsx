@@ -7,6 +7,7 @@ import { useDocument } from '@/hooks/useFirestore';
 import { getCategoryBySlug } from '@/constants/categories';
 import { StreakFlame } from '@/components/habits/StreakFlame';
 import { HabitLogHistory } from '@/components/habits/HabitLogHistory';
+import { HabitProgressGraph } from '@/components/habits/HabitProgressGraph';
 import { LeaderboardRow } from '@/components/competition/LeaderboardRow';
 import { StatCard } from '@/components/profile/StatCard';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -77,6 +78,20 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
       ) : (
         <div className="glass-card rounded-2xl p-6 text-center">
           <p className="text-slate-500">You haven&apos;t added this habit yet.</p>
+        </div>
+      )}
+
+      {/* Progress Graph */}
+      {user && habit && (
+        <div className="glass-card rounded-2xl p-4">
+          <h2 className="text-sm font-bold text-white mb-3">Progress vs Goal</h2>
+          <HabitProgressGraph
+            userId={user.uid}
+            habitId={slug}
+            goal={habit.goal}
+            unit={habit.unit}
+            color={category.color}
+          />
         </div>
       )}
 

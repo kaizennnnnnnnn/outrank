@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const addToast = useUIStore((s) => s.addToast);
   const router = useRouter();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [bio, setBio] = useState(user?.bio || '');
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -76,17 +77,16 @@ export default function SettingsPage() {
         <div className="flex items-center gap-4">
           <Avatar src={user.avatarUrl} alt={user.username} size="lg" />
           <div>
-            <label className="cursor-pointer">
-              <Button variant="secondary" size="sm" loading={uploading} onClick={() => {}}>
-                Change Avatar
-              </Button>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-            </label>
+            <Button variant="secondary" size="sm" loading={uploading} onClick={() => fileInputRef.current?.click()}>
+              Change Avatar
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
           </div>
         </div>
 

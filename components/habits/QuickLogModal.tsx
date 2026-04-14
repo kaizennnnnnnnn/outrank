@@ -155,6 +155,29 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
             </motion.button>
           </div>
 
+          {/* Goal progress indicator */}
+          {habit.goal > 0 && (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500">Goal: {habit.goal} {config.dailyLabel}</span>
+                <span className={value >= habit.goal ? 'text-emerald-400 font-medium' : 'text-orange-400'}>
+                  {Math.min(Math.round((value / habit.goal) * 100), 100)}% — {value >= habit.goal ? 'Full XP' : `${Math.max(1, Math.round((Math.min(value / habit.goal, 1)) * (proofFile ? 15 : 10)))} XP`}
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-[#18182a] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min((value / habit.goal) * 100, 100)}%`,
+                    background: value >= habit.goal
+                      ? 'linear-gradient(to right, #10b981, #34d399)'
+                      : 'linear-gradient(to right, #f97316, #fb923c)',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Proof Upload — PROMINENT */}
           <div className="rounded-xl border border-[#1e1e30] bg-[#0c0c16] p-3">
             <div className="flex items-center justify-between mb-2">

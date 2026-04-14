@@ -30,7 +30,17 @@ interface LogHabitParams {
 export async function logHabit(params: LogHabitParams) {
   const { userId, habitSlug, categoryId, value, note, proofImageUrl, username, avatarUrl } = params;
   const hasProof = !!proofImageUrl;
-  const baseXP = hasProof ? XP_LOG_VERIFIED : XP_LOG;
+  const maxBaseXP = hasProof ? XP_LOG_VERIFIED : XP_LOG;
+
+  // 2. Get habit to check goal for XP scaling
+  const habitRef = doc(db, `habits/${userId}/userHabits/${habitSlug}`);
+  const habitSnap = await getDoc(habitRef);
+
+  // Scale XP based on how much of the goal was achieved
+  // e.g. goal=10, logged=3 → 30% XP. Capped at 100%.
+  const goal = habitSnap.exists() ? (habitSnap.data().goal || 1) : 1;
+  const completionRatio = Math.min(value / goal, 1);
+  const baseXP = Math.max(1, Math.round(maxBaseXP * completionRatio));
 
   // 1. Create the log document
   const logRef = await addDoc(collection(db, `logs/${userId}/habitLogs`), {
@@ -38,6 +48,8 @@ export async function logHabit(params: LogHabitParams) {
     categoryId,
     categorySlug: habitSlug,
     value,
+    goal,
+    completionPercent: Math.round(completionRatio * 100),
     note,
     proofImageUrl,
     verified: hasProof,
@@ -45,10 +57,6 @@ export async function logHabit(params: LogHabitParams) {
     xpEarned: baseXP,
     createdAt: Timestamp.now(),
   });
-
-  // 2. Update habit streak + totalLogs
-  const habitRef = doc(db, `habits/${userId}/userHabits/${habitSlug}`);
-  const habitSnap = await getDoc(habitRef);
 
   if (!habitSnap.exists()) return { xpEarned: baseXP, newStreak: 0 };
 
