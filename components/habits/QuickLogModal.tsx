@@ -87,12 +87,16 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
     }
   };
 
-  // Reset value when habit changes
-  if (habit && value !== habit.goal && !logging) {
+  // Set initial value only when a different habit is opened
+  const [lastHabitSlug, setLastHabitSlug] = useState('');
+  if (habit && habit.categorySlug !== lastHabitSlug) {
+    setLastHabitSlug(habit.categorySlug);
     setValue(habit.goal);
   }
 
-  const xpAmount = earnedXP || (proofFile ? 15 : 10);
+  const xpAmount = earnedXP || Math.max(1, Math.round(
+    (Math.min(value / (habit?.goal || 1), 1)) * (proofFile ? 15 : 10)
+  ));
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Log ${habit?.categoryName || ''}`}>
@@ -157,14 +161,18 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
 
           {/* Goal progress indicator */}
           {habit.goal > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">Goal: {habit.goal} {config.dailyLabel}</span>
-                <span className={value >= habit.goal ? 'text-emerald-400 font-medium' : 'text-orange-400'}>
-                  {Math.min(Math.round((value / habit.goal) * 100), 100)}% — {value >= habit.goal ? 'Full XP' : `${Math.max(1, Math.round((Math.min(value / habit.goal, 1)) * (proofFile ? 15 : 10)))} XP`}
-                </span>
+                {value >= habit.goal ? (
+                  <span className="text-emerald-400 font-medium">Goal met — Full XP (+{proofFile ? 15 : 10})</span>
+                ) : (
+                  <span className="text-orange-400">
+                    {Math.round((value / habit.goal) * 100)}% of goal — {Math.max(1, Math.round((value / habit.goal) * (proofFile ? 15 : 10)))} XP
+                  </span>
+                )}
               </div>
-              <div className="w-full h-1.5 bg-[#18182a] rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-[#18182a] rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-300"
                   style={{
