@@ -31,8 +31,8 @@ export function SoulOrb({ intensity, size = 300 }: SoulOrbProps) {
     const R = size * 0.28;
     const pct = Math.min(intensity, 100) / 100;
 
-    // Color brightness: even at 0% we show dim gray particles
-    const brightness = 0.12 + pct * 0.88;
+    // Color brightness: even at 0% particles are visible (gray)
+    const brightness = 0.45 + pct * 0.55;
 
     // Particle count scales with intensity, but always at least 120
     const NUM = Math.floor(120 + pct * 380);
@@ -46,7 +46,7 @@ export function SoulOrb({ intensity, size = 300 }: SoulOrbProps) {
       particles.push({
         phi: Math.acos(1 - 2 * (i + 0.5) / NUM),
         theta: Math.PI * (1 + Math.sqrt(5)) * i,
-        size: 0.8 + Math.random() * 1.6,
+        size: 1.2 + Math.random() * 2.0,
         phase: Math.random() * Math.PI * 2,
         speed: 0.5 + Math.random() * 0.5,
         layer: Math.random(),
@@ -99,7 +99,7 @@ export function SoulOrb({ intensity, size = 300 }: SoulOrbProps) {
       ctx.fillRect(0, 0, W, H);
 
       // Core glow
-      const gp = sin(t * 1.2) * 0.02 + 0.04 + pct * 0.05;
+      const gp = sin(t * 1.2) * 0.02 + 0.08 + pct * 0.07;
       const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, R + 30);
       g1.addColorStop(0, `rgba(${floor(200 * brightness)}, ${floor(60 * brightness)}, ${floor(15 * brightness)}, ${gp})`);
       g1.addColorStop(0.5, `rgba(${floor(100 * brightness)}, ${floor(30 * brightness)}, 8, ${gp * 0.4})`);
@@ -216,9 +216,9 @@ export function SoulOrb({ intensity, size = 300 }: SoulOrbProps) {
 
       // Draw particles
       for (const d of all) {
-        const depthFade = max(0, (d.s - 0.35) / 0.65);
+        const depthFade = max(0.1, (d.s - 0.2) / 0.8);
         const breathe = sin(t * 2 + d.phase) * 0.15 + 0.85;
-        let alpha = max(0.03, depthFade * breathe * 0.8 * brightness);
+        let alpha = max(0.08, depthFade * breathe * 0.9 * brightness);
 
         let r: number, g: number, b: number;
         if (d.type === 1) {
