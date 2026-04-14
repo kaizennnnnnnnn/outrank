@@ -47,7 +47,7 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
       const endMs = Date.now() + selectedDuration * 24 * 60 * 60 * 1000;
       const endDate = Timestamp.fromDate(new Date(endMs));
 
-      await createDocument('competitions', {
+      const compId = await createDocument('competitions', {
         type: 'duel',
         categoryId: selectedCategory,
         categorySlug: selectedCategory,
@@ -60,6 +60,16 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
           { userId: user.uid, username: user.username, avatarUrl: user.avatarUrl || '', score: 0, rank: 0 },
           { userId: opponentId, username: opponentUsername, avatarUrl: opponentAvatar, score: 0, rank: 0 },
         ],
+      });
+
+      // Send notification to opponent
+      await createDocument(`notifications/${opponentId}/items`, {
+        type: 'duel_challenge',
+        message: `${user.username} challenged you to a ${cat.name} duel!`,
+        isRead: false,
+        relatedId: compId,
+        actorId: user.uid,
+        actorAvatar: user.avatarUrl || '',
       });
 
       addToast({ type: 'success', message: `Duel sent to ${opponentUsername}!` });

@@ -136,7 +136,7 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow update: if isOwner(userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
-      allow create: if false;
+      allow create: if isAuthenticated();
       allow delete: if false;
     }
 

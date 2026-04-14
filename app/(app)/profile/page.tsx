@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
+import { useFriends } from '@/hooks/useFriends';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -10,14 +11,17 @@ import { XPProgressBar } from '@/components/profile/XPProgressBar';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { ActivityHeatmap } from '@/components/profile/ActivityHeatmap';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
-import { StatCard } from '@/components/profile/StatCard';
-import { getLevelForXP, getXPProgress } from '@/constants/levels';
+import { OverallProgressGraph } from '@/components/habits/OverallProgressGraph';
+import { StreakFlame } from '@/components/habits/StreakFlame';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { BoltFullIcon, ChartBarIcon, UsersFullIcon, FireIcon } from '@/components/ui/AppIcons';
+import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { habits } = useHabits();
+  const { friends } = useFriends();
 
   if (!user) {
     return (
@@ -32,6 +36,7 @@ export default function ProfilePage() {
   const xpProgress = getXPProgress(user.totalXP);
   const totalLogs = habits.reduce((sum, h) => sum + h.totalLogs, 0);
   const longestStreak = Math.max(...habits.map((h) => h.longestStreak), 0);
+  const friendCount = friends.length; // Use actual count, not Firestore field
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -48,15 +53,7 @@ export default function ProfilePage() {
 
         {/* XP Bar */}
         <div className="mt-4 max-w-xs mx-auto">
-          <div className="w-full h-2 bg-[#18182a] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-red-600 to-orange-400 rounded-full transition-all"
-              style={{ width: `${xpProgress.percentage}%` }}
-            />
-          </div>
-          <p className="text-xs text-slate-600 mt-1 font-mono">
-            {xpProgress.current}/{xpProgress.needed} XP to next level
-          </p>
+          <XPProgressBar totalXP={user.totalXP} />
         </div>
 
         <div className="flex justify-center mt-4">
@@ -75,12 +72,12 @@ export default function ProfilePage() {
         </div>
         <div className="glass-card rounded-xl p-4 text-center">
           <div className="flex justify-center"><ChartBarIcon size={24} className="text-red-400" /></div>
-          <p className="font-mono text-lg font-bold text-white mt-1">{totalLogs.toString()}</p>
+          <p className="font-mono text-lg font-bold text-white mt-1">{totalLogs}</p>
           <p className="text-xs text-slate-500">Total Logs</p>
         </div>
         <div className="glass-card rounded-xl p-4 text-center">
           <div className="flex justify-center"><UsersFullIcon size={24} className="text-red-400" /></div>
-          <p className="font-mono text-lg font-bold text-white mt-1">{user.friendCount.toString()}</p>
+          <p className="font-mono text-lg font-bold text-white mt-1">{friendCount}</p>
           <p className="text-xs text-slate-500">Friends</p>
         </div>
         <div className="glass-card rounded-xl p-4 text-center">
@@ -89,6 +86,9 @@ export default function ProfilePage() {
           <p className="text-xs text-slate-500">Best Streak</p>
         </div>
       </div>
+
+      {/* Weekly Progress */}
+      <OverallProgressGraph />
 
       {/* Activity Heatmap */}
       <div className="glass-card rounded-2xl p-4">
@@ -109,10 +109,10 @@ export default function ProfilePage() {
           {habits.map((h) => (
             <Link key={h.categorySlug} href={`/habits/${h.categorySlug}`}>
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#18182a] border border-[#2d2d45] text-xs hover:border-red-500/30 transition-colors">
-                <span>{h.categoryIcon}</span>
+                <CategoryIcon icon={h.categoryIcon} color={h.color} size="sm" slug={h.categorySlug} />
                 <span className="text-slate-300">{h.categoryName}</span>
                 {h.currentStreak > 0 && (
-                  <span className="text-orange-400 font-mono">🔥{h.currentStreak}</span>
+                  <StreakFlame streak={h.currentStreak} size="sm" />
                 )}
               </div>
             </Link>
