@@ -25,13 +25,14 @@ export default function FeedPage() {
   const handleReaction = async (feedOwnerId: string, itemId: string, emoji: ReactionEmoji) => {
     if (!user) return;
     try {
-      const ref = doc(db, `feed/${feedOwnerId}/items`, itemId);
+      // Update the item in MY feed (that's where I'm reading it from)
+      const ref = doc(db, `feed/${user.uid}/items`, itemId);
       const field = `reactions.${emoji}`;
-      // Toggle reaction
       await updateDoc(ref, {
         [field]: arrayUnion(user.uid),
       });
-    } catch {
+    } catch (err) {
+      console.error('Reaction failed:', err);
       addToast({ type: 'error', message: 'Failed to react' });
     }
   };
