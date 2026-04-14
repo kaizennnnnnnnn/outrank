@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
@@ -21,12 +22,24 @@ import { formatRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, firebaseUser } = useAuth();
   const { habits, loading: habitsLoading } = useHabits();
   const { items: feedItems, loading: feedLoading } = useFeed();
+  const router = useRouter();
 
   const [logModal, setLogModal] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState<UserHabit | null>(null);
+
+  // Safety net: if Firebase user exists but no Firestore profile after 3s,
+  // the user likely signed in before profile creation was fixed — redirect to onboarding
+  useEffect(() => {
+    if (firebaseUser && !user) {
+      const timeout = setTimeout(() => {
+        router.push('/onboarding');
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+  }, [firebaseUser, user, router]);
 
   if (!user) {
     return (

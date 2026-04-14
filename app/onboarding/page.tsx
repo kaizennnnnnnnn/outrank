@@ -92,6 +92,41 @@ export default function OnboardingPage() {
         );
       }
 
+      // Create user profile if it doesn't exist (e.g. redirected from dashboard)
+      if (!user && firebaseUser) {
+        const finalUsername = username.length >= 3
+          ? username.toLowerCase()
+          : `user_${Math.random().toString(36).slice(2, 8)}`;
+
+        await setDocument('usernames', finalUsername, { uid: firebaseUser.uid });
+        await setDocument('users', firebaseUser.uid, {
+          uid: firebaseUser.uid,
+          username: finalUsername,
+          email: firebaseUser.email || '',
+          avatarUrl: '',
+          bio: '',
+          level: 1,
+          totalXP: 0,
+          currentTitle: 'Rookie',
+          friendCount: 0,
+          isVerified: !!firebaseUser.emailVerified,
+          isPremium: false,
+          createdAt: Timestamp.now(),
+          lastActiveAt: Timestamp.now(),
+          isPublic: true,
+          isBanned: false,
+          fcmToken: '',
+          streakFreezeTokens: 1,
+          weeklyXP: 0,
+          monthlyXP: 0,
+          settings: {
+            notifications: { streakReminder: true, friendActivity: true, duelUpdates: true, leagueUpdates: true, weeklyRecap: true, leaderboardChanges: true },
+            privacy: { isPublic: true, showOnLeaderboards: true },
+            theme: 'dark',
+          },
+        });
+      }
+
       addToast({ type: 'success', message: 'You\'re all set! Let\'s go!' });
       router.push('/dashboard');
     } catch {
