@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { LevelBadge } from '@/components/profile/LevelBadge';
 import { XPProgressBar } from '@/components/profile/XPProgressBar';
+import { SoulOrb } from '@/components/profile/SoulOrb';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { ActivityHeatmap } from '@/components/profile/ActivityHeatmap';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
@@ -36,10 +37,28 @@ export default function ProfilePage() {
   const xpProgress = getXPProgress(user.totalXP);
   const totalLogs = habits.reduce((sum, h) => sum + h.totalLogs, 0);
   const longestStreak = Math.max(...habits.map((h) => h.longestStreak), 0);
-  const friendCount = friends.length; // Use actual count, not Firestore field
+  const friendCount = friends.length;
+  const currentStreaks = habits.reduce((sum, h) => sum + h.currentStreak, 0);
+
+  // Soul Orb intensity: 0-100 based on activity
+  // XP contributes up to 40, streaks up to 30, logs up to 20, level up to 10
+  const xpScore = Math.min(user.totalXP / 500, 40); // 500 XP = max XP contribution
+  const streakScore = Math.min(currentStreaks / 10, 30); // 10 total streak days = max
+  const logScore = Math.min(totalLogs / 20, 20); // 20 logs = max log contribution
+  const levelScore = Math.min(level.level / 10, 10); // level 10 = max level contribution
+  const orbIntensity = Math.min(Math.round(xpScore + streakScore + logScore + levelScore), 100);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Soul Orb */}
+      <div className="flex flex-col items-center">
+        <SoulOrb intensity={orbIntensity} size={280} />
+        <div className="mt-3 text-center">
+          <p className="text-xs text-slate-600">Soul Orb</p>
+          <p className="text-xs font-mono text-orange-400">{orbIntensity}% Awakened</p>
+        </div>
+      </div>
+
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">
         <div className="flex justify-center mb-4">
