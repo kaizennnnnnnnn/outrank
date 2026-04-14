@@ -95,8 +95,7 @@ export function SoulOrb({ intensity, size = 300 }: SoulOrbProps) {
 
     function frame() {
       t += 0.012;
-      ctx.fillStyle = '#050508';
-      ctx.fillRect(0, 0, W, H);
+      ctx.clearRect(0, 0, W, H);
 
       // Core glow
       const gp = sin(t * 1.2) * 0.02 + 0.08 + pct * 0.07;
@@ -268,13 +267,6 @@ export function SoulOrb({ intensity, size = 300 }: SoulOrbProps) {
         }
       }
 
-      // Vignette
-      const vg = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, W * 0.55);
-      vg.addColorStop(0, 'transparent');
-      vg.addColorStop(1, 'rgba(5, 5, 8, 0.55)');
-      ctx.fillStyle = vg;
-      ctx.fillRect(0, 0, W, H);
-
       animRef.current = requestAnimationFrame(frame);
     }
 
@@ -286,7 +278,7 @@ export function SoulOrb({ intensity, size = 300 }: SoulOrbProps) {
     <canvas
       ref={canvasRef}
       style={{ width: size, height: size, maxWidth: '100%' }}
-      className="rounded-full"
+      className=""
     />
   );
 }
