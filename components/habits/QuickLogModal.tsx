@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ProofUploader } from './ProofUploader';
 import { UserHabit } from '@/types/habit';
-import { createDocument, Timestamp } from '@/lib/firestore';
 import { uploadProofImage } from '@/lib/storage';
+import { logHabit } from '@/lib/logHabit';
 import { validateLogValue, sanitizeNote } from '@/lib/security';
 import { getGoalConfig } from '@/constants/categories';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useUIStore } from '@/store/uiStore';
+import { useAuth } from '@/hooks/useAuth';
 
 interface QuickLogModalProps {
   isOpen: boolean;
@@ -23,11 +24,13 @@ interface QuickLogModalProps {
 
 export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalProps) {
   const addToast = useUIStore((s) => s.addToast);
+  const { user } = useAuth();
   const [value, setValue] = useState(1);
   const [note, setNote] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [logging, setLogging] = useState(false);
   const [showXP, setShowXP] = useState(false);
+  const [earnedXP, setEarnedXP] = useState(0);
 
   const config = habit ? getGoalConfig(habit.categorySlug) : null;
 
@@ -36,10 +39,11 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
     setNote('');
     setProofFile(null);
     setShowXP(false);
+    setEarnedXP(0);
   };
 
   const handleLog = async () => {
-    if (!habit) return;
+    if (!habit || !user) return;
     if (!validateLogValue(value)) {
       addToast({ type: 'error', message: 'Invalid value' });
       return;
@@ -54,26 +58,29 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
         proofUrl = await uploadProofImage(userId, tempLogId, proofFile);
       }
 
-      await createDocument(`logs/${userId}/habitLogs`, {
-        habitId: habit.categorySlug,
+      // Use the full logHabit function that handles XP, streaks, leaderboards
+      const result = await logHabit({
+        userId,
+        habitSlug: habit.categorySlug,
         categoryId: habit.categoryId,
-        categorySlug: habit.categorySlug,
         value,
         note: sanitizeNote(note),
         proofImageUrl: proofUrl,
-        verified: !!proofUrl,
-        loggedAt: Timestamp.now(),
-        xpEarned: proofUrl ? 15 : 10, // Bonus XP for proof
+        username: user.username,
+        avatarUrl: user.avatarUrl || '',
       });
 
+      setEarnedXP(result.xpEarned);
       setShowXP(true);
       setTimeout(() => {
         setShowXP(false);
         onClose();
         resetForm();
-        addToast({ type: 'success', message: `${habit.categoryIcon} Logged! +${proofUrl ? 15 : 10} XP` });
+        const streakMsg = result.newStreak > 1 ? ` | ${result.newStreak}d streak!` : '';
+        addToast({ type: 'success', message: `${habit.categoryIcon} Logged! +${result.xpEarned} XP${streakMsg}` });
       }, 1200);
-    } catch {
+    } catch (err) {
+      console.error('Log failed:', err);
       addToast({ type: 'error', message: 'Failed to log. Try again.' });
     } finally {
       setLogging(false);
@@ -85,7 +92,7 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
     setValue(habit.goal);
   }
 
-  const xpAmount = proofFile ? 15 : 10;
+  const xpAmount = earnedXP || (proofFile ? 15 : 10);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Log ${habit?.categoryName || ''}`}>

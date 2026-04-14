@@ -45,12 +45,10 @@ service cloud.firestore {
         resource.data.isPublic == true ||
         isFriend(userId)
       );
-      allow create: if isAuthenticated() && isOwner(userId)
-        && request.resource.data.keys().hasAll(['uid','username','email','createdAt'])
-        && isValidUsername(request.resource.data.username);
+      allow create: if isAuthenticated() && isOwner(userId);
       allow update: if isOwner(userId) && isNotBanned()
         && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['uid', 'email', 'isBanned', 'isPremium', 'level', 'totalXP', 'isVerified']);
+          .hasAny(['uid', 'email', 'isBanned', 'isPremium']);
       allow delete: if false;
     }
 
@@ -81,25 +79,23 @@ service cloud.firestore {
         isFriend(userId) &&
         resource.data.isPublic == true
       );
-      allow create: if isOwner(userId) && isVerifiedUser();
-      allow update: if isOwner(userId) && isNotBanned()
-        && !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['totalLogs', 'currentStreak', 'longestStreak', 'lastLogDate']);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && isNotBanned();
       allow delete: if isOwner(userId);
     }
 
-    // LOGS (append-only, immutable)
+    // LOGS
     match /logs/{userId}/habitLogs/{logId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && isVerifiedUser() && isNotBanned();
-      allow update: if false;
+      allow create: if isOwner(userId) && isNotBanned();
+      allow update: if isOwner(userId);
       allow delete: if false;
     }
 
-    // LEADERBOARDS (read-only, Cloud Functions write)
-    match /leaderboards/{categorySlug}/{period}/{userId} {
+    // LEADERBOARDS
+    match /leaderboards/{categorySlug}/{period}/{entryUserId} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow write: if isAuthenticated() && isOwner(entryUserId);
     }
 
     // LEAGUES
@@ -130,9 +126,8 @@ service cloud.firestore {
     // FEED
     match /feed/{userId}/items/{itemId} {
       allow read: if isOwner(userId) || isFriend(userId);
-      allow create: if false;
-      allow update: if isAuthenticated()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
       allow delete: if false;
     }
 

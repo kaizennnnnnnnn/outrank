@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { CATEGORIES } from '@/constants/categories';
 import { useAuth } from '@/hooks/useAuth';
-import { createDocument, Timestamp } from '@/lib/firestore';
+import { logHabit } from '@/lib/logHabit';
 import { useUIStore } from '@/store/uiStore';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
@@ -45,17 +45,17 @@ export function DailyChallenge() {
     if (!user || !cat) return;
     setCompleting(true);
     try {
-      await createDocument(`logs/${user.uid}/habitLogs`, {
-        habitId: challenge.category,
+      const result = await logHabit({
+        userId: user.uid,
+        habitSlug: challenge.category,
         categoryId: challenge.category,
-        categorySlug: challenge.category,
         value: challenge.value,
         note: `Daily challenge: ${challenge.text}`,
         proofImageUrl: '',
-        loggedAt: Timestamp.now(),
-        xpEarned: challenge.bonus,
+        username: user.username,
+        avatarUrl: user.avatarUrl || '',
       });
-      addToast({ type: 'success', message: `Daily challenge complete! +${challenge.bonus} XP ⚡` });
+      addToast({ type: 'success', message: `Daily challenge complete! +${result.xpEarned} XP` });
     } catch {
       addToast({ type: 'error', message: 'Failed to complete challenge' });
     } finally {
