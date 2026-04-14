@@ -5,7 +5,10 @@ import {
   addDoc,
   updateDoc,
   getDoc,
+  getDocs,
   setDoc,
+  query,
+  where,
   Timestamp,
   increment,
 } from 'firebase/firestore';
@@ -155,7 +158,7 @@ export async function logHabit(params: LogHabitParams) {
   }
 
   // 7. Create feed item for friends to see
-  await addDoc(collection(db, `feed/${userId}/items`), {
+  const feedItem = {
     type: 'log',
     actorId: userId,
     actorUsername: username,
@@ -166,7 +169,25 @@ export async function logHabit(params: LogHabitParams) {
     message: `${username} logged ${value} ${habit.unit || ''} of ${habit.categoryName || habitSlug}`,
     reactions: {},
     createdAt: Timestamp.now(),
-  });
+  };
+
+  // Write to own feed
+  await addDoc(collection(db, `feed/${userId}/items`), feedItem);
+
+  // Write to all friends' feeds so they can see it
+  try {
+    const friendsSnap = await getDocs(
+      query(
+        collection(db, `friendships/${userId}/friends`),
+        where('status', '==', 'accepted')
+      )
+    );
+    for (const friendDoc of friendsSnap.docs) {
+      await addDoc(collection(db, `feed/${friendDoc.id}/items`), feedItem);
+    }
+  } catch (err) {
+    console.error('Failed to write to friends feeds:', err);
+  }
 
   return { xpEarned: totalXP, newStreak };
 }

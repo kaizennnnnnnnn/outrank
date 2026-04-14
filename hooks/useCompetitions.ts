@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
-import { getCollection, where, orderBy } from '@/lib/firestore';
+import { getCollection, where } from '@/lib/firestore';
 import { Competition } from '@/types/competition';
 
 export function useCompetitions() {
@@ -17,25 +17,42 @@ export function useCompetitions() {
       return;
     }
 
-    async function fetch() {
+    async function fetchComps() {
       try {
-        const comps = await getCollection<Competition>('competitions', [
-          where('status', 'in', ['pending', 'active']),
-          orderBy('startDate', 'desc'),
+        // Fetch pending and active separately to avoid composite index requirement
+        const [pending, active] = await Promise.all([
+          getCollection<Competition>('competitions', [
+            where('status', '==', 'pending'),
+          ]),
+          getCollection<Competition>('competitions', [
+            where('status', '==', 'active'),
+          ]),
         ]);
+
+        const all = [...pending, ...active];
+
         // Filter to competitions the user is part of
-        const userComps = comps.filter((c) =>
+        const userComps = all.filter((c) =>
           c.participants.some((p) => p.userId === user!.uid)
         );
+
+        // Sort by most recent first
+        userComps.sort((a, b) => {
+          const aTime = a.startDate?.toDate?.()?.getTime?.() || 0;
+          const bTime = b.startDate?.toDate?.()?.getTime?.() || 0;
+          return bTime - aTime;
+        });
+
         setCompetitions(userComps);
-      } catch {
+      } catch (err) {
+        console.error('Failed to fetch competitions:', err);
         setCompetitions([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetch();
+    fetchComps();
   }, [user?.uid, user]);
 
   return { competitions, loading };
