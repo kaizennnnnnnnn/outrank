@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { updateDocument } from '@/lib/firestore';
 import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 
 const typeIcons: Record<string, string> = {
@@ -31,6 +32,7 @@ const typeIcons: Record<string, string> = {
 export default function NotificationsPage() {
   const { user } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const router = useRouter();
 
   const handleMarkRead = async (id: string) => {
     if (!user) return;
@@ -75,7 +77,17 @@ export default function NotificationsPage() {
           {notifications.map((notif) => (
             <button
               key={notif.id}
-              onClick={() => notif.id && !notif.isRead && handleMarkRead(notif.id)}
+              onClick={() => {
+                if (notif.id && !notif.isRead) handleMarkRead(notif.id);
+                // Navigate based on notification type
+                if (notif.type === 'duel_challenge' || notif.type === 'duel_accepted' || notif.type === 'duel_ended') {
+                  router.push('/compete');
+                } else if (notif.type === 'friend_request' || notif.type === 'friend_accepted') {
+                  router.push('/friends');
+                } else if (notif.type === 'leaderboard_overtaken') {
+                  router.push('/leaderboard');
+                }
+              }}
               className={cn(
                 'w-full flex items-start gap-3 p-4 rounded-xl text-left transition-all',
                 notif.isRead
@@ -94,6 +106,9 @@ export default function NotificationsPage() {
                 <p className="text-xs text-slate-600 mt-1">
                   {notif.createdAt?.toDate ? formatRelativeTime(notif.createdAt.toDate()) : ''}
                 </p>
+                {notif.type === 'duel_challenge' && !notif.isRead && (
+                  <p className="text-xs text-orange-400 mt-1 font-medium">Tap to view &amp; accept →</p>
+                )}
               </div>
               {!notif.isRead && (
                 <span className="w-2 h-2 rounded-full bg-red-500 mt-2 shrink-0" />
