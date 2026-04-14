@@ -159,6 +159,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // SHARED REACTIONS
+    match /reactions/{reactionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false;
+    }
+
     // TOURNAMENTS
     match /tournaments/{tournamentId} {
       allow read: if isAuthenticated();

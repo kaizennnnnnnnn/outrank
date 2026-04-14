@@ -1,14 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeed } from '@/hooks/useFeed';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatRelativeTime } from '@/lib/utils';
-import { updateDocument, doc } from '@/lib/firestore';
+import { doc } from '@/lib/firestore';
 import { db } from '@/lib/firebase';
-import { arrayUnion, arrayRemove, updateDoc } from 'firebase/firestore';
+import { arrayUnion, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { ReactionEmoji } from '@/types/feed';
 import { cn } from '@/lib/utils';
@@ -21,16 +22,57 @@ export default function FeedPage() {
   const { user } = useAuth();
   const { items, loading } = useFeed();
   const addToast = useUIStore((s) => s.addToast);
+  const [sharedReactions, setSharedReactions] = useState<Record<string, Record<string, string[]>>>({});
 
-  const handleReaction = async (feedOwnerId: string, itemId: string, emoji: ReactionEmoji) => {
+  // Load shared reactions for all feed items that have originId
+  useEffect(() => {
+    async function loadReactions() {
+      const reactionMap: Record<string, Record<string, string[]>> = {};
+      for (const item of items) {
+        const originId = (item as unknown as Record<string, unknown>).originId as string | undefined;
+        if (!originId) continue;
+        try {
+          const snap = await getDoc(doc(db, `reactions/${originId}`));
+          if (snap.exists()) {
+            reactionMap[originId] = snap.data().reactions || {};
+          }
+        } catch { /* ignore */ }
+      }
+      setSharedReactions(reactionMap);
+    }
+    if (items.length > 0) loadReactions();
+  }, [items]);
+
+  const handleReaction = async (originId: string | undefined, itemId: string, emoji: ReactionEmoji) => {
     if (!user) return;
     try {
-      // Update the item in MY feed (that's where I'm reading it from)
-      const ref = doc(db, `feed/${user.uid}/items`, itemId);
-      const field = `reactions.${emoji}`;
-      await updateDoc(ref, {
-        [field]: arrayUnion(user.uid),
-      });
+      if (originId) {
+        // Use shared reactions document
+        const ref = doc(db, `reactions/${originId}`);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          await setDoc(ref, { reactions: { [emoji]: [user.uid] } });
+        } else {
+          await updateDoc(ref, {
+            [`reactions.${emoji}`]: arrayUnion(user.uid),
+          });
+        }
+        // Update local state immediately
+        setSharedReactions((prev) => {
+          const current = prev[originId] || {};
+          const emojiList = current[emoji] || [];
+          if (!emojiList.includes(user.uid)) {
+            return { ...prev, [originId]: { ...current, [emoji]: [...emojiList, user.uid] } };
+          }
+          return prev;
+        });
+      } else {
+        // Fallback: update own feed copy
+        const ref = doc(db, `feed/${user.uid}/items`, itemId);
+        await updateDoc(ref, {
+          [`reactions.${emoji}`]: arrayUnion(user.uid),
+        });
+      }
     } catch (err) {
       console.error('Reaction failed:', err);
       addToast({ type: 'error', message: 'Failed to react' });
@@ -82,12 +124,16 @@ export default function FeedPage() {
               {/* Reactions */}
               <div className="flex items-center gap-2">
                 {REACTIONS.map((emoji) => {
-                  const reacted = item.reactions?.[emoji]?.includes(user?.uid || '');
-                  const count = item.reactions?.[emoji]?.length || 0;
+                  const originId = (item as unknown as Record<string, unknown>).originId as string | undefined;
+                  const shared = originId ? sharedReactions[originId] : null;
+                  const reactionsData = shared || item.reactions || {};
+                  const emojiUsers = (reactionsData as Record<string, string[]>)[emoji] || [];
+                  const reacted = emojiUsers.includes(user?.uid || '');
+                  const count = emojiUsers.length;
                   return (
                     <button
                       key={emoji}
-                      onClick={() => item.id && handleReaction(item.actorId, item.id, emoji)}
+                      onClick={() => item.id && handleReaction(originId, item.id, emoji)}
                       className={cn(
                         'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all',
                         reacted

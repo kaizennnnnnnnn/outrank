@@ -158,6 +158,9 @@ export async function logHabit(params: LogHabitParams) {
   }
 
   // 7. Create feed item for friends to see
+  // Generate a shared origin ID so reactions are shared across all copies
+  const originId = `${userId}_${habitSlug}_${Date.now()}`;
+
   const feedItem = {
     type: 'log',
     actorId: userId,
@@ -167,9 +170,13 @@ export async function logHabit(params: LogHabitParams) {
     categoryIcon: habit.categoryIcon || '',
     value,
     message: `${username} logged ${value} ${habit.unit || ''} of ${habit.categoryName || habitSlug}`,
+    originId,
     reactions: {},
     createdAt: Timestamp.now(),
   };
+
+  // Initialize shared reactions document
+  await setDoc(doc(db, `reactions/${originId}`), { reactions: {} });
 
   // Write to own feed
   await addDoc(collection(db, `feed/${userId}/items`), feedItem);
