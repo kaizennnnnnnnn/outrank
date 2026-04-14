@@ -40,6 +40,7 @@ export default function FriendsPage() {
 
   // Duel challenge
   const [duelTarget, setDuelTarget] = useState<{ id: string; username: string; avatar: string } | null>(null);
+  const [challengedIds, setChallengedIds] = useState<string[]>([]);
 
   // Resolve friend IDs to actual profiles
   useEffect(() => {
@@ -133,8 +134,9 @@ export default function FriendsPage() {
     setRemoveTarget(null);
   };
 
+  // All known connection IDs — both accepted friends and all pending (sent + received)
   const friendIds = friends.map((f) => f.id);
-  const pendingIds = pending.map((p) => p.id);
+  const allConnectionIds = [...friends.map((f) => f.id), ...pending.map((p) => p.id)];
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -157,7 +159,7 @@ export default function FriendsPage() {
           <h2 className="text-sm font-bold text-slate-400">Search Results</h2>
           {searchResults.map((u) => {
             const isFriend = friendIds.includes(u.uid);
-            const isPending = pendingIds.includes(u.uid);
+            const isPending = allConnectionIds.includes(u.uid) && !isFriend;
             return (
               <div key={u.uid} className="flex items-center gap-3 glass-card rounded-xl p-3">
                 <Link href={`/profile/${u.username}`}>
@@ -170,7 +172,16 @@ export default function FriendsPage() {
                   <p className="text-xs text-slate-500">Lv.{u.level} &bull; {u.totalXP.toLocaleString()} XP</p>
                 </div>
                 {isFriend ? (
-                  <span className="text-xs text-emerald-400 font-medium">Friends</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-emerald-400 font-medium">Friends</span>
+                    <Button size="sm" variant="secondary" onClick={() => setDuelTarget({
+                      id: u.uid,
+                      username: u.username,
+                      avatar: u.avatarUrl || '',
+                    })}>
+                      <SwordsCrossIcon size={12} /> Challenge
+                    </Button>
+                  </div>
                 ) : isPending ? (
                   <span className="text-xs text-yellow-400 font-medium">Pending</span>
                 ) : (
@@ -238,19 +249,25 @@ export default function FriendsPage() {
 
               {/* Action buttons */}
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="primary"
-                  className="flex-1"
-                  onClick={() => setDuelTarget({
-                    id: friend.friendId,
-                    username: friend.profile?.username || 'Friend',
-                    avatar: friend.profile?.avatarUrl || '',
-                  })}
-                >
-                  <SwordsCrossIcon size={14} />
-                  Challenge
-                </Button>
+                {challengedIds.includes(friend.friendId) ? (
+                  <Button size="sm" variant="secondary" className="flex-1" disabled>
+                    Challenged!
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="flex-1"
+                    onClick={() => setDuelTarget({
+                      id: friend.friendId,
+                      username: friend.profile?.username || 'Friend',
+                      avatar: friend.profile?.avatarUrl || '',
+                    })}
+                  >
+                    <SwordsCrossIcon size={14} />
+                    Challenge
+                  </Button>
+                )}
                 <Link href={`/profile/${friend.profile?.username || friend.friendId}`} className="flex-1">
                   <Button size="sm" variant="secondary" className="w-full">
                     View Profile
@@ -288,7 +305,10 @@ export default function FriendsPage() {
       {duelTarget && (
         <CreateDuelModal
           isOpen={!!duelTarget}
-          onClose={() => setDuelTarget(null)}
+          onClose={() => {
+            setChallengedIds((prev) => [...prev, duelTarget.id]);
+            setDuelTarget(null);
+          }}
           opponentId={duelTarget.id}
           opponentUsername={duelTarget.username}
           opponentAvatar={duelTarget.avatar}
