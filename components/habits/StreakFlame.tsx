@@ -15,8 +15,8 @@ function getFlameColors(streak: number): { main: string; inner: string; glow: st
   return { main: '#f97316', inner: '#fbbf24', glow: 'rgba(249,115,22,0.25)', text: 'from-yellow-400 via-orange-400 to-orange-600' };
 }
 
-const iconSizes = { sm: 16, md: 22, lg: 34 };
-const textSizes = { sm: 'text-xs', md: 'text-sm', lg: 'text-xl' };
+const iconSizes = { sm: 22, md: 30, lg: 42 };
+const textSizes = { sm: 'text-sm', md: 'text-base', lg: 'text-2xl' };
 
 export function StreakFlame({ streak, size = 'md' }: StreakFlameProps) {
   if (streak === 0) return null;
@@ -25,7 +25,7 @@ export function StreakFlame({ streak, size = 'md' }: StreakFlameProps) {
   const s = iconSizes[size];
 
   return (
-    <div className="inline-flex items-center gap-1">
+    <div className="inline-flex items-center gap-1.5">
       <motion.div
         animate={{
           scaleY: [1, 1.18, 0.92, 1.1, 1],
@@ -42,7 +42,7 @@ export function StreakFlame({ streak, size = 'md' }: StreakFlameProps) {
         <motion.div
           animate={{ opacity: [0.3, 0.6, 0.3] }}
           transition={{ duration: 1.2, repeat: Infinity }}
-          className="absolute inset-0 blur-sm rounded-full"
+          className="absolute -inset-1 blur-md rounded-full"
           style={{ background: colors.glow, width: s, height: s }}
         />
         {/* Flame SVG */}
