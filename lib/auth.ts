@@ -10,7 +10,7 @@ import {
   User,
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { setDocument } from './firestore';
+import { setDocument, getDocument } from './firestore';
 import { Timestamp } from 'firebase/firestore';
 import { UserProfile, UserSettings } from '@/types/user';
 
@@ -80,9 +80,51 @@ export async function loginWithEmail(email: string, password: string): Promise<U
   return credential.user;
 }
 
-export async function loginWithGoogle(): Promise<User> {
+export async function loginWithGoogle(): Promise<{ user: User; isNewUser: boolean }> {
   const credential = await signInWithPopup(auth, googleProvider);
-  return credential.user;
+  const user = credential.user;
+
+  // Check if user profile already exists in Firestore
+  const existingProfile = await getDocument<UserProfile>('users', user.uid);
+
+  if (!existingProfile) {
+    // New Google user — create profile automatically
+    const baseName = (user.displayName || user.email?.split('@')[0] || 'user')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '')
+      .slice(0, 16);
+    const uniqueUsername = `${baseName}_${Math.random().toString(36).slice(2, 6)}`;
+
+    await setDocument('usernames', uniqueUsername, { uid: user.uid });
+
+    const profile: Omit<UserProfile, 'id'> = {
+      uid: user.uid,
+      username: uniqueUsername,
+      email: user.email?.toLowerCase() || '',
+      avatarUrl: user.photoURL || '',
+      bio: '',
+      level: 1,
+      totalXP: 0,
+      currentTitle: 'Rookie',
+      friendCount: 0,
+      isVerified: true,
+      isPremium: false,
+      createdAt: Timestamp.now(),
+      lastActiveAt: Timestamp.now(),
+      isPublic: true,
+      isBanned: false,
+      fcmToken: '',
+      streakFreezeTokens: 1,
+      weeklyXP: 0,
+      monthlyXP: 0,
+      settings: DEFAULT_SETTINGS,
+    };
+
+    await setDocument('users', user.uid, profile);
+    return { user, isNewUser: true };
+  }
+
+  return { user, isNewUser: false };
 }
 
 export async function logout(): Promise<void> {

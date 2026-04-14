@@ -28,7 +28,15 @@ export default function DashboardPage() {
   const [logModal, setLogModal] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState<UserHabit | null>(null);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+      </div>
+    );
+  }
 
   const level = getLevelForXP(user.totalXP);
   const xpProgress = getXPProgress(user.totalXP);

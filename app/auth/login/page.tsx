@@ -42,8 +42,8 @@ export default function LoginPage() {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      await loginWithGoogle();
-      router.push('/dashboard');
+      const { isNewUser } = await loginWithGoogle();
+      router.push(isNewUser ? '/onboarding' : '/dashboard');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Google sign-in failed';
       addToast({ type: 'error', message });

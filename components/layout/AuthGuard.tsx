@@ -5,18 +5,19 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { SplashScreen } from '@/components/ui/SplashScreen';
 
-const PUBLIC_PATHS = ['/', '/auth/login', '/auth/register', '/auth/forgot-password'];
+const PUBLIC_PATHS = ['/', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/verify-email'];
+const ONBOARDING_PATH = '/onboarding';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const isPublic = PUBLIC_PATHS.includes(pathname);
+  const isOnboarding = pathname === ONBOARDING_PATH;
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     if (!loading) {
-      // Keep splash for minimum 1.8s for the animation to complete
       const timer = setTimeout(() => setShowSplash(false), 1800);
       return () => clearTimeout(timer);
     }
@@ -25,16 +26,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading || showSplash) return;
 
+    // Not logged in → redirect to login (unless on public page)
     if (!isAuthenticated && !isPublic) {
       router.push('/auth/login');
+      return;
     }
 
+    // Logged in on auth pages → redirect to dashboard
     if (isAuthenticated && (pathname === '/auth/login' || pathname === '/auth/register')) {
       router.push('/dashboard');
+      return;
     }
-  }, [isAuthenticated, loading, isPublic, pathname, router, showSplash]);
+  }, [isAuthenticated, loading, isPublic, pathname, router, showSplash, user]);
 
-  // Show splash screen while loading
   if (loading || showSplash) {
     return <SplashScreen show={true} />;
   }
