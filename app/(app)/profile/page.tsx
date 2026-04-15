@@ -46,7 +46,8 @@ export default function ProfilePage() {
 
   // Orb tier: stored as orbTier on user profile, default 1
   const storedTier = (user as unknown as Record<string, number>).orbTier || 1;
-  const [localTier, setLocalTier] = useState(storedTier);
+  // TEMP: Force tier 1 for testing evolution
+  const [localTier, setLocalTier] = useState(1);
 
   const handleEvolve = async () => {
     if (localTier >= 5) return;
