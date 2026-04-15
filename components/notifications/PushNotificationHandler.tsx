@@ -1,24 +1,43 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { requestNotificationPermission, showBrowserNotification } from '@/lib/pushNotifications';
+import { Button } from '@/components/ui/Button';
 
 export function PushNotificationHandler() {
   const { user } = useAuth();
   const { notifications } = useNotifications();
-  const prevCountRef = useRef<number>(-1); // -1 means not initialized
-  const hasRequestedRef = useRef(false);
+  const prevCountRef = useRef<number>(-1);
+  const [showPrompt, setShowPrompt] = useState(false);
 
-  // Request permission once after login
+  // Check if we need to ask for permission
   useEffect(() => {
-    if (!user || hasRequestedRef.current) return;
-    hasRequestedRef.current = true;
+    if (!user) return;
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
 
-    // Request immediately — browser will show the popup
-    requestNotificationPermission(user.uid);
+    // If permission hasn't been decided yet, show our custom prompt
+    if (Notification.permission === 'default') {
+      const dismissed = localStorage.getItem('notif_prompt_dismissed');
+      if (!dismissed) {
+        setTimeout(() => setShowPrompt(true), 2000);
+      }
+    }
   }, [user]);
+
+  const handleAllow = async () => {
+    if (user) {
+      await requestNotificationPermission(user.uid);
+    }
+    setShowPrompt(false);
+  };
+
+  const handleDismiss = () => {
+    setShowPrompt(false);
+    localStorage.setItem('notif_prompt_dismissed', 'true');
+  };
 
   // Watch for new notifications and show browser popup
   useEffect(() => {
@@ -27,12 +46,10 @@ export function PushNotificationHandler() {
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 
     if (prevCountRef.current === -1) {
-      // First load — just set the baseline, don't show popups for old notifications
       prevCountRef.current = unreadCount;
       return;
     }
 
-    // Show popup if new notification arrived
     if (unreadCount > prevCountRef.current) {
       const latest = notifications.find((n) => !n.isRead);
       if (latest) {
@@ -42,7 +59,6 @@ export function PushNotificationHandler() {
         } else if (latest.type === 'friend_request' || latest.type === 'friend_accepted') {
           target = '/friends';
         }
-
         showBrowserNotification('Outrank', latest.message, target);
       }
     }
@@ -50,5 +66,25 @@ export function PushNotificationHandler() {
     prevCountRef.current = unreadCount;
   }, [notifications]);
 
-  return null;
+  return (
+    <AnimatePresence>
+      {showPrompt && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="fixed bottom-20 left-4 right-4 z-[100] max-w-sm mx-auto"
+        >
+          <div className="glass-card rounded-2xl p-4 border border-red-500/20 space-y-3">
+            <p className="text-sm font-medium text-white">Enable notifications?</p>
+            <p className="text-xs text-slate-400">Get notified when friends challenge you, log habits, or react to your progress.</p>
+            <div className="flex gap-2">
+              <Button size="sm" className="flex-1" onClick={handleAllow}>Allow</Button>
+              <Button size="sm" variant="ghost" className="flex-1" onClick={handleDismiss}>Not now</Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }

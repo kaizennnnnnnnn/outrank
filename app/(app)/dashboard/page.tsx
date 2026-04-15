@@ -15,7 +15,7 @@ import { HabitCard } from '@/components/habits/HabitCard';
 import { Avatar } from '@/components/ui/Avatar';
 import { FlameIcon, BoltIcon } from '@/components/ui/Icons';
 import { SoulOrb } from '@/components/profile/SoulOrb';
-import { StreakFlame } from '@/components/habits/StreakFlame';
+import { StreakFire } from '@/components/habits/StreakFire';
 import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { useUIStore } from '@/store/uiStore';
@@ -73,9 +73,7 @@ export default function DashboardPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-orange-500/10 border border-orange-500/20">
-            <StreakFlame streak={Math.max(...habits.map(h => h.currentStreak), 0)} size="sm" />
-          </div>
+          <StreakFire streak={Math.max(...habits.map(h => h.currentStreak), 0)} size={45} />
           <Link href="/profile">
             <SoulOrb intensity={Math.min(Math.round(
               Math.min(user.totalXP / 500, 40) + Math.min(habits.reduce((s, h) => s + h.currentStreak, 0) / 10, 30) +

@@ -52,9 +52,7 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
         const oneYearAgo = new Date();
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-        const logs = await getCollection<HabitLog>(`logs/${userId}/habitLogs`, [
-          orderBy('createdAt', 'desc'),
-        ]);
+        const logs = await getCollection<HabitLog>(`logs/${userId}/habitLogs`, []);
 
         const counts: Record<string, number> = {};
         for (const log of logs) {
