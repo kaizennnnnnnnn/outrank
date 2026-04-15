@@ -14,6 +14,8 @@ import { QuickLogModal } from '@/components/habits/QuickLogModal';
 import { HabitCard } from '@/components/habits/HabitCard';
 import { Avatar } from '@/components/ui/Avatar';
 import { FlameIcon, BoltIcon } from '@/components/ui/Icons';
+import { SoulOrb } from '@/components/profile/SoulOrb';
+import { StreakFlame } from '@/components/habits/StreakFlame';
 import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { useUIStore } from '@/store/uiStore';
@@ -62,19 +64,24 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Welcome Header */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-white">
-            Welcome back, <span className="text-orange-400">{user.username}</span>
-          </h1>
-          <p className="text-sm text-slate-500">
-            Lv.{level.level} {level.title} &bull; {user.totalXP.toLocaleString()} XP
-          </p>
+        <div className="flex items-center gap-3">
+          <Link href="/profile">
+            <SoulOrb intensity={Math.min(Math.round(
+              Math.min(user.totalXP / 500, 40) + Math.min(habits.reduce((s, h) => s + h.currentStreak, 0) / 10, 30) +
+              Math.min(habits.reduce((s, h) => s + h.totalLogs, 0) / 20, 20) + Math.min(level.level / 10, 10)
+            ), 100)} tier={(user as unknown as Record<string, number>).orbTier || 1} size={50} />
+          </Link>
+          <div>
+            <h1 className="font-heading text-lg font-bold text-white">Outrank</h1>
+            <p className="text-xs text-slate-500">
+              Lv.{level.level} {level.title} &bull; {user.totalXP.toLocaleString()} XP
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
-          <FlameIcon size={18} className="text-orange-500" />
-          <span className="font-mono font-bold text-orange-400 text-sm">{user.weeklyXP} XP</span>
+          <StreakFlame streak={Math.max(...habits.map(h => h.currentStreak), 0)} size="sm" />
         </div>
       </div>
 

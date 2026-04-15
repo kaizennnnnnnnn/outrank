@@ -66,7 +66,14 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Soul Orb */}
-      <SoulOrb intensity={orbIntensity} tier={localTier} size={300} onEvolve={handleEvolve} />
+      <SoulOrb
+        intensity={orbIntensity}
+        tier={localTier}
+        size={300}
+        onEvolve={handleEvolve}
+        baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
+        pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+      />
 
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">

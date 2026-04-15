@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getOrbTier } from '@/constants/orbTiers';
+import { getOrbBaseColor, getOrbPulseColor } from '@/constants/orbColors';
 import { Button } from '@/components/ui/Button';
 
 interface SoulOrbProps {
@@ -10,9 +11,11 @@ interface SoulOrbProps {
   tier: number;
   size?: number;
   onEvolve?: () => void;
+  baseColorId?: string;
+  pulseColorId?: string;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pulseColorId }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -59,6 +62,16 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps)
 
     const W = size, H = size, cx = W / 2, cy = H / 2;
     const config = getOrbTier(tier);
+    // Apply custom colors if set
+    const customBase = baseColorId ? getOrbBaseColor(baseColorId) : null;
+    const customPulse = pulseColorId ? getOrbPulseColor(pulseColorId) : null;
+    if (customBase) {
+      config.colors.outer = customBase.outer;
+      config.colors.mid = customBase.mid;
+      config.colors.inner = customBase.inner;
+      config.colors.core = customBase.core;
+      config.colors.glow = customBase.glow;
+    }
     const pct = Math.min(intensity, 100) / 100;
     const R = size * config.radius;
     const brightness = 0.4 + pct * 0.6;
@@ -116,8 +129,8 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps)
     const onStart = (x: number, y: number) => { dragRef.current = { ...dragRef.current, dragging: true, lastX: x, lastY: y }; };
     const onMove = (x: number, y: number) => {
       if (!dragRef.current.dragging) return;
-      dragRef.current.rotY += (x - dragRef.current.lastX) * 0.01;
-      dragRef.current.rotX += (y - dragRef.current.lastY) * 0.01;
+      dragRef.current.rotY += (x - dragRef.current.lastX) * 0.03;
+      dragRef.current.rotX += (y - dragRef.current.lastY) * 0.02;
       dragRef.current.lastX = x; dragRef.current.lastY = y;
     };
     const onEnd = () => { dragRef.current.dragging = false; };
@@ -300,25 +313,43 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps)
         }
       }
 
-      // Burst sparks — small contained explosion particles
+      // Burst sparks — explosion particles radiating outward
       if (burstPhase) {
         const burstProgress = (eT - 1.4) / 0.6;
-        const numSparks = 20;
+        // Inner ring of sparks
+        const numSparks = 36;
         for (let i = 0; i < numSparks; i++) {
-          const angle = (i / numSparks) * PI2;
-          const dist = burstProgress * R * 0.6;
+          const angle = (i / numSparks) * PI2 + burstProgress * 0.5;
+          const dist = burstProgress * R * 0.9;
           const sparkX = cx + cos(angle) * dist;
           const sparkY = cy + sin(angle) * dist;
-          const sparkAlpha = (1 - burstProgress) * 0.8;
-          const sparkSize = (1 - burstProgress) * 3;
+          const sparkAlpha = (1 - burstProgress) * 0.9;
+          const sparkSize = (1 - burstProgress) * 4;
           ctx.fillStyle = `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${sparkAlpha})`;
           ctx.beginPath(); ctx.arc(sparkX, sparkY, max(0.5, sparkSize), 0, PI2); ctx.fill();
           // Spark glow
-          const sg = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, sparkSize * 3);
-          sg.addColorStop(0, `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${sparkAlpha * 0.3})`);
+          const sg = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, sparkSize * 4);
+          sg.addColorStop(0, `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${sparkAlpha * 0.4})`);
           sg.addColorStop(1, 'transparent');
-          ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sparkX, sparkY, sparkSize * 3, 0, PI2); ctx.fill();
+          ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sparkX, sparkY, sparkSize * 4, 0, PI2); ctx.fill();
         }
+        // Outer ring of smaller sparks
+        for (let i = 0; i < 24; i++) {
+          const angle = (i / 24) * PI2 - burstProgress * 0.3;
+          const dist = burstProgress * R * 1.2;
+          const sparkX = min(max(cx + cos(angle) * dist, 5), W - 5);
+          const sparkY = min(max(cy + sin(angle) * dist, 5), H - 5);
+          const sparkAlpha = (1 - burstProgress) * 0.5;
+          const sparkSize = (1 - burstProgress) * 2;
+          ctx.fillStyle = `rgba(${colInner[0]}, ${colInner[1]}, ${colInner[2]}, ${sparkAlpha})`;
+          ctx.beginPath(); ctx.arc(sparkX, sparkY, max(0.3, sparkSize), 0, PI2); ctx.fill();
+        }
+        // Central flash glow
+        const flashAlpha = (1 - burstProgress) * 0.3;
+        const flashG = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.5);
+        flashG.addColorStop(0, `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${flashAlpha})`);
+        flashG.addColorStop(1, 'transparent');
+        ctx.fillStyle = flashG; ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, PI2); ctx.fill();
       }
 
       animRef.current = requestAnimationFrame(frame);
