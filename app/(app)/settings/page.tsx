@@ -63,7 +63,8 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/');
+    // Full page reload clears all in-memory state (Zustand, listeners, cache)
+    window.location.href = '/auth/login';
   };
 
   return (
