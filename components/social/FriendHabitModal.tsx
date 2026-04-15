@@ -52,7 +52,7 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
     if (!user) return;
     try {
       const msg = customMessage
-        ? `${user.username}: "${customMessage}" — about ${habitName}`
+        ? `Message from ${user.username} about ${habitName}: "${customMessage}"`
         : `${user.username} reminded you to log ${habitName} today!`;
 
       await createDocument(`notifications/${friendId}/items`, {
@@ -135,7 +135,7 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
                         <Button size="sm" variant="ghost" onClick={() => setMessageTarget(
                           messageTarget === habit.categorySlug ? null : habit.categorySlug
                         )}>
-                          +
+                          Message
                         </Button>
                       </div>
                     )}

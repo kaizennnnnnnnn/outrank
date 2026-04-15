@@ -172,6 +172,26 @@ export async function logHabit(params: LogHabitParams) {
       });
     }
   }
+  // 6b. Update active duel scores for this category
+  try {
+    const duelsSnap = await getDocs(
+      query(
+        collection(db, 'competitions'),
+        where('status', '==', 'active'),
+        where('categorySlug', '==', habitSlug)
+      )
+    );
+    for (const duelDoc of duelsSnap.docs) {
+      const duel = duelDoc.data();
+      const participants = duel.participants || [];
+      const myIdx = participants.findIndex((p: { userId: string }) => p.userId === userId);
+      if (myIdx >= 0) {
+        participants[myIdx].score = (participants[myIdx].score || 0) + value;
+        await updateDoc(doc(db, 'competitions', duelDoc.id), { participants });
+      }
+    }
+  } catch (err) { console.error('Duel score update failed:', err); }
+
   } catch (err) { console.error('Leaderboard update failed:', err); }
 
   // 7. Create feed item for friends to see

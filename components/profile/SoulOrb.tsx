@@ -85,11 +85,12 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     const R = size * config.radius;
     const brightness = 0.4 + pct * 0.6;
     const isSmall = size <= 100;
-    // Small orbs: fewer particles, normal size
     const numP = isSmall
-      ? Math.floor(config.particles * 0.2)
+      ? Math.floor(config.particles * 0.25)
       : Math.floor(config.particles * (0.5 + pct * 0.5));
-    const particleScale = 1.0;
+    // Small orbs: smaller particles, faster spin
+    const particleScale = isSmall ? 0.5 : 1.0;
+    const speedMultiplier = isSmall ? 2.0 : 1.0;
 
     type P = { phi: number; theta: number; size: number; phase: number; speed: number; layer: number };
     const particles: P[] = [];
@@ -205,7 +206,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       ctx.fillStyle = g1;
       ctx.fillRect(0, 0, W, H);
 
-      const ry = t * 0.5 * speedBoost + dragRef.current.rotY;
+      const ry = t * 0.5 * speedBoost * speedMultiplier + dragRef.current.rotY;
       const rx = sin(t * 0.2) * 0.3 + 0.4 + dragRef.current.rotX;
       const cry = cos(ry), sry = sin(ry), crx = cos(rx), srx = sin(rx);
 
@@ -315,10 +316,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         const sz = d.sz * d.s * (1 + d.pBoost * 2);
 
         if (sz > 0.5 && alpha > 0.05) {
-          const grd = ctx.createRadialGradient(d.px, d.py, 0, d.px, d.py, sz * 4);
+          const grd = ctx.createRadialGradient(d.px, d.py, 0, d.px, d.py, sz * (isSmall ? 2 : 4));
           grd.addColorStop(0, `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${alpha * 0.2})`);
           grd.addColorStop(1, 'transparent');
-          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(d.px, d.py, sz * 4, 0, PI2); ctx.fill();
+          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(d.px, d.py, sz * (isSmall ? 2 : 4), 0, PI2); ctx.fill();
         }
 
         ctx.fillStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${alpha})`;

@@ -62,6 +62,8 @@ export function StreakFire({ size = 60, streak }: StreakFireProps) {
 
       const { sin } = Math;
       const s = scale;
+      // Increase wobble for small sizes so animation is visible
+      const wobbleBoost = size < 80 ? 1.8 : 1.0;
 
       // Ambient glow
       const glow = ctx.createRadialGradient(cx, baseY - 30 * s, 5 * s, cx, baseY - 20 * s, 80 * s);
@@ -72,11 +74,11 @@ export function StreakFire({ size = 60, streak }: StreakFireProps) {
       ctx.fillRect(0, 0, size, size);
 
       // Outer flame
-      const w1 = sin(time * 3.2) * 6 * s;
-      const w2 = sin(time * 4.1 + 1) * 5 * s;
-      const w3 = sin(time * 2.7 + 2) * 4 * s;
-      const tipY = size * 0.15 + sin(time * 3.8) * 8 * s;
-      const tipX = cx + sin(time * 2.5) * 5 * s;
+      const w1 = sin(time * 3.2) * 6 * s * wobbleBoost;
+      const w2 = sin(time * 4.1 + 1) * 5 * s * wobbleBoost;
+      const w3 = sin(time * 2.7 + 2) * 4 * s * wobbleBoost;
+      const tipY = size * 0.15 + sin(time * 3.8) * 8 * s * wobbleBoost;
+      const tipX = cx + sin(time * 2.5) * 5 * s * wobbleBoost;
 
       ctx.beginPath();
       ctx.moveTo(cx, baseY);
