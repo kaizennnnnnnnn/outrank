@@ -41,11 +41,11 @@ export default function ProfilePage() {
   const currentStreaks = habits.reduce((sum, h) => sum + h.currentStreak, 0);
 
   // Soul Orb intensity: 0-100 based on activity
-  // XP contributes up to 40, streaks up to 30, logs up to 20, level up to 10
-  const xpScore = Math.min(user.totalXP / 500, 40); // 500 XP = max XP contribution
-  const streakScore = Math.min(currentStreaks / 10, 30); // 10 total streak days = max
-  const logScore = Math.min(totalLogs / 20, 20); // 20 logs = max log contribution
-  const levelScore = Math.min(level.level / 10, 10); // level 10 = max level contribution
+  // TEMP: Force max intensity for testing
+  const xpScore = 40;
+  const streakScore = 30;
+  const logScore = 20;
+  const levelScore = 10;
   const orbIntensity = Math.min(Math.round(xpScore + streakScore + logScore + levelScore), 100);
 
   return (
