@@ -41,16 +41,9 @@ export default function ProfilePage() {
   const friendCount = friends.length;
   const currentStreaks = habits.reduce((sum, h) => sum + h.currentStreak, 0);
 
-  // Soul Orb intensity: 0-100 based on activity
-  const xpScore = Math.min(user.totalXP / 500, 40);
-  const streakScore = Math.min(currentStreaks / 10, 30);
-  const logScore = Math.min(totalLogs / 20, 20);
-  const levelScore = Math.min(level.level / 10, 10);
-  const orbIntensity = Math.min(Math.round(xpScore + streakScore + logScore + levelScore), 100);
-
-  // Orb tier: stored as orbTier on user profile, default 1
-  const storedTier = (user as unknown as Record<string, number>).orbTier || 1;
-  const [localTier, setLocalTier] = useState(storedTier);
+  // TEMP: Force 100% and reset tier for evolution testing
+  const orbIntensity = 100;
+  const [localTier, setLocalTier] = useState(1);
 
   const handleEvolve = async () => {
     if (localTier >= 5) return;

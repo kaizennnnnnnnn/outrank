@@ -11,7 +11,7 @@ export const sanitize = (input: string): string => {
 };
 
 export const sanitizeUsername = (username: string): string => {
-  return username.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20);
+  return username.replace(/[^\p{L}\p{N}_]/gu, '').slice(0, 20);
 };
 
 export const validateLogValue = (value: number, max: number = 10000): boolean => {

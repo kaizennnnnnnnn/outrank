@@ -35,7 +35,7 @@ service cloud.firestore {
     }
 
     function isValidUsername(username) {
-      return username.matches('^[a-zA-Z0-9_]{3,20}$');
+      return username.size() >= 3 && username.size() <= 20;
     }
 
     // USERS
@@ -75,10 +75,7 @@ service cloud.firestore {
 
     // HABITS
     match /habits/{userId}/userHabits/{habitId} {
-      allow read: if isOwner(userId) || (
-        isFriend(userId) &&
-        resource.data.isPublic == true
-      );
+      allow read: if isAuthenticated();
       allow create: if isOwner(userId);
       allow update: if isOwner(userId) && isNotBanned();
       allow delete: if isOwner(userId);
