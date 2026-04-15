@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreateDuelModal } from '@/components/competition/CreateDuelModal';
-import { getCollection, getDocument, setDocument, updateDocument, removeDocument, where, Timestamp } from '@/lib/firestore';
+import { getCollection, getDocument, setDocument, updateDocument, removeDocument, createDocument, where, Timestamp } from '@/lib/firestore';
 import { sanitizeUsername } from '@/lib/security';
 import { useUIStore } from '@/store/uiStore';
 import { UserProfile } from '@/types/user';
@@ -268,11 +268,29 @@ export default function FriendsPage() {
                     Challenge
                   </Button>
                 )}
-                <Link href={`/profile/${friend.profile?.username || friend.friendId}`} className="flex-1">
-                  <Button size="sm" variant="secondary" className="w-full">
-                    View Profile
-                  </Button>
-                </Link>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={async () => {
+                    try {
+                      await createDocument(`notifications/${friend.friendId}/items`, {
+                        type: 'streak_at_risk',
+                        message: `${user?.username} reminded you to log your habits today!`,
+                        isRead: false,
+                        relatedId: '',
+                        actorId: user?.uid,
+                        actorAvatar: user?.avatarUrl || '',
+                        createdAt: Timestamp.now(),
+                      });
+                      addToast({ type: 'success', message: `Reminded ${friend.profile?.username}!` });
+                    } catch {
+                      addToast({ type: 'error', message: 'Failed to send reminder' });
+                    }
+                  }}
+                >
+                  Remind
+                </Button>
                 <Button
                   size="sm"
                   variant="ghost"

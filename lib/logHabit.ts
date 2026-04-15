@@ -191,6 +191,16 @@ export async function logHabit(params: LogHabitParams) {
     );
     for (const friendDoc of friendsSnap.docs) {
       await addDoc(collection(db, `feed/${friendDoc.id}/items`), feedItem);
+      // Notify friend
+      await addDoc(collection(db, `notifications/${friendDoc.id}/items`), {
+        type: 'friend_logged',
+        message: `${username} logged ${value} ${habit.unit || ''} of ${habit.categoryName || habitSlug}`,
+        isRead: false,
+        relatedId: habitSlug,
+        actorId: userId,
+        actorAvatar: avatarUrl,
+        createdAt: Timestamp.now(),
+      });
     }
   } catch (err) {
     console.error('Failed to write to friends feeds:', err);

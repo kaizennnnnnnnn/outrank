@@ -7,8 +7,9 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { formatRelativeTime } from '@/lib/utils';
-import { doc } from '@/lib/firestore';
+import { doc, createDocument } from '@/lib/firestore';
 import { db } from '@/lib/firebase';
+import { Timestamp } from 'firebase/firestore';
 import { arrayUnion, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { ReactionEmoji } from '@/types/feed';
@@ -43,7 +44,7 @@ export default function FeedPage() {
     if (items.length > 0) loadReactions();
   }, [items]);
 
-  const handleReaction = async (originId: string | undefined, itemId: string, emoji: ReactionEmoji) => {
+  const handleReaction = async (originId: string | undefined, itemId: string, emoji: ReactionEmoji, actorId?: string) => {
     if (!user) return;
     try {
       if (originId) {
@@ -72,6 +73,20 @@ export default function FeedPage() {
         await updateDoc(ref, {
           [`reactions.${emoji}`]: arrayUnion(user.uid),
         });
+      }
+      // Notify the actor that someone reacted
+      if (actorId && actorId !== user.uid) {
+        try {
+          await createDocument(`notifications/${actorId}/items`, {
+            type: 'friend_logged',
+            message: `${user.username} reacted ${emoji} to your log`,
+            isRead: false,
+            relatedId: '',
+            actorId: user.uid,
+            actorAvatar: user.avatarUrl || '',
+            createdAt: Timestamp.now(),
+          });
+        } catch { /* silent */ }
       }
     } catch (err) {
       console.error('Reaction failed:', err);
@@ -133,7 +148,7 @@ export default function FeedPage() {
                   return (
                     <button
                       key={emoji}
-                      onClick={() => item.id && handleReaction(originId, item.id, emoji)}
+                      onClick={() => item.id && handleReaction(originId, item.id, emoji, item.actorId)}
                       className={cn(
                         'flex items-center gap-1 px-2.5 py-1 rounded-full text-xs transition-all',
                         reacted

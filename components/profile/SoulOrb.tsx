@@ -19,6 +19,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps)
   const evolveRef = useRef(false);
   const evolveTimeRef = useRef(0);
   const [evolving, setEvolving] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
   const canEvolve = intensity >= 100 && tier < 5;
 
   const handleEvolve = useCallback(() => {
@@ -26,12 +27,20 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps)
     setEvolving(true);
     evolveRef.current = true;
     evolveTimeRef.current = 0;
+    // Phase 1: animation plays (0-2.2s)
+    // Phase 2: fade out (2.2s)
+    setTimeout(() => setFadeOut(true), 2200);
+    // Phase 3: switch tier while faded (2.7s)
     setTimeout(() => {
+      onEvolve?.();
+    }, 2700);
+    // Phase 4: fade back in (3s)
+    setTimeout(() => {
+      setFadeOut(false);
       setEvolving(false);
       evolveRef.current = false;
       evolveTimeRef.current = 0;
-      onEvolve?.();
-    }, 3000);
+    }, 3200);
   }, [canEvolve, onEvolve]);
 
   useEffect(() => {
@@ -291,6 +300,27 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps)
         }
       }
 
+      // Burst sparks — small contained explosion particles
+      if (burstPhase) {
+        const burstProgress = (eT - 1.4) / 0.6;
+        const numSparks = 20;
+        for (let i = 0; i < numSparks; i++) {
+          const angle = (i / numSparks) * PI2;
+          const dist = burstProgress * R * 0.6;
+          const sparkX = cx + cos(angle) * dist;
+          const sparkY = cy + sin(angle) * dist;
+          const sparkAlpha = (1 - burstProgress) * 0.8;
+          const sparkSize = (1 - burstProgress) * 3;
+          ctx.fillStyle = `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${sparkAlpha})`;
+          ctx.beginPath(); ctx.arc(sparkX, sparkY, max(0.5, sparkSize), 0, PI2); ctx.fill();
+          // Spark glow
+          const sg = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, sparkSize * 3);
+          sg.addColorStop(0, `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${sparkAlpha * 0.3})`);
+          sg.addColorStop(1, 'transparent');
+          ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sparkX, sparkY, sparkSize * 3, 0, PI2); ctx.fill();
+        }
+      }
+
       animRef.current = requestAnimationFrame(frame);
     }
 
@@ -313,7 +343,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve }: SoulOrbProps)
     <div className="flex flex-col items-center">
       <canvas
         ref={canvasRef}
-        style={{ width: size, height: size, maxWidth: '100%', cursor: 'grab', touchAction: 'none' }}
+        style={{
+          width: size, height: size, maxWidth: '100%', cursor: 'grab', touchAction: 'none',
+          opacity: fadeOut ? 0 : 1,
+          transition: 'opacity 0.5s ease-in-out',
+        }}
       />
       <div className="mt-2 text-center">
         <p className="text-xs font-heading text-orange-400">{config.name}</p>
