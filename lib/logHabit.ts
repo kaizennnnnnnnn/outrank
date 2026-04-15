@@ -61,7 +61,19 @@ export async function logHabit(params: LogHabitParams) {
     createdAt: Timestamp.now(),
   });
 
-  if (!habitSnap.exists()) return { xpEarned: baseXP, newStreak: 0 };
+  if (!habitSnap.exists()) {
+    // No habit doc (e.g. daily challenge for untracked category)
+    // Still award XP
+    try {
+      await updateDoc(doc(db, `users/${userId}`), {
+        totalXP: increment(baseXP),
+        weeklyXP: increment(baseXP),
+        monthlyXP: increment(baseXP),
+        lastActiveAt: Timestamp.now(),
+      });
+    } catch { /* silent */ }
+    return { xpEarned: baseXP, newStreak: 0 };
+  }
 
   const habit = habitSnap.data();
   const today = new Date();
@@ -129,7 +141,11 @@ export async function logHabit(params: LogHabitParams) {
     }
   }
 
+  // --- Secondary operations (non-fatal) ---
+  // If any of these fail, the core log + XP + streak are already saved
+
   // 6. Update leaderboard
+  try {
   const leaderboardData = {
     userId,
     username,
@@ -156,8 +172,10 @@ export async function logHabit(params: LogHabitParams) {
       });
     }
   }
+  } catch (err) { console.error('Leaderboard update failed:', err); }
 
   // 7. Create feed item for friends to see
+  try {
   // Generate a shared origin ID so reactions are shared across all copies
   const originId = `${userId}_${habitSlug}_${Date.now()}`;
 
@@ -205,6 +223,7 @@ export async function logHabit(params: LogHabitParams) {
   } catch (err) {
     console.error('Failed to write to friends feeds:', err);
   }
+  } catch (err) { console.error('Feed/notifications failed:', err); }
 
   return { xpEarned: totalXP, newStreak };
 }
