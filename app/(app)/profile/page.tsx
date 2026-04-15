@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { useFriends } from '@/hooks/useFriends';
@@ -44,23 +45,24 @@ export default function ProfilePage() {
   const orbIntensity = 100;
 
   // Orb tier: stored as orbTier on user profile, default 1
-  const orbTier = (user as unknown as Record<string, number>).orbTier || 1;
+  const storedTier = (user as unknown as Record<string, number>).orbTier || 1;
+  const [localTier, setLocalTier] = useState(storedTier);
 
   const handleEvolve = async () => {
-    if (orbTier >= 5) return;
+    if (localTier >= 5) return;
+    const newTier = localTier + 1;
     try {
       const { updateDocument } = await import('@/lib/firestore');
-      await updateDocument('users', user.uid, { orbTier: orbTier + 1 });
-      window.location.reload(); // reload to reset orb with new tier
-    } catch {
-      // silent fail
-    }
+      await updateDocument('users', user.uid, { orbTier: newTier });
+    } catch { /* silent */ }
+    // Smooth transition — update local state, orb component re-renders with new tier
+    setLocalTier(newTier);
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Soul Orb */}
-      <SoulOrb intensity={orbIntensity} tier={orbTier} size={300} onEvolve={handleEvolve} />
+      <SoulOrb intensity={orbIntensity} tier={localTier} size={300} onEvolve={handleEvolve} />
 
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">
