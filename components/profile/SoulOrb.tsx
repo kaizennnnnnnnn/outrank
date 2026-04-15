@@ -85,11 +85,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     const R = size * config.radius;
     const brightness = 0.4 + pct * 0.6;
     const isSmall = size <= 100;
-    // Small orbs: fewer but larger particles so they're visible
+    // Small orbs: fewer particles, normal size
     const numP = isSmall
-      ? Math.floor(config.particles * 0.15)
+      ? Math.floor(config.particles * 0.2)
       : Math.floor(config.particles * (0.5 + pct * 0.5));
-    const particleScale = isSmall ? 2.5 : 1.0;
+    const particleScale = 1.0;
 
     type P = { phi: number; theta: number; size: number; phase: number; speed: number; layer: number };
     const particles: P[] = [];
@@ -106,7 +106,8 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
 
     type Rng = { angle: number; radius: number; tiltX: number; speedMul: number; size: number; phase: number };
     const rings: Rng[] = [];
-    for (let r = 0; r < config.rings; r++) {
+    const ringCount = isSmall ? 0 : config.rings; // No rings for small orbs
+    for (let r = 0; r < ringCount; r++) {
       const tiltX = (r - 1) * 0.5 + Math.random() * 0.3;
       const radius = R + 10 + r * 8;
       const rp = Math.floor(config.ringParticles * (0.5 + pct * 0.5));

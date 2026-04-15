@@ -41,29 +41,33 @@ export function PushNotificationHandler() {
 
   // Watch for new notifications and show browser popup
   useEffect(() => {
-    if (!notifications || notifications.length === 0) return;
+    try {
+      if (!notifications || notifications.length === 0) return;
 
-    const unreadCount = notifications.filter((n) => !n.isRead).length;
+      const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-    if (prevCountRef.current === -1) {
-      prevCountRef.current = unreadCount;
-      return;
-    }
-
-    if (unreadCount > prevCountRef.current) {
-      const latest = notifications.find((n) => !n.isRead);
-      if (latest) {
-        let target = '/notifications';
-        if (latest.type === 'duel_challenge' || latest.type === 'duel_accepted' || latest.type === 'duel_ended') {
-          target = '/compete';
-        } else if (latest.type === 'friend_request' || latest.type === 'friend_accepted') {
-          target = '/friends';
-        }
-        showBrowserNotification('Outrank', latest.message, target);
+      if (prevCountRef.current === -1) {
+        prevCountRef.current = unreadCount;
+        return;
       }
-    }
 
-    prevCountRef.current = unreadCount;
+      if (unreadCount > prevCountRef.current) {
+        const latest = notifications.find((n) => !n.isRead);
+        if (latest && latest.message) {
+          try {
+            let target = '/notifications';
+            if (latest.type === 'duel_challenge' || latest.type === 'duel_accepted' || latest.type === 'duel_ended') {
+              target = '/compete';
+            } else if (latest.type === 'friend_request' || latest.type === 'friend_accepted') {
+              target = '/friends';
+            }
+            showBrowserNotification('Outrank', latest.message, target);
+          } catch { /* notification display failed — don't crash */ }
+        }
+      }
+
+      prevCountRef.current = unreadCount;
+    } catch { /* prevent crash */ }
   }, [notifications]);
 
   return (
@@ -77,7 +81,7 @@ export function PushNotificationHandler() {
         >
           <div className="glass-card rounded-2xl p-4 border border-red-500/20 space-y-3">
             <p className="text-sm font-medium text-white">Enable notifications?</p>
-            <p className="text-xs text-slate-400">Get notified when friends challenge you, log habits, or react to your progress.</p>
+            <p className="text-xs text-slate-400">Get notified when friends challenge you, log habits, or react to your progress. On mobile, add Outrank to your Home Screen for best experience.</p>
             <div className="flex gap-2">
               <Button size="sm" className="flex-1" onClick={handleAllow}>Allow</Button>
               <Button size="sm" variant="ghost" className="flex-1" onClick={handleDismiss}>Not now</Button>
