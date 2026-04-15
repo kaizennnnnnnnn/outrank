@@ -5,7 +5,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Avatar } from '@/components/ui/Avatar';
 import { Logo } from '@/components/ui/Logo';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { FlameIcon } from '@/components/ui/Icons';
+import { FlameIcon, SettingsIcon, UsersIcon } from '@/components/ui/Icons';
 import Link from 'next/link';
 import { getXPProgress, getLevelForXP } from '@/constants/levels';
 
@@ -43,12 +43,18 @@ export function TopBar() {
         </div>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 text-sm font-mono font-bold text-orange-400">
             <FlameIcon size={16} className="text-orange-500" />
-            {user.weeklyXP} XP
+            {user.weeklyXP}
           </div>
+          <Link href="/friends" className="lg:hidden p-2 rounded-xl hover:bg-[#1e1e30] transition-colors">
+            <UsersIcon size={18} className="text-slate-400" />
+          </Link>
           <NotificationBell count={unreadCount} />
+          <Link href="/settings" className="lg:hidden p-2 rounded-xl hover:bg-[#1e1e30] transition-colors">
+            <SettingsIcon size={18} className="text-slate-400" />
+          </Link>
           <Link href="/profile" className="lg:hidden">
             <Avatar src={user.avatarUrl} alt={user.username} size="sm" />
           </Link>

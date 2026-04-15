@@ -110,7 +110,7 @@ export default function NotificationsPage() {
                   {notif.createdAt?.toDate ? formatRelativeTime(notif.createdAt.toDate()) : ''}
                 </p>
                 {notif.type === 'duel_challenge' && !notif.isRead && (
-                  <p className="text-xs text-orange-400 mt-1 font-medium">Tap to view &amp; accept →</p>
+                  <p className="text-xs text-orange-400 mt-1 font-medium">Tap to view →</p>
                 )}
               </div>
               {!notif.isRead && (
