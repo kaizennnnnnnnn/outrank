@@ -15,6 +15,7 @@ import { Timestamp } from 'firebase/firestore';
 import { UserProfile, UserSettings } from '@/types/user';
 
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 const DEFAULT_SETTINGS: UserSettings = {
   notifications: {
