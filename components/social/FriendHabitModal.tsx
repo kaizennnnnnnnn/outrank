@@ -38,7 +38,8 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
           orderBy('createdAt', 'desc'),
         ]);
         setHabits(h);
-      } catch {
+      } catch (err) {
+        console.error('Failed to load friend habits:', err);
         setHabits([]);
       } finally {
         setLoading(false);

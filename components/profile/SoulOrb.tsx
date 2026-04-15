@@ -13,9 +13,10 @@ interface SoulOrbProps {
   onEvolve?: () => void;
   baseColorId?: string;
   pulseColorId?: string;
+  hideLabel?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pulseColorId }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pulseColorId, hideLabel }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -72,6 +73,14 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       config.colors.core = customBase.core;
       config.colors.glow = customBase.glow;
     }
+    // Pulse colors for waves and sparks
+    const pulseColors = customPulse || {
+      outer: config.colors.outer,
+      mid: config.colors.mid,
+      inner: config.colors.inner,
+      core: config.colors.core,
+      glow: config.colors.glow,
+    };
     const pct = Math.min(intensity, 100) / 100;
     const R = size * config.radius;
     const brightness = 0.4 + pct * 0.6;
@@ -118,6 +127,8 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     const colMid = hexToRgb(config.colors.mid);
     const colInner = hexToRgb(config.colors.inner);
     const colCore = hexToRgb(config.colors.core);
+    const pulseRgb = hexToRgb(pulseColors.core);
+    const pulseInnerRgb = hexToRgb(pulseColors.inner);
 
     function project(x: number, y: number, z: number) {
       const d = size * 0.9;
@@ -286,9 +297,9 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
 
         if (d.type === 1) { r = colMid[0]; g = colMid[1]; b = colMid[2]; alpha *= 0.5; }
         if (d.pBoost > 0) {
-          r += (colCore[0] - r) * d.pBoost;
-          g += (colCore[1] - g) * d.pBoost;
-          b += (colCore[2] - b) * d.pBoost;
+          r += (pulseRgb[0] - r) * d.pBoost;
+          g += (pulseRgb[1] - g) * d.pBoost;
+          b += (pulseRgb[2] - b) * d.pBoost;
           alpha = min(1, alpha + d.pBoost * 0.6);
         }
 
@@ -325,7 +336,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
           const sparkY = cy + sin(angle) * dist;
           const sparkAlpha = (1 - burstProgress) * 0.9;
           const sparkSize = (1 - burstProgress) * 4;
-          ctx.fillStyle = `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${sparkAlpha})`;
+          ctx.fillStyle = `rgba(${pulseRgb[0]}, ${pulseRgb[1]}, ${pulseRgb[2]}, ${sparkAlpha})`;
           ctx.beginPath(); ctx.arc(sparkX, sparkY, max(0.5, sparkSize), 0, PI2); ctx.fill();
           // Spark glow
           const sg = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, sparkSize * 4);
@@ -380,10 +391,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
           transition: 'opacity 0.5s ease-in-out',
         }}
       />
-      <div className="mt-2 text-center">
+      {!hideLabel && <div className="mt-2 text-center">
         <p className="text-xs font-heading text-orange-400">{config.name}</p>
         <p className="text-[10px] text-slate-600">{intensity}% — {config.description}</p>
-      </div>
+      </div>}
 
       <AnimatePresence>
         {canEvolve && !evolving && (
