@@ -41,23 +41,30 @@ export default function ProfilePage() {
   const currentStreaks = habits.reduce((sum, h) => sum + h.currentStreak, 0);
 
   // Soul Orb intensity: 0-100 based on activity
-  // TEMP: Force max intensity for testing
-  const xpScore = 40;
-  const streakScore = 30;
-  const logScore = 20;
-  const levelScore = 10;
+  const xpScore = Math.min(user.totalXP / 500, 40);
+  const streakScore = Math.min(currentStreaks / 10, 30);
+  const logScore = Math.min(totalLogs / 20, 20);
+  const levelScore = Math.min(level.level / 10, 10);
   const orbIntensity = Math.min(Math.round(xpScore + streakScore + logScore + levelScore), 100);
+
+  // Orb tier: stored as orbTier on user profile, default 1
+  const orbTier = (user as unknown as Record<string, number>).orbTier || 1;
+
+  const handleEvolve = async () => {
+    if (orbTier >= 5) return;
+    try {
+      const { updateDocument } = await import('@/lib/firestore');
+      await updateDocument('users', user.uid, { orbTier: orbTier + 1 });
+      window.location.reload(); // reload to reset orb with new tier
+    } catch {
+      // silent fail
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Soul Orb */}
-      <div className="flex flex-col items-center">
-        <SoulOrb intensity={orbIntensity} size={280} />
-        <div className="mt-3 text-center">
-          <p className="text-xs text-slate-600">Soul Orb</p>
-          <p className="text-xs font-mono text-orange-400">{orbIntensity}% Awakened</p>
-        </div>
-      </div>
+      <SoulOrb intensity={orbIntensity} tier={orbTier} size={300} onEvolve={handleEvolve} />
 
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">
