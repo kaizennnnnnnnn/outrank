@@ -377,7 +377,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       canvas.removeEventListener('touchmove', tm);
       canvas.removeEventListener('touchend', onEnd);
     };
-  }, [intensity, tier, size]);
+  }, [intensity, tier, size, baseColorId, pulseColorId]);
 
   const config = getOrbTier(tier);
 

@@ -8,7 +8,7 @@ import { requestNotificationPermission, showBrowserNotification } from '@/lib/pu
 export function PushNotificationHandler() {
   const { user } = useAuth();
   const { notifications } = useNotifications();
-  const prevCountRef = useRef<number>(0);
+  const prevCountRef = useRef<number>(-1); // -1 means not initialized
   const hasRequestedRef = useRef(false);
 
   // Request permission once after login
@@ -16,12 +16,8 @@ export function PushNotificationHandler() {
     if (!user || hasRequestedRef.current) return;
     hasRequestedRef.current = true;
 
-    // Small delay so the app loads first
-    const timer = setTimeout(() => {
-      requestNotificationPermission(user.uid);
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    // Request immediately — browser will show the popup
+    requestNotificationPermission(user.uid);
   }, [user]);
 
   // Watch for new notifications and show browser popup
@@ -30,11 +26,16 @@ export function PushNotificationHandler() {
 
     const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-    // Only show popup if count increased (new notification arrived)
-    if (unreadCount > prevCountRef.current && prevCountRef.current > 0) {
+    if (prevCountRef.current === -1) {
+      // First load — just set the baseline, don't show popups for old notifications
+      prevCountRef.current = unreadCount;
+      return;
+    }
+
+    // Show popup if new notification arrived
+    if (unreadCount > prevCountRef.current) {
       const latest = notifications.find((n) => !n.isRead);
       if (latest) {
-        // Map notification type to navigation target
         let target = '/notifications';
         if (latest.type === 'duel_challenge' || latest.type === 'duel_accepted' || latest.type === 'duel_ended') {
           target = '/compete';
@@ -49,5 +50,5 @@ export function PushNotificationHandler() {
     prevCountRef.current = unreadCount;
   }, [notifications]);
 
-  return null; // This component renders nothing — it just handles side effects
+  return null;
 }

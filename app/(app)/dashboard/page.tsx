@@ -80,7 +80,10 @@ export default function DashboardPage() {
             <SoulOrb intensity={Math.min(Math.round(
               Math.min(user.totalXP / 500, 40) + Math.min(habits.reduce((s, h) => s + h.currentStreak, 0) / 10, 30) +
               Math.min(habits.reduce((s, h) => s + h.totalLogs, 0) / 20, 20) + Math.min(level.level / 10, 10)
-            ), 100)} tier={(user as unknown as Record<string, number>).orbTier || 1} size={48} hideLabel />
+            ), 100)} tier={(user as unknown as Record<string, number>).orbTier || 1} size={80} hideLabel
+              baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
+              pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+            />
           </Link>
         </div>
       </div>

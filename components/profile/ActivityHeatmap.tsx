@@ -58,14 +58,16 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
 
         const counts: Record<string, number> = {};
         for (const log of logs) {
-          if (!log.createdAt?.toDate) continue;
-          const date = log.createdAt.toDate();
+          // Try both createdAt and loggedAt
+          const ts = (log as unknown as Record<string, unknown>).createdAt || (log as unknown as Record<string, unknown>).loggedAt;
+          if (!ts || typeof (ts as { toDate?: () => Date }).toDate !== 'function') continue;
+          const date = (ts as { toDate: () => Date }).toDate();
           const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
           counts[key] = (counts[key] || 0) + 1;
         }
         setLogCounts(counts);
-      } catch {
-        // Silently fail
+      } catch (err) {
+        console.error('Heatmap load failed:', err);
       } finally {
         setLoading(false);
       }
