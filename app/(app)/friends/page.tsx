@@ -15,6 +15,7 @@ import { sanitizeUsername } from '@/lib/security';
 import { useUIStore } from '@/store/uiStore';
 import { UserProfile } from '@/types/user';
 import { UsersFullIcon, SwordsCrossIcon } from '@/components/ui/AppIcons';
+import { FriendHabitModal } from '@/components/social/FriendHabitModal';
 import Link from 'next/link';
 
 // Resolved friend = friendship data + actual user profile
@@ -37,6 +38,9 @@ export default function FriendsPage() {
 
   // Remove confirmation
   const [removeTarget, setRemoveTarget] = useState<{ id: string; name: string } | null>(null);
+
+  // Habit viewer
+  const [habitTarget, setHabitTarget] = useState<{ id: string; username: string; avatar: string } | null>(null);
 
   // Duel challenge
   const [duelTarget, setDuelTarget] = useState<{ id: string; username: string; avatar: string } | null>(null);
@@ -272,24 +276,13 @@ export default function FriendsPage() {
                   size="sm"
                   variant="secondary"
                   className="flex-1"
-                  onClick={async () => {
-                    try {
-                      await createDocument(`notifications/${friend.friendId}/items`, {
-                        type: 'streak_at_risk',
-                        message: `${user?.username} reminded you to log your habits today!`,
-                        isRead: false,
-                        relatedId: '',
-                        actorId: user?.uid,
-                        actorAvatar: user?.avatarUrl || '',
-                        createdAt: Timestamp.now(),
-                      });
-                      addToast({ type: 'success', message: `Reminded ${friend.profile?.username}!` });
-                    } catch {
-                      addToast({ type: 'error', message: 'Failed to send reminder' });
-                    }
-                  }}
+                  onClick={() => setHabitTarget({
+                    id: friend.friendId,
+                    username: friend.profile?.username || 'Friend',
+                    avatar: friend.profile?.avatarUrl || '',
+                  })}
                 >
-                  Remind
+                  Status
                 </Button>
                 <Button
                   size="sm"
@@ -330,6 +323,17 @@ export default function FriendsPage() {
           opponentId={duelTarget.id}
           opponentUsername={duelTarget.username}
           opponentAvatar={duelTarget.avatar}
+        />
+      )}
+
+      {/* Friend Habit Status Modal */}
+      {habitTarget && (
+        <FriendHabitModal
+          isOpen={!!habitTarget}
+          onClose={() => setHabitTarget(null)}
+          friendId={habitTarget.id}
+          friendUsername={habitTarget.username}
+          friendAvatar={habitTarget.avatar}
         />
       )}
     </div>
