@@ -6,6 +6,7 @@ import { EmailVerifyGuard } from '@/components/layout/EmailVerifyGuard';
 import { ToastContainer } from '@/components/ui/Toast';
 import { LevelUpOverlay } from '@/components/ui/LevelUpOverlay';
 import { BadgeUnlockOverlay } from '@/components/ui/BadgeUnlockOverlay';
+import { PushNotificationHandler } from '@/components/notifications/PushNotificationHandler';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <ToastContainer />
         <LevelUpOverlay />
         <BadgeUnlockOverlay />
+        <PushNotificationHandler />
       </EmailVerifyGuard>
     </AuthGuard>
   );
