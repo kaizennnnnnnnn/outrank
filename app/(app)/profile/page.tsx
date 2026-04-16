@@ -16,6 +16,7 @@ import { TitleDisplay } from '@/components/profile/TitleDisplay';
 import { OverallProgressGraph } from '@/components/habits/OverallProgressGraph';
 import { StreakFlame } from '@/components/habits/StreakFlame';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { OrbHistory } from '@/components/profile/OrbHistory';
 import { BoltFullIcon, ChartBarIcon, UsersFullIcon, FireIcon } from '@/components/ui/AppIcons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import Link from 'next/link';
@@ -45,12 +46,17 @@ export default function ProfilePage() {
   const orbIntensity = 100;
   const [localTier, setLocalTier] = useState(1);
 
+  const [showOrbHistory, setShowOrbHistory] = useState(false);
+
   const handleEvolve = async () => {
     if (localTier >= 5) return;
     const newTier = localTier + 1;
     try {
       const { updateDocument } = await import('@/lib/firestore');
+      const { increment } = await import('firebase/firestore');
       await updateDocument('users', user.uid, { orbTier: newTier });
+      // Award 30 fragments for evolution
+      await updateDocument('users', user.uid, { fragments: increment(30) });
     } catch { /* silent */ }
     // Smooth transition — update local state, orb component re-renders with new tier
     setLocalTier(newTier);
@@ -67,6 +73,14 @@ export default function ProfilePage() {
         baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
         pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
       />
+
+      {/* Tap orb hint + Orb History */}
+      <div className="text-center -mt-2">
+        <button onClick={() => setShowOrbHistory(true)} className="text-[10px] text-slate-600 hover:text-orange-400 transition-colors">
+          Tap orb for details
+        </button>
+      </div>
+      <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
 
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">

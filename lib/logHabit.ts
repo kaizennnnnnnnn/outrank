@@ -112,6 +112,35 @@ export async function logHabit(params: LogHabitParams) {
   if (newStreak === 30) totalXP += XP_STREAK_30;
   if (newStreak === 100) totalXP += XP_STREAK_100;
 
+  // 3b. Apply Orb Aura XP multiplier
+  try {
+    const userSnap2 = await getDoc(doc(db, `users/${userId}`));
+    const ud = userSnap2.data();
+    const orbTier = ud?.orbTier || 1;
+    const auraMultipliers: Record<number, number> = { 1: 1.0, 2: 1.05, 3: 1.10, 4: 1.15, 5: 1.20 };
+    totalXP = Math.round(totalXP * (auraMultipliers[orbTier] || 1.0));
+
+    // 3c. Add Orb Energy (+15 per log)
+    const currentEnergy = ud?.orbEnergy ?? 50;
+    const newEnergy = Math.min(100, currentEnergy + 15);
+    await updateDoc(doc(db, `users/${userId}`), { orbEnergy: newEnergy });
+
+    // 3d. Award fragments for daily completion
+    // Check if all habits are logged today
+    const allHabitsSnap = await getDocs(query(collection(db, `habits/${userId}/userHabits`)));
+    const allHabits = allHabitsSnap.docs;
+    const todayStr = new Date().toDateString();
+    const allLoggedToday = allHabits.every(h => {
+      const d = h.data();
+      return d.lastLogDate?.toDate?.()?.toDateString?.() === todayStr;
+    });
+    if (allLoggedToday && allHabits.length > 0) {
+      await updateDoc(doc(db, `users/${userId}`), {
+        fragments: increment(5), // Daily completion bonus
+      });
+    }
+  } catch { /* non-fatal */ }
+
   // Update XP on the log if bonus was added
   if (totalXP !== baseXP) {
     await updateDoc(doc(db, `logs/${userId}/habitLogs/${logRef.id}`), {
