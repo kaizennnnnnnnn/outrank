@@ -161,6 +161,37 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Push Notifications */}
+      <section className="glass-card rounded-2xl p-6 space-y-4">
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Push Notifications</h2>
+        <p className="text-xs text-slate-500">
+          {typeof window !== 'undefined' && 'Notification' in window
+            ? `Status: ${Notification.permission === 'granted' ? 'Enabled' : Notification.permission === 'denied' ? 'Blocked — enable in browser settings' : 'Not set up'}`
+            : 'Not supported on this device'}
+        </p>
+        <Button
+          variant="primary"
+          size="sm"
+          className="w-full"
+          onClick={async () => {
+            try {
+              const { requestNotificationPermission } = await import('@/lib/pushNotifications');
+              const result = await requestNotificationPermission(user.uid);
+              if (result) {
+                addToast({ type: 'success', message: 'Notifications enabled! You will now receive push alerts.' });
+              } else {
+                addToast({ type: 'error', message: 'Permission denied. Check your browser notification settings.' });
+              }
+            } catch {
+              addToast({ type: 'error', message: 'Failed to enable notifications.' });
+            }
+          }}
+        >
+          Enable Push Notifications
+        </Button>
+        <p className="text-[10px] text-slate-600">On mobile, add Outrank to your Home Screen for best experience. If blocked, go to your browser settings to re-enable.</p>
+      </section>
+
       {/* Connected Accounts */}
       <section className="glass-card rounded-2xl p-6 space-y-4">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Connected Accounts</h2>
