@@ -1,4 +1,4 @@
-export { onLogCreated } from './onLogCreated';
+// onLogCreated removed — XP/streaks/leaderboards handled client-side in logHabit.ts
 export { onUserCreated } from './onUserCreated';
 export { onFriendAccepted } from './onFriendAccepted';
 export { scheduledStreaks, streakReminder } from './scheduledStreaks';
@@ -6,3 +6,4 @@ export { scheduledLeaderboard, weeklyLeaderboardReset, monthlyLeaderboardReset }
 export { onReportCreated } from './onReportCreated';
 export { checkUsername } from './checkUsername';
 export { weeklyRecap } from './weeklyRecap';
+export { onNotificationCreated } from './onNotificationCreated';
