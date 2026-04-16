@@ -23,9 +23,15 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
   useEffect(() => {
     async function fetch() {
       try {
-        const users = await getCollection<UserProfile>('users', [
+        // Try exact match first, then lowercase
+        let users = await getCollection<UserProfile>('users', [
           where('username', '==', username),
         ]);
+        if (users.length === 0) {
+          users = await getCollection<UserProfile>('users', [
+            where('username', '==', decodeURIComponent(username).toLowerCase()),
+          ]);
+        }
         setProfile(users[0] || null);
       } catch {
         setProfile(null);

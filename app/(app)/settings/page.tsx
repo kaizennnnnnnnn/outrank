@@ -110,55 +110,9 @@ export default function SettingsPage() {
         <Button onClick={handleSave} loading={saving}>Save Changes</Button>
       </section>
 
-      {/* Orb Customization */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Soul Orb Colors</h2>
-
-        <div>
-          <p className="text-xs text-slate-500 mb-2">Base Color</p>
-          <div className="flex gap-2">
-            {['crimson', 'ocean', 'emerald', 'violet', 'gold'].map((colorId) => {
-              const colors: Record<string, string> = { crimson: '#dc2626', ocean: '#2563eb', emerald: '#10b981', violet: '#7c3aed', gold: '#d97706' };
-              const names: Record<string, string> = { crimson: 'Crimson', ocean: 'Ocean', emerald: 'Emerald', violet: 'Violet', gold: 'Gold' };
-              const current = (user as unknown as Record<string, string>).orbBaseColor || 'crimson';
-              return (
-                <button
-                  key={colorId}
-                  onClick={async () => {
-                    await updateDocument('users', user.uid, { orbBaseColor: colorId });
-                    addToast({ type: 'success', message: `Orb color: ${names[colorId]}` });
-                  }}
-                  className={`w-10 h-10 rounded-xl border-2 transition-all ${current === colorId ? 'border-white scale-110' : 'border-[#2d2d45]'}`}
-                  style={{ background: `radial-gradient(circle, ${colors[colorId]}80, ${colors[colorId]}30)` }}
-                  title={names[colorId]}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="text-xs text-slate-500 mb-2">Pulse / Wave Color</p>
-          <div className="flex gap-2">
-            {['fire', 'ice', 'lightning', 'shadow', 'plasma'].map((colorId) => {
-              const colors: Record<string, string> = { fire: '#f97316', ice: '#06b6d4', lightning: '#eab308', shadow: '#78716c', plasma: '#d946ef' };
-              const names: Record<string, string> = { fire: 'Fire', ice: 'Ice', lightning: 'Lightning', shadow: 'Shadow', plasma: 'Plasma' };
-              const current = (user as unknown as Record<string, string>).orbPulseColor || 'fire';
-              return (
-                <button
-                  key={colorId}
-                  onClick={async () => {
-                    await updateDocument('users', user.uid, { orbPulseColor: colorId });
-                    addToast({ type: 'success', message: `Pulse color: ${names[colorId]}` });
-                  }}
-                  className={`w-10 h-10 rounded-xl border-2 transition-all ${current === colorId ? 'border-white scale-110' : 'border-[#2d2d45]'}`}
-                  style={{ background: `radial-gradient(circle, ${colors[colorId]}80, ${colors[colorId]}30)` }}
-                  title={names[colorId]}
-                />
-              );
-            })}
-          </div>
-        </div>
+      {/* Orb Colors — now in Shop */}
+      <section className="glass-card rounded-2xl p-4">
+        <p className="text-xs text-slate-500">Orb colors and upgrades are available in the <a href="/shop" className="text-orange-400 underline">Shop</a>.</p>
       </section>
 
       {/* Push Notifications */}

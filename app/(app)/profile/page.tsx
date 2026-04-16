@@ -65,19 +65,26 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Soul Orb */}
-      <SoulOrb
-        intensity={orbIntensity}
-        tier={localTier}
-        size={300}
-        onEvolve={handleEvolve}
-        baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
-        pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
-      />
+      <div onClick={() => setShowOrbHistory(true)} className="cursor-pointer">
+        <SoulOrb
+          intensity={orbIntensity}
+          tier={localTier}
+          size={300}
+          onEvolve={handleEvolve}
+          baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
+          pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+        />
+      </div>
 
-      {/* Tap orb hint + Orb History */}
-      <div className="text-center -mt-2">
-        <button onClick={() => setShowOrbHistory(true)} className="text-[10px] text-slate-600 hover:text-orange-400 transition-colors">
-          Tap orb for details
+      {/* Fragments display */}
+      <div className="flex items-center justify-center gap-6 -mt-2">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-400"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>
+          <span className="font-mono text-sm font-bold text-orange-400">{(user as unknown as Record<string, number>).fragments || 0}</span>
+          <span className="text-[10px] text-slate-500">fragments</span>
+        </div>
+        <button onClick={() => setShowOrbHistory(true)} className="text-[10px] text-slate-500 hover:text-orange-400 transition-colors underline">
+          View Orb Details
         </button>
       </div>
       <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
