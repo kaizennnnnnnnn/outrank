@@ -21,11 +21,22 @@ export const onNotificationCreated = functions.firestore
         return;
       }
 
+      // Get sender's avatar if available
+      let senderAvatar = '';
+      if (notification.actorId) {
+        try {
+          const actorDoc = await db.doc(`users/${notification.actorId}`).get();
+          const actorData = actorDoc.data();
+          if (actorData?.avatarUrl) senderAvatar = actorData.avatarUrl;
+        } catch { /* ignore */ }
+      }
+
       const message: admin.messaging.Message = {
         token: userData.fcmToken,
         notification: {
           title: 'Outrank',
           body: notification.message || 'You have a new notification',
+          imageUrl: senderAvatar || undefined,
         },
         data: {
           type: notification.type || 'general',
@@ -34,8 +45,8 @@ export const onNotificationCreated = functions.firestore
         },
         webpush: {
           notification: {
-            icon: '/icon-192.png',
-            badge: '/icon-192.png',
+            icon: senderAvatar || 'https://outrank-ten.vercel.app/icon-192.png',
+            badge: 'https://outrank-ten.vercel.app/icon-192.png',
             vibrate: [200, 100, 200],
           },
           fcmOptions: {
