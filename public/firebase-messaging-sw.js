@@ -1,4 +1,4 @@
-// Firebase Messaging Service Worker — handles background push notifications
+// Firebase Messaging Service Worker
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
@@ -13,17 +13,20 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages
+// FCM auto-displays notifications that have a 'notification' field.
+// We do NOT call showNotification here to avoid duplicates.
+// This handler is only for data-only messages if needed in the future.
 messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title || 'Outrank';
-  const options = {
-    body: payload.notification?.body || 'You have a new notification',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    vibrate: [200, 100, 200],
-    data: payload.data,
-  };
-  self.registration.showNotification(title, options);
+  // Only show if there's no notification field (data-only message)
+  if (!payload.notification) {
+    const title = 'Outrank';
+    const options = {
+      body: payload.data?.message || 'New notification',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+    };
+    self.registration.showNotification(title, options);
+  }
 });
 
 // Handle notification click — open the app
@@ -32,7 +35,7 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes('outrank') && 'focus' in client) {
+        if ('focus' in client) {
           return client.focus();
         }
       }
