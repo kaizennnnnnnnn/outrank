@@ -3,14 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
-import { useNotifications } from '@/hooks/useNotifications';
-import { requestNotificationPermission, showBrowserNotification } from '@/lib/pushNotifications';
+import { requestNotificationPermission } from '@/lib/pushNotifications';
 import { Button } from '@/components/ui/Button';
 
 export function PushNotificationHandler() {
   const { user } = useAuth();
-  const { notifications } = useNotifications();
-  const prevCountRef = useRef<number>(-1);
   const [showPrompt, setShowPrompt] = useState(false);
 
   // Check if we need to ask for permission
@@ -18,7 +15,6 @@ export function PushNotificationHandler() {
     if (!user) return;
     if (typeof window === 'undefined' || !('Notification' in window)) return;
 
-    // If permission hasn't been decided yet, show our custom prompt
     if (Notification.permission === 'default') {
       const dismissed = localStorage.getItem('notif_prompt_dismissed');
       if (!dismissed) {
@@ -39,36 +35,7 @@ export function PushNotificationHandler() {
     localStorage.setItem('notif_prompt_dismissed', 'true');
   };
 
-  // Watch for new notifications and show browser popup
-  useEffect(() => {
-    try {
-      if (!notifications || notifications.length === 0) return;
-
-      const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-      if (prevCountRef.current === -1) {
-        prevCountRef.current = unreadCount;
-        return;
-      }
-
-      if (unreadCount > prevCountRef.current) {
-        const latest = notifications.find((n) => !n.isRead);
-        if (latest && latest.message) {
-          try {
-            let target = '/notifications';
-            if (latest.type === 'duel_challenge' || latest.type === 'duel_accepted' || latest.type === 'duel_ended') {
-              target = '/compete';
-            } else if (latest.type === 'friend_request' || latest.type === 'friend_accepted') {
-              target = '/friends';
-            }
-            showBrowserNotification('Outrank', latest.message, target);
-          } catch { /* notification display failed — don't crash */ }
-        }
-      }
-
-      prevCountRef.current = unreadCount;
-    } catch { /* prevent crash */ }
-  }, [notifications]);
+  // No more client-side browser notifications — FCM Cloud Function handles push delivery
 
   return (
     <AnimatePresence>

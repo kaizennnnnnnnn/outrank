@@ -108,31 +108,37 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
               return (
                 <div key={habit.categorySlug} className="space-y-2">
                   <div className={cn(
-                    'flex items-center gap-3 rounded-xl p-3 border',
+                    'rounded-xl p-3 border space-y-3',
                     loggedToday
                       ? 'bg-emerald-500/5 border-emerald-500/20'
                       : 'bg-[#10101a] border-[#1e1e30]'
                   )}>
-                    <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="sm" slug={habit.categorySlug} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white">{habit.categoryName}</p>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        <span>Goal: {habit.goal} {habit.unit}</span>
-                        {habit.currentStreak > 0 && (
-                          <StreakFlame streak={habit.currentStreak} size="sm" />
-                        )}
+                    {/* Top row: icon + info + status */}
+                    <div className="flex items-center gap-3">
+                      <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="sm" slug={habit.categorySlug} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-white">{habit.categoryName}</p>
+                        <p className="text-xs text-slate-500">Goal: {habit.goal} {habit.unit}</p>
                       </div>
+                      {habit.currentStreak > 0 && (
+                        <StreakFlame streak={habit.currentStreak} size="sm" />
+                      )}
                     </div>
+                    {/* Bottom row: actions */}
                     {loggedToday ? (
-                      <span className="text-xs text-emerald-400 font-medium">Done</span>
+                      <div className="flex items-center gap-2 pl-12">
+                        <span className="text-xs text-emerald-400 font-medium">Logged today</span>
+                      </div>
                     ) : reminded ? (
-                      <span className="text-xs text-orange-400 font-medium">Sent</span>
+                      <div className="flex items-center gap-2 pl-12">
+                        <span className="text-xs text-orange-400 font-medium">Reminder sent</span>
+                      </div>
                     ) : (
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="secondary" onClick={() => remind(habit.categorySlug, habit.categoryName)}>
+                      <div className="flex gap-2 pl-12">
+                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => remind(habit.categorySlug, habit.categoryName)}>
                           Remind
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setMessageTarget(
+                        <Button size="sm" variant="ghost" className="flex-1" onClick={() => setMessageTarget(
                           messageTarget === habit.categorySlug ? null : habit.categorySlug
                         )}>
                           Message
