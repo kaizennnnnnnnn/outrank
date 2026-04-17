@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
-type Tab = 'colors' | 'boosts' | 'utilities';
+type Tab = 'base' | 'pulse' | 'rings' | 'boosts' | 'utilities';
 
 interface ShopItem {
   id: string;
@@ -37,64 +37,64 @@ interface ShopItem {
 
 const SHOP_ITEMS: ShopItem[] = [
   // ---- COLORS: BASE ----
-  { id: 'color_crimson', name: 'Crimson', description: 'Deep red base', price: 0, type: 'base_color', tab: 'colors', colorValue: '#dc2626', rarity: 'common' },
-  { id: 'color_ocean', name: 'Ocean', description: 'Electric blue', price: 50, type: 'base_color', tab: 'colors', colorValue: '#2563eb', rarity: 'rare' },
-  { id: 'color_emerald', name: 'Emerald', description: 'Vibrant green', price: 50, type: 'base_color', tab: 'colors', colorValue: '#10b981', rarity: 'rare' },
-  { id: 'color_violet', name: 'Violet', description: 'Royal purple', price: 75, type: 'base_color', tab: 'colors', colorValue: '#7c3aed', rarity: 'epic' },
-  { id: 'color_gold', name: 'Gold', description: 'Prestige gold', price: 100, type: 'base_color', tab: 'colors', colorValue: '#d97706', rarity: 'epic' },
-  { id: 'color_obsidian', name: 'Obsidian', description: 'Black with violet veins', price: 150, type: 'base_color', tab: 'colors', colorValue: '#a78bfa', rarity: 'epic' },
-  { id: 'color_phoenix', name: 'Phoenix', description: 'Molten red-to-gold', price: 175, type: 'base_color', tab: 'colors', colorValue: '#f59e0b', rarity: 'legendary' },
-  { id: 'color_aurora', name: 'Aurora', description: 'Green and violet lights', price: 225, type: 'base_color', tab: 'colors', colorValue: '#10b981', rarity: 'legendary' },
-  { id: 'color_nebula', name: 'Nebula', description: 'Purple-pink cosmic dust', price: 250, type: 'base_color', tab: 'colors', colorValue: '#ec4899', rarity: 'legendary' },
-  { id: 'color_prismatic', name: 'Prismatic', description: 'Full spectrum — pinnacle flex', price: 400, type: 'base_color', tab: 'colors', colorValue: '#a855f7', rarity: 'legendary' },
+  { id: 'color_crimson', name: 'Crimson', description: 'Deep red base', price: 0, type: 'base_color', tab: 'base', colorValue: '#dc2626', rarity: 'common' },
+  { id: 'color_ocean', name: 'Ocean', description: 'Electric blue', price: 50, type: 'base_color', tab: 'base', colorValue: '#2563eb', rarity: 'rare' },
+  { id: 'color_emerald', name: 'Emerald', description: 'Vibrant green', price: 50, type: 'base_color', tab: 'base', colorValue: '#10b981', rarity: 'rare' },
+  { id: 'color_violet', name: 'Violet', description: 'Royal purple', price: 75, type: 'base_color', tab: 'base', colorValue: '#7c3aed', rarity: 'epic' },
+  { id: 'color_gold', name: 'Gold', description: 'Prestige gold', price: 100, type: 'base_color', tab: 'base', colorValue: '#d97706', rarity: 'epic' },
+  { id: 'color_obsidian', name: 'Obsidian', description: 'Black with violet veins', price: 150, type: 'base_color', tab: 'base', colorValue: '#a78bfa', rarity: 'epic' },
+  { id: 'color_phoenix', name: 'Phoenix', description: 'Molten red-to-gold', price: 175, type: 'base_color', tab: 'base', colorValue: '#f59e0b', rarity: 'legendary' },
+  { id: 'color_aurora', name: 'Aurora', description: 'Green and violet lights', price: 225, type: 'base_color', tab: 'base', colorValue: '#10b981', rarity: 'legendary' },
+  { id: 'color_nebula', name: 'Nebula', description: 'Purple-pink cosmic dust', price: 250, type: 'base_color', tab: 'base', colorValue: '#ec4899', rarity: 'legendary' },
+  { id: 'color_prismatic', name: 'Prismatic', description: 'Full spectrum — pinnacle flex', price: 400, type: 'base_color', tab: 'base', colorValue: '#a855f7', rarity: 'legendary' },
   // Base mixes
-  { id: 'color_sunset', name: 'Sunset', description: 'Orange melting into pink', price: 180, type: 'base_color', tab: 'colors', colorValue: '#f472b6', rarity: 'epic' },
-  { id: 'color_northern', name: 'Northern Lights', description: 'Cyan, green, violet shimmer', price: 260, type: 'base_color', tab: 'colors', colorValue: '#22c55e', rarity: 'legendary' },
-  { id: 'color_candy', name: 'Candy', description: 'Pink, blue, yellow pop', price: 200, type: 'base_color', tab: 'colors', colorValue: '#ec4899', rarity: 'epic' },
-  { id: 'color_toxic', name: 'Toxic', description: 'Poisonous green and yellow', price: 220, type: 'base_color', tab: 'colors', colorValue: '#84cc16', rarity: 'epic' },
-  { id: 'color_deepsea', name: 'Deep Sea', description: 'Ocean abyss to glowing cyan', price: 200, type: 'base_color', tab: 'colors', colorValue: '#22d3ee', rarity: 'epic' },
-  { id: 'color_bloodmoon', name: 'Blood Moon', description: 'Ominous red with gold core', price: 300, type: 'base_color', tab: 'colors', colorValue: '#ef4444', rarity: 'legendary' },
+  { id: 'color_sunset', name: 'Sunset', description: 'Orange melting into pink', price: 180, type: 'base_color', tab: 'base', colorValue: '#f472b6', rarity: 'epic' },
+  { id: 'color_northern', name: 'Northern Lights', description: 'Cyan, green, violet shimmer', price: 260, type: 'base_color', tab: 'base', colorValue: '#22c55e', rarity: 'legendary' },
+  { id: 'color_candy', name: 'Candy', description: 'Pink, blue, yellow pop', price: 200, type: 'base_color', tab: 'base', colorValue: '#ec4899', rarity: 'epic' },
+  { id: 'color_toxic', name: 'Toxic', description: 'Poisonous green and yellow', price: 220, type: 'base_color', tab: 'base', colorValue: '#84cc16', rarity: 'epic' },
+  { id: 'color_deepsea', name: 'Deep Sea', description: 'Ocean abyss to glowing cyan', price: 200, type: 'base_color', tab: 'base', colorValue: '#22d3ee', rarity: 'epic' },
+  { id: 'color_bloodmoon', name: 'Blood Moon', description: 'Ominous red with gold core', price: 300, type: 'base_color', tab: 'base', colorValue: '#ef4444', rarity: 'legendary' },
   // Mythic base
-  { id: 'color_rainbow', name: 'Rainbow', description: 'Hue cycles continuously. Mythic.', price: 750, type: 'base_color', tab: 'colors', colorValue: '#a855f7', rarity: 'mythic' },
-  { id: 'color_stargaze', name: 'Stargaze', description: 'Dark void pierced by white-hot stars', price: 600, type: 'base_color', tab: 'colors', colorValue: '#7c3aed', rarity: 'mythic' },
-  { id: 'color_eternal', name: 'Eternal', description: 'Black and pure gold. Timeless', price: 800, type: 'base_color', tab: 'colors', colorValue: '#fbbf24', rarity: 'mythic' },
+  { id: 'color_rainbow', name: 'Rainbow', description: 'Hue cycles continuously. Mythic.', price: 750, type: 'base_color', tab: 'base', colorValue: '#a855f7', rarity: 'mythic' },
+  { id: 'color_stargaze', name: 'Stargaze', description: 'Dark void pierced by white-hot stars', price: 600, type: 'base_color', tab: 'base', colorValue: '#7c3aed', rarity: 'mythic' },
+  { id: 'color_eternal', name: 'Eternal', description: 'Black and pure gold. Timeless', price: 800, type: 'base_color', tab: 'base', colorValue: '#fbbf24', rarity: 'mythic' },
 
   // ---- COLORS: PULSE ----
-  { id: 'pulse_fire', name: 'Fire Pulse', description: 'Orange fire wave', price: 0, type: 'pulse_color', tab: 'colors', colorValue: '#f97316', rarity: 'common' },
-  { id: 'pulse_ice', name: 'Ice Pulse', description: 'Cyan ice wave', price: 40, type: 'pulse_color', tab: 'colors', colorValue: '#06b6d4', rarity: 'rare' },
-  { id: 'pulse_lightning', name: 'Lightning Pulse', description: 'Yellow electric wave', price: 40, type: 'pulse_color', tab: 'colors', colorValue: '#eab308', rarity: 'rare' },
-  { id: 'pulse_shadow', name: 'Shadow Pulse', description: 'Dark mysterious wave', price: 60, type: 'pulse_color', tab: 'colors', colorValue: '#78716c', rarity: 'epic' },
-  { id: 'pulse_plasma', name: 'Plasma Pulse', description: 'Pink energy wave', price: 80, type: 'pulse_color', tab: 'colors', colorValue: '#d946ef', rarity: 'epic' },
-  { id: 'pulse_solar', name: 'Solar Pulse', description: 'Yellow-white corona', price: 120, type: 'pulse_color', tab: 'colors', colorValue: '#fde047', rarity: 'legendary' },
-  { id: 'pulse_cosmic', name: 'Cosmic Pulse', description: 'Blue to pink gradient', price: 130, type: 'pulse_color', tab: 'colors', colorValue: '#4f46e5', rarity: 'legendary' },
-  { id: 'pulse_mystic', name: 'Mystic Pulse', description: 'Emerald with violet threads', price: 140, type: 'pulse_color', tab: 'colors', colorValue: '#059669', rarity: 'legendary' },
-  { id: 'pulse_inferno', name: 'Inferno Pulse', description: 'Lava-hot orange-red', price: 150, type: 'pulse_color', tab: 'colors', colorValue: '#b91c1c', rarity: 'legendary' },
-  { id: 'pulse_void', name: 'Void Pulse', description: 'Black hole collapse', price: 180, type: 'pulse_color', tab: 'colors', colorValue: '#7e22ce', rarity: 'legendary' },
+  { id: 'pulse_fire', name: 'Fire Pulse', description: 'Orange fire wave', price: 0, type: 'pulse_color', tab: 'pulse', colorValue: '#f97316', rarity: 'common' },
+  { id: 'pulse_ice', name: 'Ice Pulse', description: 'Cyan ice wave', price: 40, type: 'pulse_color', tab: 'pulse', colorValue: '#06b6d4', rarity: 'rare' },
+  { id: 'pulse_lightning', name: 'Lightning Pulse', description: 'Yellow electric wave', price: 40, type: 'pulse_color', tab: 'pulse', colorValue: '#eab308', rarity: 'rare' },
+  { id: 'pulse_shadow', name: 'Shadow Pulse', description: 'Dark mysterious wave', price: 60, type: 'pulse_color', tab: 'pulse', colorValue: '#78716c', rarity: 'epic' },
+  { id: 'pulse_plasma', name: 'Plasma Pulse', description: 'Pink energy wave', price: 80, type: 'pulse_color', tab: 'pulse', colorValue: '#d946ef', rarity: 'epic' },
+  { id: 'pulse_solar', name: 'Solar Pulse', description: 'Yellow-white corona', price: 120, type: 'pulse_color', tab: 'pulse', colorValue: '#fde047', rarity: 'legendary' },
+  { id: 'pulse_cosmic', name: 'Cosmic Pulse', description: 'Blue to pink gradient', price: 130, type: 'pulse_color', tab: 'pulse', colorValue: '#4f46e5', rarity: 'legendary' },
+  { id: 'pulse_mystic', name: 'Mystic Pulse', description: 'Emerald with violet threads', price: 140, type: 'pulse_color', tab: 'pulse', colorValue: '#059669', rarity: 'legendary' },
+  { id: 'pulse_inferno', name: 'Inferno Pulse', description: 'Lava-hot orange-red', price: 150, type: 'pulse_color', tab: 'pulse', colorValue: '#b91c1c', rarity: 'legendary' },
+  { id: 'pulse_void', name: 'Void Pulse', description: 'Black hole collapse', price: 180, type: 'pulse_color', tab: 'pulse', colorValue: '#7e22ce', rarity: 'legendary' },
   // Pulse mixes
-  { id: 'pulse_pulse_sunset', name: 'Sunset Pulse', description: 'Pink-orange horizon wave', price: 140, type: 'pulse_color', tab: 'colors', colorValue: '#fb7185', rarity: 'epic' },
-  { id: 'pulse_pulse_toxic', name: 'Toxic Pulse', description: 'Lime and yellow current', price: 140, type: 'pulse_color', tab: 'colors', colorValue: '#84cc16', rarity: 'epic' },
-  { id: 'pulse_pulse_candy', name: 'Candy Pulse', description: 'Pink into electric blue', price: 160, type: 'pulse_color', tab: 'colors', colorValue: '#e879f9', rarity: 'epic' },
-  { id: 'pulse_pulse_neon', name: 'Neon Pulse', description: 'Green with cyan highlights', price: 160, type: 'pulse_color', tab: 'colors', colorValue: '#22c55e', rarity: 'epic' },
+  { id: 'pulse_pulse_sunset', name: 'Sunset Pulse', description: 'Pink-orange horizon wave', price: 140, type: 'pulse_color', tab: 'pulse', colorValue: '#fb7185', rarity: 'epic' },
+  { id: 'pulse_pulse_toxic', name: 'Toxic Pulse', description: 'Lime and yellow current', price: 140, type: 'pulse_color', tab: 'pulse', colorValue: '#84cc16', rarity: 'epic' },
+  { id: 'pulse_pulse_candy', name: 'Candy Pulse', description: 'Pink into electric blue', price: 160, type: 'pulse_color', tab: 'pulse', colorValue: '#e879f9', rarity: 'epic' },
+  { id: 'pulse_pulse_neon', name: 'Neon Pulse', description: 'Green with cyan highlights', price: 160, type: 'pulse_color', tab: 'pulse', colorValue: '#22c55e', rarity: 'epic' },
   // Mythic pulse
-  { id: 'pulse_pulse_rainbow', name: 'Rainbow Pulse', description: 'Every color, always shifting', price: 700, type: 'pulse_color', tab: 'colors', colorValue: '#eab308', rarity: 'mythic' },
-  { id: 'pulse_pulse_stargaze', name: 'Stargaze Pulse', description: 'Purple void with white flashes', price: 550, type: 'pulse_color', tab: 'colors', colorValue: '#a855f7', rarity: 'mythic' },
-  { id: 'pulse_pulse_eternal', name: 'Eternal Pulse', description: 'Molten gold through darkness', price: 650, type: 'pulse_color', tab: 'colors', colorValue: '#fbbf24', rarity: 'mythic' },
+  { id: 'pulse_pulse_rainbow', name: 'Rainbow Pulse', description: 'Every color, always shifting', price: 700, type: 'pulse_color', tab: 'pulse', colorValue: '#eab308', rarity: 'mythic' },
+  { id: 'pulse_pulse_stargaze', name: 'Stargaze Pulse', description: 'Purple void with white flashes', price: 550, type: 'pulse_color', tab: 'pulse', colorValue: '#a855f7', rarity: 'mythic' },
+  { id: 'pulse_pulse_eternal', name: 'Eternal Pulse', description: 'Molten gold through darkness', price: 650, type: 'pulse_color', tab: 'pulse', colorValue: '#fbbf24', rarity: 'mythic' },
 
   // ---- RING COLORS (new axis) ----
-  { id: 'ring_color_ring_default', name: 'Default Rings', description: 'Red-gold orbital rings', price: 0, type: 'ring_color', tab: 'colors', colorValue: '#f59e0b', rarity: 'common' },
-  { id: 'ring_color_ring_silver', name: 'Silver Rings', description: 'Cold metallic rings', price: 45, type: 'ring_color', tab: 'colors', colorValue: '#94a3b8', rarity: 'rare' },
-  { id: 'ring_color_ring_emerald', name: 'Emerald Rings', description: 'Jade green rings', price: 55, type: 'ring_color', tab: 'colors', colorValue: '#10b981', rarity: 'rare' },
-  { id: 'ring_color_ring_sapphire', name: 'Sapphire Rings', description: 'Electric blue rings', price: 55, type: 'ring_color', tab: 'colors', colorValue: '#2563eb', rarity: 'rare' },
-  { id: 'ring_color_ring_royal', name: 'Royal Rings', description: 'Purple aristocrat rings', price: 90, type: 'ring_color', tab: 'colors', colorValue: '#7c3aed', rarity: 'epic' },
-  { id: 'ring_color_ring_rose', name: 'Rose Rings', description: 'Pink petals in orbit', price: 90, type: 'ring_color', tab: 'colors', colorValue: '#e11d48', rarity: 'epic' },
-  { id: 'ring_color_ring_neon', name: 'Neon Rings', description: 'Harsh bright green', price: 120, type: 'ring_color', tab: 'colors', colorValue: '#22c55e', rarity: 'epic' },
-  { id: 'ring_color_ring_sunset', name: 'Sunset Rings', description: 'Orange-to-pink horizon', price: 170, type: 'ring_color', tab: 'colors', colorValue: '#f472b6', rarity: 'legendary' },
-  { id: 'ring_color_ring_aurora', name: 'Aurora Rings', description: 'Green and violet shimmer', price: 200, type: 'ring_color', tab: 'colors', colorValue: '#8b5cf6', rarity: 'legendary' },
-  { id: 'ring_color_ring_molten', name: 'Molten Rings', description: 'Lava-hot orbiting iron', price: 200, type: 'ring_color', tab: 'colors', colorValue: '#dc2626', rarity: 'legendary' },
-  { id: 'ring_color_ring_ghost', name: 'Ghost Rings', description: 'Barely-there pale whisper', price: 160, type: 'ring_color', tab: 'colors', colorValue: '#64748b', rarity: 'epic' },
-  { id: 'ring_color_ring_candy', name: 'Candy Rings', description: 'Pink and blue swirl', price: 180, type: 'ring_color', tab: 'colors', colorValue: '#ec4899', rarity: 'legendary' },
-  { id: 'ring_color_ring_toxic', name: 'Toxic Rings', description: 'Corrosive green-yellow', price: 180, type: 'ring_color', tab: 'colors', colorValue: '#65a30d', rarity: 'legendary' },
-  { id: 'ring_color_ring_rainbow', name: 'Rainbow Rings', description: 'Each particle its own color, cycling. Mythic.', price: 900, type: 'ring_color', tab: 'colors', colorValue: '#a855f7', rarity: 'mythic' },
+  { id: 'ring_color_ring_default', name: 'Default Rings', description: 'Red-gold orbital rings', price: 0, type: 'ring_color', tab: 'rings', colorValue: '#f59e0b', rarity: 'common' },
+  { id: 'ring_color_ring_silver', name: 'Silver Rings', description: 'Cold metallic rings', price: 45, type: 'ring_color', tab: 'rings', colorValue: '#94a3b8', rarity: 'rare' },
+  { id: 'ring_color_ring_emerald', name: 'Emerald Rings', description: 'Jade green rings', price: 55, type: 'ring_color', tab: 'rings', colorValue: '#10b981', rarity: 'rare' },
+  { id: 'ring_color_ring_sapphire', name: 'Sapphire Rings', description: 'Electric blue rings', price: 55, type: 'ring_color', tab: 'rings', colorValue: '#2563eb', rarity: 'rare' },
+  { id: 'ring_color_ring_royal', name: 'Royal Rings', description: 'Purple aristocrat rings', price: 90, type: 'ring_color', tab: 'rings', colorValue: '#7c3aed', rarity: 'epic' },
+  { id: 'ring_color_ring_rose', name: 'Rose Rings', description: 'Pink petals in orbit', price: 90, type: 'ring_color', tab: 'rings', colorValue: '#e11d48', rarity: 'epic' },
+  { id: 'ring_color_ring_neon', name: 'Neon Rings', description: 'Harsh bright green', price: 120, type: 'ring_color', tab: 'rings', colorValue: '#22c55e', rarity: 'epic' },
+  { id: 'ring_color_ring_sunset', name: 'Sunset Rings', description: 'Orange-to-pink horizon', price: 170, type: 'ring_color', tab: 'rings', colorValue: '#f472b6', rarity: 'legendary' },
+  { id: 'ring_color_ring_aurora', name: 'Aurora Rings', description: 'Green and violet shimmer', price: 200, type: 'ring_color', tab: 'rings', colorValue: '#8b5cf6', rarity: 'legendary' },
+  { id: 'ring_color_ring_molten', name: 'Molten Rings', description: 'Lava-hot orbiting iron', price: 200, type: 'ring_color', tab: 'rings', colorValue: '#dc2626', rarity: 'legendary' },
+  { id: 'ring_color_ring_ghost', name: 'Ghost Rings', description: 'Barely-there pale whisper', price: 160, type: 'ring_color', tab: 'rings', colorValue: '#64748b', rarity: 'epic' },
+  { id: 'ring_color_ring_candy', name: 'Candy Rings', description: 'Pink and blue swirl', price: 180, type: 'ring_color', tab: 'rings', colorValue: '#ec4899', rarity: 'legendary' },
+  { id: 'ring_color_ring_toxic', name: 'Toxic Rings', description: 'Corrosive green-yellow', price: 180, type: 'ring_color', tab: 'rings', colorValue: '#65a30d', rarity: 'legendary' },
+  { id: 'ring_color_ring_rainbow', name: 'Rainbow Rings', description: 'Each particle its own color, cycling. Mythic.', price: 900, type: 'ring_color', tab: 'rings', colorValue: '#a855f7', rarity: 'mythic' },
 
   // ---- BOOSTS ----
   { id: 'boost_1h', name: '1h Quick Boost', description: '2× XP for one hour — try before you commit', price: 20, type: 'power_boost_1h', tab: 'boosts', rarity: 'common' },
@@ -120,7 +120,9 @@ const rarityAccent: Record<Rarity, { border: string; glow: string; text: string 
 };
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'colors',    label: 'Cosmetics', icon: <PaintIcon /> },
+  { id: 'base',      label: 'Base',      icon: <OrbSmallIcon /> },
+  { id: 'pulse',     label: 'Pulse',     icon: <WaveIcon /> },
+  { id: 'rings',     label: 'Rings',     icon: <RingsIcon /> },
   { id: 'boosts',    label: 'Boosts',    icon: <BoltIcon /> },
   { id: 'utilities', label: 'Utilities', icon: <ShieldIcon /> },
 ];
@@ -129,7 +131,7 @@ export default function ShopPage() {
   const { user } = useAuth();
   const addToast = useUIStore((s) => s.addToast);
   const [buying, setBuying] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('colors');
+  const [tab, setTab] = useState<Tab>('base');
 
   const userData = user as unknown as Record<string, unknown> | undefined;
   const fragments = (userData?.fragments as number) || 0;
@@ -280,14 +282,14 @@ export default function ShopPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Tabs — 5 columns. Horizontal scroll on narrow screens if they don't fit. */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:grid sm:grid-cols-5">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={cn(
-              'flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all',
+              'flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all whitespace-nowrap shrink-0',
               tab === t.id
                 ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_6px_20px_-10px_rgba(239,68,68,0.7)]'
                 : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
@@ -372,7 +374,9 @@ function RarityGroup({
       <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">{title}</h2>
       <div className={cn(
         'grid gap-3',
-        tab === 'colors' ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2',
+        tab === 'base' || tab === 'pulse' || tab === 'rings'
+          ? 'grid-cols-2 sm:grid-cols-3'
+          : 'grid-cols-1 sm:grid-cols-2',
       )}>
         {items.map((item) => (
           <ShopCard
@@ -541,8 +545,14 @@ function OrbPreview({ colorSet, isRing }: { colorSet: OrbColorSet; isRing?: bool
   );
 }
 
-function PaintIcon() {
-  return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5" /><circle cx="17.5" cy="10.5" r=".5" /><circle cx="8.5" cy="7.5" r=".5" /><circle cx="6.5" cy="12.5" r=".5" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125 0-.946.746-1.688 1.688-1.688h1.998c3.042 0 5.541-2.499 5.541-5.542C22 6.305 17.5 2 12 2z" /></svg>;
+function OrbSmallIcon() {
+  return <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9" opacity="0.25" /><circle cx="12" cy="12" r="5" /></svg>;
+}
+function WaveIcon() {
+  return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" /><path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity="0.5" /></svg>;
+}
+function RingsIcon() {
+  return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(20 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(-20 12 12)" opacity="0.6" /></svg>;
 }
 function BoltIcon() {
   return <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>;
