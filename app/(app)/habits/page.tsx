@@ -14,7 +14,8 @@ import { getLevelForXP } from '@/constants/levels';
 import { setDocument, Timestamp, removeDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
-import { TargetFullIcon } from '@/components/ui/AppIcons';
+import { TargetFullIcon, CheckCircleFullIcon } from '@/components/ui/AppIcons';
+import { StreakFlame } from '@/components/habits/StreakFlame';
 import Link from 'next/link';
 
 export default function HabitsPage() {
@@ -58,7 +59,7 @@ export default function HabitsPage() {
         color: cat.color,
         unit: cat.unit,
       });
-      addToast({ type: 'success', message: `${cat.icon} ${cat.name} added!` });
+      addToast({ type: 'success', message: `${cat.name} added!` });
     } catch {
       addToast({ type: 'error', message: 'Failed to add habit' });
     } finally {
@@ -111,37 +112,65 @@ export default function HabitsPage() {
           {habits.map((habit) => (
             <motion.div
               key={habit.categorySlug}
-              whileHover={{ scale: 1.02 }}
-              className="bg-[#10101a] border border-[#1e1e30] rounded-2xl p-4 space-y-3 glow-hover transition-all"
+              whileHover={{ y: -2 }}
+              className="group relative overflow-hidden rounded-2xl p-5 transition-all"
+              style={{
+                background: `linear-gradient(145deg, ${habit.color}08 0%, #10101a 40%, #0b0b14 100%)`,
+                border: `1px solid ${habit.color}22`,
+                boxShadow: `0 1px 0 0 ${habit.color}10 inset, 0 8px 24px -12px ${habit.color}18`,
+              }}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="md" slug={habit.categorySlug} />
-                  <div>
-                    <Link href={`/habits/${habit.categorySlug}`}>
-                      <p className="text-sm font-bold text-white hover:text-orange-400">{habit.categoryName}</p>
-                    </Link>
-                    <p className="text-xs text-slate-500">
-                      Goal: {habit.goal} {habit.unit}/{habit.goalPeriod}
-                    </p>
+              {/* Accent glow */}
+              <div
+                className="absolute -top-16 -right-16 w-40 h-40 rounded-full opacity-[0.07] blur-3xl pointer-events-none transition-opacity group-hover:opacity-[0.14]"
+                style={{ background: habit.color }}
+              />
+
+              {/* Remove button — subtle X in corner */}
+              <button
+                onClick={() => removeHabit(habit.categorySlug)}
+                className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                aria-label="Remove habit"
+              >
+                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                </svg>
+              </button>
+
+              <Link href={`/habits/${habit.categorySlug}`} className="relative flex items-start gap-4">
+                <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
+                <div className="flex-1 min-w-0 pt-1">
+                  <p className="text-base font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                    {habit.categoryName}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    <span className="font-mono text-slate-400">{habit.goal}</span>
+                    <span className="mx-1">{habit.unit}</span>
+                    <span className="text-slate-600">/ {habit.goalPeriod}</span>
+                  </p>
+                </div>
+              </Link>
+
+              {/* Stats — pill-style badges */}
+              <div className="relative flex items-center gap-2 mt-4 flex-wrap">
+                {habit.currentStreak > 0 ? (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
+                    <StreakFlame streak={habit.currentStreak} size="sm" />
                   </div>
-                </div>
-                <button
-                  onClick={() => removeHabit(habit.categorySlug)}
-                  className="text-slate-600 hover:text-red-400 text-xs transition-colors"
-                >
-                  Remove
-                </button>
-              </div>
-              <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-1">
-                  <span className="text-orange-400 animate-flame">🔥</span>
-                  <span className="font-mono text-orange-400">{habit.currentStreak}d streak</span>
-                </div>
-                <span className="text-slate-600">|</span>
-                <span className="text-slate-500">{habit.totalLogs} total logs</span>
-                <span className="text-slate-600">|</span>
-                <span className="text-slate-500">Best: {habit.longestStreak}d</span>
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full bg-[#0b0b14] border border-[#1e1e30] text-[10px] font-mono text-slate-600">
+                    No streak
+                  </span>
+                )}
+                <span className="px-2.5 py-1 rounded-full bg-[#0b0b14] border border-[#1e1e30] text-[10px] font-mono text-slate-400">
+                  <span className="text-slate-500">Logs</span>{' '}
+                  <span className="text-white">{habit.totalLogs}</span>
+                </span>
+                <span className="px-2.5 py-1 rounded-full bg-[#0b0b14] border border-[#1e1e30] text-[10px] font-mono text-slate-400">
+                  <span className="text-slate-500">Best</span>{' '}
+                  <span className="text-white">{habit.longestStreak}d</span>
+                </span>
               </div>
             </motion.div>
           ))}
@@ -174,7 +203,7 @@ export default function HabitsPage() {
                         <p className="text-xs font-medium text-white truncate">{cat.name}</p>
                         <p className="text-[10px] text-slate-600">{cat.unit}</p>
                       </div>
-                      {isSubscribed && <span className="text-emerald-400 text-xs">✓</span>}
+                      {isSubscribed && <CheckCircleFullIcon size={14} className="text-emerald-400" />}
                       {adding === cat.slug && <span className="text-xs text-slate-500">...</span>}
                     </button>
                   );

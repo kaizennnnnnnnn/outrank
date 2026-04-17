@@ -31,12 +31,12 @@ export const onNotificationCreated = functions.firestore
         } catch { /* ignore */ }
       }
 
+      const appIcon = 'https://outrank-ten.vercel.app/icon-192.png';
       const message: admin.messaging.Message = {
         token: userData.fcmToken,
         notification: {
           title: 'Outrank',
           body: notification.message || 'You have a new notification',
-          imageUrl: senderAvatar || undefined,
         },
         data: {
           type: notification.type || 'general',
@@ -45,8 +45,8 @@ export const onNotificationCreated = functions.firestore
         },
         webpush: {
           notification: {
-            icon: senderAvatar || 'https://outrank-ten.vercel.app/icon-192.png',
-            badge: 'https://outrank-ten.vercel.app/icon-192.png',
+            icon: senderAvatar || appIcon,
+            badge: appIcon,
             vibrate: [200, 100, 200],
           },
           fcmOptions: {
