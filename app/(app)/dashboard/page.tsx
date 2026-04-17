@@ -17,6 +17,7 @@ import { FlameIcon, BoltIcon } from '@/components/ui/Icons';
 import { SoulOrb } from '@/components/profile/SoulOrb';
 import { StreakFire } from '@/components/habits/StreakFire';
 import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { useUIStore } from '@/store/uiStore';
 import { UserHabit } from '@/types/habit';
@@ -175,21 +176,45 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="space-y-2">
-              {feedItems.filter((item) => item.actorId !== user.uid).slice(0, 10).map((item) => (
-                <div key={item.id} className="glass-card rounded-xl p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Avatar src={item.actorAvatar} alt={item.actorUsername} size="sm" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-white font-medium truncate">{item.actorUsername}</p>
-                      <p className="text-[10px] text-slate-600">
-                        {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
-                      </p>
+              {feedItems.filter((item) => item.actorId !== user.uid).slice(0, 10).map((item) => {
+                const color = item.categoryColor || '#f97316';
+                return (
+                  <Link key={item.id} href={`/profile/${item.actorUsername}`}>
+                    <div
+                      className="group relative overflow-hidden rounded-xl p-3 transition-all hover:-translate-y-[1px]"
+                      style={{
+                        background: `linear-gradient(145deg, ${color}06 0%, #10101a 50%, #0b0b14 100%)`,
+                        border: `1px solid ${color}1a`,
+                      }}
+                    >
+                      <div
+                        className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-[0.06] blur-2xl pointer-events-none"
+                        style={{ background: color }}
+                      />
+                      <div className="relative flex items-center gap-3">
+                        <Avatar src={item.actorAvatar} alt={item.actorUsername} size="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white font-semibold truncate group-hover:text-orange-400 transition-colors">
+                            {item.actorUsername}
+                          </p>
+                          <p className="text-[10px] text-slate-600">
+                            {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
+                          </p>
+                        </div>
+                        {(item.categorySlug || item.categoryIcon) && (
+                          <CategoryIcon
+                            slug={item.categorySlug}
+                            icon={item.categoryIcon || ''}
+                            color={color}
+                            size="sm"
+                          />
+                        )}
+                      </div>
+                      <p className="relative text-xs text-slate-400 mt-2 pl-11">{item.message}</p>
                     </div>
-                    {item.categoryIcon && <span className="text-lg">{item.categoryIcon}</span>}
-                  </div>
-                  <p className="text-xs text-slate-400">{item.message}</p>
-                </div>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
