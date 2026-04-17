@@ -235,6 +235,8 @@ export async function logHabit(params: LogHabitParams) {
     actorAvatar: avatarUrl,
     categoryName: habit.categoryName || habitSlug,
     categoryIcon: habit.categoryIcon || '',
+    categorySlug: habitSlug,
+    categoryColor: habit.color || '#f97316',
     value,
     message: `${username} logged ${value} ${habit.unit || ''} of ${habit.categoryName || habitSlug}`,
     originId,

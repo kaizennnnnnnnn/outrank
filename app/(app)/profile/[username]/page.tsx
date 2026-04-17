@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { getCollection, where } from '@/lib/firestore';
+import { getDocument } from '@/lib/firestore';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { LevelBadge } from '@/components/profile/LevelBadge';
@@ -21,25 +21,31 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchProfile() {
       try {
-        // Try exact match first, then lowercase
-        let users = await getCollection<UserProfile>('users', [
-          where('username', '==', username),
-        ]);
-        if (users.length === 0) {
-          users = await getCollection<UserProfile>('users', [
-            where('username', '==', decodeURIComponent(username).toLowerCase()),
-          ]);
+        // Look up UID from the publicly-readable usernames collection
+        const decoded = decodeURIComponent(username).toLowerCase();
+        const usernameDoc = await getDocument<{ uid: string }>('usernames', decoded);
+        if (!usernameDoc) {
+          // Also try the raw param in case casing differs
+          const rawDoc = await getDocument<{ uid: string }>('usernames', username);
+          if (rawDoc) {
+            const userProfile = await getDocument<UserProfile>('users', rawDoc.uid);
+            setProfile(userProfile);
+          } else {
+            setProfile(null);
+          }
+        } else {
+          const userProfile = await getDocument<UserProfile>('users', usernameDoc.uid);
+          setProfile(userProfile);
         }
-        setProfile(users[0] || null);
       } catch {
         setProfile(null);
       } finally {
         setLoading(false);
       }
     }
-    fetch();
+    fetchProfile();
   }, [username]);
 
   if (loading) {

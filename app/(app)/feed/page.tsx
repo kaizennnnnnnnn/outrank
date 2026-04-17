@@ -15,6 +15,7 @@ import { useUIStore } from '@/store/uiStore';
 import { ReactionEmoji } from '@/types/feed';
 import { cn } from '@/lib/utils';
 import { ActivityIcon } from '@/components/ui/AppIcons';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import Link from 'next/link';
 
 const REACTIONS: ReactionEmoji[] = ['🔥', '💪', '👏', '⚡', '🤝'];
@@ -130,7 +131,14 @@ export default function FeedPage() {
                     {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
                   </p>
                 </div>
-                {item.categoryIcon && <span className="text-2xl">{item.categoryIcon}</span>}
+                {(item.categorySlug || item.categoryIcon) && (
+                  <CategoryIcon
+                    slug={item.categorySlug}
+                    icon={item.categoryIcon || ''}
+                    color={item.categoryColor || '#f97316'}
+                    size="sm"
+                  />
+                )}
               </div>
 
               {/* Content */}

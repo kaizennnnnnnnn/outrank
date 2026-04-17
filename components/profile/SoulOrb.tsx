@@ -26,7 +26,8 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
   const [fadeOut, setFadeOut] = useState(false);
   const canEvolve = intensity >= 100 && tier < 5;
 
-  const handleEvolve = useCallback(() => {
+  const handleEvolve = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (!canEvolve) return;
     setEvolving(true);
     evolveRef.current = true;
@@ -284,8 +285,8 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         const a = all.find(d => d.idx === arc.from && d.type === 0);
         const b = all.find(d => d.idx === arc.to && d.type === 0);
         if (!a || !b || a.z > 60 || b.z > 60) continue;
-        ctx.strokeStyle = `rgba(${colInner[0]}, ${colInner[1]}, ${colInner[2]}, ${arc.life * 0.4 * brightness})`;
-        ctx.lineWidth = arc.life * 1.5;
+        ctx.strokeStyle = `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, ${arc.life * 0.7 * brightness})`;
+        ctx.lineWidth = arc.life * 2;
         ctx.beginPath(); ctx.moveTo(a.px, a.py);
         ctx.quadraticCurveTo((a.px + b.px) / 2 + sin(t * 12) * 8, (a.py + b.py) / 2 + cos(t * 10) * 8, b.px, b.py);
         ctx.stroke();

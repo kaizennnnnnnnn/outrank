@@ -2,10 +2,10 @@
 
 import { Avatar } from '@/components/ui/Avatar';
 import { ReactionBar } from './ReactionBar';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { FeedItem as FeedItemType } from '@/types/feed';
 import { formatRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
-import Image from 'next/image';
 
 interface FeedItemProps {
   item: FeedItemType;
@@ -31,7 +31,14 @@ export function FeedItemCard({ item, currentUserId, onReact }: FeedItemProps) {
             {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
           </p>
         </div>
-        {item.categoryIcon && <span className="text-2xl">{item.categoryIcon}</span>}
+        {(item.categorySlug || item.categoryIcon) && (
+          <CategoryIcon
+            slug={item.categorySlug}
+            icon={item.categoryIcon || ''}
+            color={item.categoryColor || '#f97316'}
+            size="sm"
+          />
+        )}
       </div>
 
       {/* Content */}

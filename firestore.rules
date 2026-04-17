@@ -83,7 +83,7 @@ service cloud.firestore {
 
     // LOGS
     match /logs/{userId}/habitLogs/{logId} {
-      allow read: if isOwner(userId);
+      allow read: if isAuthenticated();
       allow create: if isOwner(userId) && isNotBanned();
       allow update: if isOwner(userId);
       allow delete: if false;

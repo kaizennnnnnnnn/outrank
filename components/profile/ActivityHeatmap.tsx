@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getCollection, where, orderBy } from '@/lib/firestore';
-import { HabitLog } from '@/types/habit';
+import { collection, query, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 
 interface ActivityHeatmapProps {
@@ -45,36 +45,67 @@ function getIntensity(count: number): string {
 export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
   const [logCounts, setLogCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalFound, setTotalFound] = useState(0);
 
   useEffect(() => {
-    async function fetch() {
-      try {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    if (!userId) return;
 
-        const logs = await getCollection<HabitLog>(`logs/${userId}/habitLogs`, []);
+    const colRef = collection(db, `logs/${userId}/habitLogs`);
+    const q = query(colRef);
 
+    const unsub = onSnapshot(
+      q,
+      (snapshot) => {
         const counts: Record<string, number> = {};
-        for (const log of logs) {
-          // Try both createdAt and loggedAt
-          const ts = (log as unknown as Record<string, unknown>).createdAt || (log as unknown as Record<string, unknown>).loggedAt;
-          if (!ts || typeof (ts as { toDate?: () => Date }).toDate !== 'function') continue;
-          const date = (ts as { toDate: () => Date }).toDate();
+        let parsed = 0;
+
+        for (const d of snapshot.docs) {
+          const data = d.data();
+          const ts = data.createdAt || data.loggedAt;
+          if (!ts) continue;
+
+          let date: Date;
+          if (typeof ts.toDate === 'function') {
+            date = ts.toDate();
+          } else if (typeof ts.seconds === 'number') {
+            date = new Date(ts.seconds * 1000);
+          } else if (ts instanceof Date) {
+            date = ts;
+          } else {
+            continue;
+          }
+
           const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
           counts[key] = (counts[key] || 0) + 1;
+          parsed++;
         }
+
         setLogCounts(counts);
-      } catch (err) {
-        console.error('Heatmap load failed:', err);
-      } finally {
+        setTotalFound(parsed);
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        console.error('Heatmap subscription error:', err);
+        setError(err.code || err.message || 'Failed to load activity');
         setLoading(false);
       }
-    }
-    fetch();
+    );
+
+    return unsub;
   }, [userId]);
 
   const weeks = getWeeks();
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  if (error) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-xs text-red-400">Could not load activity data</p>
+        <p className="text-[10px] text-slate-600 mt-1">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full overflow-x-auto">
@@ -106,6 +137,9 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
         <div className="w-[11px] h-[11px] rounded-[2px] bg-red-600/80" />
         <div className="w-[11px] h-[11px] rounded-[2px] bg-red-500" />
         <span>More</span>
+        {!loading && totalFound === 0 && (
+          <span className="ml-2 text-slate-500">— Log habits to see activity</span>
+        )}
       </div>
     </div>
   );

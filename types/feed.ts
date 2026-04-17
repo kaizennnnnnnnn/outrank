@@ -12,6 +12,8 @@ export interface FeedItem {
   actorAvatar: string;
   categoryName?: string;
   categoryIcon?: string;
+  categorySlug?: string;
+  categoryColor?: string;
   value?: number;
   message: string;
   reactions: Record<ReactionEmoji, string[]>;
