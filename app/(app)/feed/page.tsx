@@ -131,14 +131,13 @@ export default function FeedPage() {
                     {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
                   </p>
                 </div>
-                {(item.categorySlug || item.categoryIcon) && (
-                  <CategoryIcon
-                    slug={item.categorySlug}
-                    icon={item.categoryIcon || ''}
-                    color={item.categoryColor || '#f97316'}
-                    size="sm"
-                  />
-                )}
+                <CategoryIcon
+                  slug={item.categorySlug}
+                  name={item.categoryName}
+                  icon={item.categoryIcon || ''}
+                  color={item.categoryColor || '#f97316'}
+                  size="sm"
+                />
               </div>
 
               {/* Content */}

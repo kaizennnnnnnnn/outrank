@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { updateDocument } from '@/lib/firestore';
-import { increment, arrayUnion } from 'firebase/firestore';
+import { increment, arrayUnion, Timestamp } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +25,11 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 'color_emerald', name: 'Emerald Orb', description: 'Vibrant green base color', price: 50, type: 'base_color', colorValue: '#10b981', rarity: 'rare' },
   { id: 'color_violet', name: 'Violet Orb', description: 'Royal purple base color', price: 75, type: 'base_color', colorValue: '#7c3aed', rarity: 'epic' },
   { id: 'color_gold', name: 'Gold Orb', description: 'Prestigious gold base color', price: 100, type: 'base_color', colorValue: '#d97706', rarity: 'epic' },
+  { id: 'color_obsidian', name: 'Obsidian Orb', description: 'Black with violet undertones', price: 150, type: 'base_color', colorValue: '#a78bfa', rarity: 'epic' },
+  { id: 'color_phoenix', name: 'Phoenix Orb', description: 'Molten red-to-gold gradient', price: 175, type: 'base_color', colorValue: '#f59e0b', rarity: 'legendary' },
+  { id: 'color_aurora', name: 'Aurora Orb', description: 'Shifting green and violet lights', price: 225, type: 'base_color', colorValue: '#10b981', rarity: 'legendary' },
+  { id: 'color_nebula', name: 'Nebula Orb', description: 'Purple and pink cosmic dust', price: 250, type: 'base_color', colorValue: '#ec4899', rarity: 'legendary' },
+  { id: 'color_prismatic', name: 'Prismatic Orb', description: 'The full spectrum. Pinnacle flex', price: 400, type: 'base_color', colorValue: '#a855f7', rarity: 'legendary' },
 
   // Pulse Colors
   { id: 'pulse_fire', name: 'Fire Pulse', description: 'Orange fire wave', price: 0, type: 'pulse_color', colorValue: '#f97316', rarity: 'common' },
@@ -32,6 +37,11 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 'pulse_lightning', name: 'Lightning Pulse', description: 'Yellow electric wave', price: 40, type: 'pulse_color', colorValue: '#eab308', rarity: 'rare' },
   { id: 'pulse_shadow', name: 'Shadow Pulse', description: 'Dark mysterious wave', price: 60, type: 'pulse_color', colorValue: '#78716c', rarity: 'epic' },
   { id: 'pulse_plasma', name: 'Plasma Pulse', description: 'Pink energy wave', price: 80, type: 'pulse_color', colorValue: '#d946ef', rarity: 'epic' },
+  { id: 'pulse_solar', name: 'Solar Pulse', description: 'Burning yellow-white corona', price: 120, type: 'pulse_color', colorValue: '#fde047', rarity: 'legendary' },
+  { id: 'pulse_cosmic', name: 'Cosmic Pulse', description: 'Deep blue to pink gradient', price: 130, type: 'pulse_color', colorValue: '#4f46e5', rarity: 'legendary' },
+  { id: 'pulse_mystic', name: 'Mystic Pulse', description: 'Emerald with violet threads', price: 140, type: 'pulse_color', colorValue: '#059669', rarity: 'legendary' },
+  { id: 'pulse_inferno', name: 'Inferno Pulse', description: 'Lava-hot orange-red', price: 150, type: 'pulse_color', colorValue: '#b91c1c', rarity: 'legendary' },
+  { id: 'pulse_void', name: 'Void Pulse', description: 'Black hole collapse', price: 180, type: 'pulse_color', colorValue: '#7e22ce', rarity: 'legendary' },
 
   // Special Items
   { id: 'instant_evolve', name: 'Instant Evolution', description: 'Instantly evolve your orb to the next tier', price: 200, type: 'instant_evolve', rarity: 'legendary' },
@@ -126,7 +136,7 @@ export default function ShopPage() {
         addToast({ type: 'success', message: `Purchased & equipped ${item.name}!` });
       } else if (item.type === 'instant_evolve') {
         const currentTier = (user as unknown as Record<string, number>).orbTier || 1;
-        if (currentTier >= 5) {
+        if (currentTier >= 10) {
           addToast({ type: 'error', message: 'Already at max tier!' });
           return;
         }
@@ -136,6 +146,7 @@ export default function ShopPage() {
         await updateDocument('users', user.uid, { streakFreezeTokens: increment(3) });
         addToast({ type: 'success', message: '+3 Streak Freezes!' });
       } else if (item.type === 'power_boost') {
+        await updateDocument('users', user.uid, { xpBoostActivatedAt: Timestamp.now() });
         addToast({ type: 'success', message: '24h XP Boost activated!' });
       }
     } catch {

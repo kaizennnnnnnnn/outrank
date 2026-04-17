@@ -2,14 +2,16 @@
 
 import { cn } from '@/lib/utils';
 import { getCategoryIconComponent } from './CategoryIcons';
+import { resolveSlug } from '@/constants/categories';
 
 interface CategoryIconProps {
-  icon: string; // emoji fallback
+  icon: string; // legacy prop — kept for compat, no longer rendered as emoji
   color: string;
   size?: 'sm' | 'md' | 'lg';
   selected?: boolean;
   className?: string;
-  slug?: string; // category slug for custom SVG lookup
+  slug?: string;
+  name?: string; // when slug is missing, we'll resolve from display name
 }
 
 const sizeMap = {
@@ -18,11 +20,12 @@ const sizeMap = {
   lg: { container: 'w-16 h-16', iconSize: 30 },
 };
 
-export function CategoryIcon({ icon, color, size = 'md', selected, className, slug }: CategoryIconProps) {
+export function CategoryIcon({ color, size = 'md', selected, className, slug, name }: CategoryIconProps) {
   const s = sizeMap[size];
 
-  // Try to get custom SVG icon, fall back to emoji
-  const IconComponent = slug ? getCategoryIconComponent(slug) : null;
+  // Always render SVG. Resolve slug from display name if missing.
+  const resolvedSlug = resolveSlug(slug, name) || 'generic';
+  const IconComponent = getCategoryIconComponent(resolvedSlug);
 
   return (
     <div className={cn('relative group', className)}>
@@ -61,15 +64,9 @@ export function CategoryIcon({ icon, color, size = 'md', selected, className, sl
           }}
         />
 
-        {/* Icon — custom SVG or emoji fallback */}
+        {/* Icon — always SVG */}
         <div className="relative z-10" style={{ color }}>
-          {IconComponent ? (
-            <IconComponent size={s.iconSize} />
-          ) : (
-            <span className={cn(size === 'sm' ? 'text-lg' : size === 'lg' ? 'text-3xl' : 'text-2xl', 'drop-shadow-sm')}>
-              {icon}
-            </span>
-          )}
+          <IconComponent size={s.iconSize} />
         </div>
 
         {/* Bottom accent */}

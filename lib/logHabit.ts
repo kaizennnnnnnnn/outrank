@@ -39,11 +39,21 @@ export async function logHabit(params: LogHabitParams) {
   const habitRef = doc(db, `habits/${userId}/userHabits/${habitSlug}`);
   const habitSnap = await getDoc(habitRef);
 
+  // Check if the user has an active XP boost (24h 2x)
+  let boostMultiplier = 1;
+  try {
+    const userDoc = await getDoc(doc(db, `users/${userId}`));
+    const boostAt = userDoc.data()?.xpBoostActivatedAt;
+    if (boostAt && typeof boostAt.toDate === 'function') {
+      const elapsedMs = Date.now() - boostAt.toDate().getTime();
+      if (elapsedMs < 24 * 60 * 60 * 1000) boostMultiplier = 2;
+    }
+  } catch { /* ignore */ }
+
   // Scale XP based on how much of the goal was achieved
-  // e.g. goal=10, logged=3 → 30% XP. Capped at 100%.
   const goal = habitSnap.exists() ? (habitSnap.data().goal || 1) : 1;
   const completionRatio = Math.min(value / goal, 1);
-  const baseXP = Math.max(1, Math.round(maxBaseXP * completionRatio));
+  const baseXP = Math.max(1, Math.round(maxBaseXP * completionRatio * boostMultiplier));
 
   // 1. Create the log document
   const logRef = await addDoc(collection(db, `logs/${userId}/habitLogs`), {

@@ -99,55 +99,63 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
           <StatCard icon={<ChartBarIcon size={24} className="text-red-400" />} value={habit.totalLogs.toString()} label="Total Logs" />
 
           {/* Editable Daily Goal */}
-          <div className="glass-card rounded-xl p-4 text-center relative">
+          <div className={cn(
+            'relative rounded-xl p-4 text-center border-2 transition-all',
+            editingGoal
+              ? 'bg-orange-500/5 border-orange-500/40'
+              : 'bg-[#10101a] border-orange-500/25 hover:border-orange-500/50'
+          )}>
             <div className="flex justify-center"><TargetFullIcon size={24} className="text-orange-400" /></div>
+
             {editingGoal ? (
-              <div className="mt-2 flex items-center justify-center gap-1">
-                <input
-                  type="number"
-                  min="1"
-                  max="100000"
-                  value={goalDraft}
-                  onChange={(e) => setGoalDraft(e.target.value)}
-                  className="w-16 bg-[#0b0b14] border border-[#1e1e30] rounded-md px-2 py-1 text-center font-mono text-base font-bold text-white focus:outline-none focus:border-orange-400"
-                  autoFocus
-                />
-                <span className="text-xs text-slate-500">{habit.unit}</span>
-              </div>
-            ) : (
-              <p className="font-mono text-lg font-bold text-white mt-1">{habit.goal} <span className="text-xs text-slate-500 font-normal">{habit.unit}</span></p>
-            )}
-            <div className="flex items-center justify-center gap-1 mt-1">
-              <p className="text-xs text-slate-500">Daily Goal</p>
-              {editingGoal ? (
-                <>
+              <>
+                <div className="mt-2 flex items-center justify-center gap-1">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100000"
+                    value={goalDraft}
+                    onChange={(e) => setGoalDraft(e.target.value)}
+                    className="w-20 bg-[#0b0b14] border border-orange-500/40 rounded-md px-2 py-1 text-center font-mono text-lg font-bold text-white focus:outline-none focus:border-orange-400"
+                    autoFocus
+                  />
+                  <span className="text-xs text-slate-500">{habit.unit}</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Daily Goal</p>
+                <div className="flex items-center justify-center gap-2 mt-2">
                   <button
                     onClick={saveGoal}
                     disabled={savingGoal}
-                    className="ml-1 text-[10px] text-orange-400 hover:text-orange-300 font-medium transition-colors"
+                    className="px-3 py-1 rounded-md bg-orange-500 hover:bg-orange-400 text-[11px] font-bold text-white transition-colors disabled:opacity-60"
                   >
-                    {savingGoal ? '...' : 'Save'}
+                    {savingGoal ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={() => { setEditingGoal(false); setGoalDraft(String(habit.goal)); }}
-                    className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors"
+                    className="px-3 py-1 rounded-md bg-[#1e1e30] hover:bg-[#2a2a40] text-[11px] font-medium text-slate-300 transition-colors"
                   >
                     Cancel
                   </button>
-                </>
-              ) : (
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-mono text-lg font-bold text-white mt-1">
+                  {habit.goal} <span className="text-xs text-slate-500 font-normal">{habit.unit}</span>
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Daily Goal</p>
                 <button
                   onClick={() => setEditingGoal(true)}
-                  className="text-slate-600 hover:text-orange-400 transition-colors"
-                  aria-label="Edit goal"
+                  className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 text-orange-400 text-[11px] font-semibold transition-colors"
                 >
                   <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
+                  Edit Goal
                 </button>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       ) : (

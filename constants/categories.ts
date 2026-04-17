@@ -75,6 +75,17 @@ export const getCategoriesBySection = (section: CategorySection) =>
 export const getCategoryBySlug = (slug: string) =>
   CATEGORIES.find((c) => c.slug === slug);
 
+// Resolve a slug from a category's display name (handles old feed items that
+// stored only categoryName without categorySlug).
+export const getCategoryByName = (name: string) =>
+  CATEGORIES.find((c) => c.name.toLowerCase() === name.toLowerCase());
+
+export function resolveSlug(slug: string | undefined, name: string | undefined): string | undefined {
+  if (slug) return slug;
+  if (!name) return undefined;
+  return getCategoryByName(name)?.slug;
+}
+
 // Smart defaults and step increments per category
 // For boolean/daily habits (did-you-do-it type), goal is always 1
 export interface CategoryGoalConfig {

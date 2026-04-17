@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { useFriends } from '@/hooks/useFriends';
@@ -42,14 +42,25 @@ export default function ProfilePage() {
   const friendCount = friends.length;
   const currentStreaks = habits.reduce((sum, h) => sum + h.currentStreak, 0);
 
-  // TEMP: Force 100% and reset tier for evolution testing
-  const orbIntensity = 100;
-  const [localTier, setLocalTier] = useState(1);
+  // Intensity: derived from XP, streaks, logs, level (0-100)
+  const orbIntensity = Math.min(
+    Math.round(
+      Math.min(user.totalXP / 500, 40) +
+      Math.min(currentStreaks / 10, 30) +
+      Math.min(totalLogs / 20, 20) +
+      Math.min(level.level / 10, 10)
+    ),
+    100,
+  );
+  const realTier = (user as unknown as Record<string, number>).orbTier || 1;
+  const [localTier, setLocalTier] = useState(realTier);
+  // Keep local tier in sync if user doc updates (e.g. shop purchase)
+  useEffect(() => { setLocalTier(realTier); }, [realTier]);
 
   const [showOrbHistory, setShowOrbHistory] = useState(false);
 
   const handleEvolve = async () => {
-    if (localTier >= 5) return;
+    if (localTier >= 10) return;
     const newTier = localTier + 1;
     try {
       const { updateDocument } = await import('@/lib/firestore');
@@ -58,7 +69,6 @@ export default function ProfilePage() {
       // Award 30 fragments for evolution
       await updateDocument('users', user.uid, { fragments: increment(30) });
     } catch { /* silent */ }
-    // Smooth transition — update local state, orb component re-renders with new tier
     setLocalTier(newTier);
   };
 

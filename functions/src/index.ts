@@ -7,3 +7,4 @@ export { onReportCreated } from './onReportCreated';
 export { checkUsername } from './checkUsername';
 export { weeklyRecap } from './weeklyRecap';
 export { onNotificationCreated } from './onNotificationCreated';
+export { scheduleNotifier } from './scheduleNotifier';

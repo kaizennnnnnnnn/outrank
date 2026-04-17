@@ -101,6 +101,16 @@ export function StreakFire({ size = 60, streak }: StreakFireProps) {
       time += 0.016;
       frame++;
 
+      // Wind — two oscillators at different frequencies give the flame a
+      // living, multi-directional lean without looking like a wildfire.
+      const wind =
+        Math.sin(time * 0.55) * 0.9 +
+        Math.sin(time * 1.3 + 0.7) * 0.4;
+      // Occasional "gust" — stronger, briefer horizontal burst
+      const gust = Math.sin(time * 0.22) > 0.85
+        ? Math.sin(time * 3.0) * 1.8
+        : 0;
+
       // Spawn: aggressive center flames + edge tongues
       if (frame % 1 === 0) {
         spawnFlame(true);
@@ -141,17 +151,20 @@ export function StreakFire({ size = 60, streak }: StreakFireProps) {
         if (!f.active) continue;
         f.life++;
 
-        // Turbulence: multi-frequency sway for a flickering, dancing flame
+        // Turbulence: multi-frequency sway for a flickering, dancing flame.
+        // Height ratio — higher particles sway and lean more.
         const heightFromBase = Math.max(0, baseY - f.y);
         const heightRatio = Math.min(1, heightFromBase / (size * 0.75));
-        // More sway as flame rises
         const swayStrength = 0.12 + heightRatio * 0.35;
         const turb =
           sin(f.life * 0.24 + f.seed) * swayStrength * s +
           sin(time * 2.2 + f.y * 0.03 + f.seed * 0.5) * swayStrength * 0.6 * s;
-        f.vx += turb;
+        // Wind pushes particles harder the higher they rise — keeps the base
+        // anchored but lets the tip flick left/right in different directions.
+        const windPush = (wind + gust) * heightRatio * 0.22 * s;
+        f.vx += turb + windPush;
         f.vx *= 0.93;
-        f.vy -= 0.06 * s; // buoyancy
+        f.vy -= 0.06 * s;
         f.x += f.vx;
         f.y += f.vy;
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getOrbTier } from '@/constants/orbTiers';
+import { getOrbTier, MAX_ORB_TIER } from '@/constants/orbTiers';
 import { getOrbBaseColor, getOrbPulseColor } from '@/constants/orbColors';
 import { Button } from '@/components/ui/Button';
 
@@ -24,7 +24,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
   const evolveTimeRef = useRef(0);
   const [evolving, setEvolving] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
-  const canEvolve = intensity >= 100 && tier < 5;
+  const canEvolve = intensity >= 100 && tier < MAX_ORB_TIER;
 
   const handleEvolve = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -122,6 +122,22 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     type Arc = { from: number; to: number; life: number; decay: number };
     const pulses: Pulse[] = [];
     const arcs: Arc[] = [];
+
+    // Satellites — orbiting micro-orbs introduced at tier 6+
+    type Satellite = { angle: number; radius: number; tiltX: number; tiltY: number; speed: number; size: number; trail: { x: number; y: number; a: number }[] };
+    const satellites: Satellite[] = [];
+    const satCount = !isSmall ? (config.satellites || 0) : 0;
+    for (let i = 0; i < satCount; i++) {
+      satellites.push({
+        angle: (i / satCount) * Math.PI * 2,
+        radius: R + 22 + Math.random() * 18,
+        tiltX: (Math.random() - 0.5) * 1.2,
+        tiltY: (Math.random() - 0.5) * 1.2,
+        speed: 0.6 + Math.random() * 0.8,
+        size: 1.6 + Math.random() * 1.4,
+        trail: [],
+      });
+    }
 
     let t = 0;
     const { sin, cos, PI, sqrt, asin, min, max, floor, random } = Math;
@@ -309,6 +325,53 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         ctx.beginPath(); ctx.moveTo(a.px, a.py);
         ctx.quadraticCurveTo((a.px + b.px) / 2 + sin(t * 12) * 8, (a.py + b.py) / 2 + cos(t * 10) * 8, b.px, b.py);
         ctx.stroke();
+      }
+
+      // Satellites (tier 6+) — orbiting micro-orbs with motion trails
+      for (const sat of satellites) {
+        sat.angle += 0.008 * sat.speed * speedBoost;
+        const rr = sat.radius * radiusMod;
+        const x0 = rr * cos(sat.angle);
+        const y0 = rr * sin(sat.angle) * cos(sat.tiltX);
+        const z0 = rr * sin(sat.angle) * sin(sat.tiltX);
+        // apply global rotation
+        const x1 = x0 * cry + z0 * sry;
+        const z1 = -x0 * sry + z0 * cry;
+        const y2 = y0 * crx - z1 * srx;
+        const z2 = y0 * srx + z1 * crx;
+        const pr = project(x1, y2, z2);
+
+        // Push to trail, keep only last N positions
+        sat.trail.push({ x: pr.px, y: pr.py, a: 1 });
+        if (sat.trail.length > 10) sat.trail.shift();
+
+        // Draw trail
+        for (let i = 0; i < sat.trail.length; i++) {
+          const tpt = sat.trail[i];
+          const trailAlpha = (i / sat.trail.length) * 0.6 * brightness;
+          ctx.fillStyle = `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${trailAlpha})`;
+          ctx.beginPath();
+          ctx.arc(tpt.x, tpt.y, sat.size * (i / sat.trail.length) * 0.7, 0, PI2);
+          ctx.fill();
+        }
+
+        // Glow halo
+        if (pr.z < 50) {
+          const satGrad = ctx.createRadialGradient(pr.px, pr.py, 0, pr.px, pr.py, sat.size * 4);
+          satGrad.addColorStop(0, `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${0.8 * brightness})`);
+          satGrad.addColorStop(0.5, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${0.3 * brightness})`);
+          satGrad.addColorStop(1, 'transparent');
+          ctx.fillStyle = satGrad;
+          ctx.beginPath();
+          ctx.arc(pr.px, pr.py, sat.size * 4, 0, PI2);
+          ctx.fill();
+
+          // Bright core
+          ctx.fillStyle = `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${brightness})`;
+          ctx.beginPath();
+          ctx.arc(pr.px, pr.py, sat.size, 0, PI2);
+          ctx.fill();
+        }
       }
 
       // Particles

@@ -65,17 +65,44 @@ export function DailyChallenge() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-red-500/20 bg-gradient-to-r from-red-600/5 to-[#10101a] p-4"
+      className="relative overflow-hidden rounded-2xl p-4"
+      style={{
+        background: `linear-gradient(135deg, ${cat.color}18 0%, rgba(249,115,22,0.08) 40%, #10101a 90%)`,
+        border: `1px solid ${cat.color}30`,
+        boxShadow: `0 0 24px -12px ${cat.color}40, inset 0 1px 0 ${cat.color}15`,
+      }}
     >
-      <div className="flex items-center gap-1 mb-2">
-        <span className="text-xs font-bold text-orange-400 uppercase tracking-wider">Daily Challenge</span>
-        <span className="text-xs text-slate-600">&bull; +{challenge.bonusXP} bonus XP</span>
+      {/* Ambient glow */}
+      <div
+        className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-[0.12] blur-3xl pointer-events-none"
+        style={{ background: cat.color }}
+      />
+
+      <div className="relative flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-1.5 h-1.5 rounded-full animate-pulse"
+            style={{ background: cat.color, boxShadow: `0 0 6px ${cat.color}` }}
+          />
+          <span className="text-[10px] font-bold text-orange-400 uppercase tracking-[0.15em]">
+            Daily Challenge
+          </span>
+        </div>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+          <svg width={10} height={10} viewBox="0 0 24 24" fill="currentColor" className="text-orange-400">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+          <span className="text-[10px] font-mono font-bold text-orange-400">+{challenge.bonusXP} XP</span>
+        </span>
       </div>
-      <div className="flex items-center gap-3">
-        <CategoryIcon icon={cat.icon} color={cat.color} size="md" slug={cat.slug} />
+
+      <div className="relative flex items-center gap-3">
+        <CategoryIcon slug={cat.slug} name={cat.name} icon={cat.icon} color={cat.color} size="md" />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white">{challenge.text}</p>
-          <p className="text-xs text-slate-500">{cat.name} &bull; {challenge.value} {cat.unit}</p>
+          <p className="text-sm font-bold text-white leading-tight">{challenge.text}</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            {cat.name} &middot; {challenge.value} {cat.unit}
+          </p>
         </div>
         <Button size="sm" onClick={handleComplete} loading={completing}>
           Complete

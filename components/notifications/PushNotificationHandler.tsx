@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { requestNotificationPermission } from '@/lib/pushNotifications';
+import { updateDocument } from '@/lib/firestore';
 import { Button } from '@/components/ui/Button';
 
 export function PushNotificationHandler() {
@@ -21,6 +22,19 @@ export function PushNotificationHandler() {
         setTimeout(() => setShowPrompt(true), 2000);
       }
     }
+  }, [user]);
+
+  // Save the user's timezone so the server can fire scheduled reminders at
+  // their local time. Runs once per session; only writes if missing/changed.
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (!tz) return;
+      const current = (user as unknown as Record<string, string>).timezone;
+      if (current === tz) return;
+      updateDocument('users', user.uid, { timezone: tz }).catch(() => { /* ignore */ });
+    } catch { /* ignore */ }
   }, [user]);
 
   const handleAllow = async () => {

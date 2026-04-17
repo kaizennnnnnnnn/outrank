@@ -214,14 +214,13 @@ export default function DashboardPage() {
                             {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
                           </p>
                         </div>
-                        {(item.categorySlug || item.categoryIcon) && (
-                          <CategoryIcon
-                            slug={item.categorySlug}
-                            icon={item.categoryIcon || ''}
-                            color={color}
-                            size="sm"
-                          />
-                        )}
+                        <CategoryIcon
+                          slug={item.categorySlug}
+                          name={item.categoryName}
+                          icon={item.categoryIcon || ''}
+                          color={color}
+                          size="sm"
+                        />
                       </div>
                       <p className="relative text-xs text-slate-400 mt-2 pl-11">{item.message}</p>
                     </div>

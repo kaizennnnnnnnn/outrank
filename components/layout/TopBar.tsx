@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Logo } from '@/components/ui/Logo';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { FlameIcon, SettingsIcon, UsersIcon } from '@/components/ui/Icons';
+import { XPBoostBadge } from '@/components/profile/XPBoostBadge';
 import Link from 'next/link';
 import { getXPProgress, getLevelForXP } from '@/constants/levels';
 
@@ -44,6 +45,7 @@ export function TopBar() {
 
         {/* Right side */}
         <div className="flex items-center gap-2">
+          <XPBoostBadge activatedAt={(user as unknown as Record<string, unknown>).xpBoostActivatedAt as never} size="sm" />
           <div className="flex items-center gap-1.5 text-sm font-mono font-bold text-orange-400">
             <FlameIcon size={16} className="text-orange-500" />
             {user.weeklyXP}
