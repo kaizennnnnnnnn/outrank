@@ -40,22 +40,33 @@ export default function ProfilePage() {
   const totalLogs = habits.reduce((sum, h) => sum + h.totalLogs, 0);
   const longestStreak = Math.max(...habits.map((h) => h.longestStreak), 0);
   const friendCount = friends.length;
-  const currentStreaks = habits.reduce((sum, h) => sum + h.currentStreak, 0);
+  // currentStreaks reserved for the production intensity formula (see comment below)
 
-  // Intensity: derived from XP, streaks, logs, level (0-100)
-  const orbIntensity = Math.min(
-    Math.round(
-      Math.min(user.totalXP / 500, 40) +
-      Math.min(currentStreaks / 10, 30) +
-      Math.min(totalLogs / 20, 20) +
-      Math.min(level.level / 10, 10)
-    ),
-    100,
-  );
+  // TEST MODE: always allow evolving (intensity pinned to 100). Remove both of
+  // these lines and uncomment the block below to go back to earned intensity.
+  const orbIntensity = 100;
+  // const orbIntensity = Math.min(
+  //   Math.round(
+  //     Math.min(user.totalXP / 500, 40) +
+  //     Math.min(currentStreaks / 10, 30) +
+  //     Math.min(totalLogs / 20, 20) +
+  //     Math.min(level.level / 10, 10)
+  //   ),
+  //   100,
+  // );
+
   const realTier = (user as unknown as Record<string, number>).orbTier || 1;
   const [localTier, setLocalTier] = useState(realTier);
-  // Keep local tier in sync if user doc updates (e.g. shop purchase)
   useEffect(() => { setLocalTier(realTier); }, [realTier]);
+
+  // TEST MODE: reset tier helper so you can re-test the full 1→10 chain.
+  const resetTier = async () => {
+    try {
+      const { updateDocument } = await import('@/lib/firestore');
+      await updateDocument('users', user.uid, { orbTier: 1 });
+    } catch { /* silent */ }
+    setLocalTier(1);
+  };
 
   const [showOrbHistory, setShowOrbHistory] = useState(false);
 
@@ -95,6 +106,14 @@ export default function ProfilePage() {
         </div>
         <button onClick={() => setShowOrbHistory(true)} className="text-[10px] text-slate-500 hover:text-orange-400 transition-colors underline">
           View Orb Details
+        </button>
+        {/* TEST MODE: reset tier to 1 so you can re-evolve all the way to 10 */}
+        <button
+          onClick={resetTier}
+          className="text-[10px] text-slate-500 hover:text-red-400 transition-colors underline"
+          title="Reset to tier 1 for testing"
+        >
+          Reset Tier
         </button>
       </div>
       <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />

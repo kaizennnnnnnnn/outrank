@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
-import { getOrbTier } from '@/constants/orbTiers';
+import { getOrbTier, MAX_ORB_TIER, ORB_TIERS } from '@/constants/orbTiers';
 import { getOrbPower, getOrbAura, ORB_ENERGY } from '@/constants/orbSystem';
 import { getCollection, orderBy, limit } from '@/lib/firestore';
 import { HabitLog } from '@/types/habit';
@@ -58,7 +58,7 @@ export function OrbHistory({ isOpen, onClose }: OrbHistoryProps) {
         {/* Orb Status */}
         <div className="glass-card rounded-xl p-4 text-center space-y-2">
           <p className="font-heading text-2xl font-bold text-orange-400">{config.name}</p>
-          <p className="text-xs text-slate-500">Tier {orbTier} of 5</p>
+          <p className="text-xs text-slate-500">Tier {orbTier} of {MAX_ORB_TIER}</p>
           <p className="text-[10px] text-slate-600">{config.description}</p>
         </div>
 
@@ -147,7 +147,7 @@ export function OrbHistory({ isOpen, onClose }: OrbHistoryProps) {
         <div>
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Evolution Path</h3>
           <div className="space-y-2">
-            {[1, 2, 3, 4, 5].map((t) => {
+            {ORB_TIERS.map((tierCfg) => tierCfg.tier).map((t) => {
               const tierConfig = getOrbTier(t);
               const reached = orbTier >= t;
               const current = orbTier === t;
