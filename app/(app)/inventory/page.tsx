@@ -251,22 +251,22 @@ function ColorCard({
         <OrbColorPreview colorSet={color} variant={variant} id={color.id} size={48} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{color.name}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
             <span
-              className="text-[9px] font-bold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded"
+              className="text-[8px] font-bold uppercase tracking-[0.06em] px-1.5 py-[1px] rounded whitespace-nowrap"
               style={{ color: rs.text, background: rs.bg, border: `1px solid ${rs.border}` }}
             >
               {rs.label}
             </span>
             {equipped && (
-              <span className="text-[9px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-0.5 rounded">
+              <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-[1px] rounded whitespace-nowrap">
                 Equipped
               </span>
             )}
           </div>
-          <p className="text-[10px] text-slate-500 mt-1">
-            {equipped ? 'Currently equipped' : 'Tap to equip'}
-          </p>
+          {!equipped && (
+            <p className="text-[10px] text-slate-500 mt-1">Tap to equip</p>
+          )}
         </div>
       </div>
     </button>
