@@ -114,7 +114,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       });
     }
 
-    type Rng = { angle: number; radius: number; tiltX: number; speedMul: number; size: number; phase: number };
+    type Rng = { angle: number; radius: number; tiltX: number; speedMul: number; size: number; phase: number; colorIdx: number };
     const rings: Rng[] = [];
     const ringCount = isSmall ? 0 : config.rings; // No rings for small orbs
     for (let r = 0; r < ringCount; r++) {
@@ -122,7 +122,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       const radius = R + 10 + r * 8;
       const rp = Math.floor(config.ringParticles * (0.5 + pct * 0.5));
       for (let i = 0; i < rp; i++) {
-        rings.push({ angle: (i / rp) * Math.PI * 2, radius, tiltX, speedMul: 1 + r * 0.3, size: 0.5 + Math.random() * 0.8, phase: Math.random() * Math.PI * 2 });
+        // Split each ring into halves / quarters so the palette shows clearly.
+        // First half of particles uses outer+mid, second half uses inner+core.
+        const halfIdx = i < rp / 2 ? 0 : 2;
+        const colorIdx = halfIdx + (i % 2); // 0=outer, 1=mid, 2=inner, 3=core
+        rings.push({ angle: (i / rp) * Math.PI * 2, radius, tiltX, speedMul: 1 + r * 0.3, size: 0.5 + Math.random() * 0.8, phase: Math.random() * Math.PI * 2, colorIdx });
       }
     }
 
@@ -172,9 +176,12 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     const pulseMidRgb = hexToRgb(pulseColors.mid);
 
     // Ring colors — equipped from shop. Rainbow cycles hue over time.
+    // Each ring particle picks one of these 4 slots via colorIdx so a single
+    // palette (e.g. Sunset) visibly shows mid AND inner AND outer, not just mid.
     const ringCol = ringColorId ? getOrbRingColor(ringColorId) : null;
-    const ringBaseRgb = ringCol ? hexToRgb(ringCol.mid) : colMid;
-    const ringHighlightRgb = ringCol ? hexToRgb(ringCol.inner) : colInner;
+    const ringPalette: [number, number, number][] = ringCol
+      ? [hexToRgb(ringCol.outer), hexToRgb(ringCol.mid), hexToRgb(ringCol.inner), hexToRgb(ringCol.core)]
+      : [colOuter, colMid, colInner, colCore];
     const ringIsRainbow = isRainbowColor(ringColorId);
     const baseIsRainbow = isRainbowColor(baseColorId);
     const pulseIsRainbow = isRainbowColor(pulseColorId);
@@ -331,7 +338,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         let x3 = x * cry + z2 * sry, z3 = -x * sry + z2 * cry;
         let y4 = y3 * crx - z3 * srx, z4 = y3 * srx + z3 * crx;
         const pr = project(x3, y4, z4);
-        all.push({ ...pr, sz: rp.size * (sin(t * 4 + rp.phase) * 0.3 + 0.7), layer: 0.5, pBoost: 0, idx: -1, type: 1, phase: rp.phase });
+        all.push({ ...pr, sz: rp.size * (sin(t * 4 + rp.phase) * 0.3 + 0.7), layer: 0.5, pBoost: 0, idx: rp.colorIdx, type: 1, phase: rp.phase });
       }
 
       all.sort((a, b) => a.z - b.z);
@@ -421,15 +428,17 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         }
 
         if (d.type === 1) {
-          // Ring particle — use ring color (or rainbow hue from index)
+          // Ring particle — rainbow cycles hue; otherwise pick from the 4-color palette
           if (ringIsRainbow) {
-            const hue = (t * 80 + d.idx * 20 + d.phase * 40) % 360;
+            const hue = (t * 80 + d.idx * 90 + d.phase * 40) % 360;
             const rb = hslRgb(hue, 0.85, 0.6);
             r = rb[0]; g = rb[1]; b = rb[2];
           } else {
-            r = ringBaseRgb[0]; g = ringBaseRgb[1]; b = ringBaseRgb[2];
+            const slot = ((d.idx % 4) + 4) % 4;
+            const c = ringPalette[slot];
+            r = c[0]; g = c[1]; b = c[2];
           }
-          alpha *= 0.6;
+          alpha *= 0.65;
         }
         if (d.pBoost > 0) {
           let pr = pulseRgb[0], pg = pulseRgb[1], pb = pulseRgb[2];

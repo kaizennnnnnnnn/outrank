@@ -111,6 +111,13 @@ export function OrbColorPreview({ colorSet, variant, size = 48, id }: Props) {
       </div>
     );
   }
+  // Non-rainbow rings: match the actual renderer which distributes outer/mid/inner/core
+  // across the ring particles. Show each color as a quarter-arc of the ring.
+  const quarterRing = `conic-gradient(from 0deg,
+    ${colorSet.outer} 0deg,    ${colorSet.outer} 90deg,
+    ${colorSet.mid} 90deg,     ${colorSet.mid} 180deg,
+    ${colorSet.inner} 180deg,  ${colorSet.inner} 270deg,
+    ${colorSet.core} 270deg,   ${colorSet.core} 360deg)`;
   return (
     <div
       className="rounded-full flex-shrink-0 relative"
@@ -121,22 +128,33 @@ export function OrbColorPreview({ colorSet, variant, size = 48, id }: Props) {
         boxShadow: `0 0 14px -4px ${colorSet.mid}aa`,
       }}
     >
+      {/* Primary oblate ring — conic palette cycle + mask to a thin band */}
       <div
         className="absolute rounded-full"
         style={{
           inset: 3,
-          border: `1.5px solid ${colorSet.mid}`,
-          boxShadow: `0 0 8px ${colorSet.mid}, inset 0 0 8px ${colorSet.inner}70`,
-          transform: 'rotate(25deg) scaleY(0.35)',
+          background: quarterRing,
+          WebkitMaskImage: 'radial-gradient(ellipse 48% 14% at 50% 50%, transparent 60%, black 62%)',
+          maskImage: 'radial-gradient(ellipse 48% 14% at 50% 50%, transparent 60%, black 62%)',
+          transform: 'rotate(25deg)',
+          filter: `drop-shadow(0 0 3px ${colorSet.mid}aa)`,
         }}
       />
+      {/* Secondary ring — offset rotation + different stop order so the
+          user sees each palette slot somewhere */}
       <div
-        className="absolute rounded-full"
+        className="absolute rounded-full opacity-85"
         style={{
           inset: 6,
-          border: `1.2px solid ${colorSet.inner}`,
-          boxShadow: `0 0 6px ${colorSet.inner}aa`,
-          transform: 'rotate(-20deg) scaleY(0.25)',
+          background: `conic-gradient(from 45deg,
+            ${colorSet.inner} 0deg, ${colorSet.inner} 90deg,
+            ${colorSet.core} 90deg,  ${colorSet.core} 180deg,
+            ${colorSet.mid} 180deg,  ${colorSet.mid} 270deg,
+            ${colorSet.outer} 270deg, ${colorSet.outer} 360deg)`,
+          WebkitMaskImage: 'radial-gradient(ellipse 46% 11% at 50% 50%, transparent 60%, black 62%)',
+          maskImage: 'radial-gradient(ellipse 46% 11% at 50% 50%, transparent 60%, black 62%)',
+          transform: 'rotate(-20deg)',
+          filter: `drop-shadow(0 0 2px ${colorSet.inner}aa)`,
         }}
       />
     </div>

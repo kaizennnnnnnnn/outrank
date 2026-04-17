@@ -22,14 +22,15 @@ export function HabitCard({ habit, isLoggedToday, onLog }: HabitCardProps) {
         'group relative overflow-hidden rounded-xl p-3.5 transition-all cursor-pointer',
       )}
       style={{
+        // Logged-today uses orange (brand palette) instead of emerald green
         background: isLoggedToday
-          ? `linear-gradient(145deg, rgba(16,185,129,0.08), #0b0b14 60%)`
+          ? `linear-gradient(145deg, rgba(249,115,22,0.1), #0b0b14 60%)`
           : `linear-gradient(145deg, ${habit.color}0c 0%, #10101a 45%, #0b0b14 100%)`,
         border: isLoggedToday
-          ? '1px solid rgba(16,185,129,0.25)'
+          ? '1px solid rgba(249,115,22,0.3)'
           : `1px solid ${habit.color}1f`,
         boxShadow: isLoggedToday
-          ? 'inset 0 1px 0 rgba(16,185,129,0.1)'
+          ? 'inset 0 1px 0 rgba(249,115,22,0.12), 0 4px 20px -10px rgba(249,115,22,0.25)'
           : `0 1px 0 ${habit.color}10 inset, 0 6px 18px -14px ${habit.color}20`,
       }}
       onClick={!isLoggedToday ? onLog : undefined}
@@ -73,8 +74,8 @@ export function HabitCard({ habit, isLoggedToday, onLog }: HabitCardProps) {
         )}
 
         {isLoggedToday ? (
-          <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
-            <CheckCircleFullIcon size={16} className="text-emerald-400" />
+          <div className="w-9 h-9 rounded-full bg-orange-500/15 border border-orange-500/40 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_-2px_rgba(249,115,22,0.5)]">
+            <CheckCircleFullIcon size={16} className="text-orange-400" />
           </div>
         ) : (
           <motion.button

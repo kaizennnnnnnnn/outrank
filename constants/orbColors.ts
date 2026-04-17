@@ -393,6 +393,19 @@ export const ORB_RING_COLORS: OrbColorSet[] = [
     outer: '#dc2626', mid: '#eab308', inner: '#22c55e', core: '#a855f7',
     glow: 'rgba(168,85,247,0.6)',
   },
+  // Mythic ring palettes — each of the 4 slots visibly different
+  {
+    id: 'ring_void',
+    name: 'Void',
+    outer: '#000000', mid: '#4c1d95', inner: '#ec4899', core: '#f5d0fe',
+    glow: 'rgba(236,72,153,0.65)',
+  },
+  {
+    id: 'ring_supernova',
+    name: 'Supernova',
+    outer: '#7f1d1d', mid: '#ea580c', inner: '#fde047', core: '#ffffff',
+    glow: 'rgba(253,224,71,0.75)',
+  },
 ];
 
 export function getOrbRingColor(id: string): OrbColorSet {

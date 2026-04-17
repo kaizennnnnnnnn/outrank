@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ORB_BASE_COLORS, ORB_PULSE_COLORS, ORB_RING_COLORS, OrbColorSet } from '@/constants/orbColors';
 import { XPBoostBadge, isXPBoostActive } from '@/components/profile/XPBoostBadge';
@@ -9,14 +10,52 @@ import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
+// Rarity lookup — mirrors what's in the shop. Anything not listed falls back to common.
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+const RARITY_BY_ID: Record<string, Rarity> = {
+  // base
+  crimson: 'common', ocean: 'rare', emerald: 'rare', violet: 'epic', gold: 'epic',
+  obsidian: 'epic', phoenix: 'legendary', aurora: 'legendary', nebula: 'legendary',
+  prismatic: 'legendary', sunset: 'epic', northern: 'legendary', candy: 'epic',
+  toxic: 'epic', deepsea: 'epic', bloodmoon: 'legendary',
+  rainbow: 'mythic', stargaze: 'mythic', eternal: 'mythic',
+  // pulse
+  fire: 'common', ice: 'rare', lightning: 'rare', shadow: 'epic', plasma: 'epic',
+  solar: 'legendary', cosmic: 'legendary', mystic: 'legendary', inferno: 'legendary', void: 'legendary',
+  pulse_sunset: 'epic', pulse_toxic: 'epic', pulse_candy: 'epic', pulse_neon: 'epic',
+  pulse_rainbow: 'mythic', pulse_stargaze: 'mythic', pulse_eternal: 'mythic',
+  // ring
+  ring_default: 'common', ring_silver: 'rare', ring_emerald: 'rare', ring_sapphire: 'rare',
+  ring_royal: 'epic', ring_rose: 'epic', ring_neon: 'epic', ring_ghost: 'epic',
+  ring_sunset: 'legendary', ring_aurora: 'legendary', ring_molten: 'legendary',
+  ring_candy: 'legendary', ring_toxic: 'legendary',
+  ring_rainbow: 'mythic', ring_void: 'mythic', ring_supernova: 'mythic',
+};
+
+const rarityStyles: Record<Rarity, { label: string; text: string; bg: string; border: string }> = {
+  common:    { label: 'Common',    text: '#94a3b8', bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.35)' },
+  rare:      { label: 'Rare',      text: '#60a5fa', bg: 'rgba(59,130,246,0.15)',  border: 'rgba(59,130,246,0.4)'   },
+  epic:      { label: 'Epic',      text: '#c084fc', bg: 'rgba(168,85,247,0.15)',  border: 'rgba(168,85,247,0.4)'   },
+  legendary: { label: 'Legendary', text: '#fbbf24', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.45)'  },
+  mythic:    { label: 'Mythic',    text: '#f9a8d4', bg: 'rgba(236,72,153,0.18)',  border: 'rgba(236,72,153,0.5)'   },
+};
+
+const rarityRank: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
+
+type SortMode = 'rarity' | 'name';
+type FilterType = 'all' | 'base' | 'pulse' | 'ring';
+
 export default function InventoryPage() {
   const { user } = useAuth();
   const addToast = useUIStore((s) => s.addToast);
 
+  const [sort, setSort] = useState<SortMode>('rarity');
+  const [filter, setFilter] = useState<FilterType>('all');
+
   if (!user) return null;
 
   const userData = user as unknown as Record<string, unknown>;
-  const ownedColors: string[] = (userData.ownedColors as string[]) || ['crimson', 'fire'];
+  const ownedColors: string[] = (userData.ownedColors as string[]) || ['crimson', 'fire', 'ring_default'];
   const fragments: number = (userData.fragments as number) || 0;
   const streakFreezes: number = user.streakFreezeTokens || 0;
   const xpBoostAt = userData.xpBoostActivatedAt;
@@ -25,39 +64,40 @@ export default function InventoryPage() {
   const equippedPulse: string = (userData.orbPulseColor as string) || 'fire';
   const equippedRing: string = (userData.orbRingColor as string) || 'ring_default';
 
-  const ownedBaseColors = ORB_BASE_COLORS.filter((c) => ownedColors.includes(c.id));
-  const ownedPulseColors = ORB_PULSE_COLORS.filter((c) => ownedColors.includes(c.id));
-  const ownedRingColors = ORB_RING_COLORS.filter((c) => ownedColors.includes(c.id) || c.id === 'ring_default');
+  const ownedBaseColors = useMemo(
+    () => sortColors(ORB_BASE_COLORS.filter((c) => ownedColors.includes(c.id)), sort),
+    [ownedColors, sort]
+  );
+  const ownedPulseColors = useMemo(
+    () => sortColors(ORB_PULSE_COLORS.filter((c) => ownedColors.includes(c.id)), sort),
+    [ownedColors, sort]
+  );
+  const ownedRingColors = useMemo(
+    () => sortColors(ORB_RING_COLORS.filter((c) => ownedColors.includes(c.id) || c.id === 'ring_default'), sort),
+    [ownedColors, sort]
+  );
 
   const equipBase = async (id: string) => {
-    try {
-      await updateDocument('users', user.uid, { orbBaseColor: id });
-      addToast({ type: 'success', message: 'Base color equipped' });
-    } catch {
-      addToast({ type: 'error', message: 'Failed to equip' });
-    }
+    try { await updateDocument('users', user.uid, { orbBaseColor: id }); addToast({ type: 'success', message: 'Base color equipped' }); }
+    catch { addToast({ type: 'error', message: 'Failed to equip' }); }
   };
   const equipPulse = async (id: string) => {
-    try {
-      await updateDocument('users', user.uid, { orbPulseColor: id });
-      addToast({ type: 'success', message: 'Pulse color equipped' });
-    } catch {
-      addToast({ type: 'error', message: 'Failed to equip' });
-    }
+    try { await updateDocument('users', user.uid, { orbPulseColor: id }); addToast({ type: 'success', message: 'Pulse color equipped' }); }
+    catch { addToast({ type: 'error', message: 'Failed to equip' }); }
   };
   const equipRing = async (id: string) => {
-    try {
-      await updateDocument('users', user.uid, { orbRingColor: id });
-      addToast({ type: 'success', message: 'Ring color equipped' });
-    } catch {
-      addToast({ type: 'error', message: 'Failed to equip' });
-    }
+    try { await updateDocument('users', user.uid, { orbRingColor: id }); addToast({ type: 'success', message: 'Ring color equipped' }); }
+    catch { addToast({ type: 'error', message: 'Failed to equip' }); }
   };
+
+  const showBase = filter === 'all' || filter === 'base';
+  const showPulse = filter === 'all' || filter === 'pulse';
+  const showRing = filter === 'all' || filter === 'ring';
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold text-white font-heading">Inventory</h1>
           <p className="text-sm text-slate-500">Everything you own — equip with one tap.</p>
@@ -69,95 +109,182 @@ export default function InventoryPage() {
 
       {/* Currencies + Consumables */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatPill
-          label="Fragments"
-          value={fragments.toLocaleString()}
-          color="#f97316"
-          icon={<FragmentIcon />}
-        />
-        <StatPill
-          label="Streak Freezes"
-          value={streakFreezes.toString()}
-          color="#06b6d4"
-          icon={<ShieldIcon />}
-        />
-        <StatPill
-          label="XP Boost"
-          value={boostActive ? 'Active' : 'Idle'}
-          color={boostActive ? '#fb923c' : '#475569'}
-          icon={<BoltIcon />}
-          extra={boostActive ? <XPBoostBadge activatedAt={xpBoostAt as never} size="sm" /> : null}
-        />
-        <StatPill
-          label="Orb Tier"
-          value={String((userData.orbTier as number) || 1)}
-          color="#a855f7"
-          icon={<OrbIcon />}
-        />
+        <StatPill label="Fragments" value={fragments.toLocaleString()} color="#f97316" icon={<FragmentIcon />} />
+        <StatPill label="Streak Freezes" value={streakFreezes.toString()} color="#06b6d4" icon={<ShieldIcon />} />
+        <StatPill label="XP Boost" value={boostActive ? 'Active' : 'Idle'} color={boostActive ? '#fb923c' : '#475569'} icon={<BoltIcon />} extra={boostActive ? <XPBoostBadge activatedAt={xpBoostAt as never} size="sm" /> : null} />
+        <StatPill label="Orb Tier" value={String((userData.orbTier as number) || 1)} color="#a855f7" icon={<OrbIcon />} />
       </section>
+
+      {/* Filter + sort controls */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">Show</span>
+        <FilterChip label="All" active={filter === 'all'} onClick={() => setFilter('all')} />
+        <FilterChip label="Base" active={filter === 'base'} onClick={() => setFilter('base')} />
+        <FilterChip label="Pulse" active={filter === 'pulse'} onClick={() => setFilter('pulse')} />
+        <FilterChip label="Rings" active={filter === 'ring'} onClick={() => setFilter('ring')} />
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1 ml-2">Sort</span>
+        <FilterChip label="Rarity" active={sort === 'rarity'} onClick={() => setSort('rarity')} />
+        <FilterChip label="Name" active={sort === 'name'} onClick={() => setSort('name')} />
+      </div>
 
       {/* Base Colors */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-            Base Colors <span className="text-slate-600">({ownedBaseColors.length})</span>
-          </h2>
-        </div>
-        {ownedBaseColors.length === 0 ? (
-          <EmptyMsg msg="No base colors yet. Visit the shop." />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {ownedBaseColors.map((c) => (
-              <ColorCard
-                key={c.id}
-                color={c}
-                equipped={equippedBase === c.id}
-                onEquip={() => equipBase(c.id)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {showBase && (
+        <ColorSection
+          title="Base Colors"
+          count={ownedBaseColors.length}
+          empty="No base colors yet. Visit the shop."
+          colors={ownedBaseColors}
+          equippedId={equippedBase}
+          onEquip={equipBase}
+          variant="orb"
+        />
+      )}
 
       {/* Pulse Colors */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-          Pulse Colors <span className="text-slate-600">({ownedPulseColors.length})</span>
-        </h2>
-        {ownedPulseColors.length === 0 ? (
-          <EmptyMsg msg="No pulse colors yet. Visit the shop." />
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {ownedPulseColors.map((c) => (
-              <ColorCard
-                key={c.id}
-                color={c}
-                equipped={equippedPulse === c.id}
-                onEquip={() => equipPulse(c.id)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      {showPulse && (
+        <ColorSection
+          title="Pulse Colors"
+          count={ownedPulseColors.length}
+          empty="No pulse colors yet. Visit the shop."
+          colors={ownedPulseColors}
+          equippedId={equippedPulse}
+          onEquip={equipPulse}
+          variant="orb"
+        />
+      )}
 
       {/* Ring Colors */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-          Ring Colors <span className="text-slate-600">({ownedRingColors.length})</span>
-        </h2>
+      {showRing && (
+        <ColorSection
+          title="Ring Colors"
+          count={ownedRingColors.length}
+          empty="No ring colors yet. Visit the shop."
+          colors={ownedRingColors}
+          equippedId={equippedRing}
+          onEquip={equipRing}
+          variant="ring"
+        />
+      )}
+    </div>
+  );
+}
+
+function sortColors(list: OrbColorSet[], mode: SortMode): OrbColorSet[] {
+  const sorted = [...list];
+  if (mode === 'rarity') {
+    // Mythic first, then Legendary, Epic, Rare, Common. Tie-break by name.
+    sorted.sort((a, b) => {
+      const ra = rarityRank[RARITY_BY_ID[a.id] || 'common'];
+      const rb = rarityRank[RARITY_BY_ID[b.id] || 'common'];
+      if (ra !== rb) return rb - ra;
+      return a.name.localeCompare(b.name);
+    });
+  } else {
+    sorted.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return sorted;
+}
+
+function ColorSection({
+  title, count, empty, colors, equippedId, onEquip, variant,
+}: {
+  title: string;
+  count: number;
+  empty: string;
+  colors: OrbColorSet[];
+  equippedId: string;
+  onEquip: (id: string) => void;
+  variant: 'orb' | 'ring';
+}) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+        {title} <span className="text-slate-600">({count})</span>
+      </h2>
+      {colors.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-[#1e1e30] bg-[#0b0b14] p-6 text-center">
+          <p className="text-xs text-slate-500">{empty}</p>
+        </div>
+      ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {ownedRingColors.map((c) => (
+          {colors.map((c) => (
             <ColorCard
               key={c.id}
               color={c}
-              equipped={equippedRing === c.id}
-              onEquip={() => equipRing(c.id)}
-              isRing
+              variant={variant}
+              equipped={equippedId === c.id}
+              onEquip={() => onEquip(c.id)}
             />
           ))}
         </div>
-      </section>
-    </div>
+      )}
+    </section>
+  );
+}
+
+function ColorCard({
+  color, variant, equipped, onEquip,
+}: {
+  color: OrbColorSet; variant: 'orb' | 'ring'; equipped: boolean; onEquip: () => void;
+}) {
+  const rarity = RARITY_BY_ID[color.id] || 'common';
+  const rs = rarityStyles[rarity];
+  return (
+    <button
+      onClick={onEquip}
+      disabled={equipped}
+      className={cn(
+        'group relative overflow-hidden rounded-xl p-3 text-left transition-all',
+        equipped ? 'cursor-default' : 'hover:border-orange-500/40'
+      )}
+      style={{
+        border: equipped ? '1px solid rgba(249,115,22,0.5)' : `1px solid ${rs.border}`,
+        background: equipped
+          ? 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 60%)'
+          : `linear-gradient(145deg, ${rs.bg}, #0b0b14 60%)`,
+        boxShadow: rarity === 'mythic' || rarity === 'legendary'
+          ? `0 0 14px -6px ${rs.text}55`
+          : undefined,
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <OrbColorPreview colorSet={color} variant={variant} id={color.id} size={48} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{color.name}</p>
+          <p className="text-[10px] text-slate-500">
+            {equipped ? 'Currently equipped' : 'Tap to equip'}
+          </p>
+        </div>
+      </div>
+      {/* Rarity badge */}
+      <span
+        className="absolute top-2 left-2 text-[8px] font-bold uppercase tracking-[0.1em] px-1.5 py-0.5 rounded"
+        style={{ color: rs.text, background: rs.bg, border: `1px solid ${rs.border}` }}
+      >
+        {rs.label}
+      </span>
+      {equipped && (
+        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 px-1.5 py-0.5 rounded">
+          Equipped
+        </span>
+      )}
+    </button>
+  );
+}
+
+function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors border',
+        active
+          ? 'text-white border-orange-500/50 bg-gradient-to-br from-red-600/25 to-orange-500/15'
+          : 'text-slate-400 border-[#1e1e30] bg-[#0b0b14] hover:text-white hover:border-[#2a2a3d]'
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -182,80 +309,15 @@ function StatPill({
   );
 }
 
-function ColorCard({
-  color, equipped, onEquip, isRing,
-}: {
-  color: OrbColorSet; equipped: boolean; onEquip: () => void; isRing?: boolean;
-}) {
-  return (
-    <button
-      onClick={onEquip}
-      disabled={equipped}
-      className={cn(
-        'group relative overflow-hidden rounded-xl p-3 text-left transition-all',
-        equipped
-          ? 'border-orange-500/50 bg-orange-500/5 cursor-default'
-          : 'border-[#1e1e30] bg-[#0b0b14] hover:border-orange-500/30'
-      )}
-      style={{ border: equipped ? undefined : `1px solid ${color.mid}1a` }}
-    >
-      <div className="flex items-center gap-3">
-        <OrbColorPreview
-          colorSet={color}
-          variant={isRing ? 'ring' : 'orb'}
-          id={color.id}
-          size={48}
-        />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{color.name}</p>
-          <p className="text-[10px] text-slate-500">
-            {equipped ? 'Currently equipped' : 'Tap to equip'}
-          </p>
-        </div>
-      </div>
-      {equipped && (
-        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 px-1.5 py-0.5 rounded">
-          Equipped
-        </span>
-      )}
-    </button>
-  );
-}
-
-function EmptyMsg({ msg }: { msg: string }) {
-  return (
-    <div className="rounded-xl border border-dashed border-[#1e1e30] bg-[#0b0b14] p-6 text-center">
-      <p className="text-xs text-slate-500">{msg}</p>
-    </div>
-  );
-}
-
 function FragmentIcon() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-    </svg>
-  );
+  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>);
 }
 function ShieldIcon() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
+  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
 }
 function BoltIcon() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
+  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>);
 }
 function OrbIcon() {
-  return (
-    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" />
-    </svg>
-  );
+  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" /></svg>);
 }

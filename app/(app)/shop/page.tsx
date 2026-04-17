@@ -96,6 +96,8 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 'ring_color_ring_candy', name: 'Candy Rings', description: 'Pink and blue swirl', price: 180, type: 'ring_color', tab: 'rings', colorValue: '#ec4899', rarity: 'legendary' },
   { id: 'ring_color_ring_toxic', name: 'Toxic Rings', description: 'Corrosive green-yellow', price: 180, type: 'ring_color', tab: 'rings', colorValue: '#65a30d', rarity: 'legendary' },
   { id: 'ring_color_ring_rainbow', name: 'Rainbow Rings', description: 'Each particle its own color, cycling. Mythic.', price: 900, type: 'ring_color', tab: 'rings', colorValue: '#a855f7', rarity: 'mythic' },
+  { id: 'ring_color_ring_void', name: 'Void Rings', description: 'Black bleeding into violet and hot pink', price: 750, type: 'ring_color', tab: 'rings', colorValue: '#ec4899', rarity: 'mythic' },
+  { id: 'ring_color_ring_supernova', name: 'Supernova Rings', description: 'Molten orange to white-hot core', price: 800, type: 'ring_color', tab: 'rings', colorValue: '#fde047', rarity: 'mythic' },
 
   // ---- BOOSTS ----
   { id: 'boost_1h', name: '1h Quick Boost', description: '2× XP for one hour — try before you commit', price: 20, type: 'power_boost_1h', tab: 'boosts', rarity: 'common' },

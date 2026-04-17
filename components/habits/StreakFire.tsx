@@ -26,7 +26,9 @@ export function StreakFire({ size = 60, streak }: StreakFireProps) {
     ctx.scale(dpr, dpr);
 
     const cx = size / 2;
-    const baseY = size * 0.93;
+    // Lift the flame up so its base isn't flush against the canvas edge —
+    // gives the flame breathing room at the bottom and centers it visually.
+    const baseY = size * 0.78;
     const scale = size / 300;
 
     // Flame particles — metaball bodies that rise, shrink, and shift hue
