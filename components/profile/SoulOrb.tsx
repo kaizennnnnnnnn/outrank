@@ -86,12 +86,19 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     const R = size * config.radius;
     const brightness = 0.4 + pct * 0.6;
     const isSmall = size <= 100;
-    const numP = isSmall
+    // Cap main-sphere particles for perf. Tiers 6-10 compensate with more
+    // rings / satellites / arcs rather than raw particle count.
+    const PARTICLE_CAP = 700;
+    const rawNumP = isSmall
       ? Math.floor(config.particles * 0.25)
       : Math.floor(config.particles * (0.5 + pct * 0.5));
-    // Small orbs: smaller particles, faster spin
+    const numP = Math.min(rawNumP, isSmall ? 200 : PARTICLE_CAP);
     const particleScale = isSmall ? 0.5 : 1.0;
     const speedMultiplier = isSmall ? 2.0 : 1.0;
+    // Heavy mode = skip per-particle radial gradients (biggest perf cost) for
+    // high-tier / dense orbs. The solid fill still looks dense because
+    // brightness is controlled via alpha.
+    const heavyMode = config.tier >= 6;
 
     type P = { phi: number; theta: number; size: number; phase: number; speed: number; layer: number };
     const particles: P[] = [];
@@ -127,14 +134,21 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     type Satellite = { angle: number; radius: number; tiltX: number; tiltY: number; speed: number; size: number; trail: { x: number; y: number; a: number }[] };
     const satellites: Satellite[] = [];
     const satCount = !isSmall ? (config.satellites || 0) : 0;
+    // Keep satellites fully inside the canvas — leave margin for their glow radius.
+    const satSizeMax = 3.0;
+    const canvasHalf = size / 2;
+    const satGlowMargin = satSizeMax * 4;
+    const maxSatRadius = Math.max(R + 6, canvasHalf - satGlowMargin - 4);
+    const satBaseOffset = Math.max(8, (maxSatRadius - R) * 0.35);
+    const satJitter = Math.max(4, (maxSatRadius - R - satBaseOffset) * 0.7);
     for (let i = 0; i < satCount; i++) {
       satellites.push({
         angle: (i / satCount) * Math.PI * 2,
-        radius: R + 22 + Math.random() * 18,
+        radius: Math.min(R + satBaseOffset + Math.random() * satJitter, maxSatRadius),
         tiltX: (Math.random() - 0.5) * 1.2,
         tiltY: (Math.random() - 0.5) * 1.2,
         speed: 0.6 + Math.random() * 0.8,
-        size: 1.6 + Math.random() * 1.4,
+        size: 1.6 + Math.random() * (satSizeMax - 1.6),
         trail: [],
       });
     }
@@ -298,8 +312,9 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
 
       all.sort((a, b) => a.z - b.z);
 
-      // Connections
-      if (pct > 0.15) {
+      // Connections — O(n²)-ish. Skip the inner loop in heavy mode;
+      // the satellites + extra rings + arcs already provide visual density.
+      if (pct > 0.15 && !heavyMode) {
         ctx.lineWidth = 0.5;
         const front = all.filter(d => d.z < 40 && d.type === 0);
         for (let i = 0; i < front.length; i++) {
@@ -341,36 +356,25 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         const z2 = y0 * srx + z1 * crx;
         const pr = project(x1, y2, z2);
 
-        // Push to trail, keep only last N positions
+        // Trail: shorter (6 vs 10) and rendered as simple circles.
         sat.trail.push({ x: pr.px, y: pr.py, a: 1 });
-        if (sat.trail.length > 10) sat.trail.shift();
+        if (sat.trail.length > 6) sat.trail.shift();
 
-        // Draw trail
         for (let i = 0; i < sat.trail.length; i++) {
           const tpt = sat.trail[i];
-          const trailAlpha = (i / sat.trail.length) * 0.6 * brightness;
+          const trailAlpha = (i / sat.trail.length) * 0.5 * brightness;
           ctx.fillStyle = `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${trailAlpha})`;
           ctx.beginPath();
           ctx.arc(tpt.x, tpt.y, sat.size * (i / sat.trail.length) * 0.7, 0, PI2);
           ctx.fill();
         }
 
-        // Glow halo
+        // Simpler halo — no radial gradient, just two stacked translucent disks.
         if (pr.z < 50) {
-          const satGrad = ctx.createRadialGradient(pr.px, pr.py, 0, pr.px, pr.py, sat.size * 4);
-          satGrad.addColorStop(0, `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${0.8 * brightness})`);
-          satGrad.addColorStop(0.5, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${0.3 * brightness})`);
-          satGrad.addColorStop(1, 'transparent');
-          ctx.fillStyle = satGrad;
-          ctx.beginPath();
-          ctx.arc(pr.px, pr.py, sat.size * 4, 0, PI2);
-          ctx.fill();
-
-          // Bright core
+          ctx.fillStyle = `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${0.25 * brightness})`;
+          ctx.beginPath(); ctx.arc(pr.px, pr.py, sat.size * 3, 0, PI2); ctx.fill();
           ctx.fillStyle = `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${brightness})`;
-          ctx.beginPath();
-          ctx.arc(pr.px, pr.py, sat.size, 0, PI2);
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(pr.px, pr.py, sat.size, 0, PI2); ctx.fill();
         }
       }
 
@@ -398,7 +402,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
 
         const sz = d.sz * d.s * (1 + d.pBoost * 2);
 
-        if (sz > 0.5 && alpha > 0.05) {
+        // Radial halo is the single most expensive op in this loop. Skip it
+        // entirely in heavy mode — the visual impact is minor because the
+        // solid fill + connections + arcs still read as a glowing sphere.
+        if (!heavyMode && sz > 0.5 && alpha > 0.05) {
           const grd = ctx.createRadialGradient(d.px, d.py, 0, d.px, d.py, sz * (isSmall ? 2 : 4));
           grd.addColorStop(0, `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${alpha * 0.2})`);
           grd.addColorStop(1, 'transparent');

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { updateDocument } from '@/lib/firestore';
 import { increment, arrayUnion, Timestamp } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
+import { ORB_BASE_COLORS, ORB_PULSE_COLORS, OrbColorSet } from '@/constants/orbColors';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -384,17 +385,11 @@ function ShopCard({
       )}
 
       <div className="flex items-center gap-3 mb-3">
-        {item.colorValue ? (
-          <div
-            className="w-10 h-10 rounded-xl flex-shrink-0"
-            style={{
-              background: `radial-gradient(circle at 35% 30%, ${item.colorValue}e6, ${item.colorValue}66 60%, transparent 80%)`,
-              boxShadow: `0 0 14px -2px ${item.colorValue}80`,
-            }}
-          />
+        {item.type === 'base_color' || item.type === 'pulse_color' ? (
+          <OrbPreview colorSet={getOrbSet(item)} />
         ) : (
           <div
-            className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center"
+            className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
             style={{ background: `${accent.border}1a`, color: accent.text }}
           >
             {iconFor(item.type)}
@@ -436,6 +431,27 @@ function iconFor(type: ShopItem['type']) {
     default:
       return null;
   }
+}
+
+function getOrbSet(item: ShopItem): OrbColorSet {
+  if (item.type === 'base_color') {
+    const id = item.id.replace('color_', '');
+    return ORB_BASE_COLORS.find((c) => c.id === id) || ORB_BASE_COLORS[0];
+  }
+  const id = item.id.replace('pulse_', '');
+  return ORB_PULSE_COLORS.find((c) => c.id === id) || ORB_PULSE_COLORS[0];
+}
+
+function OrbPreview({ colorSet }: { colorSet: OrbColorSet }) {
+  return (
+    <div
+      className="w-12 h-12 rounded-full flex-shrink-0"
+      style={{
+        background: `radial-gradient(circle at 35% 30%, ${colorSet.core}cc, ${colorSet.inner}aa 45%, ${colorSet.mid}88 70%, ${colorSet.outer}44)`,
+        boxShadow: `0 0 18px -2px ${colorSet.mid}80, inset 0 -4px 8px ${colorSet.outer}80`,
+      }}
+    />
+  );
 }
 
 function PaintIcon() {

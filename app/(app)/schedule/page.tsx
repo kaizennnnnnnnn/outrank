@@ -206,8 +206,9 @@ export default function SchedulePage() {
           ) : (
             <div className="min-w-[720px]">
               {/* Day headers */}
-              <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-1 sticky top-0">
-                <div />
+              <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-1">
+                {/* Sticky top-left corner so it stays pinned when scrolling horizontally */}
+                <div className="sticky left-0 z-[12] bg-[#0b0b14]" />
                 {DAYS.map((d) => (
                   <div
                     key={d.idx}
@@ -224,7 +225,8 @@ export default function SchedulePage() {
                   key={h}
                   className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-1"
                 >
-                  <div className="text-[10px] font-mono text-slate-600 text-right pr-2 pt-2 whitespace-nowrap">
+                  {/* Sticky time column with opaque background so grid doesn't show through */}
+                  <div className="sticky left-0 z-[11] bg-[#0b0b14] text-[10px] font-mono text-slate-500 text-right pr-2 pt-2 whitespace-nowrap rounded-md">
                     {fmtHour(h)}
                   </div>
                   {DAYS.map((d) => {
