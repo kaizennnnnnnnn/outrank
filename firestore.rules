@@ -180,5 +180,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    // SCHEDULE — weekly habit planner, owner-only
+    match /scheduleEntries/{userId}/items/{entryId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
   }
 }
