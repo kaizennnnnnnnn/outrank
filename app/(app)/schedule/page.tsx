@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { useSchedule } from '@/hooks/useSchedule';
@@ -42,6 +42,35 @@ export default function SchedulePage() {
   // Habit selected via tap-to-place (mobile) or being dragged (desktop)
   const [selectedHabit, setSelectedHabit] = useState<UserHabit | null>(null);
   const [placing, setPlacing] = useState(false);
+
+  // Live clock — used to highlight the current day + hour row
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  // Mon=0..Sun=6
+  const todayIdx = (now.getDay() + 6) % 7;
+  const currentHour = now.getHours();
+  const tz = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
+
+  const sendTestNotification = async () => {
+    if (!user) return;
+    try {
+      await createDocument(`notifications/${user.uid}/items`, {
+        type: 'schedule_reminder',
+        message: 'Test reminder — your schedule notifications are working',
+        isRead: false,
+        relatedId: '',
+        actorId: '',
+        actorAvatar: '',
+        createdAt: Timestamp.now(),
+      });
+      addToast({ type: 'success', message: 'Test notification sent — check your device' });
+    } catch {
+      addToast({ type: 'error', message: 'Failed to send test' });
+    }
+  };
 
   // Map (day, hour) -> entry for O(1) lookup while rendering
   const entryMap = useMemo(() => {
@@ -121,7 +150,7 @@ export default function SchedulePage() {
   return (
     <div className="max-w-7xl mx-auto space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white font-heading">Schedule</h1>
           <p className="text-sm text-slate-500">
@@ -136,13 +165,22 @@ export default function SchedulePage() {
             }
           </p>
         </div>
-        <Link href="/dashboard" className="text-xs text-slate-500 hover:text-orange-400 transition-colors">
-          &larr; Back
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={sendTestNotification}
+            className="text-[11px] px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 transition-colors"
+            title={`Your timezone: ${tz}`}
+          >
+            Test push
+          </button>
+          <Link href="/dashboard" className="text-xs text-slate-500 hover:text-orange-400 transition-colors">
+            &larr; Back
+          </Link>
+        </div>
       </div>
 
-      {/* Mobile: sticky horizontal habit strip at top */}
-      <div className="lg:hidden sticky top-0 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-2 bg-[#08080f]/95 backdrop-blur-sm border-b border-[#1e1e30]">
+      {/* Mobile: sticky horizontal habit strip just below the TopBar (which is h-14 = 56px) */}
+      <div className="lg:hidden sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-2 bg-[#08080f]/95 backdrop-blur-md border-b border-[#1e1e30]">
         {habitsLoading ? (
           <div className="flex gap-2 overflow-x-auto">
             {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-32 rounded-xl flex-shrink-0" />)}
@@ -206,27 +244,44 @@ export default function SchedulePage() {
           ) : (
             <div className="min-w-[720px]">
               {/* Day headers */}
-              <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-1">
+              <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-2">
                 {/* Sticky top-left corner so it stays pinned when scrolling horizontally */}
                 <div className="sticky left-0 z-[12] bg-[#0b0b14]" />
-                {DAYS.map((d) => (
-                  <div
-                    key={d.idx}
-                    className="text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider py-2 bg-[#0b0b14] rounded-md"
-                  >
-                    {d.short}
-                  </div>
-                ))}
+                {DAYS.map((d) => {
+                  const isToday = d.idx === todayIdx;
+                  return (
+                    <div
+                      key={d.idx}
+                      className={cn(
+                        'text-center text-[11px] font-bold uppercase tracking-wider py-2 rounded-md transition-colors',
+                        isToday
+                          ? 'text-white bg-gradient-to-b from-red-600/30 to-orange-500/15 border border-orange-500/40 shadow-[0_0_18px_-6px_rgba(249,115,22,0.6)]'
+                          : 'text-slate-400 bg-[#0b0b14]'
+                      )}
+                    >
+                      {d.short}
+                      {isToday && <div className="text-[9px] text-orange-400 font-mono mt-0.5">today</div>}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Rows: one per hour */}
-              {HOURS.map((h) => (
+              {HOURS.map((h) => {
+                const isCurrentHour = h === currentHour;
+                return (
                 <div
                   key={h}
-                  className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-1"
+                  className={cn(
+                    'grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-1 relative',
+                    isCurrentHour && 'before:absolute before:left-[60px] before:right-0 before:top-1/2 before:h-px before:bg-gradient-to-r before:from-orange-500/60 before:to-transparent before:pointer-events-none'
+                  )}
                 >
                   {/* Sticky time column with opaque background so grid doesn't show through */}
-                  <div className="sticky left-0 z-[11] bg-[#0b0b14] text-[10px] font-mono text-slate-500 text-right pr-2 pt-2 whitespace-nowrap rounded-md">
+                  <div className={cn(
+                    'sticky left-0 z-[11] text-[10px] font-mono text-right pr-2 pt-2 whitespace-nowrap rounded-md',
+                    isCurrentHour ? 'bg-[#0b0b14] text-orange-400 font-bold' : 'bg-[#0b0b14] text-slate-500',
+                  )}>
                     {fmtHour(h)}
                   </div>
                   {DAYS.map((d) => {
@@ -259,6 +314,7 @@ export default function SchedulePage() {
                         </button>
                       );
                     }
+                    const isNow = d.idx === todayIdx && h === currentHour;
                     return (
                       <button
                         key={key}
@@ -268,15 +324,18 @@ export default function SchedulePage() {
                         className={cn(
                           'h-12 rounded-md border border-dashed transition-all',
                           selectedHabit
-                            ? 'border-orange-500/30 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-400/50'
-                            : 'border-[#1e1e30] bg-[#0b0b14] hover:bg-[#10101a]'
+                            ? 'border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/15 hover:border-orange-400/60 hover:shadow-[0_0_12px_-4px_rgba(249,115,22,0.5)]'
+                            : isNow
+                              ? 'border-orange-500/25 bg-orange-500/[0.03]'
+                              : 'border-[#1e1e30] bg-[#0b0b14] hover:bg-[#10101a] hover:border-[#2a2a3d]'
                         )}
                         aria-label={`${d.long} ${fmtHour(h)}`}
                       />
                     );
                   })}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

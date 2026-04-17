@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getOrbTier, MAX_ORB_TIER } from '@/constants/orbTiers';
-import { getOrbBaseColor, getOrbPulseColor } from '@/constants/orbColors';
+import { getOrbBaseColor, getOrbPulseColor, getOrbRingColor, isRainbowColor } from '@/constants/orbColors';
 import { Button } from '@/components/ui/Button';
 
 interface SoulOrbProps {
@@ -13,10 +13,11 @@ interface SoulOrbProps {
   onEvolve?: () => void;
   baseColorId?: string;
   pulseColorId?: string;
+  ringColorId?: string;
   hideLabel?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pulseColorId, hideLabel }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pulseColorId, ringColorId, hideLabel }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -169,6 +170,29 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     const pulseRgb = hexToRgb(pulseColors.mid);
     const pulseInnerRgb = hexToRgb(pulseColors.inner);
     const pulseMidRgb = hexToRgb(pulseColors.mid);
+
+    // Ring colors — equipped from shop. Rainbow cycles hue over time.
+    const ringCol = ringColorId ? getOrbRingColor(ringColorId) : null;
+    const ringBaseRgb = ringCol ? hexToRgb(ringCol.mid) : colMid;
+    const ringHighlightRgb = ringCol ? hexToRgb(ringCol.inner) : colInner;
+    const ringIsRainbow = isRainbowColor(ringColorId);
+    const baseIsRainbow = isRainbowColor(baseColorId);
+    const pulseIsRainbow = isRainbowColor(pulseColorId);
+    // HSL helper for rainbow cycling
+    function hslRgb(h: number, s: number, l: number): [number, number, number] {
+      h = ((h % 360) + 360) % 360;
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+      if (h < 60)       { r = c; g = x; }
+      else if (h < 120) { r = x; g = c; }
+      else if (h < 180) { g = c; b = x; }
+      else if (h < 240) { g = x; b = c; }
+      else if (h < 300) { r = x; b = c; }
+      else              { r = c; b = x; }
+      return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+    }
 
     function project(x: number, y: number, z: number) {
       const d = size * 0.9;
@@ -389,11 +413,34 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         let g = colOuter[1] + (colInner[1] - colOuter[1]) * lr;
         let b = colOuter[2] + (colInner[2] - colOuter[2]) * lr;
 
-        if (d.type === 1) { r = colMid[0]; g = colMid[1]; b = colMid[2]; alpha *= 0.5; }
+        // Rainbow base color: override with time-shifted hue keyed to position
+        if (baseIsRainbow && d.type === 0) {
+          const hue = (t * 60 + d.idx * 4 + d.phase * 30) % 360;
+          const rb = hslRgb(hue, 0.8, 0.55);
+          r = rb[0]; g = rb[1]; b = rb[2];
+        }
+
+        if (d.type === 1) {
+          // Ring particle — use ring color (or rainbow hue from index)
+          if (ringIsRainbow) {
+            const hue = (t * 80 + d.idx * 20 + d.phase * 40) % 360;
+            const rb = hslRgb(hue, 0.85, 0.6);
+            r = rb[0]; g = rb[1]; b = rb[2];
+          } else {
+            r = ringBaseRgb[0]; g = ringBaseRgb[1]; b = ringBaseRgb[2];
+          }
+          alpha *= 0.6;
+        }
         if (d.pBoost > 0) {
-          r += (pulseRgb[0] - r) * d.pBoost;
-          g += (pulseRgb[1] - g) * d.pBoost;
-          b += (pulseRgb[2] - b) * d.pBoost;
+          let pr = pulseRgb[0], pg = pulseRgb[1], pb = pulseRgb[2];
+          if (pulseIsRainbow) {
+            const hue = (t * 120 + d.phase * 60) % 360;
+            const rb = hslRgb(hue, 0.9, 0.55);
+            pr = rb[0]; pg = rb[1]; pb = rb[2];
+          }
+          r += (pr - r) * d.pBoost;
+          g += (pg - g) * d.pBoost;
+          b += (pb - b) * d.pBoost;
           alpha = min(1, alpha + d.pBoost * 0.6);
         }
 
@@ -474,7 +521,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       canvas.removeEventListener('touchmove', tm);
       canvas.removeEventListener('touchend', onEnd);
     };
-  }, [intensity, tier, size, baseColorId, pulseColorId]);
+  }, [intensity, tier, size, baseColorId, pulseColorId, ringColorId]);
 
   const config = getOrbTier(tier);
 

@@ -96,6 +96,7 @@ export default function DashboardPage() {
             ), 100)} tier={(user as unknown as Record<string, number>).orbTier || 1} size={80} hideLabel
               baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
               pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+              ringColorId={(user as unknown as Record<string, string>).orbRingColor}
             />
           </Link>
         </div>

@@ -39,12 +39,11 @@ service cloud.firestore {
     }
 
     // USERS
+    // Read is open to authenticated users so global leaderboards and profile
+    // previews can query/list (Firestore rejects collection queries when the
+    // rule depends on resource.data). Per-user privacy is handled in UI.
     match /users/{userId} {
-      allow read: if isAuthenticated() && (
-        isOwner(userId) ||
-        resource.data.isPublic == true ||
-        isFriend(userId)
-      );
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && isOwner(userId);
       allow update: if isOwner(userId) && isNotBanned()
         && !request.resource.data.diff(resource.data).affectedKeys()

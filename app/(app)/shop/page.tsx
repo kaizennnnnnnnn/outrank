@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/Button';
 import { updateDocument } from '@/lib/firestore';
 import { increment, arrayUnion, Timestamp } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
-import { ORB_BASE_COLORS, ORB_PULSE_COLORS, OrbColorSet } from '@/constants/orbColors';
+import { ORB_BASE_COLORS, ORB_PULSE_COLORS, ORB_RING_COLORS, OrbColorSet } from '@/constants/orbColors';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
 type Tab = 'colors' | 'boosts' | 'utilities';
 
 interface ShopItem {
@@ -21,13 +21,14 @@ interface ShopItem {
   type:
     | 'base_color'
     | 'pulse_color'
+    | 'ring_color'
     | 'power_boost_1h'
     | 'power_boost_24h'
     | 'power_boost_7d'
     | 'instant_evolve'
-    | 'streak_freeze'      // grants N freezes (payload)
-    | 'daily_challenge_x2' // next daily challenge awards 2x bonus XP
-    | 'streak_shield_week'; // 7 freezes bundle
+    | 'streak_freeze'
+    | 'daily_challenge_x2'
+    | 'streak_shield_week';
   tab: Tab;
   colorValue?: string;
   rarity: Rarity;
@@ -46,6 +47,17 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 'color_aurora', name: 'Aurora', description: 'Green and violet lights', price: 225, type: 'base_color', tab: 'colors', colorValue: '#10b981', rarity: 'legendary' },
   { id: 'color_nebula', name: 'Nebula', description: 'Purple-pink cosmic dust', price: 250, type: 'base_color', tab: 'colors', colorValue: '#ec4899', rarity: 'legendary' },
   { id: 'color_prismatic', name: 'Prismatic', description: 'Full spectrum — pinnacle flex', price: 400, type: 'base_color', tab: 'colors', colorValue: '#a855f7', rarity: 'legendary' },
+  // Base mixes
+  { id: 'color_sunset', name: 'Sunset', description: 'Orange melting into pink', price: 180, type: 'base_color', tab: 'colors', colorValue: '#f472b6', rarity: 'epic' },
+  { id: 'color_northern', name: 'Northern Lights', description: 'Cyan, green, violet shimmer', price: 260, type: 'base_color', tab: 'colors', colorValue: '#22c55e', rarity: 'legendary' },
+  { id: 'color_candy', name: 'Candy', description: 'Pink, blue, yellow pop', price: 200, type: 'base_color', tab: 'colors', colorValue: '#ec4899', rarity: 'epic' },
+  { id: 'color_toxic', name: 'Toxic', description: 'Poisonous green and yellow', price: 220, type: 'base_color', tab: 'colors', colorValue: '#84cc16', rarity: 'epic' },
+  { id: 'color_deepsea', name: 'Deep Sea', description: 'Ocean abyss to glowing cyan', price: 200, type: 'base_color', tab: 'colors', colorValue: '#22d3ee', rarity: 'epic' },
+  { id: 'color_bloodmoon', name: 'Blood Moon', description: 'Ominous red with gold core', price: 300, type: 'base_color', tab: 'colors', colorValue: '#ef4444', rarity: 'legendary' },
+  // Mythic base
+  { id: 'color_rainbow', name: 'Rainbow', description: 'Hue cycles continuously. Mythic.', price: 750, type: 'base_color', tab: 'colors', colorValue: '#a855f7', rarity: 'mythic' },
+  { id: 'color_stargaze', name: 'Stargaze', description: 'Dark void pierced by white-hot stars', price: 600, type: 'base_color', tab: 'colors', colorValue: '#7c3aed', rarity: 'mythic' },
+  { id: 'color_eternal', name: 'Eternal', description: 'Black and pure gold. Timeless', price: 800, type: 'base_color', tab: 'colors', colorValue: '#fbbf24', rarity: 'mythic' },
 
   // ---- COLORS: PULSE ----
   { id: 'pulse_fire', name: 'Fire Pulse', description: 'Orange fire wave', price: 0, type: 'pulse_color', tab: 'colors', colorValue: '#f97316', rarity: 'common' },
@@ -58,6 +70,31 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 'pulse_mystic', name: 'Mystic Pulse', description: 'Emerald with violet threads', price: 140, type: 'pulse_color', tab: 'colors', colorValue: '#059669', rarity: 'legendary' },
   { id: 'pulse_inferno', name: 'Inferno Pulse', description: 'Lava-hot orange-red', price: 150, type: 'pulse_color', tab: 'colors', colorValue: '#b91c1c', rarity: 'legendary' },
   { id: 'pulse_void', name: 'Void Pulse', description: 'Black hole collapse', price: 180, type: 'pulse_color', tab: 'colors', colorValue: '#7e22ce', rarity: 'legendary' },
+  // Pulse mixes
+  { id: 'pulse_pulse_sunset', name: 'Sunset Pulse', description: 'Pink-orange horizon wave', price: 140, type: 'pulse_color', tab: 'colors', colorValue: '#fb7185', rarity: 'epic' },
+  { id: 'pulse_pulse_toxic', name: 'Toxic Pulse', description: 'Lime and yellow current', price: 140, type: 'pulse_color', tab: 'colors', colorValue: '#84cc16', rarity: 'epic' },
+  { id: 'pulse_pulse_candy', name: 'Candy Pulse', description: 'Pink into electric blue', price: 160, type: 'pulse_color', tab: 'colors', colorValue: '#e879f9', rarity: 'epic' },
+  { id: 'pulse_pulse_neon', name: 'Neon Pulse', description: 'Green with cyan highlights', price: 160, type: 'pulse_color', tab: 'colors', colorValue: '#22c55e', rarity: 'epic' },
+  // Mythic pulse
+  { id: 'pulse_pulse_rainbow', name: 'Rainbow Pulse', description: 'Every color, always shifting', price: 700, type: 'pulse_color', tab: 'colors', colorValue: '#eab308', rarity: 'mythic' },
+  { id: 'pulse_pulse_stargaze', name: 'Stargaze Pulse', description: 'Purple void with white flashes', price: 550, type: 'pulse_color', tab: 'colors', colorValue: '#a855f7', rarity: 'mythic' },
+  { id: 'pulse_pulse_eternal', name: 'Eternal Pulse', description: 'Molten gold through darkness', price: 650, type: 'pulse_color', tab: 'colors', colorValue: '#fbbf24', rarity: 'mythic' },
+
+  // ---- RING COLORS (new axis) ----
+  { id: 'ring_color_ring_default', name: 'Default Rings', description: 'Red-gold orbital rings', price: 0, type: 'ring_color', tab: 'colors', colorValue: '#f59e0b', rarity: 'common' },
+  { id: 'ring_color_ring_silver', name: 'Silver Rings', description: 'Cold metallic rings', price: 45, type: 'ring_color', tab: 'colors', colorValue: '#94a3b8', rarity: 'rare' },
+  { id: 'ring_color_ring_emerald', name: 'Emerald Rings', description: 'Jade green rings', price: 55, type: 'ring_color', tab: 'colors', colorValue: '#10b981', rarity: 'rare' },
+  { id: 'ring_color_ring_sapphire', name: 'Sapphire Rings', description: 'Electric blue rings', price: 55, type: 'ring_color', tab: 'colors', colorValue: '#2563eb', rarity: 'rare' },
+  { id: 'ring_color_ring_royal', name: 'Royal Rings', description: 'Purple aristocrat rings', price: 90, type: 'ring_color', tab: 'colors', colorValue: '#7c3aed', rarity: 'epic' },
+  { id: 'ring_color_ring_rose', name: 'Rose Rings', description: 'Pink petals in orbit', price: 90, type: 'ring_color', tab: 'colors', colorValue: '#e11d48', rarity: 'epic' },
+  { id: 'ring_color_ring_neon', name: 'Neon Rings', description: 'Harsh bright green', price: 120, type: 'ring_color', tab: 'colors', colorValue: '#22c55e', rarity: 'epic' },
+  { id: 'ring_color_ring_sunset', name: 'Sunset Rings', description: 'Orange-to-pink horizon', price: 170, type: 'ring_color', tab: 'colors', colorValue: '#f472b6', rarity: 'legendary' },
+  { id: 'ring_color_ring_aurora', name: 'Aurora Rings', description: 'Green and violet shimmer', price: 200, type: 'ring_color', tab: 'colors', colorValue: '#8b5cf6', rarity: 'legendary' },
+  { id: 'ring_color_ring_molten', name: 'Molten Rings', description: 'Lava-hot orbiting iron', price: 200, type: 'ring_color', tab: 'colors', colorValue: '#dc2626', rarity: 'legendary' },
+  { id: 'ring_color_ring_ghost', name: 'Ghost Rings', description: 'Barely-there pale whisper', price: 160, type: 'ring_color', tab: 'colors', colorValue: '#64748b', rarity: 'epic' },
+  { id: 'ring_color_ring_candy', name: 'Candy Rings', description: 'Pink and blue swirl', price: 180, type: 'ring_color', tab: 'colors', colorValue: '#ec4899', rarity: 'legendary' },
+  { id: 'ring_color_ring_toxic', name: 'Toxic Rings', description: 'Corrosive green-yellow', price: 180, type: 'ring_color', tab: 'colors', colorValue: '#65a30d', rarity: 'legendary' },
+  { id: 'ring_color_ring_rainbow', name: 'Rainbow Rings', description: 'Each particle its own color, cycling. Mythic.', price: 900, type: 'ring_color', tab: 'colors', colorValue: '#a855f7', rarity: 'mythic' },
 
   // ---- BOOSTS ----
   { id: 'boost_1h', name: '1h Quick Boost', description: '2× XP for one hour — try before you commit', price: 20, type: 'power_boost_1h', tab: 'boosts', rarity: 'common' },
@@ -72,14 +109,14 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 'instant_evolve', name: 'Instant Evolution', description: 'Skip the grind — evolve your orb now', price: 200, type: 'instant_evolve', tab: 'utilities', rarity: 'legendary' },
 ];
 
-// Lower index = less rare; we sort desc so legendary appears first within tab
-const rarityRank: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const rarityRank: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
 
 const rarityAccent: Record<Rarity, { border: string; glow: string; text: string }> = {
   common:    { border: '#475569',  glow: 'rgba(148,163,184,0.12)', text: '#94a3b8' },
   rare:      { border: '#3b82f6',  glow: 'rgba(59,130,246,0.18)',  text: '#60a5fa' },
   epic:      { border: '#a855f7',  glow: 'rgba(168,85,247,0.22)',  text: '#c084fc' },
   legendary: { border: '#f59e0b',  glow: 'rgba(245,158,11,0.28)',  text: '#fbbf24' },
+  mythic:    { border: '#ec4899',  glow: 'rgba(236,72,153,0.38)',  text: '#f9a8d4' },
 };
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
@@ -96,18 +133,26 @@ export default function ShopPage() {
 
   const userData = user as unknown as Record<string, unknown> | undefined;
   const fragments = (userData?.fragments as number) || 0;
-  const ownedColors = (userData?.ownedColors as string[]) || ['crimson', 'fire'];
+  const ownedColors = (userData?.ownedColors as string[]) || ['crimson', 'fire', 'ring_default'];
   const equippedBase = (userData?.orbBaseColor as string) || 'crimson';
   const equippedPulse = (userData?.orbPulseColor as string) || 'fire';
+  const equippedRing = (userData?.orbRingColor as string) || 'ring_default';
+
+  // Strip any of the id prefixes to get the stored color id.
+  const colorIdOf = (item: ShopItem) =>
+    item.id.replace(/^(color_|pulse_pulse_|pulse_|ring_color_)/, '');
 
   const isOwned = (item: ShopItem) => {
-    if (item.type === 'base_color') return ownedColors.includes(item.id.replace('color_', ''));
-    if (item.type === 'pulse_color') return ownedColors.includes(item.id.replace('pulse_', ''));
+    if (item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color') {
+      return ownedColors.includes(colorIdOf(item));
+    }
     return false;
   };
   const isEquipped = (item: ShopItem) => {
-    if (item.type === 'base_color') return equippedBase === item.id.replace('color_', '');
-    if (item.type === 'pulse_color') return equippedPulse === item.id.replace('pulse_', '');
+    const id = colorIdOf(item);
+    if (item.type === 'base_color')  return equippedBase === id;
+    if (item.type === 'pulse_color') return equippedPulse === id;
+    if (item.type === 'ring_color')  return equippedRing === id;
     return false;
   };
 
@@ -118,14 +163,13 @@ export default function ShopPage() {
     if (equipped) return;
 
     // Colors you already own — equip for free
-    if (owned && (item.type === 'base_color' || item.type === 'pulse_color')) {
+    if (owned && (item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color')) {
       setBuying(item.id);
       try {
-        if (item.type === 'base_color') {
-          await updateDocument('users', user.uid, { orbBaseColor: item.id.replace('color_', '') });
-        } else {
-          await updateDocument('users', user.uid, { orbPulseColor: item.id.replace('pulse_', '') });
-        }
+        const id = colorIdOf(item);
+        if (item.type === 'base_color')       await updateDocument('users', user.uid, { orbBaseColor: id });
+        else if (item.type === 'pulse_color') await updateDocument('users', user.uid, { orbPulseColor: id });
+        else                                  await updateDocument('users', user.uid, { orbRingColor: id });
         addToast({ type: 'success', message: `Equipped ${item.name}` });
       } catch {
         addToast({ type: 'error', message: 'Failed to equip' });
@@ -147,14 +191,20 @@ export default function ShopPage() {
       }
       switch (item.type) {
         case 'base_color': {
-          const colorId = item.id.replace('color_', '');
-          await updateDocument('users', user.uid, { orbBaseColor: colorId, ownedColors: arrayUnion(colorId) });
+          const id = colorIdOf(item);
+          await updateDocument('users', user.uid, { orbBaseColor: id, ownedColors: arrayUnion(id) });
           addToast({ type: 'success', message: `Purchased ${item.name}` });
           break;
         }
         case 'pulse_color': {
-          const colorId = item.id.replace('pulse_', '');
-          await updateDocument('users', user.uid, { orbPulseColor: colorId, ownedColors: arrayUnion(colorId) });
+          const id = colorIdOf(item);
+          await updateDocument('users', user.uid, { orbPulseColor: id, ownedColors: arrayUnion(id) });
+          addToast({ type: 'success', message: `Purchased ${item.name}` });
+          break;
+        }
+        case 'ring_color': {
+          const id = colorIdOf(item);
+          await updateDocument('users', user.uid, { orbRingColor: id, ownedColors: arrayUnion(id) });
           addToast({ type: 'success', message: `Purchased ${item.name}` });
           break;
         }
@@ -249,7 +299,17 @@ export default function ShopPage() {
         ))}
       </div>
 
-      {/* Group by rarity so "Legendary" items show together at the top */}
+      {/* Group by rarity so top tiers appear first */}
+      <RarityGroup
+        title="Mythic"
+        items={visible.filter((i) => i.rarity === 'mythic')}
+        tab={tab}
+        fragments={fragments}
+        buying={buying}
+        onBuy={handleBuy}
+        isOwned={isOwned}
+        isEquipped={isEquipped}
+      />
       <RarityGroup
         title="Legendary"
         items={visible.filter((i) => i.rarity === 'legendary')}
@@ -385,8 +445,8 @@ function ShopCard({
       )}
 
       <div className="flex items-center gap-3 mb-3">
-        {item.type === 'base_color' || item.type === 'pulse_color' ? (
-          <OrbPreview colorSet={getOrbSet(item)} />
+        {item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color' ? (
+          <OrbPreview colorSet={getOrbSet(item)} isRing={item.type === 'ring_color'} />
         ) : (
           <div
             className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
@@ -434,15 +494,42 @@ function iconFor(type: ShopItem['type']) {
 }
 
 function getOrbSet(item: ShopItem): OrbColorSet {
-  if (item.type === 'base_color') {
-    const id = item.id.replace('color_', '');
-    return ORB_BASE_COLORS.find((c) => c.id === id) || ORB_BASE_COLORS[0];
-  }
-  const id = item.id.replace('pulse_', '');
-  return ORB_PULSE_COLORS.find((c) => c.id === id) || ORB_PULSE_COLORS[0];
+  const id = item.id.replace(/^(color_|pulse_pulse_|pulse_|ring_color_)/, '');
+  if (item.type === 'base_color')  return ORB_BASE_COLORS.find((c) => c.id === id) || ORB_BASE_COLORS[0];
+  if (item.type === 'pulse_color') return ORB_PULSE_COLORS.find((c) => c.id === id) || ORB_PULSE_COLORS[0];
+  return ORB_RING_COLORS.find((c) => c.id === id) || ORB_RING_COLORS[0];
 }
 
-function OrbPreview({ colorSet }: { colorSet: OrbColorSet }) {
+function OrbPreview({ colorSet, isRing }: { colorSet: OrbColorSet; isRing?: boolean }) {
+  if (isRing) {
+    // Ring preview: a dark orb with two overlapping colored rings
+    return (
+      <div
+        className="w-12 h-12 rounded-full flex-shrink-0 relative"
+        style={{
+          background: 'radial-gradient(circle at 35% 30%, #1e1e30, #0b0b14 70%)',
+          boxShadow: `0 0 14px -4px ${colorSet.mid}70`,
+        }}
+      >
+        <div
+          className="absolute inset-1 rounded-full"
+          style={{
+            border: `1.5px solid ${colorSet.mid}`,
+            boxShadow: `0 0 8px ${colorSet.mid}80, inset 0 0 8px ${colorSet.inner}60`,
+            transform: 'rotate(30deg) scaleY(0.35)',
+          }}
+        />
+        <div
+          className="absolute inset-2 rounded-full"
+          style={{
+            border: `1.2px solid ${colorSet.inner}`,
+            boxShadow: `0 0 6px ${colorSet.inner}80`,
+            transform: 'rotate(-20deg) scaleY(0.25)',
+          }}
+        />
+      </div>
+    );
+  }
   return (
     <div
       className="w-12 h-12 rounded-full flex-shrink-0"

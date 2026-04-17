@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
-import { ORB_BASE_COLORS, ORB_PULSE_COLORS, OrbColorSet } from '@/constants/orbColors';
+import { ORB_BASE_COLORS, ORB_PULSE_COLORS, ORB_RING_COLORS, OrbColorSet } from '@/constants/orbColors';
 import { XPBoostBadge, isXPBoostActive } from '@/components/profile/XPBoostBadge';
 import { updateDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
@@ -22,9 +22,11 @@ export default function InventoryPage() {
   const boostActive = isXPBoostActive(xpBoostAt as never);
   const equippedBase: string = (userData.orbBaseColor as string) || 'crimson';
   const equippedPulse: string = (userData.orbPulseColor as string) || 'fire';
+  const equippedRing: string = (userData.orbRingColor as string) || 'ring_default';
 
   const ownedBaseColors = ORB_BASE_COLORS.filter((c) => ownedColors.includes(c.id));
   const ownedPulseColors = ORB_PULSE_COLORS.filter((c) => ownedColors.includes(c.id));
+  const ownedRingColors = ORB_RING_COLORS.filter((c) => ownedColors.includes(c.id) || c.id === 'ring_default');
 
   const equipBase = async (id: string) => {
     try {
@@ -38,6 +40,14 @@ export default function InventoryPage() {
     try {
       await updateDocument('users', user.uid, { orbPulseColor: id });
       addToast({ type: 'success', message: 'Pulse color equipped' });
+    } catch {
+      addToast({ type: 'error', message: 'Failed to equip' });
+    }
+  };
+  const equipRing = async (id: string) => {
+    try {
+      await updateDocument('users', user.uid, { orbRingColor: id });
+      addToast({ type: 'success', message: 'Ring color equipped' });
     } catch {
       addToast({ type: 'error', message: 'Failed to equip' });
     }
@@ -128,6 +138,24 @@ export default function InventoryPage() {
           </div>
         )}
       </section>
+
+      {/* Ring Colors */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+          Ring Colors <span className="text-slate-600">({ownedRingColors.length})</span>
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {ownedRingColors.map((c) => (
+            <ColorCard
+              key={c.id}
+              color={c}
+              equipped={equippedRing === c.id}
+              onEquip={() => equipRing(c.id)}
+              isRing
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
@@ -154,9 +182,9 @@ function StatPill({
 }
 
 function ColorCard({
-  color, equipped, onEquip,
+  color, equipped, onEquip, isRing,
 }: {
-  color: OrbColorSet; equipped: boolean; onEquip: () => void;
+  color: OrbColorSet; equipped: boolean; onEquip: () => void; isRing?: boolean;
 }) {
   return (
     <button
@@ -171,13 +199,40 @@ function ColorCard({
       style={{ border: equipped ? undefined : `1px solid ${color.mid}1a` }}
     >
       <div className="flex items-center gap-3">
-        <div
-          className="w-12 h-12 rounded-full flex-shrink-0"
-          style={{
-            background: `radial-gradient(circle at 35% 30%, ${color.core}cc, ${color.inner}aa 45%, ${color.mid}88 70%, ${color.outer}44)`,
-            boxShadow: `0 0 18px -2px ${color.mid}80, inset 0 -4px 8px ${color.outer}80`,
-          }}
-        />
+        {isRing ? (
+          <div
+            className="w-12 h-12 rounded-full flex-shrink-0 relative"
+            style={{
+              background: 'radial-gradient(circle at 35% 30%, #1e1e30, #0b0b14 70%)',
+              boxShadow: `0 0 14px -4px ${color.mid}70`,
+            }}
+          >
+            <div
+              className="absolute inset-1 rounded-full"
+              style={{
+                border: `1.5px solid ${color.mid}`,
+                boxShadow: `0 0 8px ${color.mid}80, inset 0 0 8px ${color.inner}60`,
+                transform: 'rotate(30deg) scaleY(0.35)',
+              }}
+            />
+            <div
+              className="absolute inset-2 rounded-full"
+              style={{
+                border: `1.2px solid ${color.inner}`,
+                boxShadow: `0 0 6px ${color.inner}80`,
+                transform: 'rotate(-20deg) scaleY(0.25)',
+              }}
+            />
+          </div>
+        ) : (
+          <div
+            className="w-12 h-12 rounded-full flex-shrink-0"
+            style={{
+              background: `radial-gradient(circle at 35% 30%, ${color.core}cc, ${color.inner}aa 45%, ${color.mid}88 70%, ${color.outer}44)`,
+              boxShadow: `0 0 18px -2px ${color.mid}80, inset 0 -4px 8px ${color.outer}80`,
+            }}
+          />
+        )}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">{color.name}</p>
           <p className="text-[10px] text-slate-500">

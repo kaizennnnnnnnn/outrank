@@ -149,7 +149,7 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
                 <div
                   key={di}
                   className={cn(
-                    'w-[11px] h-[11px] rounded-[2px] transition-colors',
+                    'w-[14px] h-[14px] rounded-[2px] transition-colors',
                     loading && 'animate-pulse',
                     isToday && !loading && count === 0 && 'ring-1 ring-orange-500/60',
                   )}
@@ -166,11 +166,11 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
       </div>
       <div className="flex items-center gap-1 mt-2 text-[10px] text-slate-600 flex-wrap">
         <span>Less</span>
-        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(0) }} />
-        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(1) }} />
-        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(3) }} />
-        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(5) }} />
-        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(7) }} />
+        <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(0) }} />
+        <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(1) }} />
+        <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(3) }} />
+        <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(5) }} />
+        <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(7) }} />
         <span>More</span>
         <span className="ml-2 text-slate-500">{diagnostic}</span>
       </div>

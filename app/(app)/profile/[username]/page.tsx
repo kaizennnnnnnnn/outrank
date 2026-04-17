@@ -142,6 +142,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
   const orbTier = (profile as unknown as Record<string, number>).orbTier || 1;
   const orbBaseColor = (profile as unknown as Record<string, string>).orbBaseColor;
   const orbPulseColor = (profile as unknown as Record<string, string>).orbPulseColor;
+  const orbRingColor = (profile as unknown as Record<string, string>).orbRingColor;
   const friendCountDisplay = actualFriendCount ?? profile.friendCount ?? 0;
 
   return (
@@ -154,6 +155,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
           size={220}
           baseColorId={orbBaseColor}
           pulseColorId={orbPulseColor}
+          ringColorId={orbRingColor}
         />
       </div>
 

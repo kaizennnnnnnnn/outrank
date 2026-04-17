@@ -9,7 +9,12 @@ export function useLeaderboard(categorySlug: string, period: LeaderboardPeriod =
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!categorySlug) return;
+    // Bail out cleanly for the sentinel used when Global view is active
+    if (!categorySlug || categorySlug === '__none__') {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
 
     const unsub = subscribeToCollection<LeaderboardEntry>(
       `leaderboards/${categorySlug}/${period}`,

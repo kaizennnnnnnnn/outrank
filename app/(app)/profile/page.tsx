@@ -94,6 +94,7 @@ export default function ProfilePage() {
           onEvolve={handleEvolve}
           baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
           pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+          ringColorId={(user as unknown as Record<string, string>).orbRingColor}
         />
       </div>
 

@@ -102,6 +102,62 @@ export const ORB_BASE_COLORS: OrbColorSet[] = [
     core: '#fef9c3',
     glow: 'rgba(239,68,68,0.55)',
   },
+  // ---- Crazy mix colors ----
+  {
+    id: 'sunset',
+    name: 'Sunset',
+    outer: '#7c2d12', mid: '#ea580c', inner: '#f472b6', core: '#fef3c7',
+    glow: 'rgba(236,72,153,0.55)',
+  },
+  {
+    id: 'northern',
+    name: 'Northern Lights',
+    outer: '#0b1324', mid: '#0891b2', inner: '#22c55e', core: '#a855f7',
+    glow: 'rgba(34,197,94,0.5)',
+  },
+  {
+    id: 'candy',
+    name: 'Candy',
+    outer: '#831843', mid: '#ec4899', inner: '#60a5fa', core: '#fef3c7',
+    glow: 'rgba(236,72,153,0.55)',
+  },
+  {
+    id: 'toxic',
+    name: 'Toxic',
+    outer: '#1a2e05', mid: '#65a30d', inner: '#facc15', core: '#f7fee7',
+    glow: 'rgba(132,204,22,0.6)',
+  },
+  {
+    id: 'deepsea',
+    name: 'Deep Sea',
+    outer: '#0c1728', mid: '#0369a1', inner: '#22d3ee', core: '#ecfeff',
+    glow: 'rgba(34,211,238,0.5)',
+  },
+  {
+    id: 'bloodmoon',
+    name: 'Blood Moon',
+    outer: '#1c0a0a', mid: '#7f1d1d', inner: '#ef4444', core: '#fde68a',
+    glow: 'rgba(239,68,68,0.6)',
+  },
+  // ---- MYTHIC (rarity beyond legendary) ----
+  {
+    id: 'rainbow',
+    name: 'Rainbow',
+    outer: '#dc2626', mid: '#eab308', inner: '#22c55e', core: '#a855f7',
+    glow: 'rgba(168,85,247,0.7)',
+  },
+  {
+    id: 'stargaze',
+    name: 'Stargaze',
+    outer: '#020617', mid: '#4c1d95', inner: '#ec4899', core: '#ffffff',
+    glow: 'rgba(168,85,247,0.7)',
+  },
+  {
+    id: 'eternal',
+    name: 'Eternal',
+    outer: '#000000', mid: '#f59e0b', inner: '#fbbf24', core: '#ffffff',
+    glow: 'rgba(250,204,21,0.8)',
+  },
 ];
 
 export const ORB_PULSE_COLORS: OrbColorSet[] = [
@@ -195,6 +251,50 @@ export const ORB_PULSE_COLORS: OrbColorSet[] = [
     core: '#fefce8',
     glow: 'rgba(79,70,229,0.55)',
   },
+  // ---- More pulse mixes ----
+  {
+    id: 'pulse_sunset',
+    name: 'Sunset Pulse',
+    outer: '#831843', mid: '#f97316', inner: '#fb7185', core: '#fef3c7',
+    glow: 'rgba(251,113,133,0.6)',
+  },
+  {
+    id: 'pulse_toxic',
+    name: 'Toxic Pulse',
+    outer: '#14532d', mid: '#84cc16', inner: '#facc15', core: '#fefce8',
+    glow: 'rgba(132,204,22,0.6)',
+  },
+  {
+    id: 'pulse_candy',
+    name: 'Candy Pulse',
+    outer: '#701a75', mid: '#e879f9', inner: '#60a5fa', core: '#fef3c7',
+    glow: 'rgba(232,121,249,0.55)',
+  },
+  {
+    id: 'pulse_neon',
+    name: 'Neon Pulse',
+    outer: '#052e16', mid: '#22c55e', inner: '#67e8f9', core: '#ffffff',
+    glow: 'rgba(34,197,94,0.6)',
+  },
+  // ---- MYTHIC pulse ----
+  {
+    id: 'pulse_rainbow',
+    name: 'Rainbow Pulse',
+    outer: '#dc2626', mid: '#eab308', inner: '#22c55e', core: '#a855f7',
+    glow: 'rgba(236,72,153,0.65)',
+  },
+  {
+    id: 'pulse_stargaze',
+    name: 'Stargaze Pulse',
+    outer: '#1e1b4b', mid: '#7c3aed', inner: '#ec4899', core: '#ffffff',
+    glow: 'rgba(168,85,247,0.7)',
+  },
+  {
+    id: 'pulse_eternal',
+    name: 'Eternal Pulse',
+    outer: '#000000', mid: '#b45309', inner: '#fbbf24', core: '#ffffff',
+    glow: 'rgba(251,191,36,0.75)',
+  },
 ];
 
 export function getOrbBaseColor(id: string): OrbColorSet {
@@ -203,4 +303,103 @@ export function getOrbBaseColor(id: string): OrbColorSet {
 
 export function getOrbPulseColor(id: string): OrbColorSet {
   return ORB_PULSE_COLORS.find(c => c.id === id) || ORB_PULSE_COLORS[0];
+}
+
+// Ring colors — the spinning rings around the orb. Added as a third cosmetic
+// axis independent from base/pulse.
+export const ORB_RING_COLORS: OrbColorSet[] = [
+  {
+    id: 'ring_default',
+    name: 'Default',
+    outer: '#dc2626', mid: '#f59e0b', inner: '#fbbf24', core: '#ffffff',
+    glow: 'rgba(245,158,11,0.3)',
+  },
+  {
+    id: 'ring_silver',
+    name: 'Silver',
+    outer: '#475569', mid: '#94a3b8', inner: '#cbd5e1', core: '#f8fafc',
+    glow: 'rgba(148,163,184,0.3)',
+  },
+  {
+    id: 'ring_emerald',
+    name: 'Emerald',
+    outer: '#064e3b', mid: '#059669', inner: '#10b981', core: '#d1fae5',
+    glow: 'rgba(16,185,129,0.4)',
+  },
+  {
+    id: 'ring_sapphire',
+    name: 'Sapphire',
+    outer: '#1e3a8a', mid: '#2563eb', inner: '#60a5fa', core: '#dbeafe',
+    glow: 'rgba(37,99,235,0.4)',
+  },
+  {
+    id: 'ring_royal',
+    name: 'Royal',
+    outer: '#4c1d95', mid: '#7c3aed', inner: '#a78bfa', core: '#ede9fe',
+    glow: 'rgba(124,58,237,0.4)',
+  },
+  {
+    id: 'ring_rose',
+    name: 'Rose',
+    outer: '#881337', mid: '#e11d48', inner: '#fb7185', core: '#ffe4e6',
+    glow: 'rgba(225,29,72,0.4)',
+  },
+  {
+    id: 'ring_neon',
+    name: 'Neon',
+    outer: '#065f46', mid: '#22c55e', inner: '#a3e635', core: '#fefce8',
+    glow: 'rgba(34,197,94,0.55)',
+  },
+  {
+    id: 'ring_sunset',
+    name: 'Sunset',
+    outer: '#7c2d12', mid: '#ea580c', inner: '#f472b6', core: '#fef3c7',
+    glow: 'rgba(236,72,153,0.5)',
+  },
+  {
+    id: 'ring_aurora',
+    name: 'Aurora',
+    outer: '#14532d', mid: '#059669', inner: '#8b5cf6', core: '#fbcfe8',
+    glow: 'rgba(139,92,246,0.55)',
+  },
+  {
+    id: 'ring_molten',
+    name: 'Molten',
+    outer: '#450a0a', mid: '#dc2626', inner: '#f97316', core: '#fef9c3',
+    glow: 'rgba(220,38,38,0.6)',
+  },
+  {
+    id: 'ring_ghost',
+    name: 'Ghost',
+    outer: '#020617', mid: '#1e293b', inner: '#64748b', core: '#f1f5f9',
+    glow: 'rgba(100,116,139,0.35)',
+  },
+  {
+    id: 'ring_candy',
+    name: 'Candy',
+    outer: '#831843', mid: '#ec4899', inner: '#60a5fa', core: '#fef3c7',
+    glow: 'rgba(236,72,153,0.55)',
+  },
+  {
+    id: 'ring_toxic',
+    name: 'Toxic',
+    outer: '#1a2e05', mid: '#65a30d', inner: '#facc15', core: '#f7fee7',
+    glow: 'rgba(132,204,22,0.6)',
+  },
+  // RAINBOW marker — renderer cycles hue over time when this is equipped
+  {
+    id: 'ring_rainbow',
+    name: 'Rainbow',
+    outer: '#dc2626', mid: '#eab308', inner: '#22c55e', core: '#a855f7',
+    glow: 'rgba(168,85,247,0.6)',
+  },
+];
+
+export function getOrbRingColor(id: string): OrbColorSet {
+  return ORB_RING_COLORS.find(c => c.id === id) || ORB_RING_COLORS[0];
+}
+
+// Marker used by the renderer: rainbow variants cycle hue each frame.
+export function isRainbowColor(id: string | undefined): boolean {
+  return !!id && id.includes('rainbow');
 }

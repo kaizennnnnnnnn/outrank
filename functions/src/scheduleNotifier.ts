@@ -56,8 +56,10 @@ export const scheduleNotifier = functions.pubsub
       const local = toLocalTime(now, tz);
       if (!local) continue;
 
-      // Only fire at the top of the hour (0-1 minute window).
-      if (local.minute > 1) continue;
+      // Fire within the first 5 minutes of the hour. The cron itself only
+      // runs every minute, so this widens forgiveness for cold starts and
+      // slow queries without risking duplicate delivery (lastFiredDateKey).
+      if (local.minute > 4) continue;
 
       // Query this user's entries for the current (dayOfWeek, hour)
       const userId = userDoc.id;
