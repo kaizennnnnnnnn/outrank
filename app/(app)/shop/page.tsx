@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { updateDocument } from '@/lib/firestore';
-import { increment } from 'firebase/firestore';
+import { increment, arrayUnion } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
 
@@ -52,10 +52,53 @@ export default function ShopPage() {
   const [buying, setBuying] = useState<string | null>(null);
 
   const fragments = user ? ((user as unknown as Record<string, number>).fragments || 0) : 0;
-  const ownedColors = (user as unknown as Record<string, string[]>)?.ownedColors || ['crimson', 'fire'];
+  const userData = user as unknown as Record<string, unknown> | undefined;
+  const ownedColors = (userData?.ownedColors as string[]) || ['crimson', 'fire'];
+  const equippedBase = (userData?.orbBaseColor as string) || 'crimson';
+  const equippedPulse = (userData?.orbPulseColor as string) || 'fire';
+
+  const isOwned = (item: ShopItem) => {
+    if (item.type === 'base_color') return ownedColors.includes(item.id.replace('color_', ''));
+    if (item.type === 'pulse_color') return ownedColors.includes(item.id.replace('pulse_', ''));
+    return false;
+  };
+
+  const isEquipped = (item: ShopItem) => {
+    if (item.type === 'base_color') return equippedBase === item.id.replace('color_', '');
+    if (item.type === 'pulse_color') return equippedPulse === item.id.replace('pulse_', '');
+    return false;
+  };
 
   const handleBuy = async (item: ShopItem) => {
     if (!user) return;
+
+    const owned = isOwned(item);
+    const equipped = isEquipped(item);
+
+    // Already equipped color — do nothing
+    if (equipped) return;
+
+    // Owned but not equipped — just equip without charging
+    if (owned && (item.type === 'base_color' || item.type === 'pulse_color')) {
+      setBuying(item.id);
+      try {
+        if (item.type === 'base_color') {
+          const colorId = item.id.replace('color_', '');
+          await updateDocument('users', user.uid, { orbBaseColor: colorId });
+          addToast({ type: 'success', message: `Equipped ${item.name}!` });
+        } else {
+          const colorId = item.id.replace('pulse_', '');
+          await updateDocument('users', user.uid, { orbPulseColor: colorId });
+          addToast({ type: 'success', message: `Equipped ${item.name}!` });
+        }
+      } catch {
+        addToast({ type: 'error', message: 'Failed to equip' });
+      } finally {
+        setBuying(null);
+      }
+      return;
+    }
+
     if (fragments < item.price) {
       addToast({ type: 'error', message: 'Not enough fragments!' });
       return;
@@ -63,19 +106,24 @@ export default function ShopPage() {
 
     setBuying(item.id);
     try {
-      // Deduct fragments
       if (item.price > 0) {
         await updateDocument('users', user.uid, { fragments: increment(-item.price) });
       }
 
       if (item.type === 'base_color') {
         const colorId = item.id.replace('color_', '');
-        await updateDocument('users', user.uid, { orbBaseColor: colorId });
-        addToast({ type: 'success', message: `Equipped ${item.name}!` });
+        await updateDocument('users', user.uid, {
+          orbBaseColor: colorId,
+          ownedColors: arrayUnion(colorId),
+        });
+        addToast({ type: 'success', message: `Purchased & equipped ${item.name}!` });
       } else if (item.type === 'pulse_color') {
         const colorId = item.id.replace('pulse_', '');
-        await updateDocument('users', user.uid, { orbPulseColor: colorId });
-        addToast({ type: 'success', message: `Equipped ${item.name}!` });
+        await updateDocument('users', user.uid, {
+          orbPulseColor: colorId,
+          ownedColors: arrayUnion(colorId),
+        });
+        addToast({ type: 'success', message: `Purchased & equipped ${item.name}!` });
       } else if (item.type === 'instant_evolve') {
         const currentTier = (user as unknown as Record<string, number>).orbTier || 1;
         if (currentTier >= 5) {
@@ -116,7 +164,7 @@ export default function ShopPage() {
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Orb Base Colors</h2>
         <div className="grid grid-cols-2 gap-3">
           {SHOP_ITEMS.filter(i => i.type === 'base_color').map((item) => (
-            <ShopCard key={item.id} item={item} fragments={fragments} buying={buying} onBuy={handleBuy} />
+            <ShopCard key={item.id} item={item} fragments={fragments} buying={buying} onBuy={handleBuy} owned={isOwned(item)} equipped={isEquipped(item)} />
           ))}
         </div>
       </section>
@@ -126,7 +174,7 @@ export default function ShopPage() {
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Pulse Wave Colors</h2>
         <div className="grid grid-cols-2 gap-3">
           {SHOP_ITEMS.filter(i => i.type === 'pulse_color').map((item) => (
-            <ShopCard key={item.id} item={item} fragments={fragments} buying={buying} onBuy={handleBuy} />
+            <ShopCard key={item.id} item={item} fragments={fragments} buying={buying} onBuy={handleBuy} owned={isOwned(item)} equipped={isEquipped(item)} />
           ))}
         </div>
       </section>
@@ -136,7 +184,7 @@ export default function ShopPage() {
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Special Items</h2>
         <div className="space-y-3">
           {SHOP_ITEMS.filter(i => !['base_color', 'pulse_color'].includes(i.type)).map((item) => (
-            <ShopCard key={item.id} item={item} fragments={fragments} buying={buying} onBuy={handleBuy} wide />
+            <ShopCard key={item.id} item={item} fragments={fragments} buying={buying} onBuy={handleBuy} owned={false} equipped={false} wide />
           ))}
         </div>
       </section>
@@ -144,19 +192,49 @@ export default function ShopPage() {
   );
 }
 
-function ShopCard({ item, fragments, buying, onBuy, wide }: {
-  item: ShopItem; fragments: number; buying: string | null; onBuy: (item: ShopItem) => void; wide?: boolean;
+function ShopCard({ item, fragments, buying, onBuy, owned, equipped, wide }: {
+  item: ShopItem; fragments: number; buying: string | null; onBuy: (item: ShopItem) => void; owned: boolean; equipped: boolean; wide?: boolean;
 }) {
   const canAfford = fragments >= item.price;
   const isFree = item.price === 0;
   const rarityColor = rarityColors[item.rarity];
 
+  let buttonLabel: string;
+  let buttonVariant: 'primary' | 'secondary' = 'primary';
+  let buttonDisabled = buying === item.id;
+  if (equipped) {
+    buttonLabel = 'Equipped';
+    buttonVariant = 'secondary';
+    buttonDisabled = true;
+  } else if (owned) {
+    buttonLabel = 'Equip (Owned)';
+    buttonVariant = 'primary';
+  } else if (isFree) {
+    buttonLabel = 'Equip (Free)';
+  } else if (!canAfford) {
+    buttonLabel = `${item.price} Fragments`;
+    buttonVariant = 'secondary';
+    buttonDisabled = true;
+  } else {
+    buttonLabel = `${item.price} Fragments`;
+  }
+
   return (
     <div className={cn(
-      'glass-card rounded-xl p-3 space-y-2 border transition-all',
-      canAfford ? 'border-[#1e1e30] hover:border-orange-500/20' : 'border-[#1e1e30] opacity-50',
+      'glass-card rounded-xl p-3 space-y-2 border transition-all relative',
+      equipped ? 'border-orange-500/40' : canAfford || owned ? 'border-[#1e1e30] hover:border-orange-500/20' : 'border-[#1e1e30] opacity-50',
       wide && 'col-span-2'
     )}>
+      {equipped && (
+        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded">
+          Equipped
+        </span>
+      )}
+      {owned && !equipped && (
+        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+          Owned
+        </span>
+      )}
       <div className="flex items-center gap-3">
         {item.colorValue && (
           <div className="w-8 h-8 rounded-lg" style={{
@@ -184,12 +262,12 @@ function ShopCard({ item, fragments, buying, onBuy, wide }: {
       <Button
         size="sm"
         className="w-full"
-        variant={canAfford ? 'primary' : 'secondary'}
-        disabled={!canAfford || buying === item.id}
+        variant={buttonVariant}
+        disabled={buttonDisabled}
         loading={buying === item.id}
         onClick={() => onBuy(item)}
       >
-        {isFree ? 'Equip (Free)' : `${item.price} Fragments`}
+        {buttonLabel}
       </Button>
     </div>
   );

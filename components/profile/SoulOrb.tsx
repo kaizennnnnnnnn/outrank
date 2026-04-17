@@ -135,8 +135,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
     const colMid = hexToRgb(config.colors.mid);
     const colInner = hexToRgb(config.colors.inner);
     const colCore = hexToRgb(config.colors.core);
-    const pulseRgb = hexToRgb(pulseColors.core);
+    // Pulse tint uses saturated mid so the color shows instead of white
+    const pulseRgb = hexToRgb(pulseColors.mid);
     const pulseInnerRgb = hexToRgb(pulseColors.inner);
+    const pulseMidRgb = hexToRgb(pulseColors.mid);
 
     function project(x: number, y: number, z: number) {
       const d = size * 0.9;
@@ -206,6 +208,23 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       g1.addColorStop(1, 'transparent');
       ctx.fillStyle = g1;
       ctx.fillRect(0, 0, W, H);
+
+      // Rhythmic pulse wave through the orb — uses pulse color, expands from center
+      if (!isEvolving) {
+        const beatT = (t * 0.8) % 1;
+        const beatRadius = beatT * R * 1.3;
+        const beatAlpha = (1 - beatT) * 0.45 * pct;
+        if (beatAlpha > 0.01) {
+          const pw = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius - R * 0.2), cx, cy, beatRadius + R * 0.1);
+          pw.addColorStop(0, 'transparent');
+          pw.addColorStop(0.7, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${beatAlpha * 0.6})`);
+          pw.addColorStop(1, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, 0)`);
+          ctx.fillStyle = pw;
+          ctx.beginPath();
+          ctx.arc(cx, cy, beatRadius + R * 0.1, 0, PI2);
+          ctx.fill();
+        }
+      }
 
       const ry = t * 0.5 * speedBoost * speedMultiplier + dragRef.current.rotY;
       const rx = sin(t * 0.2) * 0.3 + 0.4 + dragRef.current.rotX;
@@ -327,7 +346,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
         ctx.beginPath(); ctx.arc(d.px, d.py, max(0.3, sz), 0, PI2); ctx.fill();
 
         if (d.pBoost > 0.5) {
-          ctx.fillStyle = `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${(d.pBoost - 0.5) * 0.5})`;
+          ctx.fillStyle = `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${(d.pBoost - 0.5) * 0.7})`;
           ctx.beginPath(); ctx.arc(d.px, d.py, sz * 0.3, 0, PI2); ctx.fill();
         }
       }

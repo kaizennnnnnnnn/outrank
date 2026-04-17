@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreateDuelModal } from '@/components/competition/CreateDuelModal';
 import { getCollection, getDocument, setDocument, updateDocument, removeDocument, createDocument, where, Timestamp } from '@/lib/firestore';
+import { increment } from 'firebase/firestore';
 import { sanitizeUsername } from '@/lib/security';
 import { useUIStore } from '@/store/uiStore';
 import { UserProfile } from '@/types/user';
@@ -119,6 +120,9 @@ export default function FriendsPage() {
     try {
       await updateDocument(`friendships/${user.uid}/friends`, friendId, { status: 'accepted' });
       await updateDocument(`friendships/${friendId}/friends`, user.uid, { status: 'accepted' });
+      // Bump friendCount on both users so profile stats reflect reality
+      try { await updateDocument('users', user.uid, { friendCount: increment(1) }); } catch { /* ignore */ }
+      try { await updateDocument('users', friendId, { friendCount: increment(1) }); } catch { /* ignore */ }
       addToast({ type: 'success', message: 'Friend accepted!' });
     } catch {
       addToast({ type: 'error', message: 'Failed to accept' });
@@ -128,8 +132,14 @@ export default function FriendsPage() {
   const removeFriend = async (friendId: string) => {
     if (!user) return;
     try {
+      // Only decrement if previously accepted
+      const wasAccepted = friends.some((f) => f.id === friendId);
       await removeDocument(`friendships/${user.uid}/friends`, friendId);
       await removeDocument(`friendships/${friendId}/friends`, user.uid);
+      if (wasAccepted) {
+        try { await updateDocument('users', user.uid, { friendCount: increment(-1) }); } catch { /* ignore */ }
+        try { await updateDocument('users', friendId, { friendCount: increment(-1) }); } catch { /* ignore */ }
+      }
       setResolvedFriends((prev) => prev.filter((f) => f.friendId !== friendId));
       addToast({ type: 'info', message: 'Friend removed' });
     } catch {

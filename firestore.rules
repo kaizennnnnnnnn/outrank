@@ -65,9 +65,8 @@ service cloud.firestore {
 
     // FRIENDSHIPS
     match /friendships/{userId}/friends/{friendId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && isVerifiedUser()
-        && request.resource.data.status == 'pending';
+      allow read: if isAuthenticated();
+      allow create: if (isOwner(userId) || isOwner(friendId)) && isVerifiedUser();
       allow update: if (isOwner(userId) || isOwner(friendId))
         && isVerifiedUser();
       allow delete: if isOwner(userId) || isOwner(friendId);
