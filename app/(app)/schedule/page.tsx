@@ -126,14 +126,75 @@ export default function SchedulePage() {
           <h1 className="text-2xl font-bold text-white font-heading">Schedule</h1>
           <p className="text-sm text-slate-500">
             {selectedHabit
-              ? <>Tap a slot to place <span className="text-orange-400 font-medium">{selectedHabit.categoryName}</span>, or drag it.</>
-              : <>Pick a habit on the right, then tap a slot — or drag it onto the grid.</>
+              ? <>Tap a slot to place <span className="text-orange-400 font-medium">{selectedHabit.categoryName}</span>.</>
+              : (
+                <>
+                  <span className="lg:hidden">Tap a habit above, then tap a slot.</span>
+                  <span className="hidden lg:inline">Pick a habit on the right, then tap a slot — or drag it onto the grid.</span>
+                </>
+              )
             }
           </p>
         </div>
         <Link href="/dashboard" className="text-xs text-slate-500 hover:text-orange-400 transition-colors">
           &larr; Back
         </Link>
+      </div>
+
+      {/* Mobile: sticky horizontal habit strip at top */}
+      <div className="lg:hidden sticky top-0 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-2 bg-[#08080f]/95 backdrop-blur-sm border-b border-[#1e1e30]">
+        {habitsLoading ? (
+          <div className="flex gap-2 overflow-x-auto">
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-32 rounded-xl flex-shrink-0" />)}
+          </div>
+        ) : habits.length === 0 ? (
+          <div className="text-center py-2">
+            <Link href="/habits" className="text-xs text-orange-400 hover:underline">
+              Add habits first &rarr;
+            </Link>
+          </div>
+        ) : (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {habits.map((habit) => {
+              const isSelected = selectedHabit?.categorySlug === habit.categorySlug;
+              return (
+                <button
+                  key={habit.categorySlug}
+                  onClick={() => setSelectedHabit(isSelected ? null : habit)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-xl border transition-all flex-shrink-0 cursor-pointer active:scale-95',
+                    isSelected
+                      ? 'border-orange-500/60 shadow-[0_0_16px_-4px_rgba(249,115,22,0.5)]'
+                      : 'border-[#1e1e30] hover:border-orange-500/20'
+                  )}
+                  style={{
+                    background: isSelected
+                      ? `linear-gradient(145deg, ${habit.color}20, #0b0b14)`
+                      : '#0b0b14',
+                  }}
+                >
+                  <CategoryIcon
+                    icon={habit.categoryIcon}
+                    color={habit.color}
+                    size="sm"
+                    slug={habit.categorySlug}
+                  />
+                  <span className="text-xs font-semibold text-white whitespace-nowrap">
+                    {habit.categoryName}
+                  </span>
+                </button>
+              );
+            })}
+            {selectedHabit && (
+              <button
+                onClick={() => setSelectedHabit(null)}
+                className="flex-shrink-0 text-[10px] text-slate-500 hover:text-slate-300 transition-colors px-2 self-center"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main layout: grid + sidebar */}
@@ -218,8 +279,8 @@ export default function SchedulePage() {
           )}
         </div>
 
-        {/* Habit sidebar */}
-        <div className="glass-card rounded-2xl p-3 h-fit lg:sticky lg:top-4">
+        {/* Habit sidebar — desktop only (mobile uses top strip) */}
+        <div className="hidden lg:block glass-card rounded-2xl p-3 h-fit lg:sticky lg:top-4">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">
             Your Habits
           </h2>
