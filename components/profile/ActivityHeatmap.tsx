@@ -39,12 +39,15 @@ function getWeeks(): Date[][] {
   return weeks;
 }
 
-function getIntensity(count: number): string {
-  if (count === 0) return 'bg-[#18182a]';
-  if (count === 1) return 'bg-red-900/60';
-  if (count <= 3) return 'bg-red-700/70';
-  if (count <= 5) return 'bg-red-600/80';
-  return 'bg-red-500';
+// Inline RGB so count=1 is genuinely visible. Original Tailwind opacity
+// classes were so low the single-log cells disappeared into the background.
+function cellColor(count: number): string {
+  if (count === 0) return '#14141f';
+  if (count === 1) return '#7c2d12';     // deep orange-red, clearly visible
+  if (count === 2) return '#b91c1c';     // red-700
+  if (count <= 4) return '#dc2626';      // red-600
+  if (count <= 6) return '#ef4444';      // red-500
+  return '#f97316';                       // orange-500 — peak activity
 }
 
 // Try every reasonable shape a Firestore timestamp might arrive in.
@@ -131,6 +134,8 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
     ? `Found ${totalDocs} logs but none have a valid timestamp`
     : `${parsedDocs} log${parsedDocs === 1 ? '' : 's'}${latestKey ? ` • latest ${latestKey}` : ''}`;
 
+  const todayKey = dateKey(new Date());
+
   return (
     <div className="w-full overflow-x-auto">
       <div className="flex gap-[3px] min-w-fit">
@@ -139,14 +144,20 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
             {week.map((day, di) => {
               const key = dateKey(day);
               const count = logCounts[key] || 0;
+              const isToday = key === todayKey;
               return (
                 <div
                   key={di}
                   className={cn(
                     'w-[11px] h-[11px] rounded-[2px] transition-colors',
-                    loading ? 'bg-[#18182a] animate-pulse' : getIntensity(count)
+                    loading && 'animate-pulse',
+                    isToday && !loading && count === 0 && 'ring-1 ring-orange-500/60',
                   )}
-                  title={`${key}: ${count} log${count === 1 ? '' : 's'}`}
+                  style={{
+                    background: loading ? '#18182a' : cellColor(count),
+                    boxShadow: count >= 4 ? `0 0 4px ${cellColor(count)}aa` : undefined,
+                  }}
+                  title={`${key}: ${count} log${count === 1 ? '' : 's'}${isToday ? ' (today)' : ''}`}
                 />
               );
             })}
@@ -155,11 +166,11 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
       </div>
       <div className="flex items-center gap-1 mt-2 text-[10px] text-slate-600 flex-wrap">
         <span>Less</span>
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-[#18182a]" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-900/60" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-700/70" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-600/80" />
-        <div className="w-[11px] h-[11px] rounded-[2px] bg-red-500" />
+        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(0) }} />
+        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(1) }} />
+        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(3) }} />
+        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(5) }} />
+        <div className="w-[11px] h-[11px] rounded-[2px]" style={{ background: cellColor(7) }} />
         <span>More</span>
         <span className="ml-2 text-slate-500">{diagnostic}</span>
       </div>
