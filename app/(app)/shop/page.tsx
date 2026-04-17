@@ -7,6 +7,7 @@ import { updateDocument } from '@/lib/firestore';
 import { increment, arrayUnion, Timestamp } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { ORB_BASE_COLORS, ORB_PULSE_COLORS, ORB_RING_COLORS, OrbColorSet } from '@/constants/orbColors';
+import { OrbColorPreview } from '@/components/profile/OrbColorPreview';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -450,7 +451,12 @@ function ShopCard({
 
       <div className="flex items-center gap-3 mb-3">
         {item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color' ? (
-          <OrbPreview colorSet={getOrbSet(item)} isRing={item.type === 'ring_color'} />
+          <OrbColorPreview
+            colorSet={getOrbSet(item)}
+            variant={item.type === 'ring_color' ? 'ring' : 'orb'}
+            id={item.id.replace(/^(color_|pulse_pulse_|pulse_|ring_color_)/, '')}
+            size={48}
+          />
         ) : (
           <div
             className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
@@ -504,46 +510,6 @@ function getOrbSet(item: ShopItem): OrbColorSet {
   return ORB_RING_COLORS.find((c) => c.id === id) || ORB_RING_COLORS[0];
 }
 
-function OrbPreview({ colorSet, isRing }: { colorSet: OrbColorSet; isRing?: boolean }) {
-  if (isRing) {
-    // Ring preview: a dark orb with two overlapping colored rings
-    return (
-      <div
-        className="w-12 h-12 rounded-full flex-shrink-0 relative"
-        style={{
-          background: 'radial-gradient(circle at 35% 30%, #1e1e30, #0b0b14 70%)',
-          boxShadow: `0 0 14px -4px ${colorSet.mid}70`,
-        }}
-      >
-        <div
-          className="absolute inset-1 rounded-full"
-          style={{
-            border: `1.5px solid ${colorSet.mid}`,
-            boxShadow: `0 0 8px ${colorSet.mid}80, inset 0 0 8px ${colorSet.inner}60`,
-            transform: 'rotate(30deg) scaleY(0.35)',
-          }}
-        />
-        <div
-          className="absolute inset-2 rounded-full"
-          style={{
-            border: `1.2px solid ${colorSet.inner}`,
-            boxShadow: `0 0 6px ${colorSet.inner}80`,
-            transform: 'rotate(-20deg) scaleY(0.25)',
-          }}
-        />
-      </div>
-    );
-  }
-  return (
-    <div
-      className="w-12 h-12 rounded-full flex-shrink-0"
-      style={{
-        background: `radial-gradient(circle at 35% 30%, ${colorSet.core}cc, ${colorSet.inner}aa 45%, ${colorSet.mid}88 70%, ${colorSet.outer}44)`,
-        boxShadow: `0 0 18px -2px ${colorSet.mid}80, inset 0 -4px 8px ${colorSet.outer}80`,
-      }}
-    />
-  );
-}
 
 function OrbSmallIcon() {
   return <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9" opacity="0.25" /><circle cx="12" cy="12" r="5" /></svg>;
