@@ -5,6 +5,7 @@ import { ReactionBar } from './ReactionBar';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { FeedItem as FeedItemType } from '@/types/feed';
 import { formatRelativeTime } from '@/lib/utils';
+import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
 import Link from 'next/link';
 
 interface FeedItemProps {
@@ -14,6 +15,12 @@ interface FeedItemProps {
 }
 
 export function FeedItemCard({ item, currentUserId, onReact }: FeedItemProps) {
+  const resolvedCat = item.categorySlug
+    ? getCategoryBySlug(item.categorySlug)
+    : item.categoryName
+      ? getCategoryByName(item.categoryName)
+      : undefined;
+  const color = item.categoryColor || resolvedCat?.color || '#f97316';
   return (
     <div className="glass-card rounded-2xl p-4 space-y-3">
       {/* Header */}
@@ -35,7 +42,7 @@ export function FeedItemCard({ item, currentUserId, onReact }: FeedItemProps) {
           slug={item.categorySlug}
           name={item.categoryName}
           icon={item.categoryIcon || ''}
-          color={item.categoryColor || '#f97316'}
+          color={color}
           size="sm"
         />
       </div>

@@ -16,6 +16,7 @@ import { ReactionEmoji } from '@/types/feed';
 import { cn } from '@/lib/utils';
 import { ActivityIcon } from '@/components/ui/AppIcons';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
 import Link from 'next/link';
 
 const REACTIONS: ReactionEmoji[] = ['🔥', '💪', '👏', '⚡', '🤝'];
@@ -116,7 +117,14 @@ export default function FeedPage() {
         />
       ) : (
         <div className="space-y-3">
-          {items.filter((item) => item.actorId !== user?.uid).map((item) => (
+          {items.filter((item) => item.actorId !== user?.uid).map((item) => {
+            const resolvedCat = item.categorySlug
+              ? getCategoryBySlug(item.categorySlug)
+              : item.categoryName
+                ? getCategoryByName(item.categoryName)
+                : undefined;
+            const color = item.categoryColor || resolvedCat?.color || '#f97316';
+            return (
             <div key={item.id} className="glass-card rounded-2xl p-4 space-y-3">
               {/* Header */}
               <div className="flex items-center gap-3">
@@ -135,7 +143,7 @@ export default function FeedPage() {
                   slug={item.categorySlug}
                   name={item.categoryName}
                   icon={item.categoryIcon || ''}
-                  color={item.categoryColor || '#f97316'}
+                  color={color}
                   size="sm"
                 />
               </div>
@@ -170,7 +178,8 @@ export default function FeedPage() {
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

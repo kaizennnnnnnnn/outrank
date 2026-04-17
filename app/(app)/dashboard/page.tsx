@@ -18,6 +18,7 @@ import { SoulOrb } from '@/components/profile/SoulOrb';
 import { StreakFire } from '@/components/habits/StreakFire';
 import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { useUIStore } from '@/store/uiStore';
 import { UserHabit } from '@/types/habit';
@@ -190,7 +191,12 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {feedItems.filter((item) => item.actorId !== user.uid).slice(0, 10).map((item) => {
-                const color = item.categoryColor || '#f97316';
+                const resolvedCat = item.categorySlug
+                  ? getCategoryBySlug(item.categorySlug)
+                  : item.categoryName
+                    ? getCategoryByName(item.categoryName)
+                    : undefined;
+                const color = item.categoryColor || resolvedCat?.color || '#f97316';
                 return (
                   <Link key={item.id} href={`/profile/${item.actorUsername}`}>
                     <div
