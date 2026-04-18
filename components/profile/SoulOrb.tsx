@@ -27,10 +27,30 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
   const evolveTimeRef = useRef(0);
   const [evolving, setEvolving] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  const [showAscendConfirm, setShowAscendConfirm] = useState(false);
+  const [ascending, setAscending] = useState(false);
+  const [ascendPhase, setAscendPhase] = useState<'collapse' | 'rebirth' | null>(null);
   // Evolve button only appears when the caller explicitly provides onEvolve,
   // so orb previews (duel result modal, other users' profiles, etc.) never
   // show the button.
   const canEvolve = intensity >= 100 && tier < MAX_ORB_TIER && !!onEvolve;
+
+  const triggerAscend = useCallback(() => {
+    setShowAscendConfirm(false);
+    setAscending(true);
+    setAscendPhase('collapse');
+    // 0-1.5s: collapse phase — orb spirals and crunches to a point
+    // 1.5s: fire the real onAscend (firestore tier reset to 1) at the flash apex
+    setTimeout(() => {
+      onAscend?.();
+      setAscendPhase('rebirth');
+    }, 1500);
+    // 2.8s: animation done, clear state
+    setTimeout(() => {
+      setAscending(false);
+      setAscendPhase(null);
+    }, 2800);
+  }, [onAscend]);
 
   const handleEvolve = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -541,25 +561,69 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
 
   return (
     <div className="flex flex-col items-center">
-      <canvas
-        ref={canvasRef}
-        style={{
-          width: size, height: size, maxWidth: '100%', cursor: 'grab', touchAction: 'none',
-          opacity: fadeOut ? 0 : 1,
-          transition: 'opacity 0.5s ease-in-out',
-        }}
-      />
+      <div
+        className="relative"
+        style={{ width: size, height: size }}
+      >
+        <div
+          className={ascending ? 'animate-ascend-collapse' : ''}
+          style={{
+            width: size,
+            height: size,
+            transformOrigin: 'center',
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            style={{
+              width: size, height: size, maxWidth: '100%', cursor: 'grab', touchAction: 'none',
+              opacity: fadeOut ? 0 : 1,
+              transition: 'opacity 0.5s ease-in-out',
+            }}
+          />
+        </div>
+
+        {/* Ascension flash overlay — bloom of white/gold at collapse */}
+        {ascending && (
+          <div
+            className="absolute inset-0 pointer-events-none animate-ascend-flash rounded-full"
+            style={{
+              background: 'radial-gradient(circle, #ffffff 0%, #fde68a 30%, #f472b6 55%, transparent 75%)',
+              mixBlendMode: 'screen',
+            }}
+          />
+        )}
+
+        {/* Expanding shockwave rings */}
+        {ascending && (
+          <>
+            <div
+              className="absolute inset-0 pointer-events-none animate-ascend-shockwave rounded-full"
+              style={{ border: '4px solid #fde68a', boxShadow: '0 0 24px #f472b6' }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none animate-ascend-shockwave rounded-full"
+              style={{ border: '3px solid #ec4899', animationDelay: '0.4s' }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none animate-ascend-shockwave rounded-full"
+              style={{ border: '2px solid #a855f7', animationDelay: '0.8s' }}
+            />
+          </>
+        )}
+      </div>
+
       {!hideLabel && <div className="mt-2 text-center">
         <p className="text-xs font-heading text-orange-400">{config.name}</p>
         <p className="text-[10px] text-slate-600">{intensity}% — {config.description}</p>
       </div>}
 
       <AnimatePresence>
-        {/* At the cap: show Ascend (pink pulsing CTA) instead of Evolve */}
-        {tier >= MAX_ORB_TIER && onAscend && !evolving && (
+        {/* At the cap: show Ascend (pink pulsing CTA) — click opens confirmation first */}
+        {tier >= MAX_ORB_TIER && onAscend && !evolving && !ascending && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <button
-              onClick={(e) => { e.stopPropagation(); onAscend(); }}
+              onClick={(e) => { e.stopPropagation(); setShowAscendConfirm(true); }}
               className="text-sm font-heading font-bold text-white tracking-[0.15em] uppercase px-6 py-2.5 rounded-xl animate-frame-pulse bg-gradient-to-r from-pink-600 via-fuchsia-500 to-orange-400 shadow-[0_8px_30px_-6px_rgba(236,72,153,0.85)]"
             >
               Ascend
@@ -586,6 +650,223 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
           Evolving...
         </motion.p>
       )}
+
+      {ascending && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 2.8 }}
+          className="mt-3 text-sm font-heading font-bold tracking-[0.25em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-fuchsia-300 to-orange-300"
+        >
+          {ascendPhase === 'rebirth' ? 'Reborn' : 'Ascending'}
+        </motion.p>
+      )}
+
+      <AscendConfirmModal
+        isOpen={showAscendConfirm}
+        onClose={() => setShowAscendConfirm(false)}
+        onConfirm={triggerAscend}
+        tier={tier}
+        baseColorId={baseColorId}
+        pulseColorId={pulseColorId}
+        ringColorId={ringColorId}
+      />
+    </div>
+  );
+}
+
+// ---- Ascend confirmation modal ----
+
+interface AscendConfirmProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  tier: number;
+  baseColorId?: string;
+  pulseColorId?: string;
+  ringColorId?: string;
+}
+
+function AscendConfirmModal({ isOpen, onClose, onConfirm, tier, baseColorId, pulseColorId, ringColorId }: AscendConfirmProps) {
+  const currentConfig = getOrbTier(tier);
+  const starterConfig = getOrbTier(1);
+
+  const rewards: { icon: string; label: string; detail: string; color: string }[] = [
+    { icon: 'frag', label: '+500 Fragments',     detail: 'Spend in the shop on cosmetics',           color: '#f59e0b' },
+    { icon: 'frame', label: 'Ascension Frame',   detail: 'Exclusive shimmering profile frame',       color: '#ec4899' },
+    { icon: 'name', label: 'Ascendant Title',    detail: 'Rainbow name effect unlocked',             color: '#a855f7' },
+    { icon: 'count', label: '+1 Ascension',      detail: 'Forever marked on your profile',           color: '#22d3ee' },
+  ];
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 z-[200] bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-3xl overflow-hidden flex flex-col"
+            style={{
+              background: 'radial-gradient(ellipse 120% 80% at 50% 0%, rgba(236,72,153,0.22), transparent 55%), linear-gradient(180deg, #0f0b18 0%, #07070c 100%)',
+              border: '1px solid rgba(236,72,153,0.4)',
+              boxShadow: '0 20px 80px -20px rgba(236,72,153,0.55), inset 0 1px 0 rgba(236,72,153,0.2)',
+            }}
+          >
+            {/* Decorative top glow bar */}
+            <div
+              className="h-0.5 w-full"
+              style={{ background: 'linear-gradient(90deg, transparent, #ec4899 50%, transparent)' }}
+            />
+
+            <div className="p-6 pt-7 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-pink-300/90">
+                Ascension Ritual
+              </p>
+              <h2 className="font-heading text-3xl font-bold mt-2 bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-fuchsia-200 to-orange-300">
+                Ascend your orb?
+              </h2>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed max-w-[320px] mx-auto">
+                Your orb will <b className="text-pink-300">collapse into a new beginning</b>. You keep all your progress — and earn permanent rewards.
+              </p>
+            </div>
+
+            {/* Before → After orb preview */}
+            <div className="mx-6 mb-4 p-4 rounded-2xl bg-[#08080f] border border-[#1e1e30] flex items-center justify-around">
+              <div className="text-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-2">Now</div>
+                <MiniOrbPreview tier={tier} baseColorId={baseColorId} pulseColorId={pulseColorId} ringColorId={ringColorId} size={56} />
+                <p className="text-[10px] font-heading text-orange-300 mt-2">{currentConfig.name}</p>
+              </div>
+              <div className="flex flex-col items-center text-slate-500">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse text-pink-400">
+                  <path d="M5 12h14" />
+                  <path d="M13 6l6 6-6 6" />
+                </svg>
+                <span className="text-[9px] font-bold uppercase tracking-widest text-pink-400 mt-1">Reborn</span>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-2">After</div>
+                <MiniOrbPreview tier={1} baseColorId={baseColorId} pulseColorId={pulseColorId} ringColorId={ringColorId} size={56} />
+                <p className="text-[10px] font-heading text-slate-400 mt-2">{starterConfig.name}</p>
+              </div>
+            </div>
+
+            {/* Rewards grid */}
+            <div className="px-6 pb-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">You will receive</p>
+              <div className="grid grid-cols-2 gap-2">
+                {rewards.map((r) => (
+                  <div
+                    key={r.label}
+                    className="rounded-xl p-2.5 border flex flex-col gap-0.5"
+                    style={{
+                      background: `linear-gradient(145deg, ${r.color}18, #0b0b14 70%)`,
+                      borderColor: `${r.color}40`,
+                    }}
+                  >
+                    <p className="text-[11px] font-bold" style={{ color: r.color }}>{r.label}</p>
+                    <p className="text-[10px] text-slate-500 leading-tight">{r.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="p-6 pt-4 flex gap-2">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-3 rounded-xl bg-[#1e1e30] hover:bg-[#2a2a40] text-sm font-medium text-slate-300 transition-colors"
+              >
+                Not yet
+              </button>
+              <button
+                onClick={onConfirm}
+                className="flex-[1.5] px-4 py-3 rounded-xl text-sm font-heading font-bold uppercase tracking-[0.15em] text-white transition-transform hover:scale-[1.02] active:scale-[0.98] animate-frame-pulse"
+                style={{
+                  background: 'linear-gradient(90deg, #db2777 0%, #e11d48 40%, #ea580c 100%)',
+                  boxShadow: '0 0 30px -8px rgba(236,72,153,0.9)',
+                }}
+              >
+                Ascend now
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/** Static orb preview for the ascend modal — uses the equipped colors. */
+function MiniOrbPreview({ tier, baseColorId, pulseColorId, ringColorId, size }: {
+  tier: number;
+  baseColorId?: string;
+  pulseColorId?: string;
+  ringColorId?: string;
+  size: number;
+}) {
+  const config = getOrbTier(tier);
+  const base = baseColorId ? getOrbBaseColor(baseColorId) : {
+    outer: config.colors.outer, mid: config.colors.mid, inner: config.colors.inner, core: config.colors.core, glow: config.colors.glow,
+  };
+  const ring = ringColorId ? getOrbRingColor(ringColorId) : base;
+  const pulse = pulseColorId ? getOrbPulseColor(pulseColorId) : base;
+  const baseIsRainbow = isRainbowColor(baseColorId);
+
+  const orbBg = baseIsRainbow
+    ? `conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)`
+    : `radial-gradient(circle at 32% 28%, #ffffff 0%, ${base.core} 12%, ${base.inner} 38%, ${base.mid} 66%, ${base.outer} 100%)`;
+
+  return (
+    <div
+      className="relative inline-block animate-mini-orb-core"
+      style={{
+        width: size,
+        height: size,
+        filter: `drop-shadow(0 0 ${size * 0.25}px ${base.mid}cc)`,
+      }}
+    >
+      {tier >= 2 && (
+        <div
+          className="absolute inset-0 rounded-full animate-mini-orb-ring"
+          style={{
+            background: `conic-gradient(from 0deg, ${ring.outer}, ${ring.mid}, ${ring.inner}, ${ring.core}, ${ring.mid}, ${ring.outer})`,
+            WebkitMaskImage: 'radial-gradient(ellipse 55% 18% at 50% 50%, transparent 62%, black 66%)',
+            maskImage: 'radial-gradient(ellipse 55% 18% at 50% 50%, transparent 62%, black 66%)',
+          }}
+        />
+      )}
+      <div
+        className="absolute rounded-full"
+        style={{
+          inset: size * 0.14,
+          background: orbBg,
+          boxShadow: `0 0 ${size * 0.35}px ${base.mid}aa, inset 0 -${size * 0.1}px ${size * 0.2}px ${base.outer}`,
+        }}
+      />
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: size * 0.26,
+          background: `radial-gradient(circle at 34% 30%, ${pulse.core}cc, ${pulse.inner}44 50%, transparent 75%)`,
+          mixBlendMode: 'screen',
+        }}
+      />
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          width: size * 0.22, height: size * 0.16,
+          left: size * 0.24, top: size * 0.22,
+          background: 'radial-gradient(ellipse, #ffffffdd 0%, transparent 80%)',
+        }}
+      />
     </div>
   );
 }

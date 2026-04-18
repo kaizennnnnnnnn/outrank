@@ -160,48 +160,72 @@ export default function DashboardPage() {
       <DailyChallenge />
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Today's Habits */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Today&apos;s Habits</h2>
-            <Link href="/habits">
-              <Button variant="ghost" size="sm">Manage</Button>
-            </Link>
+        {/* Today's Habits — wrapped in a premium container */}
+        <div className="lg:col-span-2">
+          <div
+            className="relative overflow-hidden rounded-2xl p-5 border"
+            style={{
+              background:
+                'radial-gradient(ellipse 90% 60% at 0% 0%, rgba(220,38,38,0.08), transparent 55%),' +
+                'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
+              borderColor: 'rgba(249,115,22,0.18)',
+              boxShadow: 'inset 0 1px 0 rgba(249,115,22,0.06)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
+                />
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
+                  Today&rsquo;s Habits
+                </p>
+                {!habitsLoading && habits.length > 0 && (
+                  <span className="text-[10px] font-mono text-slate-500 ml-1">
+                    · {habits.filter((h) => h.lastLogDate && new Date(h.lastLogDate.toDate()).toDateString() === new Date().toDateString()).length}/{habits.length}
+                  </span>
+                )}
+              </div>
+              <Link href="/habits">
+                <Button variant="ghost" size="sm">Manage</Button>
+              </Link>
+            </div>
+
+            {habitsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
+              </div>
+            ) : habits.length === 0 ? (
+              <EmptyState
+                icon={<TargetFullIcon size={40} className="text-orange-400" />}
+                title="No habits yet"
+                description="Add your first habit to start tracking and competing."
+                action={
+                  <Link href="/habits">
+                    <Button>Browse Categories</Button>
+                  </Link>
+                }
+              />
+            ) : (
+              <div className="space-y-2">
+                {habits.map((habit) => {
+                  const isLoggedToday = habit.lastLogDate
+                    ? new Date(habit.lastLogDate.toDate()).toDateString() === new Date().toDateString()
+                    : false;
+
+                  return (
+                    <HabitCard
+                      key={habit.categorySlug}
+                      habit={habit}
+                      isLoggedToday={isLoggedToday}
+                      onLog={() => openLogModal(habit)}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
-
-          {habitsLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
-            </div>
-          ) : habits.length === 0 ? (
-            <EmptyState
-              icon={<TargetFullIcon size={40} className="text-orange-400" />}
-              title="No habits yet"
-              description="Add your first habit to start tracking and competing."
-              action={
-                <Link href="/habits">
-                  <Button>Browse Categories</Button>
-                </Link>
-              }
-            />
-          ) : (
-            <div className="space-y-2">
-              {habits.map((habit) => {
-                const isLoggedToday = habit.lastLogDate
-                  ? new Date(habit.lastLogDate.toDate()).toDateString() === new Date().toDateString()
-                  : false;
-
-                return (
-                  <HabitCard
-                    key={habit.categorySlug}
-                    habit={habit}
-                    isLoggedToday={isLoggedToday}
-                    onLog={() => openLogModal(habit)}
-                  />
-                );
-              })}
-            </div>
-          )}
         </div>
 
       </div>

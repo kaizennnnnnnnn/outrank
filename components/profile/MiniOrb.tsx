@@ -12,10 +12,9 @@ interface Props {
 }
 
 /**
- * Tiny CSS-only orb for in-list previews (leaderboards, feed, etc.). Uses
- * the equipped base/pulse/ring colors so every row still reads as that
- * player's orb. Animated with a slow spin + pulse so it feels alive without
- * the cost of a full canvas.
+ * Tiny CSS-only orb for leaderboards/lists — built up from multiple layered
+ * radial gradients, tilted rings, a specular highlight, an orbiting satellite,
+ * and an expanding pulse wave so it visually mirrors the full SoulOrb canvas.
  */
 export function MiniOrb({ tier = 1, baseColorId, pulseColorId, ringColorId, size = 22 }: Props) {
   const config = getOrbTier(tier);
@@ -27,82 +26,161 @@ export function MiniOrb({ tier = 1, baseColorId, pulseColorId, ringColorId, size
 
   const baseIsRainbow = isRainbowColor(baseColorId);
   const ringIsRainbow = isRainbowColor(ringColorId);
+  const pulseIsRainbow = isRainbowColor(pulseColorId);
 
   const orbBg = baseIsRainbow
     ? `conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)`
-    : `radial-gradient(circle at 35% 28%, ${base.core} 0%, ${base.inner} 30%, ${base.mid} 60%, ${base.outer} 95%)`;
+    : `radial-gradient(circle at 32% 28%, #ffffff 0%, ${base.core} 12%, ${base.inner} 38%, ${base.mid} 66%, ${base.outer} 100%)`;
 
   const ringBg = ringIsRainbow
     ? `conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ec4899, #ef4444)`
-    : `linear-gradient(135deg, ${ring.mid}, ${ring.inner}, ${ring.mid})`;
+    : `conic-gradient(from 0deg, ${ring.outer}, ${ring.mid}, ${ring.inner}, ${ring.core}, ${ring.inner}, ${ring.mid}, ${ring.outer})`;
+
+  const pulseColor = pulseIsRainbow ? '#a855f7' : pulse.core;
+
+  // Satellite orbit radius (tier 6+) — sits just outside the orb body
+  const satR = size * 0.46;
 
   return (
     <div
-      className="relative inline-block flex-shrink-0 animate-frame-pulse"
+      className="relative inline-block flex-shrink-0 animate-mini-orb-core"
       style={{
         width: size,
         height: size,
-        filter: `drop-shadow(0 0 4px ${base.mid}aa)`,
+        filter: `drop-shadow(0 0 ${size * 0.25}px ${base.mid}cc) drop-shadow(0 0 ${size * 0.1}px ${base.core}aa)`,
       }}
       title={`Tier ${tier}`}
     >
-      {/* Ring — oblate conic/linear band, slow spin */}
-      {tier >= 2 && (
+      {/* Outer diffuse glow */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: -size * 0.18,
+          background: `radial-gradient(circle, ${base.mid}88 0%, ${base.outer}22 40%, transparent 70%)`,
+        }}
+      />
+
+      {/* Expanding pulse wave (tier 3+) */}
+      {tier >= 3 && (
         <div
-          className="absolute inset-0 rounded-full animate-frame-spin"
+          className="absolute inset-0 rounded-full pointer-events-none animate-mini-orb-pulse-wave"
           style={{
-            background: ringBg,
-            WebkitMaskImage: 'radial-gradient(ellipse 52% 16% at 50% 50%, transparent 62%, black 64%)',
-            maskImage: 'radial-gradient(ellipse 52% 16% at 50% 50%, transparent 62%, black 64%)',
-            transform: 'rotate(25deg)',
-            opacity: 0.9,
+            border: `1.5px solid ${pulseColor}`,
+            boxShadow: `0 0 6px ${pulseColor}`,
           }}
         />
       )}
-      {/* Outer tier-5+ wreath dots */}
+
+      {/* Primary tilted ring (tier 2+) */}
+      {tier >= 2 && (
+        <div
+          className="absolute inset-0 rounded-full animate-mini-orb-ring"
+          style={{
+            background: ringBg,
+            WebkitMaskImage: 'radial-gradient(ellipse 55% 18% at 50% 50%, transparent 62%, black 66%)',
+            maskImage: 'radial-gradient(ellipse 55% 18% at 50% 50%, transparent 62%, black 66%)',
+            filter: `drop-shadow(0 0 3px ${ring.mid})`,
+            opacity: 0.95,
+          }}
+        />
+      )}
+
+      {/* Secondary counter-rotating ring (tier 4+) */}
+      {tier >= 4 && (
+        <div
+          className="absolute inset-0 rounded-full animate-mini-orb-ring-rev"
+          style={{
+            background: ringBg,
+            WebkitMaskImage: 'radial-gradient(ellipse 18% 55% at 50% 50%, transparent 62%, black 66%)',
+            maskImage: 'radial-gradient(ellipse 18% 55% at 50% 50%, transparent 62%, black 66%)',
+            opacity: 0.7,
+          }}
+        />
+      )}
+
+      {/* Wreath dots (tier 5+) — more points than before, spinning */}
       {tier >= 5 && (
-        <>
-          {Array.from({ length: 6 }).map((_, i) => {
-            const angle = (i / 6) * Math.PI * 2;
+        <div className="absolute inset-0 animate-mini-orb-ring">
+          {Array.from({ length: 8 }).map((_, i) => {
+            const angle = (i / 8) * Math.PI * 2;
             const r = size / 2 - 0.5;
             const x = Math.cos(angle) * r + size / 2;
             const y = Math.sin(angle) * r + size / 2;
             const c = [ring.outer, ring.mid, ring.inner, ring.core][i % 4];
+            const d = Math.max(1.5, size * 0.09);
             return (
               <span
                 key={i}
                 className="absolute rounded-full"
                 style={{
-                  width: 2,
-                  height: 2,
-                  left: x - 1,
-                  top: y - 1,
+                  width: d,
+                  height: d,
+                  left: x - d / 2,
+                  top: y - d / 2,
                   background: c,
-                  boxShadow: `0 0 3px ${c}`,
+                  boxShadow: `0 0 4px ${c}, 0 0 1px #fff`,
                 }}
               />
             );
           })}
-        </>
+        </div>
       )}
-      {/* Orb body */}
+
+      {/* Orb body — multi-stop radial gradient */}
       <div
         className="absolute rounded-full"
         style={{
-          inset: Math.max(1, size * 0.12),
+          inset: Math.max(1, size * 0.14),
           background: orbBg,
-          boxShadow: `0 0 ${size * 0.3}px ${base.mid}88, inset 0 -${size * 0.08}px ${size * 0.16}px ${base.outer}`,
+          boxShadow: `
+            0 0 ${size * 0.35}px ${base.mid}aa,
+            inset 0 -${size * 0.1}px ${size * 0.2}px ${base.outer},
+            inset 0 ${size * 0.05}px ${size * 0.1}px ${base.inner}66
+          `,
         }}
       />
-      {/* Pulse highlight */}
-      {tier >= 3 && (
+
+      {/* Inner core pulse tint */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: Math.max(1.5, size * 0.26),
+          background: `radial-gradient(circle at 34% 30%, ${pulse.core}cc 0%, ${pulse.inner}55 40%, transparent 70%)`,
+          mixBlendMode: 'screen',
+        }}
+      />
+
+      {/* Specular highlight — makes it read as a sphere */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          width: size * 0.22,
+          height: size * 0.16,
+          left: size * 0.24,
+          top: size * 0.22,
+          background: `radial-gradient(ellipse, #ffffffdd 0%, #ffffff55 45%, transparent 80%)`,
+          filter: 'blur(0.5px)',
+        }}
+      />
+
+      {/* Orbiting satellite (tier 6+) */}
+      {tier >= 6 && (
         <div
-          className="absolute rounded-full pointer-events-none"
-          style={{
-            inset: Math.max(1, size * 0.28),
-            background: `radial-gradient(circle at 30% 30%, ${pulse.core}aa, transparent 55%)`,
-          }}
-        />
+          className="absolute inset-0 animate-mini-orb-ring-rev pointer-events-none"
+          style={{ transform: 'rotate(0deg)' }}
+        >
+          <span
+            className="absolute rounded-full"
+            style={{
+              width: Math.max(2, size * 0.14),
+              height: Math.max(2, size * 0.14),
+              left: size / 2 + satR - Math.max(1, size * 0.07),
+              top: size / 2 - Math.max(1, size * 0.07),
+              background: pulseColor,
+              boxShadow: `0 0 6px ${pulseColor}, 0 0 2px #fff`,
+            }}
+          />
+        </div>
       )}
     </div>
   );

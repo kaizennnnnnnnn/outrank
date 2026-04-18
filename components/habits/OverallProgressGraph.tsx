@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getCollection, orderBy, limit } from '@/lib/firestore';
 import { HabitLog } from '@/types/habit';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { cn } from '@/lib/utils';
 
 interface DayXP {
   date: string;
@@ -64,46 +65,89 @@ export function OverallProgressGraph() {
   const maxXP = Math.max(...data.map((d) => d.xp), 1);
   const totalXP = data.reduce((sum, d) => sum + d.xp, 0);
   const totalLogs = data.reduce((sum, d) => sum + d.logs, 0);
+  const bestIdx = data.reduce((best, d, i) => d.xp > data[best].xp ? i : best, 0);
+  const todayIdx = data.length - 1;
 
   return (
-    <div className="glass-card rounded-2xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-white">Weekly Overview</h2>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="font-mono text-orange-400">{totalXP} XP</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-500">{totalLogs} logs</span>
+    <div
+      className="relative overflow-hidden rounded-2xl p-5 border"
+      style={{
+        background:
+          'radial-gradient(ellipse 90% 60% at 100% 0%, rgba(249,115,22,0.12), transparent 55%),' +
+          'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(220,38,38,0.08), transparent 60%),' +
+          'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
+        borderColor: 'rgba(249,115,22,0.22)',
+        boxShadow: '0 0 30px -16px rgba(249,115,22,0.5), inset 0 1px 0 rgba(249,115,22,0.08)',
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400/90">
+            Weekly Overview
+          </p>
+          <p className="font-heading text-2xl font-bold text-white mt-0.5">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">
+              {totalXP.toLocaleString()}
+            </span>
+            <span className="text-slate-500 text-sm font-mono ml-1">XP</span>
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Logs</p>
+          <p className="font-heading text-lg font-bold text-white">{totalLogs}</p>
         </div>
       </div>
 
       {/* Bar chart */}
-      <div className="flex items-end justify-between gap-1.5 h-20">
+      <div className="flex items-end justify-between gap-1.5 h-24">
         {data.map((day, i) => {
           const barHeight = maxXP > 0 ? (day.xp / maxXP) * 100 : 0;
+          const isBest = i === bestIdx && day.xp > 0;
+          const isToday = i === todayIdx;
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
               <div
-                className="w-full rounded-t transition-all duration-500 min-h-[2px]"
+                className="w-full rounded-t-md transition-all duration-700 min-h-[3px] relative"
                 style={{
-                  height: `${Math.max(barHeight, 2)}%`,
+                  height: `${Math.max(barHeight, 3)}%`,
                   background: day.xp > 0
-                    ? 'linear-gradient(to top, #dc2626, #ef4444)'
-                    : '#18182a',
-                  boxShadow: day.xp > 0 ? '0 0 6px rgba(220,38,38,0.3)' : 'none',
+                    ? isBest
+                      ? 'linear-gradient(to top, #dc2626, #f97316, #fbbf24)'
+                      : 'linear-gradient(to top, #991b1b, #dc2626, #f97316)'
+                    : '#13131f',
+                  boxShadow: day.xp > 0
+                    ? isBest
+                      ? '0 0 14px rgba(249,115,22,0.7), inset 0 1px 0 rgba(255,255,255,0.25)'
+                      : '0 0 8px rgba(220,38,38,0.4)'
+                    : 'none',
+                  border: isToday ? '1px solid rgba(249,115,22,0.5)' : 'none',
                 }}
-              />
+              >
+                {isBest && (
+                  <div
+                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-yellow-300 animate-frame-pulse"
+                    style={{ boxShadow: '0 0 6px #fde047' }}
+                  />
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
       {/* Labels */}
-      <div className="flex justify-between">
+      <div className="flex justify-between mt-2">
         {data.map((day, i) => (
           <div key={i} className="flex-1 text-center">
-            <p className="text-[9px] text-slate-600">{day.date}</p>
-            <p className="text-[9px] font-mono text-slate-500">
-              {day.xp > 0 ? `+${day.xp}` : '-'}
+            <p className={cn(
+              'text-[10px] font-bold uppercase tracking-wider',
+              i === todayIdx ? 'text-orange-400' : 'text-slate-600'
+            )}>{day.date}</p>
+            <p className={cn(
+              'text-[9px] font-mono mt-0.5',
+              day.xp > 0 ? 'text-slate-400' : 'text-slate-700'
+            )}>
+              {day.xp > 0 ? `+${day.xp}` : '—'}
             </p>
           </div>
         ))}

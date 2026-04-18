@@ -10,6 +10,7 @@ import { HabitLogHistory } from '@/components/habits/HabitLogHistory';
 import { HabitProgressGraph } from '@/components/habits/HabitProgressGraph';
 import { LeaderboardRow } from '@/components/competition/LeaderboardRow';
 import { StatCard } from '@/components/profile/StatCard';
+import { LeagueCrest } from '@/components/profile/RanksModal';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { UserHabit } from '@/types/habit';
@@ -18,6 +19,7 @@ import { LeaderboardPeriod } from '@/types/leaderboard';
 import { updateDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
+import { LEAGUES, getLeague, getNextLeague } from '@/constants/seasons';
 
 const periods: { value: LeaderboardPeriod; label: string }[] = [
   { value: 'weekly', label: 'Weekly' },
@@ -178,6 +180,15 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
         </div>
       )}
 
+      {/* League info — where you stand on this habit's weekly ladder */}
+      {user && (
+        <LeagueInfoCard
+          weeklyXP={user.weeklyXP || 0}
+          categoryColor={category.color}
+          categoryName={category.name}
+        />
+      )}
+
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Leaderboard */}
         <div className="space-y-3">
@@ -228,6 +239,105 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
             <HabitLogHistory userId={user.uid} habitId={slug} />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function LeagueInfoCard({ weeklyXP, categoryColor, categoryName }: {
+  weeklyXP: number;
+  categoryColor: string;
+  categoryName: string;
+}) {
+  const current = getLeague(weeklyXP);
+  const next = getNextLeague(weeklyXP);
+  const currentIdx = LEAGUES.findIndex((l) => l.id === current.id);
+  const toNext = next ? Math.max(0, next.minWeeklyXP - weeklyXP) : 0;
+  const segmentSpan = next ? (next.minWeeklyXP - current.minWeeklyXP) : 1;
+  const segmentProgress = next ? ((weeklyXP - current.minWeeklyXP) / segmentSpan) * 100 : 100;
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl p-5 border"
+      style={{
+        background: `radial-gradient(ellipse 120% 80% at 100% 0%, ${current.color}22, transparent 55%), linear-gradient(160deg, #10101a 0%, #0b0b14 100%)`,
+        borderColor: `${current.color}40`,
+        boxShadow: `0 0 28px -10px ${current.color}66`,
+      }}
+    >
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: current.color }}>
+            League · {categoryName}
+          </p>
+          <p className="font-heading text-xl font-bold text-white mt-1">
+            You&rsquo;re in <span style={{ color: current.color }}>{current.name}</span>
+          </p>
+          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed max-w-[320px]">
+            Your <b>weekly XP</b> determines your league on every habit leaderboard. Log <b style={{ color: categoryColor }}>{categoryName}</b> to keep climbing.
+          </p>
+        </div>
+        <LeagueCrest color={current.color} tier={current.id} size={52} />
+      </div>
+
+      {/* Progress to next league */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1.5">
+          <span>{weeklyXP.toLocaleString()} weekly XP</span>
+          {next ? (
+            <span>{toNext.toLocaleString()} to <b style={{ color: next.color }}>{next.name}</b></span>
+          ) : (
+            <span className="text-pink-400 font-bold uppercase tracking-widest">Max tier</span>
+          )}
+        </div>
+        <div className="w-full h-2 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30]">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${Math.min(100, Math.max(0, segmentProgress))}%`,
+              background: next
+                ? `linear-gradient(90deg, ${current.color}, ${next.color})`
+                : `linear-gradient(90deg, ${current.color}, #fde047)`,
+              boxShadow: `0 0 10px ${current.color}aa`,
+            }}
+          />
+        </div>
+      </div>
+
+      {/* League ladder preview — current, next, one above */}
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {[currentIdx, currentIdx + 1, currentIdx + 2].map((idx, i) => {
+          const l = LEAGUES[idx];
+          if (!l) {
+            return (
+              <div key={i} className="rounded-xl p-3 text-center bg-[#08080f] border border-dashed border-[#1e1e30] opacity-60">
+                <p className="text-[10px] text-slate-600">— top —</p>
+              </div>
+            );
+          }
+          const isCurrent = i === 0;
+          return (
+            <div
+              key={l.id}
+              className={cn(
+                'rounded-xl p-3 text-center border flex flex-col items-center gap-1.5',
+                isCurrent && 'ring-1 ring-orange-500/40',
+              )}
+              style={{
+                background: `linear-gradient(145deg, ${l.color}14, #0b0b14 70%)`,
+                borderColor: `${l.color}35`,
+              }}
+            >
+              <LeagueCrest color={l.color} tier={l.id} size={32} />
+              <p className="text-[11px] font-heading font-bold leading-tight" style={{ color: l.color }}>
+                {l.name}
+              </p>
+              <p className="text-[9px] font-mono text-slate-500">
+                {l.minWeeklyXP.toLocaleString()}+ XP
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
