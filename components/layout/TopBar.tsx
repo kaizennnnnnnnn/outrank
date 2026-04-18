@@ -5,7 +5,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Avatar } from '@/components/ui/Avatar';
 import { Logo } from '@/components/ui/Logo';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { FlameIcon } from '@/components/ui/Icons';
+import { FlameIcon, UsersIcon } from '@/components/ui/Icons';
 import { XPBoostBadge } from '@/components/profile/XPBoostBadge';
 import Link from 'next/link';
 import { getXPProgress, getLevelForXP } from '@/constants/levels';
@@ -84,6 +84,9 @@ export function TopBar() {
               <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
               <path d="M3 12h18" />
             </svg>
+          </Link>
+          <Link href="/friends" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Friends">
+            <UsersIcon size={16} className="text-orange-400" />
           </Link>
           <NotificationBell count={unreadCount} />
           <Link href="/profile" className="lg:hidden ml-0.5">
