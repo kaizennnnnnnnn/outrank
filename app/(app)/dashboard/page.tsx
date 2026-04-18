@@ -2,36 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
-import { useFeed } from '@/hooks/useFeed';
 import { Button } from '@/components/ui/Button';
 import { CardSkeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { DailyChallenge } from '@/components/habits/DailyChallenge';
 import { QuickLogModal } from '@/components/habits/QuickLogModal';
 import { HabitCard } from '@/components/habits/HabitCard';
-import { Avatar } from '@/components/ui/Avatar';
-import { FlameIcon, BoltIcon } from '@/components/ui/Icons';
 import { SoulOrb } from '@/components/profile/SoulOrb';
 import { StreakFire } from '@/components/habits/StreakFire';
-import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
-import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
+import { TargetFullIcon } from '@/components/ui/AppIcons';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { getLeague } from '@/constants/seasons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
-import { useUIStore } from '@/store/uiStore';
 import { UserHabit } from '@/types/habit';
 import { OverallProgressGraph } from '@/components/habits/OverallProgressGraph';
-import { formatRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user, firebaseUser } = useAuth();
   const { habits, loading: habitsLoading } = useHabits();
-  const { items: feedItems, loading: feedLoading } = useFeed();
   const router = useRouter();
 
   const [logModal, setLogModal] = useState(false);
@@ -186,80 +177,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Friend Activity */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white">Friend Activity</h2>
-          {feedLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
-            </div>
-          ) : feedItems.length === 0 ? (
-            <EmptyState
-              icon={<UsersFullIcon size={40} className="text-red-400" />}
-              title="No activity yet"
-              description="Add friends to see their progress here."
-              action={
-                <Link href="/friends">
-                  <Button variant="secondary" size="sm">Find Friends</Button>
-                </Link>
-              }
-            />
-          ) : (
-            <div className="space-y-2">
-              {feedItems.filter((item) => item.actorId !== user.uid).slice(0, 10).map((item) => {
-                const resolvedCat = item.categorySlug
-                  ? getCategoryBySlug(item.categorySlug)
-                  : item.categoryName
-                    ? getCategoryByName(item.categoryName)
-                    : undefined;
-                const color = item.categoryColor || resolvedCat?.color || '#f97316';
-                return (
-                  <Link key={item.id} href={`/profile/${item.actorUsername}`}>
-                    <div
-                      className="group relative overflow-hidden rounded-xl p-3 transition-all hover:-translate-y-[1px]"
-                      style={{
-                        background: `linear-gradient(145deg, ${color}06 0%, #10101a 50%, #0b0b14 100%)`,
-                        border: `1px solid ${color}1a`,
-                      }}
-                    >
-                      <div
-                        className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-[0.06] blur-2xl pointer-events-none"
-                        style={{ background: color }}
-                      />
-                      <div className="relative flex items-center gap-3">
-                        <Avatar src={item.actorAvatar} alt={item.actorUsername} size="sm" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white font-semibold truncate group-hover:text-orange-400 transition-colors">
-                            {item.actorUsername}
-                          </p>
-                          <p className="text-[10px] text-slate-600">
-                            {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
-                          </p>
-                        </div>
-                        <CategoryIcon
-                          slug={item.categorySlug}
-                          name={item.categoryName}
-                          icon={item.categoryIcon || ''}
-                          color={color}
-                          size="sm"
-                        />
-                      </div>
-                      <div className="relative text-xs text-slate-400 mt-2 pl-11 flex items-center gap-2 flex-wrap">
-                        <span>{item.message}</span>
-                        {item.verified && <VerifiedBadge />}
-                      </div>
-                      {item.proofImageUrl && (
-                        <div className="relative mt-2 pl-11">
-                          <ProofImage src={item.proofImageUrl} alt={`${item.actorUsername}'s proof`} />
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Quick Log Modal */}

@@ -111,33 +111,35 @@ body {
 }
 
 @keyframes frame-pulse {
-  0%, 100% { filter: brightness(1) drop-shadow(0 0 8px rgba(255,255,255,0.15)); }
-  50%      { filter: brightness(1.25) drop-shadow(0 0 16px rgba(255,255,255,0.35)); }
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 10px rgba(255,255,255,0.2)); transform: scale(1); }
+  50%      { filter: brightness(1.35) drop-shadow(0 0 22px rgba(255,255,255,0.55)); transform: scale(1.03); }
 }
 .animate-frame-pulse {
-  animation: frame-pulse 2.5s ease-in-out infinite;
+  animation: frame-pulse 1.8s ease-in-out infinite;
 }
 
 @keyframes name-shimmer {
-  0%   { background-position: -100% 0; }
-  100% { background-position: 200% 0; }
+  0%   { background-position: -150% 0; filter: brightness(1); }
+  50%  { filter: brightness(1.3); }
+  100% { background-position: 250% 0; filter: brightness(1); }
 }
 .animate-name-shimmer {
-  animation: name-shimmer 3s linear infinite;
+  animation: name-shimmer 2s linear infinite;
 }
 
 @keyframes name-pulse {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px currentColor); }
-  50%      { opacity: 0.85; filter: drop-shadow(0 0 10px currentColor); }
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 2px currentColor); }
+  50%      { opacity: 0.9; filter: drop-shadow(0 0 14px currentColor) drop-shadow(0 0 6px currentColor); }
 }
 .animate-name-pulse {
-  animation: name-pulse 2s ease-in-out infinite;
+  animation: name-pulse 1.3s ease-in-out infinite;
 }
 
 @keyframes name-rainbow {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+  0%   { background-position: 0% 50%; filter: brightness(1.1); }
+  50%  { filter: brightness(1.3); }
+  100% { background-position: 300% 50%; filter: brightness(1.1); }
 }
 .animate-name-rainbow {
-  animation: name-rainbow 4s linear infinite;
+  animation: name-rainbow 3s linear infinite;
 }

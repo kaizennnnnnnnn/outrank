@@ -87,10 +87,24 @@ export default function ProfilePage() {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment } = await import('firebase/firestore');
       await updateDocument('users', user.uid, { orbTier: newTier });
-      // Award 30 fragments for evolution
       await updateDocument('users', user.uid, { fragments: increment(30) });
     } catch { /* silent */ }
     setLocalTier(newTier);
+  };
+
+  const handleAscend = async () => {
+    if (!user) return;
+    try {
+      const { updateDocument } = await import('@/lib/firestore');
+      const { increment, arrayUnion } = await import('firebase/firestore');
+      await updateDocument('users', user.uid, {
+        orbTier: 1,
+        orbAscensions: increment(1),
+        fragments: increment(500),
+        ownedCosmetics: arrayUnion('frame_ascension', 'name_ascendant'),
+      });
+      setLocalTier(1);
+    } catch { /* silent */ }
   };
 
   return (
@@ -102,6 +116,7 @@ export default function ProfilePage() {
           tier={localTier}
           size={300}
           onEvolve={handleEvolve}
+          onAscend={handleAscend}
           baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
           pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
           ringColorId={(user as unknown as Record<string, string>).orbRingColor}

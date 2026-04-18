@@ -155,20 +155,21 @@ export function DuelResultModal({
                 background: 'radial-gradient(ellipse at center, rgba(249,115,22,0.07), transparent 65%)',
               }}
             >
-              {/* My orb — slides in from left */}
+              {/* My orb — starts far left, flies to center on clash, outcome decides final state */}
               <motion.div
                 animate={
                   phase === 'intro'
-                    ? { x: -80, opacity: 0.6, scale: 0.9 }
+                    ? { x: -110, opacity: 0.6, scale: 0.85 }
                     : phase === 'clash'
-                      ? { x: -30, scale: 1.05 }
+                      ? { x: 0, scale: 1.15 }
                       : won
-                        ? { x: -30, scale: 1.15 }
-                        : { x: -30, scale: 0.85, opacity: 0.55 }
+                        ? { x: 0, scale: 1.35 }
+                        : tie
+                          ? { x: -45, scale: 1.05 }
+                          : { x: 0, scale: 0.25, opacity: 0 }
                 }
-                transition={{ type: 'spring', stiffness: 160, damping: 16 }}
-                className="absolute"
-                style={{ left: '50%', transform: 'translateX(-100%)' }}
+                transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+                className="absolute flex flex-col items-center"
               >
                 <div className="relative">
                   <SoulOrb
@@ -184,17 +185,21 @@ export function DuelResultModal({
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"
                       animate={{ boxShadow: [
-                        `0 0 30px ${color}77`,
-                        `0 0 70px ${color}cc`,
-                        `0 0 30px ${color}77`,
+                        `0 0 40px ${color}aa`,
+                        `0 0 90px ${color}ff`,
+                        `0 0 40px ${color}aa`,
                       ]}}
                       transition={{ duration: 1.2, repeat: Infinity }}
                     />
                   )}
                 </div>
-                <p className={`text-center text-xs mt-1 font-semibold ${won ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}>
-                  You — {myScore}
-                </p>
+                {/* Name label UNDER the orb */}
+                <motion.p
+                  animate={{ opacity: phase === 'reveal' && !won && !tie ? 0 : 1 }}
+                  className={`text-center text-xs mt-2 font-semibold whitespace-nowrap ${won ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}
+                >
+                  You <span className="font-mono ml-1">{myScore}</span>
+                </motion.p>
               </motion.div>
 
               {/* Clash — layered blast: hot core + shockwave ring + radial rays */}
@@ -254,22 +259,21 @@ export function DuelResultModal({
                 <MoteStream from={won ? 'right' : 'left'} to={won ? 'left' : 'right'} color={color} />
               )}
 
-              {/* Opponent orb — slides in from right */}
+              {/* Opponent orb — mirrors the above. On win, it shrinks into center (consumed). */}
               <motion.div
                 animate={
                   phase === 'intro'
-                    ? { x: 80, opacity: 0.6, scale: 0.9 }
+                    ? { x: 110, opacity: 0.6, scale: 0.85 }
                     : phase === 'clash'
-                      ? { x: 30, scale: 1.05 }
+                      ? { x: 0, scale: 1.15 }
                       : !won && !tie
-                        ? { x: 30, scale: 1.15 }
+                        ? { x: 0, scale: 1.35 }
                         : tie
-                          ? { x: 30, scale: 1.0 }
-                          : { x: 30, scale: 0.85, opacity: 0.55 }
+                          ? { x: 45, scale: 1.05 }
+                          : { x: 0, scale: 0.25, opacity: 0 }
                 }
-                transition={{ type: 'spring', stiffness: 160, damping: 16 }}
-                className="absolute"
-                style={{ left: '50%' }}
+                transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+                className="absolute flex flex-col items-center"
               >
                 <div className="relative">
                   <SoulOrb
@@ -285,17 +289,20 @@ export function DuelResultModal({
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"
                       animate={{ boxShadow: [
-                        `0 0 30px ${color}77`,
-                        `0 0 70px ${color}cc`,
+                        `0 0 40px ${color}aa`,
+                        `0 0 90px ${color}ff`,
                         `0 0 30px ${color}77`,
                       ]}}
                       transition={{ duration: 1.2, repeat: Infinity }}
                     />
                   )}
                 </div>
-                <p className={`text-center text-xs mt-1 font-semibold ${!won && !tie ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}>
-                  {opp.username} — {oppScore}
-                </p>
+                <motion.p
+                  animate={{ opacity: phase === 'reveal' && won ? 0 : 1 }}
+                  className={`text-center text-xs mt-2 font-semibold whitespace-nowrap ${!won && !tie ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}
+                >
+                  {opp.username} <span className="font-mono ml-1">{oppScore}</span>
+                </motion.p>
               </motion.div>
             </div>
 
@@ -345,22 +352,33 @@ export function DuelResultModal({
 }
 
 function MoteStream({ from, to, color }: { from: 'left' | 'right'; to: 'left' | 'right'; color: string }) {
+  // With both orbs centered now, motes just spiral inward to "center" from a
+  // short side-offset, implying the winner devours whatever's left of the loser.
   return (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-1 pointer-events-none">
-      {Array.from({ length: 10 }).map((_, i) => (
+      {Array.from({ length: 14 }).map((_, i) => (
         <motion.span
           key={i}
-          className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full"
-          style={{ background: color, boxShadow: `0 0 8px ${color}` }}
+          className="absolute top-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: color,
+            boxShadow: `0 0 12px ${color}, 0 0 4px #ffffff`,
+            width: 6 - (i % 3),
+            height: 6 - (i % 3),
+          }}
           initial={{
-            left: from === 'left' ? '30%' : '70%',
+            left: from === 'left' ? '35%' : '65%',
+            top: `${50 + (Math.sin(i) * 12)}%`,
             opacity: 0,
+            scale: 0.5,
           }}
           animate={{
-            left: to === 'left' ? '30%' : '70%',
+            left: '50%',
+            top: '50%',
             opacity: [0, 1, 1, 0],
+            scale: [0.5, 1, 0.8, 0],
           }}
-          transition={{ delay: i * 0.08, duration: 0.9, ease: 'easeIn' }}
+          transition={{ delay: i * 0.055, duration: 0.85, ease: 'easeIn' }}
         />
       ))}
     </div>

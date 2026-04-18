@@ -5,13 +5,16 @@ import { motion } from 'framer-motion';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuth } from '@/hooks/useAuth';
 import { CATEGORIES } from '@/constants/categories';
-import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { LeaderboardPeriod } from '@/types/leaderboard';
 import { TrophyIconFull } from '@/components/ui/AppIcons';
 import { getCollection, orderBy as fbOrderBy, limit as fbLimit } from '@/lib/firestore';
-import { QueryConstraint } from 'firebase/firestore';
+import { QueryConstraint, getDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { FramedAvatar } from '@/components/profile/FramedAvatar';
+import { NamePlate } from '@/components/profile/NamePlate';
+import { MiniOrb } from '@/components/profile/MiniOrb';
 import { UserProfile } from '@/types/user';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -87,6 +90,40 @@ export default function LeaderboardPage() {
     view === 'category' ? selectedCategory : '__none__',
     period,
   );
+
+  // Per-category entries are lightweight; pull each user's cosmetics on demand
+  // so the row can render the same FramedAvatar + NamePlate + MiniOrb combo.
+  interface CosmeticSnap {
+    frame?: string; name?: string; tier?: number;
+    baseColor?: string; pulseColor?: string; ringColor?: string;
+  }
+  const [cosmeticsById, setCosmeticsById] = useState<Record<string, CosmeticSnap>>({});
+  useEffect(() => {
+    if (view !== 'category') return;
+    const need = catEntries.filter((e) => !cosmeticsById[e.userId]).map((e) => e.userId);
+    if (need.length === 0) return;
+    Promise.all(
+      need.map((id) => getDoc(doc(db, `users/${id}`)).then((snap) => {
+        if (!snap.exists()) return null;
+        const d = snap.data() as Record<string, unknown>;
+        return {
+          id,
+          snap: {
+            frame: d.equippedFrame as string | undefined,
+            name:  d.equippedNameEffect as string | undefined,
+            tier: (d.orbTier as number) || 1,
+            baseColor:  d.orbBaseColor as string | undefined,
+            pulseColor: d.orbPulseColor as string | undefined,
+            ringColor:  d.orbRingColor as string | undefined,
+          } as CosmeticSnap,
+        };
+      })),
+    ).then((rows) => {
+      const next: Record<string, CosmeticSnap> = {};
+      for (const r of rows) { if (r) next[r.id] = r.snap; }
+      if (Object.keys(next).length) setCosmeticsById((prev) => ({ ...prev, ...next }));
+    });
+  }, [view, catEntries, cosmeticsById]);
 
   const activeField = period === 'weekly' ? 'weeklyXP' : period === 'monthly' ? 'monthlyXP' : 'totalXP';
 
@@ -184,6 +221,7 @@ export default function LeaderboardPage() {
                 const rank = i + 1;
                 const isMe = entry.uid === user?.uid;
                 const score = (entry as unknown as Record<string, number>)[activeField] || 0;
+                const u = entry as unknown as Record<string, unknown>;
                 return (
                   <Row
                     key={entry.uid}
@@ -193,6 +231,12 @@ export default function LeaderboardPage() {
                     username={entry.username}
                     avatarUrl={entry.avatarUrl}
                     score={score}
+                    frameId={u.equippedFrame as string | undefined}
+                    nameEffectId={u.equippedNameEffect as string | undefined}
+                    orbTier={(u.orbTier as number) || 1}
+                    orbBaseColor={u.orbBaseColor as string | undefined}
+                    orbPulseColor={u.orbPulseColor as string | undefined}
+                    orbRingColor={u.orbRingColor as string | undefined}
                   />
                 );
               })}
@@ -210,6 +254,7 @@ export default function LeaderboardPage() {
               {catEntries.map((entry, i) => {
                 const rank = i + 1;
                 const isMe = entry.userId === user?.uid;
+                const c = cosmeticsById[entry.userId] || {};
                 return (
                   <Row
                     key={entry.userId}
@@ -220,6 +265,12 @@ export default function LeaderboardPage() {
                     avatarUrl={entry.avatarUrl}
                     score={entry.score}
                     delta={entry.delta}
+                    frameId={c.frame}
+                    nameEffectId={c.name}
+                    orbTier={c.tier}
+                    orbBaseColor={c.baseColor}
+                    orbPulseColor={c.pulseColor}
+                    orbRingColor={c.ringColor}
                   />
                 );
               })}
@@ -233,8 +284,11 @@ export default function LeaderboardPage() {
 
 function Row({
   index, rank, isMe, username, avatarUrl, score, delta,
+  frameId, nameEffectId, orbTier, orbBaseColor, orbPulseColor, orbRingColor,
 }: {
   index: number; rank: number; isMe: boolean; username: string; avatarUrl: string; score: number; delta?: number;
+  frameId?: string; nameEffectId?: string;
+  orbTier?: number; orbBaseColor?: string; orbPulseColor?: string; orbRingColor?: string;
 }) {
   return (
     <motion.div
@@ -250,12 +304,25 @@ function Row({
           <span className="font-mono text-sm font-bold text-slate-600">#{rank}</span>
         )}
       </div>
-      <Link href={`/profile/${username}`} className="flex items-center gap-3 flex-1 min-w-0">
-        <Avatar src={avatarUrl} alt={username} size="sm" />
-        <div className="min-w-0">
-          <p className={cn('text-sm font-medium truncate', isMe ? 'text-orange-400' : 'text-white')}>
-            {username} {isMe && <span className="text-xs text-orange-500">(you)</span>}
-          </p>
+      <Link href={`/profile/${username}`} className="flex items-center gap-2.5 flex-1 min-w-0">
+        <FramedAvatar src={avatarUrl} alt={username} size="sm" frameId={frameId} />
+        <div className="min-w-0 flex items-center gap-1.5">
+          <NamePlate
+            name={username}
+            effectId={nameEffectId}
+            size="sm"
+            className={cn('truncate', isMe && !nameEffectId && 'text-orange-400')}
+          />
+          {isMe && <span className="text-xs text-orange-500">(you)</span>}
+          {orbTier !== undefined && (
+            <MiniOrb
+              tier={orbTier}
+              baseColorId={orbBaseColor}
+              pulseColorId={orbPulseColor}
+              ringColorId={orbRingColor}
+              size={18}
+            />
+          )}
         </div>
       </Link>
       <div className="text-right">

@@ -11,13 +11,15 @@ interface SoulOrbProps {
   tier: number;
   size?: number;
   onEvolve?: () => void;
+  /** Fires when the user taps the Ascend button (shown at tier 10). */
+  onAscend?: () => void;
   baseColorId?: string;
   pulseColorId?: string;
   ringColorId?: string;
   hideLabel?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pulseColorId, ringColorId, hideLabel }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseColorId, pulseColorId, ringColorId, hideLabel }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -553,7 +555,19 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
       </div>}
 
       <AnimatePresence>
-        {canEvolve && !evolving && (
+        {/* At the cap: show Ascend (pink pulsing CTA) instead of Evolve */}
+        {tier >= MAX_ORB_TIER && onAscend && !evolving && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); onAscend(); }}
+              className="text-sm font-heading font-bold text-white tracking-[0.15em] uppercase px-6 py-2.5 rounded-xl animate-frame-pulse bg-gradient-to-r from-pink-600 via-fuchsia-500 to-orange-400 shadow-[0_8px_30px_-6px_rgba(236,72,153,0.85)]"
+            >
+              Ascend
+            </button>
+          </motion.div>
+        )}
+
+        {canEvolve && !evolving && tier < MAX_ORB_TIER && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <Button size="sm" onClick={handleEvolve} className="animate-pulse">
               Evolve

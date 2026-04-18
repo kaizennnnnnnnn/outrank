@@ -3,8 +3,11 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ORB_BASE_COLORS, ORB_PULSE_COLORS, ORB_RING_COLORS, OrbColorSet } from '@/constants/orbColors';
+import { PFP_FRAMES, NAME_EFFECTS } from '@/constants/cosmetics';
 import { XPBoostBadge, isXPBoostActive } from '@/components/profile/XPBoostBadge';
 import { OrbColorPreview } from '@/components/profile/OrbColorPreview';
+import { FramedAvatar } from '@/components/profile/FramedAvatar';
+import { NamePlate } from '@/components/profile/NamePlate';
 import { updateDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
@@ -30,6 +33,18 @@ const RARITY_BY_ID: Record<string, Rarity> = {
   ring_sunset: 'legendary', ring_aurora: 'legendary', ring_molten: 'legendary',
   ring_candy: 'legendary', ring_toxic: 'legendary',
   ring_rainbow: 'mythic', ring_void: 'mythic', ring_supernova: 'mythic',
+  // frames
+  frame_none: 'common', frame_iron: 'common',
+  frame_silver: 'rare', frame_gold: 'rare',
+  frame_emerald: 'epic', frame_ruby: 'epic', frame_sapphire: 'epic',
+  frame_phoenix: 'legendary', frame_nebula: 'legendary',
+  frame_ascension: 'mythic', frame_rainbow: 'mythic', frame_eternal: 'mythic',
+  // name effects
+  name_plain: 'common',
+  name_ember: 'rare', name_ice: 'rare', name_emerald: 'rare',
+  name_gold: 'epic', name_plasma: 'epic',
+  name_phoenix: 'legendary',
+  name_rainbow: 'mythic', name_ascendant: 'mythic', name_eternal: 'mythic',
 };
 
 const rarityStyles: Record<Rarity, { label: string; text: string; bg: string; border: string }> = {
@@ -43,7 +58,7 @@ const rarityStyles: Record<Rarity, { label: string; text: string; bg: string; bo
 const rarityRank: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
 
 type SortMode = 'rarity' | 'name';
-type FilterType = 'all' | 'base' | 'pulse' | 'ring';
+type FilterType = 'all' | 'base' | 'pulse' | 'ring' | 'frame' | 'name';
 
 export default function InventoryPage() {
   const { user } = useAuth();
@@ -56,6 +71,7 @@ export default function InventoryPage() {
 
   const userData = user as unknown as Record<string, unknown>;
   const ownedColors: string[] = (userData.ownedColors as string[]) || ['crimson', 'fire', 'ring_default'];
+  const ownedCosmetics: string[] = (userData.ownedCosmetics as string[]) || [];
   const fragments: number = (userData.fragments as number) || 0;
   const streakFreezes: number = user.streakFreezeTokens || 0;
   const xpBoostAt = userData.xpBoostActivatedAt;
@@ -63,6 +79,8 @@ export default function InventoryPage() {
   const equippedBase: string = (userData.orbBaseColor as string) || 'crimson';
   const equippedPulse: string = (userData.orbPulseColor as string) || 'fire';
   const equippedRing: string = (userData.orbRingColor as string) || 'ring_default';
+  const equippedFrame: string = (userData.equippedFrame as string) || 'frame_none';
+  const equippedNameEffect: string = (userData.equippedNameEffect as string) || 'name_plain';
 
   const ownedBaseColors = useMemo(
     () => sortColors(ORB_BASE_COLORS.filter((c) => ownedColors.includes(c.id)), sort),
@@ -75,6 +93,14 @@ export default function InventoryPage() {
   const ownedRingColors = useMemo(
     () => sortColors(ORB_RING_COLORS.filter((c) => ownedColors.includes(c.id) || c.id === 'ring_default'), sort),
     [ownedColors, sort]
+  );
+  const ownedFrames = useMemo(
+    () => sortCosmeticsByRarity(PFP_FRAMES.filter((f) => ownedCosmetics.includes(f.id) || f.id === 'frame_none'), sort),
+    [ownedCosmetics, sort],
+  );
+  const ownedNames = useMemo(
+    () => sortCosmeticsByRarity(NAME_EFFECTS.filter((n) => ownedCosmetics.includes(n.id) || n.id === 'name_plain'), sort),
+    [ownedCosmetics, sort],
   );
 
   const equipBase = async (id: string) => {
@@ -89,9 +115,19 @@ export default function InventoryPage() {
     try { await updateDocument('users', user.uid, { orbRingColor: id }); addToast({ type: 'success', message: 'Ring color equipped' }); }
     catch { addToast({ type: 'error', message: 'Failed to equip' }); }
   };
+  const equipFrame = async (id: string) => {
+    try { await updateDocument('users', user.uid, { equippedFrame: id }); addToast({ type: 'success', message: 'Frame equipped' }); }
+    catch { addToast({ type: 'error', message: 'Failed to equip' }); }
+  };
+  const equipNameEffect = async (id: string) => {
+    try { await updateDocument('users', user.uid, { equippedNameEffect: id }); addToast({ type: 'success', message: 'Name effect equipped' }); }
+    catch { addToast({ type: 'error', message: 'Failed to equip' }); }
+  };
 
   const showBase = filter === 'all' || filter === 'base';
   const showPulse = filter === 'all' || filter === 'pulse';
+  const showFrames = filter === 'all' || filter === 'frame';
+  const showNames = filter === 'all' || filter === 'name';
   const showRing = filter === 'all' || filter === 'ring';
 
   return (
@@ -122,6 +158,8 @@ export default function InventoryPage() {
         <FilterChip label="Base" active={filter === 'base'} onClick={() => setFilter('base')} />
         <FilterChip label="Pulse" active={filter === 'pulse'} onClick={() => setFilter('pulse')} />
         <FilterChip label="Rings" active={filter === 'ring'} onClick={() => setFilter('ring')} />
+        <FilterChip label="Frames" active={filter === 'frame'} onClick={() => setFilter('frame')} />
+        <FilterChip label="Names" active={filter === 'name'} onClick={() => setFilter('name')} />
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1 ml-2">Sort</span>
         <FilterChip label="Rarity" active={sort === 'rarity'} onClick={() => setSort('rarity')} />
         <FilterChip label="Name" active={sort === 'name'} onClick={() => setSort('name')} />
@@ -165,7 +203,157 @@ export default function InventoryPage() {
           variant="ring"
         />
       )}
+
+      {/* PFP Frames */}
+      {showFrames && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+            Profile Frames <span className="text-slate-600">({ownedFrames.length})</span>
+          </h2>
+          {ownedFrames.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#1e1e30] bg-[#0b0b14] p-6 text-center">
+              <p className="text-xs text-slate-500">No frames yet. Unlock them from shop, battle pass, or ascend your orb.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {ownedFrames.map((f) => (
+                <FrameCard
+                  key={f.id}
+                  id={f.id}
+                  name={f.name}
+                  avatarUrl={user.avatarUrl}
+                  alt={user.username}
+                  equipped={equippedFrame === f.id}
+                  onEquip={() => equipFrame(f.id)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Name Effects */}
+      {showNames && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+            Name Effects <span className="text-slate-600">({ownedNames.length})</span>
+          </h2>
+          {ownedNames.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#1e1e30] bg-[#0b0b14] p-6 text-center">
+              <p className="text-xs text-slate-500">No name effects yet. Earn them from shop, battle pass, or ascend.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {ownedNames.map((n) => (
+                <NameEffectCard
+                  key={n.id}
+                  id={n.id}
+                  name={n.name}
+                  userName={user.username}
+                  equipped={equippedNameEffect === n.id}
+                  onEquip={() => equipNameEffect(n.id)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
+  );
+}
+
+function sortCosmeticsByRarity<T extends { id: string; name: string }>(list: T[], mode: SortMode): T[] {
+  const sorted = [...list];
+  if (mode === 'rarity') {
+    sorted.sort((a, b) => {
+      const ra = rarityRank[RARITY_BY_ID[a.id] || 'common'];
+      const rb = rarityRank[RARITY_BY_ID[b.id] || 'common'];
+      if (ra !== rb) return rb - ra;
+      return a.name.localeCompare(b.name);
+    });
+  } else {
+    sorted.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return sorted;
+}
+
+function FrameCard({
+  id, name, avatarUrl, alt, equipped, onEquip,
+}: {
+  id: string; name: string; avatarUrl?: string; alt: string; equipped: boolean; onEquip: () => void;
+}) {
+  const rarity = RARITY_BY_ID[id] || 'common';
+  const rs = rarityStyles[rarity];
+  return (
+    <button
+      onClick={onEquip}
+      disabled={equipped}
+      className={cn('relative overflow-hidden rounded-xl p-3 text-left transition-all hover:border-orange-500/40')}
+      style={{
+        border: equipped ? '1px solid rgba(249,115,22,0.5)' : `1px solid ${rs.border}`,
+        background: equipped
+          ? 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 60%)'
+          : `linear-gradient(145deg, ${rs.bg}, #0b0b14 60%)`,
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <FramedAvatar src={avatarUrl} alt={alt} size="sm" frameId={id} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{name}</p>
+          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+            <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
+              style={{ color: rs.text, background: rs.bg, border: `1px solid ${rs.border}` }}>
+              {rs.label}
+            </span>
+            {equipped && (
+              <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-[1px] rounded">
+                Equipped
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function NameEffectCard({
+  id, name, userName, equipped, onEquip,
+}: {
+  id: string; name: string; userName: string; equipped: boolean; onEquip: () => void;
+}) {
+  const rarity = RARITY_BY_ID[id] || 'common';
+  const rs = rarityStyles[rarity];
+  return (
+    <button
+      onClick={onEquip}
+      disabled={equipped}
+      className={cn('relative overflow-hidden rounded-xl p-3 text-left transition-all hover:border-orange-500/40')}
+      style={{
+        border: equipped ? '1px solid rgba(249,115,22,0.5)' : `1px solid ${rs.border}`,
+        background: equipped
+          ? 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 60%)'
+          : `linear-gradient(145deg, ${rs.bg}, #0b0b14 60%)`,
+      }}
+    >
+      <div className="h-12 flex items-center justify-center mb-2 bg-[#0b0b14] border border-[#1e1e30] rounded-lg">
+        <NamePlate name={userName} effectId={id} size="md" />
+      </div>
+      <div className="flex items-center gap-1 flex-wrap">
+        <span className="text-sm font-semibold text-white">{name}</span>
+      </div>
+      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
+          style={{ color: rs.text, background: rs.bg, border: `1px solid ${rs.border}` }}>
+          {rs.label}
+        </span>
+        {equipped && (
+          <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-[1px] rounded">
+            Equipped
+          </span>
+        )}
+      </div>
+    </button>
   );
 }
 
