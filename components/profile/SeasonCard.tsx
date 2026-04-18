@@ -1,11 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
 import { UserProfile } from '@/types/user';
 import {
   getCurrentSeason, getSeasonDaysLeft,
   getLeague, getNextLeague, LEAGUES,
   getSeasonPassTier, getSeasonPassProgress, SEASON_PASS_TIERS,
 } from '@/constants/seasons';
+import { RanksModal } from './RanksModal';
 
 interface Props { user: UserProfile; }
 
@@ -15,6 +18,7 @@ interface Props { user: UserProfile; }
  * pass progress bar.
  */
 export function SeasonCard({ user }: Props) {
+  const [ranksOpen, setRanksOpen] = useState(false);
   const weeklyXP = user.weeklyXP || 0;
   const league = getLeague(weeklyXP);
   const nextLeague = getNextLeague(weeklyXP);
@@ -63,10 +67,14 @@ export function SeasonCard({ user }: Props) {
         <LeagueBadge color={league.color} index={LEAGUES.indexOf(league)} />
       </div>
 
-      {/* Promotion bar */}
-      <div className="relative mt-3">
+      {/* Promotion bar — click to see all league tiers */}
+      <button
+        onClick={() => setRanksOpen(true)}
+        className="relative mt-3 w-full text-left group"
+        aria-label="See league details"
+      >
         <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-          <span>Promotion</span>
+          <span className="group-hover:text-orange-400 transition-colors">Promotion · view ranks →</span>
           <span>
             {weeklyXP} / {nextLeague ? nextLeague.minWeeklyXP : '—'}
             {nextLeague && <span className="text-slate-600"> XP → {nextLeague.name}</span>}
@@ -82,12 +90,12 @@ export function SeasonCard({ user }: Props) {
             }}
           />
         </div>
-      </div>
+      </button>
 
-      {/* Season pass */}
-      <div className="relative mt-4">
+      {/* Season pass — click to go to battle-pass page */}
+      <Link href="/battle-pass" className="relative mt-4 block group">
         <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-          <span>Season Pass</span>
+          <span className="group-hover:text-orange-400 transition-colors">Season Pass · view tiers →</span>
           <span>Tier {passTier} / {SEASON_PASS_TIERS}</span>
         </div>
         <div className="h-2 bg-[#18182a] rounded-full overflow-hidden">
@@ -100,7 +108,9 @@ export function SeasonCard({ user }: Props) {
             }}
           />
         </div>
-      </div>
+      </Link>
+
+      <RanksModal isOpen={ranksOpen} onClose={() => setRanksOpen(false)} weeklyXP={weeklyXP} />
     </div>
   );
 }

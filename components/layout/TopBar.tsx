@@ -7,6 +7,7 @@ import { Logo } from '@/components/ui/Logo';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { FlameIcon, SettingsIcon, UsersIcon } from '@/components/ui/Icons';
 import { XPBoostBadge } from '@/components/profile/XPBoostBadge';
+import { getLeague } from '@/constants/seasons';
 import Link from 'next/link';
 import { getXPProgress, getLevelForXP } from '@/constants/levels';
 
@@ -46,6 +47,30 @@ export function TopBar() {
         {/* Right side */}
         <div className="flex items-center gap-2">
           <XPBoostBadge activatedAt={(user as unknown as Record<string, unknown>).xpBoostActivatedAt as never} size="sm" />
+
+          {/* League crest — companion to the fragments pill. Tap to jump to profile / ranks. */}
+          <Link
+            href="/profile"
+            className="lg:hidden flex items-center gap-1 px-2 py-1 rounded-xl border"
+            style={{
+              background: `linear-gradient(135deg, ${getLeague(user.weeklyXP || 0).color}25, #10101a 70%)`,
+              borderColor: `${getLeague(user.weeklyXP || 0).color}55`,
+            }}
+            aria-label="League"
+            title={`${getLeague(user.weeklyXP || 0).name} league`}
+          >
+            <span
+              className="w-3 h-3.5 inline-block"
+              style={{
+                clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)',
+                background: getLeague(user.weeklyXP || 0).color,
+              }}
+            />
+            <span className="text-[10px] font-bold" style={{ color: getLeague(user.weeklyXP || 0).color }}>
+              {getLeague(user.weeklyXP || 0).name.slice(0, 4).toUpperCase()}
+            </span>
+          </Link>
+
           <div className="flex items-center gap-1.5 text-sm font-mono font-bold text-orange-400">
             <FlameIcon size={16} className="text-orange-500" />
             {user.weeklyXP}

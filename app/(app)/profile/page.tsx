@@ -23,6 +23,7 @@ import { MasteryShelf } from '@/components/profile/MasteryShelf';
 import { TitlesVault } from '@/components/profile/TitlesVault';
 import { SeasonCard } from '@/components/profile/SeasonCard';
 import { PrestigeCard } from '@/components/profile/PrestigeCard';
+import { LevelRewardsModal } from '@/components/profile/LevelRewardsModal';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import Link from 'next/link';
 
@@ -74,6 +75,7 @@ export default function ProfilePage() {
   };
 
   const [showOrbHistory, setShowOrbHistory] = useState(false);
+  const [showLevelRewards, setShowLevelRewards] = useState(false);
 
   const handleEvolve = async () => {
     if (localTier >= 10) return;
@@ -139,9 +141,13 @@ export default function ProfilePage() {
           <Avatar src={user.avatarUrl} alt={user.username} size="xl" level={xpProgress.percentage} />
         </div>
         <h1 className="text-xl font-bold text-white">{user.username}</h1>
-        <p className="text-sm text-orange-400 font-heading">
+        <button
+          onClick={() => setShowLevelRewards(true)}
+          className="text-sm text-orange-400 font-heading hover:text-orange-300 transition-colors underline-offset-4 hover:underline"
+          aria-label="View level rewards"
+        >
           Lv.{level.level} {level.title}
-        </p>
+        </button>
         {user.bio && <p className="text-sm text-slate-400 mt-2">{user.bio}</p>}
 
         {/* XP Bar */}
@@ -227,6 +233,13 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      <LevelRewardsModal
+        isOpen={showLevelRewards}
+        onClose={() => setShowLevelRewards(false)}
+        currentLevel={level.level}
+        currentXP={user.totalXP}
+      />
     </div>
   );
 }

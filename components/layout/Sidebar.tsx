@@ -20,6 +20,7 @@ const navItems: { href: string; label: string; icon: ReactNode }[] = [
   { href: '/friends', label: 'Friends', icon: <UsersIcon /> },
   { href: '/feed', label: 'Feed', icon: <FeedIcon /> },
   { href: '/groups', label: 'Groups', icon: <UsersIcon /> },
+  { href: '/battle-pass', label: 'Battle Pass', icon: <TrophyIcon /> },
   { href: '/orb-leaderboard', label: 'Orb Rankings', icon: <TrophyIcon /> },
   { href: '/shop', label: 'Shop', icon: <LeagueIcon /> },
   { href: '/inventory', label: 'Inventory', icon: <TargetIcon /> },

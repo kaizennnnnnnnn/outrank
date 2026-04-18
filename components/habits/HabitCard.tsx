@@ -5,6 +5,7 @@ import { UserHabit } from '@/types/habit';
 import { StreakFlame } from './StreakFlame';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CheckCircleFullIcon } from '@/components/ui/AppIcons';
+import { getMasteryTier } from '@/constants/mastery';
 import { cn } from '@/lib/utils';
 
 interface HabitCardProps {
@@ -14,46 +15,102 @@ interface HabitCardProps {
 }
 
 export function HabitCard({ habit, isLoggedToday, onLog }: HabitCardProps) {
+  const mastery = getMasteryTier(habit.totalLogs);
+  // At higher mastery the whole card and icon frame get fancier.
+  const masteryTier = mastery?.tier ?? 0;
+  const masteryColor = mastery?.color;
+
   return (
     <motion.div
       whileHover={{ y: -1 }}
       whileTap={{ scale: 0.995 }}
-      className={cn(
-        'group relative overflow-hidden rounded-xl p-3.5 transition-all cursor-pointer',
-      )}
+      className="group relative overflow-hidden rounded-xl p-3.5 transition-all cursor-pointer"
       style={{
-        // Logged-today uses orange (brand palette) instead of emerald green
         background: isLoggedToday
           ? `linear-gradient(145deg, rgba(249,115,22,0.1), #0b0b14 60%)`
-          : `linear-gradient(145deg, ${habit.color}0c 0%, #10101a 45%, #0b0b14 100%)`,
+          : masteryColor && masteryTier >= 5
+            // Platinum+ tiers: mastery color leaks into the card background.
+            ? `linear-gradient(145deg, ${habit.color}10 0%, ${masteryColor}10 50%, #0b0b14 100%)`
+            : `linear-gradient(145deg, ${habit.color}0c 0%, #10101a 45%, #0b0b14 100%)`,
         border: isLoggedToday
           ? '1px solid rgba(249,115,22,0.3)'
-          : `1px solid ${habit.color}1f`,
+          : masteryColor && masteryTier >= 4
+            ? `1px solid ${masteryColor}55`
+            : `1px solid ${habit.color}1f`,
         boxShadow: isLoggedToday
           ? 'inset 0 1px 0 rgba(249,115,22,0.12), 0 4px 20px -10px rgba(249,115,22,0.25)'
-          : `0 1px 0 ${habit.color}10 inset, 0 6px 18px -14px ${habit.color}20`,
+          : masteryTier >= 7 && masteryColor
+            // Emerald+ earns a noticeable glow
+            ? `0 0 22px -6px ${masteryColor}80, inset 0 1px 0 ${masteryColor}20`
+            : `0 1px 0 ${habit.color}10 inset, 0 6px 18px -14px ${habit.color}20`,
       }}
       onClick={!isLoggedToday ? onLog : undefined}
     >
-      {/* Color accent glow, muted when complete */}
+      {/* Category accent glow, muted when complete */}
       {!isLoggedToday && (
         <div
           className="absolute -top-10 -right-10 w-28 h-28 rounded-full opacity-[0.07] blur-2xl pointer-events-none transition-opacity group-hover:opacity-[0.13]"
-          style={{ background: habit.color }}
+          style={{ background: masteryColor && masteryTier >= 6 ? masteryColor : habit.color }}
+        />
+      )}
+
+      {/* Obsidian-tier shimmer */}
+      {masteryTier >= 10 && !isLoggedToday && (
+        <div
+          className="absolute inset-0 pointer-events-none opacity-30"
+          style={{
+            background: `linear-gradient(110deg, transparent 30%, ${masteryColor}55 50%, transparent 70%)`,
+            animation: 'shimmer 3s linear infinite',
+          }}
         />
       )}
 
       <div className="relative flex items-center gap-3.5">
-        <CategoryIcon
-          slug={habit.categorySlug}
-          name={habit.categoryName}
-          icon={habit.categoryIcon}
-          color={habit.color}
-          size="md"
-        />
+        {/* Mastery ring around the category icon */}
+        <div className="relative flex-shrink-0">
+          {mastery && (
+            <div
+              className="absolute -inset-[3px] rounded-[14px] pointer-events-none"
+              style={{
+                border: `1.5px solid ${masteryColor}`,
+                boxShadow: masteryTier >= 5 ? `0 0 10px ${masteryColor}70` : undefined,
+              }}
+            />
+          )}
+          <CategoryIcon
+            slug={habit.categorySlug}
+            name={habit.categoryName}
+            icon={habit.categoryIcon}
+            color={habit.color}
+            size="md"
+          />
+        </div>
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white truncate">{habit.categoryName}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p
+              className="text-sm font-bold truncate"
+              style={{
+                color: masteryTier >= 7 && masteryColor ? masteryColor : '#ffffff',
+                textShadow: masteryTier >= 9 && masteryColor ? `0 0 6px ${masteryColor}99` : undefined,
+              }}
+            >
+              {habit.categoryName}
+            </p>
+            {mastery && (
+              <span
+                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
+                style={{
+                  color: masteryColor,
+                  background: `${masteryColor}18`,
+                  border: `1px solid ${masteryColor}55`,
+                }}
+                title={`Mastery tier ${masteryTier}: ${mastery.name}`}
+              >
+                {mastery.name}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span className="px-2 py-0.5 rounded-full bg-[#0b0b14] border border-[#1e1e30] text-[10px] font-mono text-slate-400">
               <span className="text-slate-500">Goal</span>{' '}

@@ -39,21 +39,29 @@ export async function logHabit(params: LogHabitParams) {
   const habitRef = doc(db, `habits/${userId}/userHabits/${habitSlug}`);
   const habitSnap = await getDoc(habitRef);
 
-  // Check if the user has an active XP boost (24h 2x)
+  // Check if the user has an active XP boost (24h 2x) and prestige bonus
   let boostMultiplier = 1;
+  let prestigeBonus = 0;
   try {
     const userDoc = await getDoc(doc(db, `users/${userId}`));
-    const boostAt = userDoc.data()?.xpBoostActivatedAt;
+    const data = userDoc.data();
+    const boostAt = data?.xpBoostActivatedAt;
     if (boostAt && typeof boostAt.toDate === 'function') {
       const elapsedMs = Date.now() - boostAt.toDate().getTime();
       if (elapsedMs < 24 * 60 * 60 * 1000) boostMultiplier = 2;
     }
+    // +1% per prestige cycle, compounding onto the boost multiplier
+    const prestigeLevel = (data?.prestige as number) || 0;
+    prestigeBonus = prestigeLevel * 0.01;
   } catch { /* ignore */ }
 
   // Scale XP based on how much of the goal was achieved
   const goal = habitSnap.exists() ? (habitSnap.data().goal || 1) : 1;
   const completionRatio = Math.min(value / goal, 1);
-  const baseXP = Math.max(1, Math.round(maxBaseXP * completionRatio * boostMultiplier));
+  const baseXP = Math.max(
+    1,
+    Math.round(maxBaseXP * completionRatio * boostMultiplier * (1 + prestigeBonus)),
+  );
 
   // 1. Create the log document
   const logRef = await addDoc(collection(db, `logs/${userId}/habitLogs`), {
