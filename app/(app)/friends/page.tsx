@@ -107,8 +107,21 @@ export default function FriendsPage() {
         createdAt: Timestamp.now(),
         direction: 'received',
       });
+      // Notify the recipient that they received a friend request.
+      // friend_accepted is already handled by the onFriendAccepted Cloud
+      // Function once both docs flip to accepted.
+      try {
+        await createDocument(`notifications/${friendId}/items`, {
+          type: 'friend_request',
+          message: `${user.username} sent you a friend request`,
+          isRead: false,
+          relatedId: user.uid,
+          actorId: user.uid,
+          actorAvatar: user.avatarUrl || '',
+          createdAt: Timestamp.now(),
+        });
+      } catch { /* non-fatal — the request still went through */ }
       addToast({ type: 'success', message: 'Friend request sent!' });
-      // Remove from search results
       setSearchResults((prev) => prev.filter((u) => u.uid !== friendId));
     } catch {
       addToast({ type: 'error', message: 'Failed to send request' });
