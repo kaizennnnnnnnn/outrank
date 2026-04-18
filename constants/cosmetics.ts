@@ -100,6 +100,7 @@ export const PFP_FRAMES: PfpFrame[] = [
   { id: 'frame_stargaze',    name: 'Stargaze Wreath', rarity: 'mythic',    colors: ['#020617', '#4c1d95', '#ec4899', '#ffffff'], style: 'wreath', animated: true, description: 'Every star you ever dreamed of.' },
   { id: 'frame_celestial',   name: 'Celestial Crown', rarity: 'mythic',    colors: ['#fde047', '#ffffff', '#a78bfa', '#ffffff'], style: 'wreath', animated: true, description: 'Worn by the constellations.' },
   { id: 'frame_void',        name: 'Void Halo',       rarity: 'mythic',    colors: ['#000000', '#4c1d95', '#ec4899', '#f5d0fe'], style: 'conic',  animated: true, description: 'A ring carved from pure darkness.' },
+  { id: 'frame_awakened',    name: 'Awakened Crown',  rarity: 'mythic',    colors: ['#fef3c7', '#fde047', '#f9a8d4', '#c084fc', '#22d3ee', '#fde047'], style: 'conic', animated: true, description: 'Earned at 100% awakening — radiant at every tier.' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -154,6 +155,7 @@ export const NAME_EFFECTS: NameEffect[] = [
   { id: 'name_holographic', name: 'Holographic', rarity: 'mythic',    colors: ['#22d3ee', '#c084fc', '#f472b6', '#fbbf24', '#22d3ee'], animated: 'holographic', description: 'Shifts with the angle of observation.' },
   { id: 'name_glitch',     name: 'Glitch',       rarity: 'mythic',    colors: ['#ff00cc', '#ffffff', '#00e0ff'],       animated: 'glitch',     description: 'Reality.exe has stopped working.' },
   { id: 'name_mythic_rad', name: 'Radiance',     rarity: 'mythic',    colors: ['#fef3c7', '#fbbf24', '#ec4899', '#a855f7', '#fef3c7'], animated: 'mythic', description: 'Light that cannot be contained.' },
+  { id: 'name_awakened',   name: 'Awakened',     rarity: 'mythic',    colors: ['#fef3c7', '#fde047', '#f9a8d4', '#c084fc', '#22d3ee', '#fde047'], animated: 'mythic', description: 'Earned at 100% awakening — the full spectrum.' },
 ];
 
 export function getFrame(id: string | undefined | null): PfpFrame {
@@ -169,6 +171,7 @@ export interface EarnContext {
   orbAscensions: number;
   prestige: number;
   level: number;
+  fullAwakenings?: number;
 }
 export function autoUnlockedCosmetics(ctx: EarnContext): string[] {
   const out: string[] = [];
@@ -180,6 +183,9 @@ export function autoUnlockedCosmetics(ctx: EarnContext): string[] {
   }
   if (ctx.level >= 50) {
     out.push('frame_phoenix', 'name_phoenix');
+  }
+  if ((ctx.fullAwakenings || 0) >= 1) {
+    out.push('frame_awakened', 'name_awakened');
   }
   return out;
 }

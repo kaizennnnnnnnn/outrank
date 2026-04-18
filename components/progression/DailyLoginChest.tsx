@@ -47,9 +47,15 @@ export function DailyLoginChest() {
 
     (async () => {
       try {
+        // Awakening bump (+3 per claim, clamped at 100). Read-clamp-write so
+        // increment() can't overshoot the cap.
+        const currentAwakening = ((userData.awakening as number) || 0);
+        const nextAwakening = Math.min(100, currentAwakening + 3);
+
         const payload: Record<string, unknown> = {
           lastLoginClaimAt: Timestamp.now(),
           loginStreak: newStreak,
+          awakening: nextAwakening,
         };
         if (reward.fragments) payload.fragments = increment(reward.fragments);
         if (reward.evolutions) payload.orbEvolutionCharges = increment(reward.evolutions);

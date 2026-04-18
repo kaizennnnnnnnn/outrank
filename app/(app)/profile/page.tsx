@@ -37,14 +37,18 @@ export default function ProfilePage() {
   const { friends } = useFriends();
 
   // Hooks must run unconditionally — derive from user? with safe fallbacks.
-  const realTier = (user as unknown as Record<string, number> | null)?.orbTier || 1;
-  const evolveCharges = (user as unknown as Record<string, number> | null)?.orbEvolutionCharges || 0;
+  const userAny = user as unknown as Record<string, number> | null;
+  const realTier = userAny?.orbTier || 1;
+  const evolveCharges = userAny?.orbEvolutionCharges || 0;
+  const storedAwakening = Math.min(100, userAny?.awakening || 0);
   const [localTier, setLocalTier] = useState(realTier);
   const [localCharges, setLocalCharges] = useState(evolveCharges);
+  const [localAwakening, setLocalAwakening] = useState(storedAwakening);
   const [showOrbHistory, setShowOrbHistory] = useState(false);
   const [showLevelRewards, setShowLevelRewards] = useState(false);
   useEffect(() => { setLocalTier(realTier); }, [realTier]);
   useEffect(() => { setLocalCharges(evolveCharges); }, [evolveCharges]);
+  useEffect(() => { setLocalAwakening(storedAwakening); }, [storedAwakening]);
 
   if (!user) {
     return (
@@ -59,30 +63,31 @@ export default function ProfilePage() {
   const totalLogs = habits.reduce((sum, h) => sum + h.totalLogs, 0);
   const longestStreak = Math.max(...habits.map((h) => h.longestStreak), 0);
   const friendCount = friends.length;
-  const currentStreaks = habits.reduce((s, h) => s + h.currentStreak, 0);
 
-  // Intensity is derived from real progress — XP, streaks, logs, level.
-  // Capped at 100. Used for visual "richness" of the orb canvas only; it
-  // no longer gates evolution (that's earned via daily habit completion).
-  const orbIntensity = Math.min(
-    Math.round(
-      Math.min(user.totalXP / 500, 40) +
-      Math.min(currentStreaks / 10, 30) +
-      Math.min(totalLogs / 20, 20) +
-      Math.min(level.level / 10, 10)
-    ),
-    100,
-  );
+  // Awakening is now a persistent 0-100 counter stored on the user doc.
+  // It climbs via daily logins + habit logs and is NEVER reset by evolve
+  // or ascend — only Full Awakening (at 100%) resets it to 0. This is the
+  // value passed to SoulOrb as `intensity` (it drives visual richness +
+  // determines the size of the bonus on each regular evolve).
+  const orbIntensity = localAwakening;
 
   const handleEvolve = async () => {
     if (localTier >= 10 || localCharges <= 0) return;
     const newTier = localTier + 1;
+    // Rewards scale with current awakening. 0% = tiny, 100% = hefty.
+    const bonusFrags = 25 + Math.floor(localAwakening * 0.5); // 25..75
+    const bonusXP    = 20 + Math.floor(localAwakening * 0.5); // 20..70
     try {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment } = await import('firebase/firestore');
       await updateDocument('users', user.uid, {
         orbTier: newTier,
         orbEvolutionCharges: increment(-1),
+        fragments: increment(bonusFrags),
+        totalXP: increment(bonusXP),
+        weeklyXP: increment(bonusXP),
+        monthlyXP: increment(bonusXP),
+        seasonPassXP: increment(bonusXP),
       });
     } catch { /* silent */ }
     setLocalTier(newTier);
@@ -104,6 +109,41 @@ export default function ProfilePage() {
     } catch { /* silent */ }
   };
 
+  // Full Awakening — special cash-out at 100% awakening. Grants a permanent
+  // +5% XP multiplier (stackable), mythic Awakened cosmetics on the first
+  // awakening, a big fragment + XP payout, and 2 evolution charges. Then
+  // resets awakening to 0 so the user can climb again for another
+  // stack of the permanent bonus.
+  const handleFullAwaken = async () => {
+    if (!user || localAwakening < 100) return;
+    const userRaw = user as unknown as Record<string, number>;
+    const firstTime = (userRaw.fullAwakenings || 0) === 0;
+    try {
+      const { updateDocument } = await import('@/lib/firestore');
+      const { increment, arrayUnion } = await import('firebase/firestore');
+      await updateDocument('users', user.uid, {
+        awakening: 0,
+        fullAwakenings: increment(1),
+        awakeningBonus: increment(0.05),
+        fragments: increment(2000),
+        totalXP: increment(1000),
+        weeklyXP: increment(1000),
+        monthlyXP: increment(1000),
+        seasonPassXP: increment(1000),
+        orbEvolutionCharges: increment(2),
+        ...(firstTime
+          ? {
+              ownedCosmetics: arrayUnion('frame_awakened', 'name_awakened'),
+              equippedFrame: 'frame_awakened',
+              equippedNameEffect: 'name_awakened',
+            }
+          : {}),
+      });
+    } catch { /* silent */ }
+    setLocalAwakening(0);
+    setLocalCharges((c) => c + 2);
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Soul Orb */}
@@ -114,6 +154,7 @@ export default function ProfilePage() {
           size={300}
           onEvolve={localCharges > 0 ? handleEvolve : undefined}
           onAscend={handleAscend}
+          onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
           baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
           pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
           ringColorId={(user as unknown as Record<string, string>).orbRingColor}
@@ -150,12 +191,44 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Explanation row — shown when no charges and not capped */}
-      {localCharges === 0 && localTier < 10 && (
-        <p className="text-[11px] text-center text-slate-500 -mt-3 max-w-sm mx-auto leading-relaxed">
-          Log <b className="text-orange-400">every habit today</b> to earn +1 evolution, +30 fragments, and +50 bonus XP.
-        </p>
-      )}
+      {/* Awakening progress bar — persistent 0-100 counter, survives evolve +
+          ascend. Only Full Awakening resets it. Higher % = bigger rewards on
+          every regular evolve you do. */}
+      <div className="-mt-3 max-w-sm mx-auto">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5">
+          <span className={localAwakening >= 100 ? 'text-pink-300 animate-frame-pulse' : 'text-slate-500'}>
+            Awakening
+          </span>
+          <span className="font-mono text-slate-400">{localAwakening}%</span>
+        </div>
+        <div className="w-full h-1.5 bg-[#0b0b14] rounded-full overflow-hidden border border-[#1e1e30]">
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${localAwakening}%`,
+              background: localAwakening >= 100
+                ? 'linear-gradient(90deg, #fde047, #f9a8d4, #a855f7, #22d3ee, #fde047)'
+                : 'linear-gradient(90deg, #7c3aed, #ec4899, #fbbf24)',
+              backgroundSize: localAwakening >= 100 ? '200% 100%' : undefined,
+              animation: localAwakening >= 100 ? 'shop-mythic-bg 3s linear infinite' : undefined,
+              boxShadow: localAwakening >= 60 ? '0 0 10px rgba(236,72,153,0.55)' : undefined,
+            }}
+          />
+        </div>
+        {localCharges === 0 && localTier < 10 ? (
+          <p className="text-[10px] text-center text-slate-500 mt-2 leading-relaxed">
+            Log <b className="text-orange-400">every habit today</b> for +1 evolution, +30 frags, +50 XP — and +5% awakening.
+          </p>
+        ) : localAwakening >= 100 ? (
+          <p className="text-[10px] text-center mt-2 leading-relaxed">
+            <b className="text-pink-300">100% reached.</b> Full Awaken for a permanent XP bonus + exclusive skin.
+          </p>
+        ) : (
+          <p className="text-[10px] text-center text-slate-500 mt-2 leading-relaxed">
+            Evolve now for <b className="text-orange-400">+{25 + Math.floor(localAwakening * 0.5)} frags</b>, <b className="text-orange-400">+{20 + Math.floor(localAwakening * 0.5)} XP</b>. Higher awakening = bigger prize.
+          </p>
+        )}
+      </div>
       <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
 
       {/* Orb nickname + mood */}

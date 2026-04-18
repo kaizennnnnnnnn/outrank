@@ -39,9 +39,12 @@ export async function logHabit(params: LogHabitParams) {
   const habitRef = doc(db, `habits/${userId}/userHabits/${habitSlug}`);
   const habitSnap = await getDoc(habitRef);
 
-  // Check if the user has an active XP boost (24h 2x) and prestige bonus
+  // Check if the user has an active XP boost (24h 2x), prestige bonus, and
+  // awakening bonus (stacking +5% per Full Awakening — stored as a decimal
+  // multiplier on `awakeningBonus`).
   let boostMultiplier = 1;
   let prestigeBonus = 0;
+  let awakeningBonus = 0;
   try {
     const userDoc = await getDoc(doc(db, `users/${userId}`));
     const data = userDoc.data();
@@ -53,14 +56,17 @@ export async function logHabit(params: LogHabitParams) {
     // +1% per prestige cycle, compounding onto the boost multiplier
     const prestigeLevel = (data?.prestige as number) || 0;
     prestigeBonus = prestigeLevel * 0.01;
+    awakeningBonus = (data?.awakeningBonus as number) || 0;
   } catch { /* ignore */ }
 
-  // Scale XP based on how much of the goal was achieved
+  // Scale XP based on how much of the goal was achieved. Prestige +
+  // awakening bonuses are additive (so 2 prestige + 2 full-awakenings =
+  // +2% + +10% = +12% on top of the base boost multiplier).
   const goal = habitSnap.exists() ? (habitSnap.data().goal || 1) : 1;
   const completionRatio = Math.min(value / goal, 1);
   const baseXP = Math.max(
     1,
-    Math.round(maxBaseXP * completionRatio * boostMultiplier * (1 + prestigeBonus)),
+    Math.round(maxBaseXP * completionRatio * boostMultiplier * (1 + prestigeBonus + awakeningBonus)),
   );
 
   // 1. Create the log document
@@ -210,12 +216,24 @@ export async function logHabit(params: LogHabitParams) {
 
   const finalXP = totalXP + bonusXP;
 
+  // --- Awakening progression ---
+  // Persistent 0-100 counter. Every habit log drips +1. Finishing every habit
+  // of the day adds +5. Climbs slowly so high % always means the user earned
+  // it. Read-then-clamp-then-write so we can't overshoot 100 via increment().
+  let currentAwakening = 0;
+  try {
+    currentAwakening = ((await getDoc(userRef)).data()?.awakening as number) || 0;
+  } catch { /* ignore — default to 0 */ }
+  const awakeningGain = 1 + (dailyBonusEarned ? 5 : 0);
+  const newAwakening = Math.min(100, currentAwakening + awakeningGain);
+
   await updateDoc(userRef, {
     totalXP: increment(finalXP),
     weeklyXP: increment(finalXP),
     monthlyXP: increment(finalXP),
     seasonPassXP: increment(finalXP),
     lastActiveAt: Timestamp.now(),
+    awakening: newAwakening,
     ...(dailyBonusEarned
       ? {
           fragments: increment(bonusFragments),

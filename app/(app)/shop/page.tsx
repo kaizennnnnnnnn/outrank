@@ -807,6 +807,10 @@ function ShopCard({
     background: cardBg,
     border: `1px solid ${equipped ? '#f97316aa' : accent.border + (isMythic ? '99' : isLegendary ? '77' : '40')}`,
     opacity: !canAfford && !owned && !isFree ? 0.72 : 1,
+    // Isolate each card's paint / layout / style so animations on one card
+    // don't invalidate the whole shop grid. Big perf win for lots of mythic
+    // + legendary cards rendering on-screen at once.
+    contain: 'layout style paint',
   };
 
   return (

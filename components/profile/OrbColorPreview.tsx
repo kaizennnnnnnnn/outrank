@@ -72,17 +72,17 @@ export function OrbColorPreview({ colorSet, variant, size = 48, id, rarity }: Pr
           }}
         />
       )}
-      {/* Mythic aurora hue wash — outermost, gently rotates hue */}
+      {/* Mythic gets an extra static brightness boost via a radial wash.
+          Previously this layer ran an animated hue-rotate + blur(3px) conic
+          gradient which was the single most expensive element in the shop
+          when many mythic cards were visible — replaced with a static blob. */}
       {tier >= 4 && (
         <div
-          className="absolute rounded-full pointer-events-none animate-frame-aurora"
+          className="absolute rounded-full pointer-events-none"
           style={{
             inset: -2,
-            background: isRainbow
-              ? `conic-gradient(from 0deg, ${RAINBOW_STOPS.slice(0, -1).join(', ')}, ${RAINBOW_STOPS[0]})`
-              : `conic-gradient(from 0deg, ${colorSet.outer}, ${colorSet.mid}, ${colorSet.inner}, ${colorSet.core}, ${colorSet.mid}, ${colorSet.outer})`,
-            opacity: 0.35,
-            filter: 'blur(3px)',
+            background: `radial-gradient(circle, ${colorSet.core}44 0%, ${haloColor}22 45%, transparent 75%)`,
+            mixBlendMode: 'screen',
           }}
         />
       )}
@@ -100,10 +100,12 @@ export function OrbColorPreview({ colorSet, variant, size = 48, id, rarity }: Pr
           }}
         />
       )}
-      {/* Orbiting sparkles — legendary + */}
+      {/* Orbiting sparkles — legendary + (reduced count for perf; two is
+          enough to read as "orbiting" without choking the frame budget when
+          lots of mythic previews are on-screen). */}
       {tier >= 3 && (
         <div className="absolute inset-0 pointer-events-none animate-frame-orbit">
-          {Array.from({ length: tier >= 4 ? 4 : 2 }).map((_, i, arr) => {
+          {Array.from({ length: 2 }).map((_, i, arr) => {
             const angle = (i / arr.length) * Math.PI * 2;
             const r = outer / 2 - 1;
             const x = Math.cos(angle) * r + outer / 2;

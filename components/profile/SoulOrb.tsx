@@ -13,13 +13,15 @@ interface SoulOrbProps {
   onEvolve?: () => void;
   /** Fires when the user taps the Ascend button (shown at tier 10). */
   onAscend?: () => void;
+  /** Fires when the user performs a Full Awakening (only shown at 100% awakening). */
+  onFullAwaken?: () => void;
   baseColorId?: string;
   pulseColorId?: string;
   ringColorId?: string;
   hideLabel?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseColorId, pulseColorId, ringColorId, hideLabel }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -30,10 +32,15 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
   const [showAscendConfirm, setShowAscendConfirm] = useState(false);
   const [ascending, setAscending] = useState(false);
   const [ascendPhase, setAscendPhase] = useState<'collapse' | 'rebirth' | null>(null);
-  // Evolve button only appears when the caller explicitly provides onEvolve,
-  // so orb previews (duel result modal, other users' profiles, etc.) never
-  // show the button.
-  const canEvolve = intensity >= 100 && tier < MAX_ORB_TIER && !!onEvolve;
+  const [showFullAwakenConfirm, setShowFullAwakenConfirm] = useState(false);
+  const [awakening, setAwakeningState] = useState(false);
+  const [awakenPhase, setAwakenPhase] = useState<'charge' | 'beams' | 'flash' | 'respawn' | null>(null);
+  // Evolve is gated purely on whether the caller provided an `onEvolve`
+  // callback. The profile page only sets onEvolve when the user has an
+  // evolution charge, so this keeps evolve-availability in sync with charges
+  // without needing SoulOrb to know about the awakening mechanic.
+  const canEvolve = tier < MAX_ORB_TIER && !!onEvolve;
+  const canFullAwaken = !!onFullAwaken;
 
   const triggerAscend = useCallback(() => {
     setShowAscendConfirm(false);
@@ -51,6 +58,30 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
       setAscendPhase(null);
     }, 2800);
   }, [onAscend]);
+
+  // Full Awakening ritual — 5 phases, ~4.5s total. Each phase drives a
+  // different CSS overlay in the render tree. Fires onFullAwaken at the
+  // flash apex (2.4s) so the Firestore update lands while the screen is
+  // white and the user can't tell which frame corresponds to the change.
+  const triggerFullAwaken = useCallback(() => {
+    setShowFullAwakenConfirm(false);
+    setAwakeningState(true);
+    setAwakenPhase('charge');
+    // 0-1.1s: charge — orb scale pulses + draws energy inward
+    setTimeout(() => setAwakenPhase('beams'), 1100);
+    // 1.1-2.3s: beams — 8 rays fan out radially
+    setTimeout(() => setAwakenPhase('flash'), 2300);
+    // 2.3-3.0s: flash — full-screen rainbow bloom. Fire onFullAwaken at apex.
+    setTimeout(() => {
+      onFullAwaken?.();
+      setAwakenPhase('respawn');
+    }, 2400);
+    // 3.0-4.5s: respawn — transformation + rainbow aurora settle
+    setTimeout(() => {
+      setAwakeningState(false);
+      setAwakenPhase(null);
+    }, 4500);
+  }, [onFullAwaken]);
 
   const handleEvolve = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -611,6 +642,93 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
             />
           </>
         )}
+
+        {/* ---- FULL AWAKENING ritual layers ---- */}
+
+        {/* Charge pulse: orb magnifies and brightens pulling light in */}
+        {awakening && (
+          <div
+            className="absolute inset-0 pointer-events-none animate-awaken-charge rounded-full"
+            style={{
+              background: 'radial-gradient(circle, rgba(253,224,71,0.6), rgba(236,72,153,0.35) 50%, transparent 80%)',
+              mixBlendMode: 'screen',
+            }}
+          />
+        )}
+
+        {/* 8 radiating beams — only present during beams/flash phases */}
+        {awakening && (awakenPhase === 'beams' || awakenPhase === 'flash') && (
+          <div className="absolute inset-0 pointer-events-none">
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
+              const beamColors = ['#fde047', '#ec4899', '#22d3ee', '#a855f7', '#fde047', '#ec4899', '#22d3ee', '#a855f7'];
+              return (
+                <div
+                  key={deg}
+                  className="absolute top-1/2 left-1/2 origin-left animate-awaken-beam"
+                  style={{
+                    width: size * 0.9,
+                    height: 4,
+                    transform: `rotate(${deg}deg)`,
+                    background: `linear-gradient(90deg, transparent, ${beamColors[i]}, transparent)`,
+                    boxShadow: `0 0 14px ${beamColors[i]}, 0 0 6px #fff`,
+                    animationDelay: `${i * 0.04}s`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {/* Full-screen rainbow flash — covers the whole orb viewport */}
+        {awakening && (
+          <div
+            className="absolute inset-0 pointer-events-none animate-awaken-flash rounded-full"
+            style={{
+              background:
+                'radial-gradient(circle, #ffffff 0%, #fef3c7 14%, #fde047 28%, #f9a8d4 46%, #c084fc 66%, #22d3ee 82%, transparent 100%)',
+              mixBlendMode: 'screen',
+            }}
+          />
+        )}
+
+        {/* Five expanding shockwaves in prismatic order — bigger than Ascend */}
+        {awakening && (
+          <>
+            <div
+              className="absolute inset-0 pointer-events-none animate-awaken-shockwave rounded-full"
+              style={{ border: '5px solid #fef3c7', boxShadow: '0 0 32px #fde047' }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none animate-awaken-shockwave rounded-full"
+              style={{ border: '4px solid #f9a8d4', boxShadow: '0 0 24px #ec4899', animationDelay: '0.35s' }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none animate-awaken-shockwave rounded-full"
+              style={{ border: '3px solid #c084fc', boxShadow: '0 0 20px #a855f7', animationDelay: '0.7s' }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none animate-awaken-shockwave rounded-full"
+              style={{ border: '3px solid #22d3ee', boxShadow: '0 0 18px #22d3ee', animationDelay: '1.05s' }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none animate-awaken-shockwave rounded-full"
+              style={{ border: '2px solid #fef3c7', animationDelay: '1.4s' }}
+            />
+          </>
+        )}
+
+        {/* Respawn aurora ring — appears after the flash during the transform */}
+        {awakening && awakenPhase === 'respawn' && (
+          <div
+            className="absolute -inset-6 pointer-events-none rounded-full animate-awaken-aurora"
+            style={{
+              background:
+                'conic-gradient(from 0deg, #fde047, #ec4899, #a855f7, #22d3ee, #fde047, #ec4899, #a855f7, #22d3ee, #fde047)',
+              filter: 'blur(14px)',
+              opacity: 0.55,
+            }}
+          />
+        )}
       </div>
 
       {!hideLabel && <div className="mt-2 text-center">
@@ -619,8 +737,22 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
       </div>}
 
       <AnimatePresence>
-        {/* At the cap: show Ascend (pink pulsing CTA) — click opens confirmation first */}
-        {tier >= MAX_ORB_TIER && onAscend && !evolving && !ascending && (
+        {/* Full Awaken takes top billing when available — even ahead of Ascend.
+            This is the long-road 100% payoff and should feel like THE button. */}
+        {canFullAwaken && !evolving && !ascending && !awakening && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowFullAwakenConfirm(true); }}
+              className="relative text-sm font-heading font-bold text-white tracking-[0.2em] uppercase px-7 py-3 rounded-xl animate-shop-mythic-border bg-gradient-to-r from-amber-300 via-pink-500 via-fuchsia-500 to-cyan-400 shadow-[0_10px_40px_-6px_rgba(236,72,153,0.95)]"
+              style={{ backgroundSize: '200% 100%', animationDuration: '2.2s' }}
+            >
+              Full Awaken
+            </button>
+          </motion.div>
+        )}
+
+        {/* Ascend only when at tier cap AND Full Awaken isn't taking focus. */}
+        {tier >= MAX_ORB_TIER && onAscend && !canFullAwaken && !evolving && !ascending && !awakening && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <button
               onClick={(e) => { e.stopPropagation(); setShowAscendConfirm(true); }}
@@ -631,7 +763,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
           </motion.div>
         )}
 
-        {canEvolve && !evolving && tier < MAX_ORB_TIER && (
+        {canEvolve && !evolving && !awakening && tier < MAX_ORB_TIER && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <Button size="sm" onClick={handleEvolve} className="animate-pulse">
               Evolve
@@ -662,6 +794,21 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
         </motion.p>
       )}
 
+      {awakening && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 1, 0] }}
+          transition={{ duration: 4.5 }}
+          className="mt-3 text-base font-heading font-bold tracking-[0.3em] uppercase bg-clip-text text-transparent bg-gradient-to-r from-amber-300 via-pink-400 via-fuchsia-400 to-cyan-300"
+          style={{ backgroundSize: '200% 100%', animation: 'shop-mythic-bg 2s linear infinite' }}
+        >
+          {awakenPhase === 'charge'   ? 'Charging'   :
+           awakenPhase === 'beams'    ? 'Radiating'  :
+           awakenPhase === 'flash'    ? 'Awakening!' :
+           awakenPhase === 'respawn'  ? 'Awakened'   : ''}
+        </motion.p>
+      )}
+
       <AscendConfirmModal
         isOpen={showAscendConfirm}
         onClose={() => setShowAscendConfirm(false)}
@@ -670,6 +817,12 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, baseC
         baseColorId={baseColorId}
         pulseColorId={pulseColorId}
         ringColorId={ringColorId}
+      />
+
+      <FullAwakenConfirmModal
+        isOpen={showFullAwakenConfirm}
+        onClose={() => setShowFullAwakenConfirm(false)}
+        onConfirm={triggerFullAwaken}
       />
     </div>
   );
@@ -868,5 +1021,123 @@ function MiniOrbPreview({ tier, baseColorId, pulseColorId, ringColorId, size }: 
         }}
       />
     </div>
+  );
+}
+
+// ---- Full Awaken confirmation modal ----
+//
+// Shown when the user taps the Full Awaken CTA. Displays the permanent reward
+// set (exclusive Awakened cosmetic on first run, stacking +5% XP multiplier
+// forever, fragments, XP, evolution charges) and asks one final yes/no before
+// kicking off the ritual animation.
+function FullAwakenConfirmModal({ isOpen, onClose, onConfirm }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const rewards: { label: string; detail: string; color: string }[] = [
+    { label: '+5% XP Forever',        detail: 'Permanent multiplier, stacks every awakening',     color: '#fde047' },
+    { label: 'Awakened Cosmetic',     detail: 'Mythic frame + name effect (first awakening)',     color: '#f9a8d4' },
+    { label: '+2000 Fragments',       detail: 'Massive shop payout',                              color: '#fbbf24' },
+    { label: '+1000 XP',              detail: 'Instant XP injection',                             color: '#22d3ee' },
+    { label: '+2 Evolutions',         detail: 'Two ranks queued up and ready',                    color: '#ec4899' },
+    { label: 'Awakening resets',      detail: 'Climb again for another permanent +5%',            color: '#a855f7' },
+  ];
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 z-[210] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, y: 20, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.92, opacity: 0 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-3xl overflow-hidden animate-shop-mythic-border"
+            style={{
+              background:
+                'radial-gradient(ellipse 100% 70% at 0% 0%,   rgba(253,224,71,0.32), transparent 55%),' +
+                'radial-gradient(ellipse 100% 70% at 100% 0%, rgba(236,72,153,0.28), transparent 55%),' +
+                'radial-gradient(ellipse 100% 70% at 100% 100%, rgba(34,211,238,0.28), transparent 55%),' +
+                'radial-gradient(ellipse 100% 70% at 0% 100%,   rgba(168,85,247,0.28), transparent 55%),' +
+                'linear-gradient(180deg, #120a1f 0%, #07070c 100%)',
+              border: '1px solid rgba(253,224,71,0.5)',
+            }}
+          >
+            <div
+              className="h-0.5 w-full animate-shop-mythic-bg"
+              style={{
+                background: 'linear-gradient(90deg, #fde047, #ec4899, #a855f7, #22d3ee, #fde047)',
+                backgroundSize: '200% 100%',
+              }}
+            />
+
+            <div className="p-6 pt-7 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-amber-200/90">
+                Full Awakening
+              </p>
+              <h2
+                className="font-heading text-3xl font-bold mt-2 bg-clip-text text-transparent animate-shop-mythic-bg"
+                style={{
+                  background: 'linear-gradient(90deg, #fde047, #f9a8d4, #c084fc, #22d3ee, #fde047)',
+                  backgroundSize: '200% 100%',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                }}
+              >
+                Break the ceiling?
+              </h2>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed max-w-[340px] mx-auto">
+                You hit 100%. Burn your awakening to lock in a <b className="text-amber-200">permanent XP bonus</b> and unlock rewards nothing else in the game can give.
+              </p>
+            </div>
+
+            <div className="px-6 pb-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">Permanent rewards</p>
+              <div className="grid grid-cols-2 gap-2">
+                {rewards.map((r) => (
+                  <div
+                    key={r.label}
+                    className="rounded-xl p-2.5 border flex flex-col gap-0.5"
+                    style={{
+                      background: `linear-gradient(145deg, ${r.color}22, #0b0b14 75%)`,
+                      borderColor: `${r.color}55`,
+                    }}
+                  >
+                    <p className="text-[11px] font-bold" style={{ color: r.color }}>{r.label}</p>
+                    <p className="text-[10px] text-slate-500 leading-tight">{r.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6 pt-4 flex gap-2">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-3 rounded-xl bg-[#1e1e30] hover:bg-[#2a2a40] text-sm font-medium text-slate-300 transition-colors"
+              >
+                Not yet
+              </button>
+              <button
+                onClick={onConfirm}
+                className="flex-[1.7] relative px-4 py-3 rounded-xl text-sm font-heading font-bold uppercase tracking-[0.2em] text-white transition-transform hover:scale-[1.02] active:scale-[0.98] animate-shop-mythic-border"
+                style={{
+                  background: 'linear-gradient(90deg, #d97706 0%, #db2777 40%, #9333ea 75%, #0891b2 100%)',
+                  boxShadow: '0 0 40px -8px rgba(253,224,71,0.9)',
+                  backgroundSize: '200% 100%',
+                }}
+              >
+                Awaken now
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
