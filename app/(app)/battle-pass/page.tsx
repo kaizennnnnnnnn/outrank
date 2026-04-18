@@ -80,51 +80,122 @@ export default function BattlePassPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      {/* Header */}
+      {/* Header — premium banner with layered gradients + chromatic dust + animated progress */}
       <div
-        className="rounded-2xl p-5 relative overflow-hidden"
+        className="relative overflow-hidden rounded-2xl border"
         style={{
-          background: 'linear-gradient(135deg, rgba(249,115,22,0.18), rgba(220,38,38,0.08) 40%, #10101a 90%)',
-          border: '1px solid rgba(249,115,22,0.35)',
+          background:
+            'radial-gradient(ellipse 120% 100% at 100% 0%, rgba(236,72,153,0.22), transparent 50%),' +
+            'radial-gradient(ellipse 120% 100% at 0% 100%, rgba(251,191,36,0.18), transparent 60%),' +
+            'linear-gradient(135deg, rgba(249,115,22,0.22), rgba(220,38,38,0.1) 40%, #0b0b14 100%)',
+          borderColor: 'rgba(251,191,36,0.35)',
+          boxShadow: '0 0 44px -14px rgba(249,115,22,0.55), inset 0 1px 0 rgba(251,191,36,0.18)',
         }}
       >
-        <div className="absolute -top-16 -right-16 w-52 h-52 rounded-full opacity-[0.18] blur-3xl pointer-events-none"
-          style={{ background: '#f97316' }} />
-        <div className="relative flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">
-              Season {season} · {daysLeft} days left
-            </p>
-            <h1 className="font-heading text-3xl font-bold text-white mt-1">Battle Pass</h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Earn season-pass XP from every log and claim rewards here.
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider">Tier</p>
-            <p className="font-mono text-3xl font-bold text-white">{currentTier}<span className="text-slate-600 text-base"> / {SEASON_PASS_TIERS}</span></p>
-          </div>
-        </div>
-
-        <div className="relative mt-4">
-          <div className="h-2 bg-[#18182a] rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full"
+        {/* Chromatic dust — scattered gems */}
+        {Array.from({ length: 20 }).map((_, i) => {
+          const left = (i * 37) % 100;
+          const top = (i * 61) % 100;
+          const size = 2 + (i % 3);
+          const colors = ['#fbbf24', '#ec4899', '#60a5fa', '#f97316', '#a855f7'];
+          return (
+            <span
+              key={i}
+              className="absolute rounded-full pointer-events-none animate-frame-pulse"
               style={{
-                width: `${Math.max(3, (currentTier / SEASON_PASS_TIERS) * 100)}%`,
-                background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24)',
+                left: `${left}%`,
+                top: `${top}%`,
+                width: size,
+                height: size,
+                background: colors[i % colors.length],
+                boxShadow: `0 0 6px ${colors[i % colors.length]}`,
+                opacity: 0.55,
+                animationDelay: `${(i % 7) * 0.3}s`,
               }}
             />
-          </div>
-        </div>
+          );
+        })}
 
-        {/* Premium track — locked for now */}
-        <div className="relative mt-4 w-full rounded-xl py-2.5 px-3 text-center border border-pink-500/20 bg-gradient-to-r from-pink-600/10 via-orange-500/10 to-yellow-400/10 flex items-center justify-center gap-2">
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-300">
-            <rect x="3" y="11" width="18" height="11" rx="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
-          <span className="text-xs font-semibold text-pink-300">Premium Track — coming soon</span>
+        <div className="relative p-5">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.25em] bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
+                  Season {season}
+                </span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest">·</span>
+                <span className="text-[10px] text-slate-400 font-mono">{daysLeft}d left</span>
+              </div>
+              <h1 className="font-heading text-4xl font-bold mt-1.5 leading-none">
+                <span className="bg-gradient-to-r from-yellow-200 via-orange-300 to-pink-300 bg-clip-text text-transparent">
+                  Battle Pass
+                </span>
+              </h1>
+              <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed max-w-[260px]">
+                Every habit log earns season-pass XP. Climb 60 tiers to claim exclusive cosmetics.
+              </p>
+            </div>
+
+            {/* Big tier crystal */}
+            <div
+              className="relative flex flex-col items-center justify-center py-3 px-4 rounded-xl animate-frame-pulse"
+              style={{
+                background: 'linear-gradient(145deg, rgba(251,191,36,0.18), rgba(236,72,153,0.12))',
+                border: '1px solid rgba(251,191,36,0.5)',
+                boxShadow: '0 0 24px -6px rgba(251,191,36,0.6), inset 0 0 12px rgba(251,191,36,0.15)',
+              }}
+            >
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-yellow-300">Tier</p>
+              <p className="font-heading text-4xl font-bold leading-none mt-0.5 bg-gradient-to-b from-yellow-100 to-orange-400 bg-clip-text text-transparent">
+                {currentTier}
+              </p>
+              <p className="text-[9px] text-slate-500 font-mono mt-1">/ {SEASON_PASS_TIERS}</p>
+            </div>
+          </div>
+
+          {/* Progress bar with segment ticks */}
+          <div className="relative mt-5">
+            <div className="h-3 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30] relative">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.max(3, (currentTier / SEASON_PASS_TIERS) * 100)}%`,
+                  background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24, #ec4899)',
+                  boxShadow: '0 0 16px rgba(251,191,36,0.55)',
+                }}
+              />
+              {/* Milestone notches */}
+              {[10, 20, 30, 40, 50].map((n) => (
+                <span
+                  key={n}
+                  className="absolute top-0 bottom-0 w-[1.5px] bg-[#08080f]"
+                  style={{ left: `${(n / SEASON_PASS_TIERS) * 100}%` }}
+                />
+              ))}
+            </div>
+            <div className="flex justify-between text-[9px] text-slate-600 font-mono mt-1 px-0.5">
+              <span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span>
+            </div>
+          </div>
+
+          {/* Premium track — locked banner */}
+          <div
+            className="relative mt-4 w-full rounded-xl py-2.5 px-3 text-center flex items-center justify-center gap-2"
+            style={{
+              background:
+                'linear-gradient(90deg, rgba(236,72,153,0.18), rgba(249,115,22,0.14) 50%, rgba(251,191,36,0.14))',
+              border: '1px solid rgba(236,72,153,0.35)',
+              boxShadow: 'inset 0 1px 0 rgba(236,72,153,0.25)',
+            }}
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-300">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+            <span className="text-xs font-bold bg-gradient-to-r from-pink-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent">
+              Premium Track — coming soon
+            </span>
+          </div>
         </div>
       </div>
 
