@@ -8,6 +8,13 @@ import { haptic } from '@/lib/haptics';
 import { ParticleBurst } from '@/components/effects/ParticleBurst';
 import { Competition, CompetitionParticipant } from '@/types/competition';
 
+interface OrbSkin {
+  tier?: number;
+  baseColor?: string;
+  pulseColor?: string;
+  ringColor?: string;
+}
+
 interface DuelResultModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,24 +22,34 @@ interface DuelResultModalProps {
   currentUserId: string;
   /** Called when the user clicks Claim. Use this to update Firestore. */
   onClaim: (result: { won: boolean; tie: boolean; xp: number; fragments: number }) => Promise<void>;
-  /** Optional — the current user's orb tier for display accuracy. */
-  myOrbTier?: number;
-  /** Optional — the opponent's orb tier. */
-  opponentOrbTier?: number;
+  /** Current user's orb cosmetics (tier/colors). Controls their orb render. */
+  myOrb?: OrbSkin;
+  /** Opponent's orb cosmetics fetched from their user doc. */
+  opponentOrb?: OrbSkin;
 }
 
 type Phase = 'intro' | 'clash' | 'reveal' | 'claimed';
 
-const WIN_XP = 150;
-const TIE_XP = 50;
-const LOSS_XP = 20;
-const WIN_FRAGMENTS = 100;
-const TIE_FRAGMENTS = 25;
-const LOSS_FRAGMENTS = 10;
+/**
+ * Prize tiers scale with duel duration so longer commitments pay more.
+ * 3d baseline · 7d ≈ 1.5× · 14d ≈ 2× · 30d ≈ 3×.
+ */
+function getDurationMult(days: number | undefined): number {
+  const d = days ?? 7;
+  if (d >= 28) return 3;
+  if (d >= 14) return 2;
+  if (d >= 7) return 1.5;
+  return 1;
+}
+const BASE = {
+  win:  { xp: 100, fragments: 50 },
+  tie:  { xp: 35,  fragments: 15 },
+  loss: { xp: 15,  fragments: 5 },
+};
 
 export function DuelResultModal({
   isOpen, onClose, competition, currentUserId, onClaim,
-  myOrbTier = 1, opponentOrbTier = 1,
+  myOrb, opponentOrb,
 }: DuelResultModalProps) {
   const me = competition.participants.find((p: CompetitionParticipant) => p.userId === currentUserId);
   const opp = competition.participants.find((p: CompetitionParticipant) => p.userId !== currentUserId);
@@ -41,8 +58,10 @@ export function DuelResultModal({
   const tie = myScore === oppScore;
   const won = !tie && myScore > oppScore;
 
-  const xp = won ? WIN_XP : tie ? TIE_XP : LOSS_XP;
-  const fragments = won ? WIN_FRAGMENTS : tie ? TIE_FRAGMENTS : LOSS_FRAGMENTS;
+  const mult = getDurationMult(competition.durationDays);
+  const base = won ? BASE.win : tie ? BASE.tie : BASE.loss;
+  const xp = Math.round(base.xp * mult);
+  const fragments = Math.round(base.fragments * mult);
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [burst, setBurst] = useState(0);
@@ -128,8 +147,14 @@ export function DuelResultModal({
               <p className="text-xs text-slate-500 mt-1">{competition.title}</p>
             </div>
 
-            {/* Orb arena */}
-            <div className="relative h-52 flex items-center justify-center my-6">
+            {/* Orb arena — fully transparent, soft ambient glow behind the clash so the
+                canvas edges of the two orbs never feel like bare rectangles. */}
+            <div
+              className="relative h-52 flex items-center justify-center my-6 rounded-2xl overflow-hidden"
+              style={{
+                background: 'radial-gradient(ellipse at center, rgba(249,115,22,0.07), transparent 65%)',
+              }}
+            >
               {/* My orb — slides in from left */}
               <motion.div
                 animate={
@@ -146,7 +171,15 @@ export function DuelResultModal({
                 style={{ left: '50%', transform: 'translateX(-100%)' }}
               >
                 <div className="relative">
-                  <SoulOrb intensity={100} tier={myOrbTier} size={110} hideLabel />
+                  <SoulOrb
+                    intensity={100}
+                    tier={myOrb?.tier ?? 1}
+                    size={110}
+                    hideLabel
+                    baseColorId={myOrb?.baseColor}
+                    pulseColorId={myOrb?.pulseColor}
+                    ringColorId={myOrb?.ringColor}
+                  />
                   {phase !== 'intro' && won && (
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"
@@ -198,7 +231,15 @@ export function DuelResultModal({
                 style={{ left: '50%' }}
               >
                 <div className="relative">
-                  <SoulOrb intensity={100} tier={opponentOrbTier} size={110} hideLabel />
+                  <SoulOrb
+                    intensity={100}
+                    tier={opponentOrb?.tier ?? 1}
+                    size={110}
+                    hideLabel
+                    baseColorId={opponentOrb?.baseColor}
+                    pulseColorId={opponentOrb?.pulseColor}
+                    ringColorId={opponentOrb?.ringColor}
+                  />
                   {phase !== 'intro' && !won && !tie && (
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"

@@ -25,7 +25,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, baseColorId, pu
   const evolveTimeRef = useRef(0);
   const [evolving, setEvolving] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
-  const canEvolve = intensity >= 100 && tier < MAX_ORB_TIER;
+  // Evolve button only appears when the caller explicitly provides onEvolve,
+  // so orb previews (duel result modal, other users' profiles, etc.) never
+  // show the button.
+  const canEvolve = intensity >= 100 && tier < MAX_ORB_TIER && !!onEvolve;
 
   const handleEvolve = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();

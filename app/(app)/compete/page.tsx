@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCompetitions } from '@/hooks/useCompetitions';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
-import { updateDocument } from '@/lib/firestore';
+import { updateDocument, getDocument } from '@/lib/firestore';
 import { increment, arrayUnion } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { SwordsCrossIcon } from '@/components/ui/AppIcons';
@@ -51,6 +51,28 @@ export default function CompetePage() {
 
   // Duel result modal state
   const [resultDuel, setResultDuel] = useState<Competition | null>(null);
+  const [opponentOrb, setOpponentOrb] = useState<{ tier?: number; baseColor?: string; pulseColor?: string; ringColor?: string } | null>(null);
+
+  // Fetch the opponent's orb cosmetics whenever the result modal opens
+  useEffect(() => {
+    if (!resultDuel || !user) { setOpponentOrb(null); return; }
+    const opp = resultDuel.participants.find((p) => p.userId !== user.uid);
+    if (!opp) return;
+    (async () => {
+      try {
+        const doc = await getDocument<Record<string, unknown>>('users', opp.userId);
+        if (!doc) { setOpponentOrb({}); return; }
+        setOpponentOrb({
+          tier: (doc.orbTier as number) || 1,
+          baseColor: (doc.orbBaseColor as string) || undefined,
+          pulseColor: (doc.orbPulseColor as string) || undefined,
+          ringColor: (doc.orbRingColor as string) || undefined,
+        });
+      } catch {
+        setOpponentOrb({});
+      }
+    })();
+  }, [resultDuel, user]);
 
   const handleClaim = async (comp: Competition, r: { won: boolean; tie: boolean; xp: number; fragments: number }) => {
     if (!user || !comp.id) return;
@@ -211,7 +233,13 @@ export default function CompetePage() {
           competition={resultDuel}
           currentUserId={user.uid}
           onClaim={(r) => handleClaim(resultDuel, r)}
-          myOrbTier={(user as unknown as Record<string, number>).orbTier || 1}
+          myOrb={{
+            tier: (user as unknown as Record<string, number>).orbTier || 1,
+            baseColor: (user as unknown as Record<string, string>).orbBaseColor,
+            pulseColor: (user as unknown as Record<string, string>).orbPulseColor,
+            ringColor: (user as unknown as Record<string, string>).orbRingColor,
+          }}
+          opponentOrb={opponentOrb || undefined}
         />
       )}
 

@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CATEGORIES, CATEGORY_SECTIONS } from '@/constants/categories';
-import { createDocument, Timestamp } from '@/lib/firestore';
+import { createDocument, getCollection, where, Timestamp } from '@/lib/firestore';
+import { Competition } from '@/types/competition';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { SwordsCrossIcon } from '@/components/ui/AppIcons';
@@ -43,6 +44,26 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
 
     setCreating(true);
     try {
+      // Enforce one active/pending duel at a time per friend pair
+      const [pending, active] = await Promise.all([
+        getCollection<Competition>('competitions', [where('status', '==', 'pending')]),
+        getCollection<Competition>('competitions', [where('status', '==', 'active')]),
+      ]);
+      const conflict = [...pending, ...active].find(
+        (c) =>
+          c.type === 'duel' &&
+          c.participants.some((p) => p.userId === user.uid) &&
+          c.participants.some((p) => p.userId === opponentId),
+      );
+      if (conflict) {
+        addToast({
+          type: 'error',
+          message: `You already have a duel in progress with ${opponentUsername}. Wait for it to end.`,
+        });
+        setCreating(false);
+        return;
+      }
+
       const startDate = Timestamp.now();
       const endMs = Date.now() + selectedDuration * 24 * 60 * 60 * 1000;
       const endDate = Timestamp.fromDate(new Date(endMs));
@@ -55,6 +76,7 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
         creatorId: user.uid,
         startDate,
         endDate,
+        durationDays: selectedDuration,
         status: 'pending',
         participants: [
           { userId: user.uid, username: user.username, avatarUrl: user.avatarUrl || '', score: 0, rank: 0 },

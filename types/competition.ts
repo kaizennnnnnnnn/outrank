@@ -21,8 +21,12 @@ export interface Competition {
   leagueId?: string;
   startDate: Timestamp;
   endDate: Timestamp;
+  /** Days the competition is scheduled to run. Used for prize tiering. */
+  durationDays?: number;
   status: CompetitionStatus;
   participants: CompetitionParticipant[];
+  /** userIds who've already claimed their prize on the ended duel. */
+  claimedBy?: string[];
 }
 
 export interface Tournament {
