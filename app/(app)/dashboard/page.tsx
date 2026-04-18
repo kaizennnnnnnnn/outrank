@@ -161,9 +161,9 @@ export default function DashboardPage() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Today's Habits — wrapped in a premium container */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0">
           <div
-            className="relative overflow-hidden rounded-2xl p-5 border"
+            className="relative overflow-hidden rounded-2xl p-4 sm:p-5 border"
             style={{
               background:
                 'radial-gradient(ellipse 90% 60% at 0% 0%, rgba(220,38,38,0.08), transparent 55%),' +

@@ -9,9 +9,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#08080f]">
       <Sidebar />
-      <div className="lg:ml-[240px]">
+      <div className="lg:ml-[240px] overflow-x-hidden">
         <TopBar />
-        <main className="px-4 lg:px-6 py-6 pb-24 lg:pb-6">
+        <main className="px-4 lg:px-6 py-6 pb-24 lg:pb-6 max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>
