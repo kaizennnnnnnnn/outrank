@@ -7,11 +7,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { getOrbTier, MAX_ORB_TIER, ORB_TIERS } from '@/constants/orbTiers';
 import { getOrbPower, getOrbAura, ORB_ENERGY } from '@/constants/orbSystem';
-import { getCollection, orderBy, limit } from '@/lib/firestore';
+import { getCollection, orderBy, limit, updateDocument } from '@/lib/firestore';
+import { increment } from 'firebase/firestore';
 import { HabitLog } from '@/types/habit';
 import { getLevelForXP } from '@/constants/levels';
 import { StreakFire } from '@/components/habits/StreakFire';
 import { BoltFullIcon, TrophyIconFull, FireIcon, StarIcon, MedalIcon } from '@/components/ui/AppIcons';
+import { Button } from '@/components/ui/Button';
+import { ParticleBurst } from '@/components/effects/ParticleBurst';
+import { haptic } from '@/lib/haptics';
+import { useUIStore } from '@/store/uiStore';
 
 interface OrbHistoryProps {
   isOpen: boolean;
@@ -27,7 +32,33 @@ export function OrbHistory({ isOpen, onClose }: OrbHistoryProps) {
   const orbTier = user ? ((user as unknown as Record<string, number>).orbTier || 1) : 1;
   const orbEnergy = user ? ((user as unknown as Record<string, number>).orbEnergy || 50) : 50;
   const fragments = user ? ((user as unknown as Record<string, number>).fragments || 0) : 0;
+  const orbAscensions = user ? ((user as unknown as Record<string, number>).orbAscensions || 0) : 0;
   const config = getOrbTier(orbTier);
+
+  const addToast = useUIStore((s) => s.addToast);
+  const [ascendBurst, setAscendBurst] = useState(0);
+  const [ascending, setAscending] = useState(false);
+  const [confirmingAscend, setConfirmingAscend] = useState(false);
+
+  const ascend = async () => {
+    if (!user || ascending) return;
+    setAscending(true);
+    haptic('success');
+    setAscendBurst((n) => n + 1);
+    try {
+      await updateDocument('users', user.uid, {
+        orbTier: 1,
+        orbAscensions: increment(1),
+        fragments: increment(500),
+      });
+      addToast({ type: 'success', message: 'Orb ascended! +500 fragments · your colors carry over as lineage.' });
+      setConfirmingAscend(false);
+    } catch {
+      addToast({ type: 'error', message: 'Ascension failed' });
+    } finally {
+      setAscending(false);
+    }
+  };
   const power = getOrbPower(orbTier);
   const aura = getOrbAura(orbTier);
   const level = user ? getLevelForXP(user.totalXP) : { level: 1, title: 'Rookie' };
@@ -55,12 +86,57 @@ export function OrbHistory({ isOpen, onClose }: OrbHistoryProps) {
     <Modal isOpen={isOpen} onClose={onClose} title="Soul Orb" size="md">
       <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
 
+        <ParticleBurst trigger={ascendBurst} color="#f9a8d4" count={140} />
+
         {/* Orb Status */}
         <div className="glass-card rounded-xl p-4 text-center space-y-2">
           <p className="font-heading text-2xl font-bold text-orange-400">{config.name}</p>
-          <p className="text-xs text-slate-500">Tier {orbTier} of {MAX_ORB_TIER}</p>
+          <p className="text-xs text-slate-500">
+            Tier {orbTier} of {MAX_ORB_TIER}
+            {orbAscensions > 0 && (
+              <span className="ml-2 text-pink-300">· Lineage {orbAscensions}</span>
+            )}
+          </p>
           <p className="text-[10px] text-slate-600">{config.description}</p>
         </div>
+
+        {/* Ascend — unlocks at tier 10 */}
+        {orbTier >= MAX_ORB_TIER && (
+          <div
+            className="relative overflow-hidden rounded-xl p-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.18), #10101a 60%, #0b0b14 100%)',
+              border: '1px solid rgba(236,72,153,0.45)',
+              boxShadow: '0 0 22px -6px rgba(236,72,153,0.55)',
+            }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-300">
+              Ascend Your Orb
+            </p>
+            <p className="text-xs text-white mt-1">
+              Reset to Ember. Keep your equipped colors as lineage. Earn 500 fragments and the <span className="text-pink-300 font-semibold">Ascension</span> badge.
+            </p>
+            <div className="mt-3 flex justify-end gap-2">
+              {confirmingAscend ? (
+                <>
+                  <button
+                    onClick={() => setConfirmingAscend(false)}
+                    className="text-[11px] text-slate-500 hover:text-slate-300"
+                  >
+                    Cancel
+                  </button>
+                  <Button size="sm" onClick={ascend} loading={ascending}>
+                    Confirm Ascend
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => setConfirmingAscend(true)}>
+                  Ascend Orb
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Energy Bar */}
         <div className="space-y-1">
