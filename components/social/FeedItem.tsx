@@ -3,6 +3,7 @@
 import { Avatar } from '@/components/ui/Avatar';
 import { ReactionBar } from './ReactionBar';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { ProofImage, VerifiedBadge } from './ProofImage';
 import { FeedItem as FeedItemType } from '@/types/feed';
 import { formatRelativeTime } from '@/lib/utils';
 import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
@@ -48,7 +49,14 @@ export function FeedItemCard({ item, currentUserId, onReact }: FeedItemProps) {
       </div>
 
       {/* Content */}
-      <p className="text-sm text-slate-300">{item.message}</p>
+      <div className="text-sm text-slate-300 flex items-center gap-2 flex-wrap">
+        <span>{item.message}</span>
+        {item.verified && <VerifiedBadge />}
+      </div>
+
+      {item.proofImageUrl && (
+        <ProofImage src={item.proofImageUrl} alt={`${item.actorUsername}'s proof`} />
+      )}
 
       {/* Reactions */}
       <ReactionBar

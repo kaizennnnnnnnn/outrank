@@ -15,6 +15,8 @@ export interface FeedItem {
   categorySlug?: string;
   categoryColor?: string;
   value?: number;
+  proofImageUrl?: string;
+  verified?: boolean;
   message: string;
   reactions: Record<ReactionEmoji, string[]>;
   createdAt: Timestamp;

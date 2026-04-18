@@ -18,6 +18,7 @@ import { SoulOrb } from '@/components/profile/SoulOrb';
 import { StreakFire } from '@/components/habits/StreakFire';
 import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
 import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { useUIStore } from '@/store/uiStore';
@@ -216,7 +217,15 @@ export default function DashboardPage() {
                           size="sm"
                         />
                       </div>
-                      <p className="relative text-xs text-slate-400 mt-2 pl-11">{item.message}</p>
+                      <div className="relative text-xs text-slate-400 mt-2 pl-11 flex items-center gap-2 flex-wrap">
+                        <span>{item.message}</span>
+                        {item.verified && <VerifiedBadge />}
+                      </div>
+                      {item.proofImageUrl && (
+                        <div className="relative mt-2 pl-11">
+                          <ProofImage src={item.proofImageUrl} alt={`${item.actorUsername}'s proof`} />
+                        </div>
+                      )}
                     </div>
                   </Link>
                 );

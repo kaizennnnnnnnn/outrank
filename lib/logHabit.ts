@@ -248,6 +248,10 @@ export async function logHabit(params: LogHabitParams) {
     categorySlug: habitSlug,
     categoryColor: habit.color || '#f97316',
     value,
+    // Proof image + verified flag so the feed can show the photo and a
+    // "verified" badge on logs that were submitted with evidence.
+    proofImageUrl: proofImageUrl || '',
+    verified: hasProof,
     message: `${username} logged ${value} ${habit.unit || ''} of ${habit.categoryName || habitSlug}`,
     originId,
     reactions: {},

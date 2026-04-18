@@ -16,6 +16,7 @@ import { ReactionEmoji } from '@/types/feed';
 import { cn } from '@/lib/utils';
 import { ActivityIcon } from '@/components/ui/AppIcons';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
 import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
 import Link from 'next/link';
 
@@ -149,7 +150,15 @@ export default function FeedPage() {
               </div>
 
               {/* Content */}
-              <p className="text-sm text-slate-300">{item.message}</p>
+              <p className="text-sm text-slate-300 flex items-center gap-2">
+                <span>{item.message}</span>
+                {item.verified && <VerifiedBadge />}
+              </p>
+
+              {/* Proof photo */}
+              {item.proofImageUrl && (
+                <ProofImage src={item.proofImageUrl} alt={`${item.actorUsername}'s proof`} />
+              )}
 
               {/* Reactions */}
               <div className="flex items-center gap-2">
