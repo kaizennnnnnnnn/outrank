@@ -621,19 +621,45 @@ function ShopCard({
     label = `Buy · ${item.price}`;
   }
 
-  // Visual tier per rarity — Mythic wraps in an animated gradient shell, then
-  // the card content sits on top. Legendary gets a pulsing gold shadow. Epic
-  // gets a steady purple glow. Rare/Common stay flat.
+  // Visual tier per rarity — backgrounds use layered corner gradients so the
+  // card stays colorful all the way across instead of fading to pure black.
+  // Mythic stacks 4-corner color washes; Legendary does warm gold; Epic adds
+  // a single purple corner wash; Rare is clean blue; Common stays flat.
   const isMythic = item.rarity === 'mythic';
   const isLegendary = item.rarity === 'legendary';
+  const isEpic = item.rarity === 'epic';
+  const isRare = item.rarity === 'rare';
+
+  const cardBg = isMythic
+    ? [
+        'radial-gradient(ellipse 80% 70% at 0% 0%,   rgba(236,72,153,0.38), transparent 60%)',
+        'radial-gradient(ellipse 70% 70% at 100% 0%, rgba(251,191,36,0.22), transparent 55%)',
+        'radial-gradient(ellipse 90% 80% at 100% 100%, rgba(34,211,238,0.30), transparent 60%)',
+        'radial-gradient(ellipse 90% 80% at 0% 100%, rgba(168,85,247,0.28), transparent 60%)',
+        'linear-gradient(145deg, rgba(34,17,50,0.6), rgba(15,11,24,0.85))',
+      ].join(',')
+    : isLegendary
+      ? [
+          'radial-gradient(ellipse 85% 75% at 0% 0%,   rgba(251,191,36,0.32), transparent 58%)',
+          'radial-gradient(ellipse 75% 70% at 100% 100%, rgba(180,83,9,0.28), transparent 60%)',
+          'linear-gradient(145deg, rgba(42,26,10,0.55), rgba(14,14,24,0.88))',
+        ].join(',')
+      : isEpic
+        ? [
+            'radial-gradient(ellipse 80% 70% at 0% 0%, rgba(168,85,247,0.28), transparent 60%)',
+            'radial-gradient(ellipse 70% 60% at 100% 100%, rgba(124,58,237,0.18), transparent 60%)',
+            'linear-gradient(145deg, rgba(26,16,48,0.55), rgba(14,14,24,0.9))',
+          ].join(',')
+        : isRare
+          ? [
+              'radial-gradient(ellipse 75% 65% at 0% 0%, rgba(59,130,246,0.22), transparent 60%)',
+              'linear-gradient(145deg, rgba(14,22,48,0.55), rgba(14,14,24,0.9))',
+            ].join(',')
+          : `linear-gradient(145deg, ${accent.bg}, #10101a 55%, #0b0b14 100%)`;
 
   const cardStyle: React.CSSProperties = {
-    background: isMythic
-      ? 'linear-gradient(145deg, rgba(236,72,153,0.18), rgba(168,85,247,0.12) 40%, rgba(34,211,238,0.08) 75%, #0b0b14 100%)'
-      : isLegendary
-        ? `linear-gradient(145deg, rgba(251,191,36,0.14), ${accent.bg} 40%, #10101a 80%)`
-        : `linear-gradient(145deg, ${accent.bg}, #10101a 55%, #0b0b14 100%)`,
-    border: `1px solid ${equipped ? '#f97316aa' : accent.border + (isMythic ? '99' : isLegendary ? '66' : '40')}`,
+    background: cardBg,
+    border: `1px solid ${equipped ? '#f97316aa' : accent.border + (isMythic ? '99' : isLegendary ? '77' : '40')}`,
     opacity: !canAfford && !owned && !isFree ? 0.72 : 1,
   };
 
@@ -646,25 +672,92 @@ function ShopCard({
       )}
       style={cardStyle}
     >
-      {/* Mythic background shimmer */}
+      {/* --- Layered decorations by rarity --- */}
+
+      {/* Mythic: subtle dot-matrix sparkle field (4 fixed sparkles) */}
+      {isMythic && (
+        <>
+          <span className="absolute w-0.5 h-0.5 rounded-full bg-white animate-frame-spark" style={{ top: '20%', left: '15%', boxShadow: '0 0 4px #fff, 0 0 2px #ec4899' }} />
+          <span className="absolute w-0.5 h-0.5 rounded-full bg-white animate-frame-spark" style={{ top: '65%', right: '18%', animationDelay: '0.3s', boxShadow: '0 0 4px #fff, 0 0 2px #22d3ee' }} />
+          <span className="absolute w-[3px] h-[3px] rounded-full animate-frame-spark" style={{ top: '40%', right: '8%', background: '#fde047', animationDelay: '0.6s', boxShadow: '0 0 6px #fde047' }} />
+          <span className="absolute w-[2px] h-[2px] rounded-full animate-frame-spark" style={{ bottom: '15%', left: '22%', background: '#a855f7', animationDelay: '0.9s', boxShadow: '0 0 4px #a855f7' }} />
+        </>
+      )}
+
+      {/* Mythic: animated diagonal holographic shine */}
       {isMythic && (
         <div
           className="absolute inset-0 pointer-events-none animate-shop-mythic-bg"
           style={{
-            background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)',
+            background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%)',
             backgroundSize: '200% 100%',
             mixBlendMode: 'screen',
           }}
         />
       )}
 
-      {/* Rarity pill (top-left) — adds a visible cue even if user ignores grouping */}
+      {/* Mythic: corner gem in top-right */}
+      {isMythic && (
+        <div className="absolute top-0 right-0 pointer-events-none">
+          <svg width={44} height={44} viewBox="0 0 44 44" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(236,72,153,0.8))' }}>
+            <path d="M44 0 L44 14 L30 0 Z" fill="rgba(236,72,153,0.35)" />
+            <path d="M44 0 L44 10 L34 0 Z" fill="rgba(253,224,71,0.5)" />
+          </svg>
+        </div>
+      )}
+
+      {/* Legendary: warm gold corner shine */}
+      {isLegendary && (
+        <div className="absolute top-0 right-0 pointer-events-none">
+          <svg width={36} height={36} viewBox="0 0 36 36" fill="none" style={{ filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.7))' }}>
+            <path d="M36 0 L36 12 L24 0 Z" fill="rgba(251,191,36,0.32)" />
+            <path d="M36 0 L36 8  L28 0 Z" fill="rgba(254,240,138,0.6)" />
+          </svg>
+        </div>
+      )}
+
+      {/* Legendary: slow diagonal shine */}
+      {isLegendary && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(115deg, transparent 40%, rgba(253,224,71,0.12) 50%, transparent 62%)',
+            backgroundSize: '220% 100%',
+            backgroundPosition: '0% 0%',
+            animation: 'shop-mythic-bg 7s linear infinite',
+          }}
+        />
+      )}
+
+      {/* Epic: small diamond accent */}
+      {isEpic && (
+        <div
+          className="absolute top-1.5 right-1.5 w-2 h-2 rotate-45 pointer-events-none"
+          style={{
+            background: 'linear-gradient(135deg, #c084fc, #7c3aed)',
+            boxShadow: '0 0 6px rgba(168,85,247,0.7)',
+          }}
+        />
+      )}
+
+      {/* Inner border glow — readable rim on premium cards */}
+      {(isMythic || isLegendary) && (
+        <div
+          className="absolute inset-0 rounded-xl pointer-events-none"
+          style={{
+            boxShadow: `inset 0 0 0 1px ${isMythic ? 'rgba(236,72,153,0.25)' : 'rgba(251,191,36,0.22)'}`,
+          }}
+        />
+      )}
+
+      {/* Rarity pill (top-left) */}
       <span
         className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded z-10"
         style={{
-          background: `${accent.border}22`,
+          background: `${accent.border}2a`,
           color: accent.text,
-          border: `1px solid ${accent.border}55`,
+          border: `1px solid ${accent.border}66`,
+          textShadow: isMythic ? `0 0 6px ${accent.border}` : undefined,
         }}
       >
         {rarityLabels[item.rarity]}
@@ -688,26 +781,47 @@ function ShopCard({
             variant={item.type === 'ring_color' ? 'ring' : 'orb'}
             id={colorIdForPreview(item)}
             size={48}
+            rarity={item.rarity}
           />
         ) : item.type === 'frame' ? (
           <div className="flex-shrink-0">
             <FramedAvatar alt={item.name} size="sm" frameId={item.id} />
           </div>
         ) : item.type === 'name_effect' ? (
-          <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center bg-[#0b0b14] border border-[#1e1e30]">
+          <div
+            className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center border"
+            style={{
+              background: `linear-gradient(145deg, ${accent.border}22, #0b0b14 80%)`,
+              borderColor: `${accent.border}55`,
+              boxShadow: `inset 0 0 10px ${accent.border}22`,
+            }}
+          >
             <NamePlate name="Aa" effectId={item.id} size="lg" />
           </div>
         ) : (
           <div
             className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
-            style={{ background: `${accent.border}1a`, color: accent.text }}
+            style={{
+              background: `linear-gradient(145deg, ${accent.border}33, ${accent.border}11 70%)`,
+              color: accent.text,
+              border: `1px solid ${accent.border}55`,
+              boxShadow: `0 0 12px -2px ${accent.border}55, inset 0 0 8px ${accent.border}33`,
+            }}
           >
             {iconFor(item.type)}
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{item.name}</p>
-          <p className="text-[10px] text-slate-500 leading-tight line-clamp-2">{item.description}</p>
+          <p
+            className="text-sm font-semibold truncate"
+            style={{
+              color: isMythic ? '#ffffff' : '#ffffff',
+              textShadow: isMythic ? `0 0 8px ${accent.border}88` : undefined,
+            }}
+          >
+            {item.name}
+          </p>
+          <p className="text-[10px] text-slate-400 leading-tight line-clamp-2">{item.description}</p>
         </div>
       </div>
       <Button
