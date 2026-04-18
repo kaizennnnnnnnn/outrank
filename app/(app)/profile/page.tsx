@@ -27,13 +27,24 @@ import { LevelRewardsModal } from '@/components/profile/LevelRewardsModal';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { ProfileHighlights } from '@/components/profile/ProfileHighlights';
-import { getLevelForXP, getXPProgress } from '@/constants/levels';
+import { getLevelForXP } from '@/constants/levels';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const { habits } = useHabits();
   const { friends } = useFriends();
+
+  // Hooks must run unconditionally — derive from user? with safe fallbacks.
+  const realTier = (user as unknown as Record<string, number> | null)?.orbTier || 1;
+  const evolveCharges = (user as unknown as Record<string, number> | null)?.orbEvolutionCharges || 0;
+  const [localTier, setLocalTier] = useState(realTier);
+  const [localCharges, setLocalCharges] = useState(evolveCharges);
+  const [showOrbHistory, setShowOrbHistory] = useState(false);
+  const [showLevelRewards, setShowLevelRewards] = useState(false);
+  useEffect(() => { setLocalTier(realTier); }, [realTier]);
+  useEffect(() => { setLocalCharges(evolveCharges); }, [evolveCharges]);
 
   if (!user) {
     return (
@@ -45,51 +56,37 @@ export default function ProfilePage() {
   }
 
   const level = getLevelForXP(user.totalXP);
-  const xpProgress = getXPProgress(user.totalXP);
   const totalLogs = habits.reduce((sum, h) => sum + h.totalLogs, 0);
   const longestStreak = Math.max(...habits.map((h) => h.longestStreak), 0);
   const friendCount = friends.length;
-  // currentStreaks reserved for the production intensity formula (see comment below)
+  const currentStreaks = habits.reduce((s, h) => s + h.currentStreak, 0);
 
-  // TEST MODE: always allow evolving (intensity pinned to 100). Remove both of
-  // these lines and uncomment the block below to go back to earned intensity.
-  const orbIntensity = 100;
-  // const orbIntensity = Math.min(
-  //   Math.round(
-  //     Math.min(user.totalXP / 500, 40) +
-  //     Math.min(currentStreaks / 10, 30) +
-  //     Math.min(totalLogs / 20, 20) +
-  //     Math.min(level.level / 10, 10)
-  //   ),
-  //   100,
-  // );
-
-  const realTier = (user as unknown as Record<string, number>).orbTier || 1;
-  const [localTier, setLocalTier] = useState(realTier);
-  useEffect(() => { setLocalTier(realTier); }, [realTier]);
-
-  // TEST MODE: reset tier helper so you can re-test the full 1→10 chain.
-  const resetTier = async () => {
-    try {
-      const { updateDocument } = await import('@/lib/firestore');
-      await updateDocument('users', user.uid, { orbTier: 1 });
-    } catch { /* silent */ }
-    setLocalTier(1);
-  };
-
-  const [showOrbHistory, setShowOrbHistory] = useState(false);
-  const [showLevelRewards, setShowLevelRewards] = useState(false);
+  // Intensity is derived from real progress — XP, streaks, logs, level.
+  // Capped at 100. Used for visual "richness" of the orb canvas only; it
+  // no longer gates evolution (that's earned via daily habit completion).
+  const orbIntensity = Math.min(
+    Math.round(
+      Math.min(user.totalXP / 500, 40) +
+      Math.min(currentStreaks / 10, 30) +
+      Math.min(totalLogs / 20, 20) +
+      Math.min(level.level / 10, 10)
+    ),
+    100,
+  );
 
   const handleEvolve = async () => {
-    if (localTier >= 10) return;
+    if (localTier >= 10 || localCharges <= 0) return;
     const newTier = localTier + 1;
     try {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment } = await import('firebase/firestore');
-      await updateDocument('users', user.uid, { orbTier: newTier });
-      await updateDocument('users', user.uid, { fragments: increment(30) });
+      await updateDocument('users', user.uid, {
+        orbTier: newTier,
+        orbEvolutionCharges: increment(-1),
+      });
     } catch { /* silent */ }
     setLocalTier(newTier);
+    setLocalCharges((c) => Math.max(0, c - 1));
   };
 
   const handleAscend = async () => {
@@ -115,7 +112,7 @@ export default function ProfilePage() {
           intensity={orbIntensity}
           tier={localTier}
           size={300}
-          onEvolve={handleEvolve}
+          onEvolve={localCharges > 0 ? handleEvolve : undefined}
           onAscend={handleAscend}
           baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
           pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
@@ -123,25 +120,42 @@ export default function ProfilePage() {
         />
       </div>
 
-      {/* Fragments display */}
-      <div className="flex items-center justify-center gap-6 -mt-2">
+      {/* Fragments + evolution charges */}
+      <div className="flex items-center justify-center gap-3 flex-wrap -mt-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-400"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>
           <span className="font-mono text-sm font-bold text-orange-400">{(user as unknown as Record<string, number>).fragments || 0}</span>
           <span className="text-[10px] text-slate-500">fragments</span>
         </div>
+        {localTier < 10 && (
+          <div
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border',
+              localCharges > 0
+                ? 'bg-pink-500/10 border-pink-500/30 animate-frame-pulse'
+                : 'bg-[#10101a] border-[#1e1e30]'
+            )}
+          >
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={localCharges > 0 ? 'text-pink-300' : 'text-slate-600'}>
+              <path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z" />
+            </svg>
+            <span className={cn('font-mono text-sm font-bold', localCharges > 0 ? 'text-pink-300' : 'text-slate-500')}>
+              {localCharges}
+            </span>
+            <span className="text-[10px] text-slate-500">evolution{localCharges === 1 ? '' : 's'}</span>
+          </div>
+        )}
         <button onClick={() => setShowOrbHistory(true)} className="text-[10px] text-slate-500 hover:text-orange-400 transition-colors underline">
           View Orb Details
         </button>
-        {/* TEST MODE: reset tier to 1 so you can re-evolve all the way to 10 */}
-        <button
-          onClick={resetTier}
-          className="text-[10px] text-slate-500 hover:text-red-400 transition-colors underline"
-          title="Reset to tier 1 for testing"
-        >
-          Reset Tier
-        </button>
       </div>
+
+      {/* Explanation row — shown when no charges and not capped */}
+      {localCharges === 0 && localTier < 10 && (
+        <p className="text-[11px] text-center text-slate-500 -mt-3 max-w-sm mx-auto leading-relaxed">
+          Log <b className="text-orange-400">every habit today</b> to earn +1 evolution, +30 fragments, and +50 bonus XP.
+        </p>
+      )}
       <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
 
       {/* Orb nickname + mood */}

@@ -160,21 +160,6 @@ export async function logHabit(params: LogHabitParams) {
     const currentEnergy = ud?.orbEnergy ?? 50;
     const newEnergy = Math.min(100, currentEnergy + 15);
     await updateDoc(doc(db, `users/${userId}`), { orbEnergy: newEnergy });
-
-    // 3d. Award fragments for daily completion
-    // Check if all habits are logged today
-    const allHabitsSnap = await getDocs(query(collection(db, `habits/${userId}/userHabits`)));
-    const allHabits = allHabitsSnap.docs;
-    const todayStr = new Date().toDateString();
-    const allLoggedToday = allHabits.every(h => {
-      const d = h.data();
-      return d.lastLogDate?.toDate?.()?.toDateString?.() === todayStr;
-    });
-    if (allLoggedToday && allHabits.length > 0) {
-      await updateDoc(doc(db, `users/${userId}`), {
-        fragments: increment(5), // Daily completion bonus
-      });
-    }
   } catch { /* non-fatal */ }
 
   // Update XP on the log if bonus was added
@@ -186,36 +171,60 @@ export async function logHabit(params: LogHabitParams) {
 
   // 4. Update user XP
   const userRef = doc(db, `users/${userId}`);
-  // --- Daily orb evolution ---
-  // The orb resets to tier 1 once per calendar day, then each habit log
-  // evolves it by one up to tier 10. Each evolution also drips an extra +10
-  // fragments on top of the regular log XP.
-  let nextOrbTier = 1;
-  let orbEvolved = false;
-  try {
-    const userSnapPre = await getDoc(userRef);
-    const ud = userSnapPre.data();
-    const lastReset = ud?.orbDailyResetAt as { toDate?: () => Date } | undefined;
-    const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0);
-    const lastMid = lastReset?.toDate?.() ?? null;
-    if (lastMid) lastMid.setHours(0, 0, 0, 0);
-    const sameDay = lastMid ? lastMid.getTime() === todayMid.getTime() : false;
 
-    const prevTier = sameDay ? ((ud?.orbTier as number) || 1) : 0;
-    nextOrbTier = Math.min(10, prevTier + 1);
-    orbEvolved = nextOrbTier > prevTier;
-  } catch { /* ignore — orb tier just won't increment */ }
+  // --- Daily all-habits-done reward ---
+  // The orb no longer auto-evolves per log. Instead: when the user logs the
+  // LAST habit of the day (i.e. this log fills the final empty slot), they
+  // earn +1 orbEvolutionCharges, +30 fragments, and +50 bonus XP — once
+  // per calendar day. Evolution is then triggered manually from the profile.
+  const DAILY_BONUS_FRAGMENTS = 30;
+  const DAILY_BONUS_XP = 50;
+  let dailyBonusEarned = false;
+  let bonusXP = 0;
+  let bonusFragments = 0;
+  let evolutionChargeEarned = false;
+  try {
+    const allHabitsSnap = await getDocs(query(collection(db, `habits/${userId}/userHabits`)));
+    const allHabits = allHabitsSnap.docs;
+    if (allHabits.length > 0) {
+      const todayStr = new Date().toDateString();
+      const allLoggedToday = allHabits.every(h => {
+        const d = h.data();
+        // include this-very-log: current habit just got lastLogDate=Timestamp.now
+        if (h.id === habitSlug) return true;
+        return d.lastLogDate?.toDate?.()?.toDateString?.() === todayStr;
+      });
+      if (allLoggedToday) {
+        const ud = (await getDoc(userRef)).data();
+        const lastBonus = ud?.lastDailyBonusDate as { toDate?: () => Date } | undefined;
+        const lastBonusStr = lastBonus?.toDate?.()?.toDateString?.();
+        if (lastBonusStr !== todayStr) {
+          dailyBonusEarned = true;
+          bonusXP = DAILY_BONUS_XP;
+          bonusFragments = DAILY_BONUS_FRAGMENTS;
+          evolutionChargeEarned = true;
+        }
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  const finalXP = totalXP + bonusXP;
 
   await updateDoc(userRef, {
-    totalXP: increment(totalXP),
-    weeklyXP: increment(totalXP),
-    monthlyXP: increment(totalXP),
-    seasonPassXP: increment(totalXP),
+    totalXP: increment(finalXP),
+    weeklyXP: increment(finalXP),
+    monthlyXP: increment(finalXP),
+    seasonPassXP: increment(finalXP),
     lastActiveAt: Timestamp.now(),
-    orbTier: nextOrbTier,
-    orbDailyResetAt: Timestamp.now(),
-    ...(orbEvolved ? { fragments: increment(10) } : {}),
+    ...(dailyBonusEarned
+      ? {
+          fragments: increment(bonusFragments),
+          orbEvolutionCharges: increment(1),
+          lastDailyBonusDate: Timestamp.now(),
+        }
+      : {}),
   });
+  totalXP = finalXP;
 
   // 5. Recalculate level
   const userSnap = await getDoc(userRef);
@@ -366,8 +375,10 @@ export async function logHabit(params: LogHabitParams) {
     freezeUsed,
     leveledUp,
     newLevel: newLevelNum,
-    orbEvolved,
-    orbTier: nextOrbTier,
+    dailyBonusEarned,
+    bonusFragments,
+    bonusXP,
+    evolutionChargeEarned,
   };
 }
 

@@ -14,6 +14,7 @@ import { getGoalConfig } from '@/constants/categories';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useUIStore } from '@/store/uiStore';
 import { useAuth } from '@/hooks/useAuth';
+import { useHabits } from '@/hooks/useHabits';
 import { haptic } from '@/lib/haptics';
 import { ParticleBurst } from '@/components/effects/ParticleBurst';
 
@@ -27,6 +28,7 @@ interface QuickLogModalProps {
 export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalProps) {
   const addToast = useUIStore((s) => s.addToast);
   const { user } = useAuth();
+  const { habits: allHabits } = useHabits();
   const [value, setValue] = useState(1);
   const [note, setNote] = useState('');
   const [proofFile, setProofFile] = useState<File | null>(null);
@@ -37,6 +39,24 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
   const [levelUpAt, setLevelUpAt] = useState<number | null>(null);
 
   const config = habit ? getGoalConfig(habit.categorySlug) : null;
+
+  // Daily-completion preview: will this log earn the all-habits-done bonus?
+  // Bonus pays out once per calendar day, when this log fills the last slot
+  // and the user hasn't already received today's bonus.
+  const todayStr = new Date().toDateString();
+  const loggedTodayCount = allHabits.filter((h) => {
+    if (h.categorySlug === habit?.categorySlug) return true;
+    return h.lastLogDate?.toDate?.()?.toDateString?.() === todayStr;
+  }).length;
+  const alreadyLoggedToday = habit?.lastLogDate?.toDate?.()?.toDateString?.() === todayStr;
+  const lastBonus = (user as unknown as Record<string, { toDate?: () => Date } | undefined>)?.lastDailyBonusDate;
+  const bonusAlreadyClaimedToday = lastBonus?.toDate?.()?.toDateString?.() === todayStr;
+  const willCompleteAll =
+    allHabits.length > 0
+    && loggedTodayCount === allHabits.length
+    && !alreadyLoggedToday
+    && !bonusAlreadyClaimedToday;
+  const remainingAfter = allHabits.length - loggedTodayCount;
 
   const resetForm = () => {
     setValue(habit?.goal || 1);
@@ -89,7 +109,10 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
         const streakMsg = result.newStreak > 1 ? ` · ${result.newStreak}d streak` : '';
         const freezeMsg = result.freezeUsed ? ' · Streak freeze auto-applied' : '';
         const lvlMsg = result.leveledUp ? ` · Leveled up to ${result.newLevel}` : '';
-        addToast({ type: 'success', message: `Logged · +${result.xpEarned} XP${streakMsg}${freezeMsg}${lvlMsg}` });
+        const bonusMsg = result.dailyBonusEarned
+          ? ` · All habits done! +${result.bonusFragments} frags · +1 evolution`
+          : '';
+        addToast({ type: 'success', message: `Logged · +${result.xpEarned} XP${bonusMsg}${streakMsg}${freezeMsg}${lvlMsg}` });
       }, 1200);
     } catch (err) {
       console.error('Log failed:', err);
@@ -245,6 +268,78 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
             maxLength={280}
           />
 
+          {/* Reward preview — always shown, upgrades when this log will cap the day */}
+          <div
+            className={`rounded-xl border p-3 transition-colors ${
+              willCompleteAll
+                ? 'border-pink-500/40 bg-gradient-to-br from-pink-500/10 via-fuchsia-500/5 to-orange-500/10'
+                : 'border-[#1e1e30] bg-[#0c0c16]'
+            }`}
+          >
+            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-2 ${willCompleteAll ? 'text-pink-300' : 'text-slate-400'}`}>
+              {willCompleteAll ? 'Daily quest complete!' : 'You will receive'}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <RewardChip
+                icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>}
+                color="#f97316"
+                label={`+${xpAmount} XP`}
+                detail={value >= (habit.goal || 1) ? 'Goal met' : `${Math.round((value / (habit.goal || 1)) * 100)}% of goal`}
+              />
+              {proofFile && (
+                <RewardChip
+                  icon={<span>✓</span>}
+                  color="#10b981"
+                  label="Verified"
+                  detail="+5 bonus XP applied"
+                />
+              )}
+              {!proofFile && !willCompleteAll && (
+                <RewardChip
+                  icon={<span>📸</span>}
+                  color="#64748b"
+                  label="No proof"
+                  detail="Add one for +5 XP"
+                  dim
+                />
+              )}
+              {willCompleteAll && (
+                <>
+                  <RewardChip
+                    icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>}
+                    color="#fbbf24"
+                    label="+30 Fragments"
+                    detail="All habits complete bonus"
+                  />
+                  <RewardChip
+                    icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z" /></svg>}
+                    color="#ec4899"
+                    label="+1 Evolution"
+                    detail="Charge your orb's next rank"
+                  />
+                  <RewardChip
+                    icon={<span>⚡</span>}
+                    color="#f472b6"
+                    label="+50 Bonus XP"
+                    detail="Daily quest reward"
+                  />
+                </>
+              )}
+            </div>
+            {!willCompleteAll && allHabits.length > 0 && !bonusAlreadyClaimedToday && (
+              <p className="text-[10px] text-slate-500 mt-2 text-center">
+                {remainingAfter === 1
+                  ? 'One more habit after this to unlock evolution + fragments!'
+                  : `${remainingAfter - 1} habits left today to unlock evolution + fragments.`}
+              </p>
+            )}
+            {bonusAlreadyClaimedToday && (
+              <p className="text-[10px] text-emerald-400 mt-2 text-center">
+                Daily quest already claimed — come back tomorrow for another evolution charge.
+              </p>
+            )}
+          </div>
+
           {/* Submit */}
           <Button
             className="w-full text-lg py-3"
@@ -252,7 +347,9 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
             loading={logging}
             disabled={showXP}
           >
-            {proofFile ? `Log +${xpAmount} XP ✓ Verified` : `Log +${xpAmount} XP`}
+            {willCompleteAll
+              ? `Log +${xpAmount} XP · Claim daily quest`
+              : proofFile ? `Log +${xpAmount} XP ✓ Verified` : `Log +${xpAmount} XP`}
           </Button>
 
           {!proofFile && (
@@ -264,5 +361,29 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
       )}
     </Modal>
     </>
+  );
+}
+
+function RewardChip({ icon, color, label, detail, dim }: {
+  icon: React.ReactNode;
+  color: string;
+  label: string;
+  detail: string;
+  dim?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-lg p-2 border flex flex-col gap-0.5 ${dim ? 'opacity-60' : ''}`}
+      style={{
+        background: `linear-gradient(145deg, ${color}18, #0b0b14 80%)`,
+        borderColor: `${color}35`,
+      }}
+    >
+      <div className="flex items-center gap-1.5">
+        <span style={{ color }}>{icon}</span>
+        <span className="text-[11px] font-bold" style={{ color }}>{label}</span>
+      </div>
+      <p className="text-[9px] text-slate-500 leading-tight">{detail}</p>
+    </div>
   );
 }
