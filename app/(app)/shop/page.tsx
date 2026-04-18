@@ -8,11 +8,13 @@ import { increment, arrayUnion, Timestamp } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { ORB_BASE_COLORS, ORB_PULSE_COLORS, ORB_RING_COLORS, OrbColorSet } from '@/constants/orbColors';
 import { OrbColorPreview } from '@/components/profile/OrbColorPreview';
+import { FramedAvatar } from '@/components/profile/FramedAvatar';
+import { NamePlate } from '@/components/profile/NamePlate';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
-type Tab = 'base' | 'pulse' | 'rings' | 'boosts' | 'utilities';
+type Tab = 'base' | 'pulse' | 'rings' | 'account' | 'boosts' | 'utilities';
 
 interface ShopItem {
   id: string;
@@ -23,6 +25,8 @@ interface ShopItem {
     | 'base_color'
     | 'pulse_color'
     | 'ring_color'
+    | 'frame'
+    | 'name_effect'
     | 'power_boost_1h'
     | 'power_boost_24h'
     | 'power_boost_7d'
@@ -110,6 +114,25 @@ const SHOP_ITEMS: ShopItem[] = [
   { id: 'freeze_3', name: '3× Streak Freezes', description: 'Three freezes at a bulk discount', price: 35, type: 'streak_freeze', tab: 'utilities', payload: 3, rarity: 'common' },
   { id: 'freeze_7', name: 'Week Shield', description: 'Seven freezes — keep any streak alive for a week', price: 70, type: 'streak_shield_week', tab: 'utilities', payload: 7, rarity: 'epic' },
   { id: 'instant_evolve', name: 'Instant Evolution', description: 'Skip the grind — evolve your orb now', price: 200, type: 'instant_evolve', tab: 'utilities', rarity: 'legendary' },
+
+  // ---- ACCOUNT COSMETICS: PFP FRAMES ----
+  { id: 'frame_iron',     name: 'Iron Ring',       description: 'Simple iron band',              price: 30,  type: 'frame', tab: 'account', rarity: 'common',    colorValue: '#78716c' },
+  { id: 'frame_silver',   name: 'Silver Ring',     description: 'Polished silver',               price: 60,  type: 'frame', tab: 'account', rarity: 'rare',      colorValue: '#cbd5e1' },
+  { id: 'frame_gold',     name: 'Gold Ring',       description: 'Classic gold',                  price: 90,  type: 'frame', tab: 'account', rarity: 'rare',      colorValue: '#fbbf24' },
+  { id: 'frame_emerald',  name: 'Emerald Double',  description: 'Double band, emerald cut',      price: 140, type: 'frame', tab: 'account', rarity: 'epic',      colorValue: '#10b981' },
+  { id: 'frame_ruby',     name: 'Ruby Double',     description: 'Double band, crimson fire',    price: 140, type: 'frame', tab: 'account', rarity: 'epic',      colorValue: '#dc2626' },
+  { id: 'frame_sapphire', name: 'Sapphire Halo',   description: 'Deep blue halo',                price: 160, type: 'frame', tab: 'account', rarity: 'epic',      colorValue: '#60a5fa' },
+  { id: 'frame_phoenix',  name: 'Phoenix Crown',   description: 'Molten flame wreath',           price: 320, type: 'frame', tab: 'account', rarity: 'legendary', colorValue: '#f97316' },
+  { id: 'frame_nebula',   name: 'Nebula Halo',     description: 'Cosmic purple halo',            price: 320, type: 'frame', tab: 'account', rarity: 'legendary', colorValue: '#a855f7' },
+  { id: 'frame_rainbow',  name: 'Rainbow Crown',   description: 'Full spectrum, always shifting', price: 700, type: 'frame', tab: 'account', rarity: 'mythic',    colorValue: '#a855f7' },
+
+  // ---- ACCOUNT COSMETICS: NAME EFFECTS ----
+  { id: 'name_ember',   name: 'Ember Name',   description: 'Orange → red burn',        price: 45,  type: 'name_effect', tab: 'account', rarity: 'rare',      colorValue: '#f97316' },
+  { id: 'name_ice',     name: 'Ice Name',     description: 'Cold cyan sheen',           price: 45,  type: 'name_effect', tab: 'account', rarity: 'rare',      colorValue: '#60a5fa' },
+  { id: 'name_emerald', name: 'Emerald Name', description: 'Cool green gradient',       price: 55,  type: 'name_effect', tab: 'account', rarity: 'rare',      colorValue: '#10b981' },
+  { id: 'name_gold',    name: 'Gold Name',    description: 'Shimmering molten gold',    price: 120, type: 'name_effect', tab: 'account', rarity: 'epic',      colorValue: '#fbbf24' },
+  { id: 'name_plasma',  name: 'Plasma Name',  description: 'Purple plasma pulse',       price: 140, type: 'name_effect', tab: 'account', rarity: 'epic',      colorValue: '#c026d3' },
+  { id: 'name_rainbow', name: 'Rainbow Name', description: 'Every color, cycling',      price: 650, type: 'name_effect', tab: 'account', rarity: 'mythic',    colorValue: '#a855f7' },
 ];
 
 const rarityRank: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
@@ -126,6 +149,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'base',      label: 'Base',      icon: <OrbSmallIcon /> },
   { id: 'pulse',     label: 'Pulse',     icon: <WaveIcon /> },
   { id: 'rings',     label: 'Rings',     icon: <RingsIcon /> },
+  { id: 'account',   label: 'Account',   icon: <ProfileIcon /> },
   { id: 'boosts',    label: 'Boosts',    icon: <BoltIcon /> },
   { id: 'utilities', label: 'Utilities', icon: <ShieldIcon /> },
 ];
@@ -139,17 +163,24 @@ export default function ShopPage() {
   const userData = user as unknown as Record<string, unknown> | undefined;
   const fragments = (userData?.fragments as number) || 0;
   const ownedColors = (userData?.ownedColors as string[]) || ['crimson', 'fire', 'ring_default'];
+  const ownedCosmetics = (userData?.ownedCosmetics as string[]) || [];
   const equippedBase = (userData?.orbBaseColor as string) || 'crimson';
   const equippedPulse = (userData?.orbPulseColor as string) || 'fire';
   const equippedRing = (userData?.orbRingColor as string) || 'ring_default';
+  const equippedFrame = (userData?.equippedFrame as string) || 'frame_none';
+  const equippedName = (userData?.equippedNameEffect as string) || 'name_plain';
 
-  // Strip any of the id prefixes to get the stored color id.
+  // Strip any of the id prefixes to get the stored color id. Frame + name
+  // ids are already canonical (frame_* / name_*) so no stripping needed.
   const colorIdOf = (item: ShopItem) =>
     item.id.replace(/^(color_|pulse_pulse_|pulse_|ring_color_)/, '');
 
   const isOwned = (item: ShopItem) => {
     if (item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color') {
       return ownedColors.includes(colorIdOf(item));
+    }
+    if (item.type === 'frame' || item.type === 'name_effect') {
+      return ownedCosmetics.includes(item.id);
     }
     return false;
   };
@@ -158,6 +189,8 @@ export default function ShopPage() {
     if (item.type === 'base_color')  return equippedBase === id;
     if (item.type === 'pulse_color') return equippedPulse === id;
     if (item.type === 'ring_color')  return equippedRing === id;
+    if (item.type === 'frame')        return equippedFrame === item.id;
+    if (item.type === 'name_effect')  return equippedName === item.id;
     return false;
   };
 
@@ -167,14 +200,16 @@ export default function ShopPage() {
     const equipped = isEquipped(item);
     if (equipped) return;
 
-    // Colors you already own — equip for free
-    if (owned && (item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color')) {
+    // Owned cosmetics — equip for free
+    if (owned) {
       setBuying(item.id);
       try {
         const id = colorIdOf(item);
-        if (item.type === 'base_color')       await updateDocument('users', user.uid, { orbBaseColor: id });
-        else if (item.type === 'pulse_color') await updateDocument('users', user.uid, { orbPulseColor: id });
-        else                                  await updateDocument('users', user.uid, { orbRingColor: id });
+        if (item.type === 'base_color')        await updateDocument('users', user.uid, { orbBaseColor: id });
+        else if (item.type === 'pulse_color')  await updateDocument('users', user.uid, { orbPulseColor: id });
+        else if (item.type === 'ring_color')   await updateDocument('users', user.uid, { orbRingColor: id });
+        else if (item.type === 'frame')        await updateDocument('users', user.uid, { equippedFrame: item.id });
+        else if (item.type === 'name_effect')  await updateDocument('users', user.uid, { equippedNameEffect: item.id });
         addToast({ type: 'success', message: `Equipped ${item.name}` });
       } catch {
         addToast({ type: 'error', message: 'Failed to equip' });
@@ -211,6 +246,22 @@ export default function ShopPage() {
           const id = colorIdOf(item);
           await updateDocument('users', user.uid, { orbRingColor: id, ownedColors: arrayUnion(id) });
           addToast({ type: 'success', message: `Purchased ${item.name}` });
+          break;
+        }
+        case 'frame': {
+          await updateDocument('users', user.uid, {
+            equippedFrame: item.id,
+            ownedCosmetics: arrayUnion(item.id),
+          });
+          addToast({ type: 'success', message: `Purchased & equipped ${item.name}` });
+          break;
+        }
+        case 'name_effect': {
+          await updateDocument('users', user.uid, {
+            equippedNameEffect: item.id,
+            ownedCosmetics: arrayUnion(item.id),
+          });
+          addToast({ type: 'success', message: `Purchased & equipped ${item.name}` });
           break;
         }
         case 'power_boost_1h':
@@ -285,8 +336,8 @@ export default function ShopPage() {
         </div>
       </div>
 
-      {/* Tabs — 5 columns. Horizontal scroll on narrow screens if they don't fit. */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:grid sm:grid-cols-5">
+      {/* Tabs — horizontal scroll on narrow screens, 6-col grid on sm+ */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:grid sm:grid-cols-6">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -377,7 +428,7 @@ function RarityGroup({
       <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em]">{title}</h2>
       <div className={cn(
         'grid gap-3',
-        tab === 'base' || tab === 'pulse' || tab === 'rings'
+        tab === 'base' || tab === 'pulse' || tab === 'rings' || tab === 'account'
           ? 'grid-cols-2 sm:grid-cols-3'
           : 'grid-cols-1 sm:grid-cols-2',
       )}>
@@ -459,6 +510,14 @@ function ShopCard({
             id={item.id.replace(/^(color_|pulse_pulse_|pulse_|ring_color_)/, '')}
             size={48}
           />
+        ) : item.type === 'frame' ? (
+          <div className="flex-shrink-0">
+            <FramedAvatar alt={item.name} size="sm" frameId={item.id} />
+          </div>
+        ) : item.type === 'name_effect' ? (
+          <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center bg-[#0b0b14] border border-[#1e1e30]">
+            <NamePlate name="Aa" effectId={item.id} size="lg" />
+          </div>
         ) : (
           <div
             className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
@@ -521,6 +580,9 @@ function WaveIcon() {
 }
 function RingsIcon() {
   return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(20 12 12)" /><ellipse cx="12" cy="12" rx="10" ry="3.5" transform="rotate(-20 12 12)" opacity="0.6" /></svg>;
+}
+function ProfileIcon() {
+  return <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a8 8 0 0116 0v1" /></svg>;
 }
 function BoltIcon() {
   return <svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>;

@@ -100,3 +100,44 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* --- Cosmetic animations (PFP frames + name plates) --- */
+@keyframes frame-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-frame-spin {
+  animation: frame-spin 8s linear infinite;
+}
+
+@keyframes frame-pulse {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 8px rgba(255,255,255,0.15)); }
+  50%      { filter: brightness(1.25) drop-shadow(0 0 16px rgba(255,255,255,0.35)); }
+}
+.animate-frame-pulse {
+  animation: frame-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes name-shimmer {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-name-shimmer {
+  animation: name-shimmer 3s linear infinite;
+}
+
+@keyframes name-pulse {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px currentColor); }
+  50%      { opacity: 0.85; filter: drop-shadow(0 0 10px currentColor); }
+}
+.animate-name-pulse {
+  animation: name-pulse 2s ease-in-out infinite;
+}
+
+@keyframes name-rainbow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.animate-name-rainbow {
+  animation: name-rainbow 4s linear infinite;
+}

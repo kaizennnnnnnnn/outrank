@@ -8,7 +8,7 @@ import { useHabits } from '@/hooks/useHabits';
 import { getOrbTier, MAX_ORB_TIER, ORB_TIERS } from '@/constants/orbTiers';
 import { getOrbPower, getOrbAura, ORB_ENERGY } from '@/constants/orbSystem';
 import { getCollection, orderBy, limit, updateDocument } from '@/lib/firestore';
-import { increment } from 'firebase/firestore';
+import { increment, arrayUnion } from 'firebase/firestore';
 import { HabitLog } from '@/types/habit';
 import { getLevelForXP } from '@/constants/levels';
 import { StreakFire } from '@/components/habits/StreakFire';
@@ -50,8 +50,9 @@ export function OrbHistory({ isOpen, onClose }: OrbHistoryProps) {
         orbTier: 1,
         orbAscensions: increment(1),
         fragments: increment(500),
+        ownedCosmetics: arrayUnion('frame_ascension', 'name_ascendant'),
       });
-      addToast({ type: 'success', message: 'Orb ascended! +500 fragments · your colors carry over as lineage.' });
+      addToast({ type: 'success', message: 'Orb ascended! +500 fragments · Ascension frame + name effect unlocked.' });
       setConfirmingAscend(false);
     } catch {
       addToast({ type: 'error', message: 'Ascension failed' });
@@ -100,42 +101,60 @@ export function OrbHistory({ isOpen, onClose }: OrbHistoryProps) {
           <p className="text-[10px] text-slate-600">{config.description}</p>
         </div>
 
-        {/* Ascend — unlocks at tier 10 */}
+        {/* Ascend — unlocks at tier 10 with a big pulsing pink CTA */}
         {orbTier >= MAX_ORB_TIER && (
-          <div
-            className="relative overflow-hidden rounded-xl p-4"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative overflow-hidden rounded-xl p-5 animate-frame-pulse"
             style={{
-              background: 'linear-gradient(135deg, rgba(236,72,153,0.18), #10101a 60%, #0b0b14 100%)',
-              border: '1px solid rgba(236,72,153,0.45)',
-              boxShadow: '0 0 22px -6px rgba(236,72,153,0.55)',
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18) 45%, #0b0b14 100%)',
+              border: '1.5px solid rgba(236,72,153,0.55)',
+              boxShadow: '0 0 30px -6px rgba(236,72,153,0.75), inset 0 1px 0 rgba(236,72,153,0.15)',
             }}
           >
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-300">
-              Ascend Your Orb
+            <div
+              className="absolute -top-10 -right-10 w-40 h-40 rounded-full opacity-30 blur-3xl pointer-events-none"
+              style={{ background: '#ec4899' }}
+            />
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-pink-300">
+              Ascension Ready
             </p>
-            <p className="text-xs text-white mt-1">
-              Reset to Ember. Keep your equipped colors as lineage. Earn 500 fragments and the <span className="text-pink-300 font-semibold">Ascension</span> badge.
+            <p className="text-base font-bold text-white mt-1.5">
+              Your orb has reached its final form.
             </p>
-            <div className="mt-3 flex justify-end gap-2">
+            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Ascend to restart at Ember and claim <span className="text-pink-300 font-semibold">+500 fragments</span>,
+              the <span className="text-pink-300 font-semibold">Ascension Wreath</span> PFP frame,
+              and the <span className="text-pink-300 font-semibold">Ascendant</span> name effect.
+            </p>
+            <div className="mt-3">
               {confirmingAscend ? (
-                <>
+                <div className="flex gap-2">
                   <button
                     onClick={() => setConfirmingAscend(false)}
-                    className="text-[11px] text-slate-500 hover:text-slate-300"
+                    className="flex-1 text-xs text-slate-400 hover:text-white border border-[#1e1e30] rounded-xl py-2.5 transition-colors"
                   >
                     Cancel
                   </button>
-                  <Button size="sm" onClick={ascend} loading={ascending}>
-                    Confirm Ascend
-                  </Button>
-                </>
+                  <button
+                    onClick={ascend}
+                    disabled={ascending}
+                    className="flex-1 text-sm font-bold text-white rounded-xl py-2.5 bg-gradient-to-r from-pink-600 via-fuchsia-500 to-orange-400 hover:opacity-90 transition-opacity shadow-[0_6px_24px_-6px_rgba(236,72,153,0.8)]"
+                  >
+                    {ascending ? 'Ascending…' : 'Confirm Ascend'}
+                  </button>
+                </div>
               ) : (
-                <Button size="sm" variant="secondary" onClick={() => setConfirmingAscend(true)}>
-                  Ascend Orb
-                </Button>
+                <button
+                  onClick={() => setConfirmingAscend(true)}
+                  className="w-full text-base font-heading font-bold text-white rounded-xl py-3 bg-gradient-to-r from-pink-600 via-fuchsia-500 to-orange-400 hover:opacity-95 transition-all shadow-[0_8px_32px_-8px_rgba(236,72,153,0.9)] tracking-wider uppercase"
+                >
+                  Ascend
+                </button>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Energy Bar */}

@@ -186,12 +186,35 @@ export async function logHabit(params: LogHabitParams) {
 
   // 4. Update user XP
   const userRef = doc(db, `users/${userId}`);
+  // --- Daily orb evolution ---
+  // The orb resets to tier 1 once per calendar day, then each habit log
+  // evolves it by one up to tier 10. Each evolution also drips an extra +10
+  // fragments on top of the regular log XP.
+  let nextOrbTier = 1;
+  let orbEvolved = false;
+  try {
+    const userSnapPre = await getDoc(userRef);
+    const ud = userSnapPre.data();
+    const lastReset = ud?.orbDailyResetAt as { toDate?: () => Date } | undefined;
+    const todayMid = new Date(); todayMid.setHours(0, 0, 0, 0);
+    const lastMid = lastReset?.toDate?.() ?? null;
+    if (lastMid) lastMid.setHours(0, 0, 0, 0);
+    const sameDay = lastMid ? lastMid.getTime() === todayMid.getTime() : false;
+
+    const prevTier = sameDay ? ((ud?.orbTier as number) || 1) : 0;
+    nextOrbTier = Math.min(10, prevTier + 1);
+    orbEvolved = nextOrbTier > prevTier;
+  } catch { /* ignore — orb tier just won't increment */ }
+
   await updateDoc(userRef, {
     totalXP: increment(totalXP),
     weeklyXP: increment(totalXP),
     monthlyXP: increment(totalXP),
     seasonPassXP: increment(totalXP),
     lastActiveAt: Timestamp.now(),
+    orbTier: nextOrbTier,
+    orbDailyResetAt: Timestamp.now(),
+    ...(orbEvolved ? { fragments: increment(10) } : {}),
   });
 
   // 5. Recalculate level
@@ -209,6 +232,22 @@ export async function logHabit(params: LogHabitParams) {
       leveledUp = true;
       newLevelNum = newLevel.level;
     }
+
+    // Track best-ever league reached, using the fresh weeklyXP that just
+    // incremented. Only bumps up, never down — this is the persistent record.
+    try {
+      const { LEAGUES } = await import('@/constants/seasons');
+      const currentWeeklyXP = (userData.weeklyXP || 0) + totalXP;
+      const currentLeagueIdx = LEAGUES.reduce(
+        (acc, l, i) => (currentWeeklyXP >= l.minWeeklyXP ? i : acc),
+        0,
+      );
+      const bestId = userData.bestLeagueId as string | undefined;
+      const bestIdx = bestId ? LEAGUES.findIndex((l) => l.id === bestId) : -1;
+      if (currentLeagueIdx > bestIdx) {
+        await updateDoc(userRef, { bestLeagueId: LEAGUES[currentLeagueIdx].id });
+      }
+    } catch { /* silent */ }
   }
 
   // --- Secondary operations (non-fatal) ---
@@ -321,7 +360,15 @@ export async function logHabit(params: LogHabitParams) {
   }
   } catch (err) { console.error('Feed/notifications failed:', err); }
 
-  return { xpEarned: totalXP, newStreak, freezeUsed, leveledUp, newLevel: newLevelNum };
+  return {
+    xpEarned: totalXP,
+    newStreak,
+    freezeUsed,
+    leveledUp,
+    newLevel: newLevelNum,
+    orbEvolved,
+    orbTier: nextOrbTier,
+  };
 }
 
 function calculateLevel(xp: number): { level: number; title: string } {

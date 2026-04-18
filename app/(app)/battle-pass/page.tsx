@@ -51,11 +51,16 @@ export default function BattlePassPage() {
     const key = claimKey(row);
     setClaiming(key);
     try {
-      await updateDocument('users', user.uid, {
+      const update: Record<string, unknown> = {
         fragments: increment(row.fragments),
         claimedPassTiers: arrayUnion(key),
+      };
+      if (row.cosmetic) update.ownedCosmetics = arrayUnion(row.cosmetic);
+      await updateDocument('users', user.uid, update);
+      addToast({
+        type: 'success',
+        message: `Tier ${row.tier} claimed · +${row.fragments} fragments${row.cosmetic ? ' + cosmetic' : ''}`,
       });
-      addToast({ type: 'success', message: `Tier ${row.tier} claimed · +${row.fragments} fragments` });
     } catch {
       addToast({ type: 'error', message: 'Could not claim' });
     } finally {
@@ -123,11 +128,16 @@ export default function BattlePassPage() {
         </div>
       </div>
 
-      {/* Track legend */}
-      <div className="flex items-center justify-center gap-4 text-[11px]">
-        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-slate-600" /> Free</div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-gradient-to-r from-pink-500 to-orange-400" /> Premium
+      {/* Column headers */}
+      <div className="grid grid-cols-[52px_1fr_1fr] gap-2 px-1">
+        <div />
+        <div className="text-center">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Free</span>
+        </div>
+        <div className="text-center">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] bg-gradient-to-r from-pink-400 via-orange-400 to-yellow-300 bg-clip-text text-transparent">
+            Premium
+          </span>
         </div>
       </div>
 
@@ -139,24 +149,46 @@ export default function BattlePassPage() {
           const premKey = `${free.tier}-premium`;
           const freeClaimed = claimedSet().has(freeKey);
           const premClaimed = claimedSet().has(premKey);
+          const isMilestone = free.tier % 10 === 0 || free.tier === 60;
           return (
             <div
               key={free.tier}
               className={cn(
-                'grid grid-cols-[46px_1fr_1fr] gap-2 p-2 rounded-xl border transition-colors',
-                reached ? 'border-[#1e1e30] bg-[#0b0b14]' : 'border-[#12121c] bg-[#08080e] opacity-70',
+                'grid grid-cols-[52px_1fr_1fr] gap-2 p-2 rounded-xl border transition-colors relative overflow-hidden',
+                reached ? 'bg-[#0b0b14]' : 'bg-[#08080e] opacity-80',
               )}
+              style={{
+                border: `1px solid ${isMilestone && reached ? 'rgba(251,191,36,0.35)' : '#1e1e30'}`,
+                boxShadow: isMilestone && reached ? '0 0 22px -10px rgba(251,191,36,0.5)' : undefined,
+              }}
             >
+              {/* Milestone ambient glow */}
+              {isMilestone && reached && (
+                <div
+                  className="absolute -top-8 left-1/2 -translate-x-1/2 w-40 h-16 blur-3xl pointer-events-none"
+                  style={{ background: 'radial-gradient(ellipse, rgba(251,191,36,0.35), transparent 70%)' }}
+                />
+              )}
+
               {/* Tier badge */}
               <div
-                className="flex flex-col items-center justify-center rounded-lg"
+                className={cn(
+                  'relative flex flex-col items-center justify-center rounded-lg font-heading font-bold',
+                  isMilestone && 'shadow-[inset_0_0_12px_rgba(251,191,36,0.2)]',
+                )}
                 style={{
-                  background: reached ? 'rgba(249,115,22,0.12)' : '#0b0b14',
-                  border: `1px solid ${reached ? 'rgba(249,115,22,0.5)' : '#1e1e30'}`,
+                  background: isMilestone && reached
+                    ? 'linear-gradient(145deg, rgba(251,191,36,0.18), rgba(249,115,22,0.1))'
+                    : reached
+                      ? 'rgba(249,115,22,0.12)'
+                      : '#0b0b14',
+                  border: `1px solid ${isMilestone && reached ? 'rgba(251,191,36,0.55)' : reached ? 'rgba(249,115,22,0.5)' : '#1e1e30'}`,
                 }}
               >
-                <span className="font-heading font-bold text-lg"
-                  style={{ color: reached ? '#f97316' : '#475569' }}>{free.tier}</span>
+                <span className="text-lg"
+                  style={{ color: isMilestone && reached ? '#fbbf24' : reached ? '#f97316' : '#475569' }}>
+                  {free.tier}
+                </span>
               </div>
 
               <RewardCell row={free} reached={reached} claimed={freeClaimed} locked={false} onClaim={() => handleClaim(free)} claiming={claiming === freeKey} />
@@ -175,24 +207,59 @@ function RewardCell({
   row: PassRow; reached: boolean; claimed: boolean; locked: boolean; onClaim: () => void; claiming: boolean;
 }) {
   const s = rankStyles[row.rank];
+  const isPremium = row.track === 'premium';
+
   return (
     <div
-      className="rounded-lg p-2"
+      className="relative rounded-lg p-2 overflow-hidden"
       style={{
-        background: reached ? s.bg : '#0b0b14',
-        border: `1px solid ${reached ? s.border : '#1e1e30'}`,
-        opacity: locked ? 0.55 : 1,
+        background: isPremium
+          // Premium cells get a pink→orange→yellow tinted surface regardless of rank,
+          // so at-a-glance the two tracks look different.
+          ? reached
+            ? 'linear-gradient(135deg, rgba(236,72,153,0.15), rgba(249,115,22,0.08) 50%, rgba(251,191,36,0.08))'
+            : 'linear-gradient(135deg, rgba(236,72,153,0.06), rgba(251,191,36,0.04))'
+          : reached ? s.bg : '#0b0b14',
+        border: `1px solid ${
+          isPremium
+            ? reached ? 'rgba(251,191,36,0.4)' : 'rgba(236,72,153,0.25)'
+            : reached ? s.border : '#1e1e30'
+        }`,
       }}
     >
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-[8px] font-bold uppercase tracking-wider"
-          style={{ color: reached ? s.color : '#475569' }}>
-          {row.track}{locked ? ' · locked' : ''}
+      {/* Premium lock overlay + shimmer */}
+      {isPremium && locked && (
+        <>
+          <div
+            className="absolute inset-0 rounded-lg pointer-events-none"
+            style={{
+              background:
+                'repeating-linear-gradient(45deg, rgba(0,0,0,0.35) 0 6px, transparent 6px 12px)',
+            }}
+          />
+          <div className="absolute top-1 right-1">
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-300">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+          </div>
+        </>
+      )}
+
+      <div className="relative flex items-center justify-between gap-1">
+        <span
+          className={cn('text-[8px] font-bold uppercase tracking-wider',
+            isPremium && 'bg-gradient-to-r from-pink-400 to-yellow-300 bg-clip-text text-transparent')}
+          style={{ color: isPremium ? undefined : reached ? s.color : '#475569' }}
+        >
+          {isPremium ? 'Premium' : s === rankStyles.minor ? 'Free' : s === rankStyles.capstone ? 'Capstone' : s === rankStyles.major ? 'Major' : 'Milestone'}
         </span>
         {claimed && <span className="text-[8px] font-bold text-emerald-400 uppercase">Claimed</span>}
       </div>
-      <p className="font-mono text-sm font-bold text-white mt-0.5">+{row.fragments}</p>
-      {row.extra && <p className="text-[9px] text-slate-500 leading-tight">{row.extra}</p>}
+      <p className={cn('relative font-mono text-sm font-bold mt-0.5', isPremium ? 'text-yellow-200' : 'text-white')}>
+        +{row.fragments}
+      </p>
+      {row.extra && <p className={cn('relative text-[9px] leading-tight', isPremium ? 'text-pink-200/80' : 'text-slate-500')}>{row.extra}</p>}
       {reached && !claimed && !locked && (
         <Button size="sm" className="w-full mt-1.5" loading={claiming} onClick={onClaim}>
           Claim

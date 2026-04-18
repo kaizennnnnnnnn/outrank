@@ -197,15 +197,56 @@ export function DuelResultModal({
                 </p>
               </motion.div>
 
-              {/* Clash-point flare */}
+              {/* Clash — layered blast: hot core + shockwave ring + radial rays */}
               {phase === 'clash' && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: [0, 2.4, 0], opacity: [0, 1, 0] }}
-                  transition={{ duration: 0.6 }}
-                  className="absolute w-24 h-24 rounded-full"
-                  style={{ background: `radial-gradient(circle, ${color}cc, transparent 65%)` }}
-                />
+                <>
+                  {/* Hot core flash */}
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: [0, 2.8, 0], opacity: [0, 1, 0] }}
+                    transition={{ duration: 0.55 }}
+                    className="absolute w-28 h-28 rounded-full"
+                    style={{
+                      background: `radial-gradient(circle, #ffffff 0%, ${color}cc 35%, transparent 70%)`,
+                      boxShadow: `0 0 80px 20px ${color}bb`,
+                    }}
+                  />
+                  {/* Expanding shockwave ring */}
+                  <motion.div
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: [0.3, 4.5], opacity: [1, 0] }}
+                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                    className="absolute w-32 h-32 rounded-full"
+                    style={{
+                      border: `2px solid ${color}`,
+                      boxShadow: `0 0 40px ${color}, inset 0 0 20px ${color}`,
+                    }}
+                  />
+                  {/* Secondary shockwave (delayed) */}
+                  <motion.div
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: [0.5, 5.5], opacity: [0.8, 0] }}
+                    transition={{ duration: 0.9, delay: 0.15, ease: 'easeOut' }}
+                    className="absolute w-32 h-32 rounded-full border"
+                    style={{ borderColor: `${color}55` }}
+                  />
+                  {/* Radial rays */}
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ scaleY: 0, opacity: 0 }}
+                      animate={{ scaleY: [0, 1, 0], opacity: [0, 1, 0] }}
+                      transition={{ duration: 0.5, delay: 0.05 + i * 0.01 }}
+                      className="absolute top-1/2 left-1/2 origin-bottom w-[2px]"
+                      style={{
+                        height: '60px',
+                        background: `linear-gradient(to top, ${color}, transparent)`,
+                        transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-40px)`,
+                        boxShadow: `0 0 8px ${color}`,
+                      }}
+                    />
+                  ))}
+                </>
               )}
 
               {/* Mote stream — loser → winner */}

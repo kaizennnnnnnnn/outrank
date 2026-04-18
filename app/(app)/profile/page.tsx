@@ -24,6 +24,9 @@ import { TitlesVault } from '@/components/profile/TitlesVault';
 import { SeasonCard } from '@/components/profile/SeasonCard';
 import { PrestigeCard } from '@/components/profile/PrestigeCard';
 import { LevelRewardsModal } from '@/components/profile/LevelRewardsModal';
+import { FramedAvatar } from '@/components/profile/FramedAvatar';
+import { NamePlate } from '@/components/profile/NamePlate';
+import { ProfileHighlights } from '@/components/profile/ProfileHighlights';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import Link from 'next/link';
 
@@ -138,9 +141,20 @@ export default function ProfilePage() {
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">
         <div className="flex justify-center mb-4">
-          <Avatar src={user.avatarUrl} alt={user.username} size="xl" level={xpProgress.percentage} />
+          <FramedAvatar
+            src={user.avatarUrl}
+            alt={user.username}
+            size="xl"
+            frameId={(user as unknown as Record<string, string>).equippedFrame}
+          />
         </div>
-        <h1 className="text-xl font-bold text-white">{user.username}</h1>
+        <h1>
+          <NamePlate
+            name={user.username}
+            effectId={(user as unknown as Record<string, string>).equippedNameEffect}
+            size="xl"
+          />
+        </h1>
         <button
           onClick={() => setShowLevelRewards(true)}
           className="text-sm text-orange-400 font-heading hover:text-orange-300 transition-colors underline-offset-4 hover:underline"
@@ -154,6 +168,9 @@ export default function ProfilePage() {
         <div className="mt-4 max-w-xs mx-auto">
           <XPProgressBar totalXP={user.totalXP} />
         </div>
+
+        {/* Persistent achievements strip */}
+        <ProfileHighlights user={user} />
 
         <div className="flex justify-center mt-4">
           <Link href="/settings">

@@ -5,6 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { getDocument, getCollection, setDocument, where, Timestamp } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { Avatar } from '@/components/ui/Avatar';
+import { FramedAvatar } from '@/components/profile/FramedAvatar';
+import { NamePlate } from '@/components/profile/NamePlate';
+import { ProfileHighlights } from '@/components/profile/ProfileHighlights';
 import { Button } from '@/components/ui/Button';
 import { XPProgressBar } from '@/components/profile/XPProgressBar';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
@@ -162,9 +165,20 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">
         <div className="flex justify-center mb-2">
-          <Avatar src={profile.avatarUrl} alt={profile.username} size="xl" />
+          <FramedAvatar
+            src={profile.avatarUrl}
+            alt={profile.username}
+            size="xl"
+            frameId={(profile as unknown as Record<string, string>).equippedFrame}
+          />
         </div>
-        <h1 className="text-xl font-bold text-white">{profile.username}</h1>
+        <h1>
+          <NamePlate
+            name={profile.username}
+            effectId={(profile as unknown as Record<string, string>).equippedNameEffect}
+            size="xl"
+          />
+        </h1>
         <div className="flex items-center justify-center gap-2 mt-1">
           <span className="text-xs text-slate-500">Lv.{profile.level}</span>
           <TitleDisplay totalXP={profile.totalXP} />
@@ -174,6 +188,8 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
         <div className="mt-4 max-w-xs mx-auto">
           <XPProgressBar totalXP={profile.totalXP} />
         </div>
+
+        <ProfileHighlights user={profile} />
 
         {!isOwnProfile && (
           <div className="flex justify-center gap-3 mt-4">
