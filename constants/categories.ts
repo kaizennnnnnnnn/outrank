@@ -64,6 +64,34 @@ export const CATEGORIES: Omit<Category, 'id' | 'participantCount' | 'isOfficial'
   { slug: 'no-caffeine', name: 'No-Caffeine Days', icon: '☕', unit: 'days', section: 'Health', color: '#92400e', trackingType: 'count' },
   { slug: 'skincare', name: 'Skincare Routine', icon: '✨', unit: 'days', section: 'Health', color: '#f43f5e', trackingType: 'count' },
   { slug: 'stretch', name: 'Stretching', icon: '🤸', unit: 'minutes', section: 'Health', color: '#a855f7', trackingType: 'duration' },
+
+  // FINANCE — added 2026-04-17
+  { slug: 'save-money', name: 'Money Saved', icon: '💰', unit: 'USD', section: 'Finance', color: '#10b981', trackingType: 'count' },
+  { slug: 'no-spend', name: 'No-Spend Days', icon: '🚫', unit: 'days', section: 'Finance', color: '#059669', trackingType: 'count' },
+  { slug: 'invest', name: 'Invested', icon: '📈', unit: 'USD', section: 'Finance', color: '#0d9488', trackingType: 'count' },
+  { slug: 'budget-review', name: 'Budget Review', icon: '📊', unit: 'sessions', section: 'Finance', color: '#84cc16', trackingType: 'count' },
+
+  // SKILL — deliberate practice
+  { slug: 'guitar', name: 'Guitar Practice', icon: '🎸', unit: 'minutes', section: 'Creativity', color: '#ea580c', trackingType: 'duration' },
+  { slug: 'coding', name: 'Code Commits', icon: '💻', unit: 'commits', section: 'Career', color: '#60a5fa', trackingType: 'count' },
+  { slug: 'piano', name: 'Piano Practice', icon: '🎹', unit: 'minutes', section: 'Creativity', color: '#f472b6', trackingType: 'duration' },
+  { slug: 'drawing', name: 'Drawing', icon: '🖌️', unit: 'minutes', section: 'Creativity', color: '#a78bfa', trackingType: 'duration' },
+
+  // GRATITUDE / REFLECTION
+  { slug: 'gratitude', name: 'Gratitude Entries', icon: '🙏', unit: 'entries', section: 'Mind', color: '#fbbf24', trackingType: 'count' },
+  { slug: 'three-wins', name: 'Three Wins', icon: '🏆', unit: 'days', section: 'Mind', color: '#f97316', trackingType: 'count' },
+  { slug: 'reflection', name: 'Daily Reflection', icon: '🪞', unit: 'minutes', section: 'Mind', color: '#c084fc', trackingType: 'duration' },
+
+  // RELATIONSHIP
+  { slug: 'call-parent', name: 'Call Parent', icon: '📞', unit: 'calls', section: 'Lifestyle', color: '#f87171', trackingType: 'count' },
+  { slug: 'date-night', name: 'Date Night', icon: '💕', unit: 'nights', section: 'Lifestyle', color: '#ec4899', trackingType: 'count' },
+  { slug: 'friend-checkin', name: 'Friend Check-in', icon: '👋', unit: 'people', section: 'Lifestyle', color: '#60a5fa', trackingType: 'count' },
+  { slug: 'compliment', name: 'Gave Compliment', icon: '🌟', unit: 'times', section: 'Lifestyle', color: '#fde047', trackingType: 'count' },
+
+  // HYGIENE streaks
+  { slug: 'floss', name: 'Flossed', icon: '🦷', unit: 'days', section: 'Health', color: '#22d3ee', trackingType: 'count' },
+  { slug: 'sunscreen', name: 'Sunscreen', icon: '☀️', unit: 'days', section: 'Health', color: '#facc15', trackingType: 'count' },
+  { slug: 'brush-twice', name: 'Brush 2×', icon: '🪥', unit: 'days', section: 'Health', color: '#38bdf8', trackingType: 'count' },
 ];
 
 export const CATEGORY_SECTIONS = ['Body', 'Mind', 'Finance', 'Creativity', 'Career', 'Lifestyle', 'Health'] as const;

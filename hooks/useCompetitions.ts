@@ -19,17 +19,21 @@ export function useCompetitions() {
 
     async function fetchComps() {
       try {
-        // Fetch pending and active separately to avoid composite index requirement
-        const [pending, active] = await Promise.all([
+        // Fetch pending, active, and completed separately to avoid composite indexes.
+        // Completed duels may still need to be claimed, so we include them.
+        const [pending, active, completed] = await Promise.all([
           getCollection<Competition>('competitions', [
             where('status', '==', 'pending'),
           ]),
           getCollection<Competition>('competitions', [
             where('status', '==', 'active'),
           ]),
+          getCollection<Competition>('competitions', [
+            where('status', '==', 'completed'),
+          ]),
         ]);
 
-        const all = [...pending, ...active];
+        const all = [...pending, ...active, ...completed];
 
         // Filter to competitions the user is part of
         const userComps = all.filter((c) =>

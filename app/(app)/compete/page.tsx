@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
-import { updateDocument, removeDocument } from '@/lib/firestore';
+import { updateDocument } from '@/lib/firestore';
+import { increment, arrayUnion } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
-import { cn } from '@/lib/utils';
 import { SwordsCrossIcon } from '@/components/ui/AppIcons';
+import { DuelResultModal } from '@/components/competition/DuelResultModal';
+import { Competition } from '@/types/competition';
 import Link from 'next/link';
 
 export default function CompetePage() {
@@ -26,13 +28,53 @@ export default function CompetePage() {
     status: localUpdates[c.id || ''] || c.status,
   }));
 
-  const activeComps = comps.filter((c) => c.status === 'active');
+  const now = Date.now();
+  const hasEnded = (c: typeof comps[number]) => {
+    const end = c.endDate?.toDate?.()?.getTime?.() ?? 0;
+    return end > 0 && end <= now;
+  };
+  const hasClaimed = (c: typeof comps[number]) =>
+    !!(c as unknown as { claimedBy?: string[] }).claimedBy?.includes(user?.uid || '');
+
+  // A duel is "ended" if either the end date passed OR it's been marked completed
+  const endedUnclaimed = comps.filter((c) =>
+    (c.status === 'active' && hasEnded(c) && !hasClaimed(c)) ||
+    (c.status === 'completed' && !hasClaimed(c))
+  );
+  const activeComps = comps.filter((c) => c.status === 'active' && !hasEnded(c));
   const incomingChallenges = comps.filter(
     (c) => c.status === 'pending' && c.creatorId !== user?.uid
   );
   const sentChallenges = comps.filter(
     (c) => c.status === 'pending' && c.creatorId === user?.uid
   );
+
+  // Duel result modal state
+  const [resultDuel, setResultDuel] = useState<Competition | null>(null);
+
+  const handleClaim = async (comp: Competition, r: { won: boolean; tie: boolean; xp: number; fragments: number }) => {
+    if (!user || !comp.id) return;
+    try {
+      await updateDocument('competitions', comp.id, {
+        status: 'completed',
+        claimedBy: arrayUnion(user.uid),
+      });
+      // Grant XP + fragments; track duel wins for the titles vault
+      const userUpdate: Record<string, ReturnType<typeof increment>> = {
+        totalXP: increment(r.xp),
+        weeklyXP: increment(r.xp),
+        monthlyXP: increment(r.xp),
+        fragments: increment(r.fragments),
+        seasonPassXP: increment(r.xp),
+      };
+      if (r.won) userUpdate.duelWins = increment(1);
+      await updateDocument('users', user.uid, userUpdate);
+      addToast({ type: 'success', message: r.won ? `Victory! +${r.xp} XP, +${r.fragments} fragments` : `+${r.xp} XP, +${r.fragments} fragments` });
+    } catch (err) {
+      console.error('claim duel failed', err);
+      addToast({ type: 'error', message: 'Could not claim — try again' });
+    }
+  };
 
   const acceptDuel = async (compId: string) => {
     setProcessing(compId);
@@ -112,6 +154,65 @@ export default function CompetePage() {
             );
           })}
         </section>
+      )}
+
+      {/* Ended — claim rewards */}
+      {endedUnclaimed.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-orange-400 uppercase tracking-wider">
+            Duels Ended — Claim Rewards ({endedUnclaimed.length})
+          </h2>
+          {endedUnclaimed.map((comp) => {
+            const me = comp.participants.find((p) => p.userId === user?.uid);
+            const opp = comp.participants.find((p) => p.userId !== user?.uid);
+            if (!me || !opp) return null;
+            const myScore = me.score, oppScore = opp.score;
+            const tie = myScore === oppScore;
+            const won = !tie && myScore > oppScore;
+            return (
+              <button
+                key={comp.id}
+                onClick={() => setResultDuel(comp as Competition)}
+                className="w-full text-left glass-card rounded-2xl p-4 border border-orange-500/30 hover:border-orange-500/60 transition-colors shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Avatar src={me.avatarUrl} alt={me.username} size="md" />
+                    <div>
+                      <p className="text-sm font-bold text-white">{me.username}</p>
+                      <p className="font-mono text-lg text-orange-400">{myScore}</p>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-orange-400">
+                      {tie ? 'Draw' : won ? 'You won' : 'Defeat'}
+                    </span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Tap to claim</p>
+                  </div>
+                  <div className="flex items-center gap-3 text-right">
+                    <div>
+                      <p className="text-sm font-bold text-white">{opp.username}</p>
+                      <p className="font-mono text-lg text-orange-400">{oppScore}</p>
+                    </div>
+                    <Avatar src={opp.avatarUrl} alt={opp.username} size="md" />
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </section>
+      )}
+
+      {/* Duel Result Modal */}
+      {resultDuel && user && (
+        <DuelResultModal
+          isOpen={!!resultDuel}
+          onClose={() => setResultDuel(null)}
+          competition={resultDuel}
+          currentUserId={user.uid}
+          onClaim={(r) => handleClaim(resultDuel, r)}
+          myOrbTier={(user as unknown as Record<string, number>).orbTier || 1}
+        />
       )}
 
       {/* Active Duels */}
