@@ -14,20 +14,20 @@ type Palette = {
 
 function getFlameColors(streak: number): Palette {
   if (streak >= 100) return {
-    outer: '#991b1b', mid: '#dc2626', inner: '#f97316', core: '#fde047', tip: '#fffbeb',
-    glow: 'rgba(220,38,38,0.6)', text: 'from-amber-300 via-red-500 to-rose-600',
+    outer: '#7f1d1d', mid: '#dc2626', inner: '#f97316', core: '#fde047', tip: '#ffffff',
+    glow: 'rgba(220,38,38,0.65)', text: 'from-amber-200 via-red-500 to-rose-600',
   };
   if (streak >= 30) return {
     outer: '#7f1d1d', mid: '#dc2626', inner: '#ef4444', core: '#fb923c', tip: '#fde68a',
-    glow: 'rgba(220,38,38,0.45)', text: 'from-red-400 to-rose-600',
+    glow: 'rgba(220,38,38,0.48)', text: 'from-red-400 to-rose-600',
   };
   if (streak >= 7) return {
     outer: '#9a3412', mid: '#ea580c', inner: '#f97316', core: '#fbbf24', tip: '#fef9c3',
-    glow: 'rgba(249,115,22,0.4)', text: 'from-orange-400 to-red-600',
+    glow: 'rgba(249,115,22,0.42)', text: 'from-orange-400 to-red-600',
   };
   return {
-    outer: '#92400e', mid: '#d97706', inner: '#f59e0b', core: '#fbbf24', tip: '#fef3c7',
-    glow: 'rgba(245,158,11,0.35)', text: 'from-yellow-400 to-orange-600',
+    outer: '#78350f', mid: '#d97706', inner: '#f59e0b', core: '#fde047', tip: '#fef3c7',
+    glow: 'rgba(245,158,11,0.4)', text: 'from-yellow-300 to-orange-600',
   };
 }
 
@@ -35,18 +35,18 @@ const iconSizes = { sm: 22, md: 30, lg: 44 };
 const textSizes = { sm: 'text-sm', md: 'text-base', lg: 'text-2xl' };
 
 /**
- * Geometric shard flame — three nested prism-shaped layers, each swaying
- * independently on its own CSS keyframe. Totally different visual identity
- * from the big dashboard StreakFire: this one reads as a cold-edged crystal
- * "pointed" flame rather than a soft blob.
+ * Classic teardrop flame — smooth organic curves (no shards this time), a
+ * radial-gradient core so it reads as 3D, a small highlight near the top,
+ * and a single ember that rises from the tip and fades. Gentle flicker via
+ * transform + filter animations. Pure SVG + CSS, no framer-motion per
+ * instance so it stays cheap when the habit list renders several side by
+ * side.
  */
 export function StreakFlame({ streak, size = 'md' }: StreakFlameProps) {
   if (streak === 0) return null;
   const c = getFlameColors(streak);
   const s = iconSizes[size];
-  // Unique id per instance so the SVG gradient defs don't clash when several
-  // flames render side-by-side (mastery shelf, habit list, etc.).
-  const id = `shard-${streak}-${size}`;
+  const id = `flame-${streak}-${size}`;
 
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -58,71 +58,75 @@ export function StreakFlame({ streak, size = 'md' }: StreakFlameProps) {
           filter: `drop-shadow(0 0 ${s * 0.22}px ${c.glow})`,
         }}
       >
-        <svg width={s} height={s} viewBox="0 0 60 80">
+        <svg width={s} height={s} viewBox="0 0 40 50">
           <defs>
-            <linearGradient id={`${id}-outer`} x1="0.5" y1="1" x2="0.5" y2="0">
-              <stop offset="0" stopColor={c.outer} />
-              <stop offset="0.6" stopColor={c.mid} />
-              <stop offset="1" stopColor={c.inner} />
-            </linearGradient>
-            <linearGradient id={`${id}-mid`} x1="0.5" y1="1" x2="0.5" y2="0">
-              <stop offset="0" stopColor={c.mid} />
-              <stop offset="0.5" stopColor={c.inner} />
-              <stop offset="1" stopColor={c.core} />
-            </linearGradient>
-            <linearGradient id={`${id}-core`} x1="0.5" y1="1" x2="0.5" y2="0">
-              <stop offset="0" stopColor={c.inner} />
-              <stop offset="0.5" stopColor={c.core} />
-              <stop offset="1" stopColor={c.tip} />
-            </linearGradient>
+            {/* Main body gradient — hot core at the bottom-middle, darker at edges + tip */}
+            <radialGradient id={`${id}-body`} cx="0.5" cy="0.72" r="0.62">
+              <stop offset="0"    stopColor={c.core} />
+              <stop offset="0.32" stopColor={c.inner} />
+              <stop offset="0.65" stopColor={c.mid} />
+              <stop offset="1"    stopColor={c.outer} />
+            </radialGradient>
+            {/* Inner core gradient — brighter, tighter */}
+            <radialGradient id={`${id}-core`} cx="0.5" cy="0.7" r="0.5">
+              <stop offset="0"    stopColor={c.tip} />
+              <stop offset="0.4"  stopColor={c.core} />
+              <stop offset="1"    stopColor={c.inner} stopOpacity="0" />
+            </radialGradient>
           </defs>
 
-          {/* Base ember — a bright horizontal ellipse at the flame's foot */}
-          <ellipse cx="30" cy="70" rx="13" ry="4" fill={c.inner} opacity="0.65" />
+          {/* Soft base halo — the glow pool under the flame */}
+          <ellipse cx="20" cy="46" rx="10" ry="2.5" fill={c.inner} opacity="0.55" />
 
-          {/* Outer shard — widest, bobs slow */}
+          {/* Outer flame body — teardrop shape with one side subtly wider than
+              the other so it doesn't look perfectly symmetrical (reads more
+              alive). Scales and slightly wobbles via CSS. */}
           <path
-            d="M30 72 Q 10 50 16 28 Q 22 10 30 2 Q 38 10 44 28 Q 50 50 30 72 Z"
-            fill={`url(#${id}-outer)`}
+            d="M20 3
+               Q 10 14  9 26
+               Q 10 40 20 47
+               Q 31 40 32 25
+               Q 31 14 20 3 Z"
+            fill={`url(#${id}-body)`}
             style={{
-              transformOrigin: '30px 72px',
-              animation: 'shard-sway 1.6s ease-in-out infinite',
+              transformOrigin: '20px 46px',
+              animation: 'flame-breathe 1.3s ease-in-out infinite',
             }}
           />
 
-          {/* Mid shard — narrower, bobs on a different rhythm */}
+          {/* Inner bright core — smaller, offset, its own rhythm */}
           <path
-            d="M30 66 Q 18 48 22 30 Q 26 16 30 8 Q 34 16 38 30 Q 42 48 30 66 Z"
-            fill={`url(#${id}-mid)`}
-            style={{
-              transformOrigin: '30px 66px',
-              animation: 'shard-sway-alt 1.25s ease-in-out infinite',
-            }}
-          />
-
-          {/* Core shard — the hot tip */}
-          <path
-            d="M30 54 Q 25 42 26 30 Q 28 20 30 14 Q 32 20 34 30 Q 35 42 30 54 Z"
+            d="M20 13
+               Q 15 22 15 30
+               Q 16 38 20 43
+               Q 25 38 26 30
+               Q 26 22 20 13 Z"
             fill={`url(#${id}-core)`}
             style={{
-              transformOrigin: '30px 54px',
-              animation: 'shard-sway 0.95s ease-in-out infinite',
-              animationDelay: '0.1s',
+              transformOrigin: '20px 43px',
+              animation: 'flame-core-pulse 0.9s ease-in-out infinite',
             }}
           />
 
-          {/* Spark chips — two tiny diamonds that flicker around the tip */}
-          <path
-            d="M22 22 L24 20 L22 18 L20 20 Z"
-            fill={c.core}
-            opacity="0.8"
-            style={{ animation: 'shard-spark 1.8s ease-in-out infinite' }}
-          />
-          <path
-            d="M38 26 L40 24 L38 22 L36 24 Z"
+          {/* Highlight ellipse near the top — the "shine" spot that makes
+              the flame read as volumetric rather than flat */}
+          <ellipse
+            cx="20" cy="28"
+            rx="3" ry="5"
             fill={c.tip}
-            opacity="0.8"
-            style={{ animation: 'shard-spark 2.2s ease-in-out infinite', animationDelay: '0.4s' }}
+            opacity="0.55"
+            style={{ animation: 'flame-highlight 1.3s ease-in-out infinite' }}
+          />
+
+          {/* Ember — a single tiny spark rising off the tip and fading */}
+          <circle
+            cx="20" cy="4" r="1"
+            fill={c.core}
+            style={{
+              animation: 'flame-ember-rise 2.2s ease-out infinite',
+              transformBox: 'fill-box',
+              transformOrigin: 'center',
+            }}
           />
         </svg>
       </div>

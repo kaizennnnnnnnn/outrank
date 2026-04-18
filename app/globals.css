@@ -524,22 +524,32 @@ body {
   will-change: opacity;
 }
 
-/* --- New streak-flame animations ---
-   StreakFlame = per-habit geometric SVG shard, StreakFire = dashboard
-   volumetric CSS flame. Each uses its own keyframes so the two designs
-   stay visually distinct. */
+/* --- Streak-flame animations ---
+   StreakFlame = per-habit classic teardrop SVG (smooth curves),
+   StreakFire  = dashboard volumetric CSS flame. Different families so
+   the two don't feel like the same illustration at different sizes. */
 
-@keyframes shard-sway {
-  0%, 100% { transform: scaleY(1)    translateX(0);    }
-  50%      { transform: scaleY(1.06) translateX(0.4px); }
+/* Classic-flame keyframes (per-habit). Subtle vertical breath + a touch of
+   horizontal wobble so the silhouette feels alive rather than mechanical. */
+@keyframes flame-breathe {
+  0%, 100% { transform: scaleY(1)    scaleX(1);    }
+  30%      { transform: scaleY(1.06) scaleX(0.96); }
+  55%      { transform: scaleY(0.97) scaleX(1.03); }
+  80%      { transform: scaleY(1.03) scaleX(0.98); }
 }
-@keyframes shard-sway-alt {
-  0%, 100% { transform: scaleY(1)    translateX(0);     }
-  50%      { transform: scaleY(0.94) translateX(-0.4px); }
+@keyframes flame-core-pulse {
+  0%, 100% { transform: scaleY(1)    scaleX(1);    opacity: 0.95; }
+  50%      { transform: scaleY(1.1)  scaleX(0.92); opacity: 1; }
 }
-@keyframes shard-spark {
-  0%, 100% { opacity: 0.45; transform: translateY(0) scale(1); }
-  50%      { opacity: 1;    transform: translateY(-2px) scale(1.25); }
+@keyframes flame-highlight {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50%      { opacity: 0.75; transform: translateY(-1px); }
+}
+@keyframes flame-ember-rise {
+  0%   { opacity: 0;   transform: translateY(0)    scale(0.8); }
+  12%  { opacity: 1;   transform: translateY(-1px) scale(1); }
+  65%  { opacity: 0.7; transform: translateY(-10px) scale(0.9); }
+  100% { opacity: 0;   transform: translateY(-18px) scale(0.4); }
 }
 
 @keyframes fire-breathe {
