@@ -93,18 +93,36 @@ export async function logHabit(params: LogHabitParams) {
   yesterday.setDate(yesterday.getDate() - 1);
 
   let newStreak = 1;
+  let freezeUsed = false;
   if (habit.lastLogDate) {
     const lastLog = habit.lastLogDate.toDate();
     lastLog.setHours(0, 0, 0, 0);
+    const dayGap = Math.round((today.getTime() - lastLog.getTime()) / 86_400_000);
 
-    if (lastLog.getTime() === yesterday.getTime()) {
+    if (dayGap === 1) {
       // Consecutive day — extend streak
       newStreak = (habit.currentStreak || 0) + 1;
-    } else if (lastLog.getTime() === today.getTime()) {
+    } else if (dayGap === 0) {
       // Already logged today — keep current streak
       newStreak = habit.currentStreak || 1;
+    } else if (dayGap > 1 && (habit.currentStreak || 0) >= 2) {
+      // Streak would have broken — try to auto-apply a streak freeze if the
+      // user has one available. Each freeze covers one missed day.
+      try {
+        const userDoc = await getDoc(doc(db, `users/${userId}`));
+        const tokens = (userDoc.data()?.streakFreezeTokens as number) || 0;
+        const missedDays = dayGap - 1;
+        if (tokens >= missedDays) {
+          // Consume tokens, preserve streak +1 for today's log
+          await updateDoc(doc(db, `users/${userId}`), {
+            streakFreezeTokens: increment(-missedDays),
+          });
+          newStreak = (habit.currentStreak || 0) + 1;
+          freezeUsed = true;
+        }
+      } catch { /* if anything fails, streak resets as before */ }
     }
-    // Otherwise streak resets to 1
+    // Otherwise (no freeze available / not enough tokens) streak resets to 1
   }
 
   const longestStreak = Math.max(newStreak, habit.longestStreak || 0);
@@ -164,12 +182,15 @@ export async function logHabit(params: LogHabitParams) {
     totalXP: increment(totalXP),
     weeklyXP: increment(totalXP),
     monthlyXP: increment(totalXP),
+    seasonPassXP: increment(totalXP),
     lastActiveAt: Timestamp.now(),
   });
 
   // 5. Recalculate level
   const userSnap = await getDoc(userRef);
   const userData = userSnap.data();
+  let leveledUp = false;
+  let newLevelNum = userData?.level || 1;
   if (userData) {
     const newLevel = calculateLevel(userData.totalXP);
     if (newLevel.level > (userData.level || 1)) {
@@ -177,6 +198,8 @@ export async function logHabit(params: LogHabitParams) {
         level: newLevel.level,
         currentTitle: newLevel.title,
       });
+      leveledUp = true;
+      newLevelNum = newLevel.level;
     }
   }
 
@@ -290,7 +313,7 @@ export async function logHabit(params: LogHabitParams) {
   }
   } catch (err) { console.error('Feed/notifications failed:', err); }
 
-  return { xpEarned: totalXP, newStreak };
+  return { xpEarned: totalXP, newStreak, freezeUsed, leveledUp, newLevel: newLevelNum };
 }
 
 function calculateLevel(xp: number): { level: number; title: string } {

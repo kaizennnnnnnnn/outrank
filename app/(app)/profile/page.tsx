@@ -18,6 +18,11 @@ import { StreakFlame } from '@/components/habits/StreakFlame';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { OrbHistory } from '@/components/profile/OrbHistory';
 import { BoltFullIcon, ChartBarIcon, UsersFullIcon, FireIcon } from '@/components/ui/AppIcons';
+import { OrbNickname } from '@/components/profile/OrbNickname';
+import { MasteryShelf } from '@/components/profile/MasteryShelf';
+import { TitlesVault } from '@/components/profile/TitlesVault';
+import { SeasonCard } from '@/components/profile/SeasonCard';
+import { PrestigeCard } from '@/components/profile/PrestigeCard';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import Link from 'next/link';
 
@@ -119,6 +124,15 @@ export default function ProfilePage() {
       </div>
       <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
 
+      {/* Orb nickname + mood */}
+      <OrbNickname user={user} />
+
+      {/* Season / League / Pass */}
+      <SeasonCard user={user} />
+
+      {/* Prestige banner (only shows at cap or if prestiged) */}
+      <PrestigeCard user={user} />
+
       {/* Profile Header */}
       <div className="glass-card rounded-2xl p-6 text-center">
         <div className="flex justify-center mb-4">
@@ -173,6 +187,18 @@ export default function ProfilePage() {
       <div className="glass-card rounded-2xl p-4">
         <h2 className="text-sm font-bold text-white mb-3">Activity</h2>
         <ActivityHeatmap userId={user.uid} />
+      </div>
+
+      {/* Mastery shelf */}
+      <div className="glass-card rounded-2xl p-4">
+        <h2 className="text-sm font-bold text-white mb-3">Habit Mastery</h2>
+        <MasteryShelf habits={habits} />
+      </div>
+
+      {/* Titles vault */}
+      <div className="glass-card rounded-2xl p-4">
+        <h2 className="text-sm font-bold text-white mb-3">Titles</h2>
+        <TitlesVault user={user} habits={habits} />
       </div>
 
       {/* Badges */}

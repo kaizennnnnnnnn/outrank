@@ -14,6 +14,8 @@ import { getGoalConfig } from '@/constants/categories';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useUIStore } from '@/store/uiStore';
 import { useAuth } from '@/hooks/useAuth';
+import { haptic } from '@/lib/haptics';
+import { ParticleBurst } from '@/components/effects/ParticleBurst';
 
 interface QuickLogModalProps {
   isOpen: boolean;
@@ -31,6 +33,8 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
   const [logging, setLogging] = useState(false);
   const [showXP, setShowXP] = useState(false);
   const [earnedXP, setEarnedXP] = useState(0);
+  const [burst, setBurst] = useState(0);
+  const [levelUpAt, setLevelUpAt] = useState<number | null>(null);
 
   const config = habit ? getGoalConfig(habit.categorySlug) : null;
 
@@ -72,15 +76,24 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
 
       setEarnedXP(result.xpEarned);
       setShowXP(true);
+      setBurst((n) => n + 1);
+      haptic('success');
+      if (result.leveledUp) {
+        setLevelUpAt(result.newLevel);
+        haptic('double');
+      }
       setTimeout(() => {
         setShowXP(false);
         onClose();
         resetForm();
-        const streakMsg = result.newStreak > 1 ? ` | ${result.newStreak}d streak!` : '';
-        addToast({ type: 'success', message: `${habit.categoryIcon} Logged! +${result.xpEarned} XP${streakMsg}` });
+        const streakMsg = result.newStreak > 1 ? ` · ${result.newStreak}d streak` : '';
+        const freezeMsg = result.freezeUsed ? ' · Streak freeze auto-applied' : '';
+        const lvlMsg = result.leveledUp ? ` · Leveled up to ${result.newLevel}` : '';
+        addToast({ type: 'success', message: `Logged · +${result.xpEarned} XP${streakMsg}${freezeMsg}${lvlMsg}` });
       }, 1200);
     } catch (err) {
       console.error('Log failed:', err);
+      haptic('error');
       addToast({ type: 'error', message: 'Failed to log. Try again.' });
     } finally {
       setLogging(false);
@@ -99,6 +112,26 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
   ));
 
   return (
+    <>
+    <ParticleBurst trigger={burst} color="#f97316" count={60} />
+    <AnimatePresence>
+      {levelUpAt && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          onAnimationComplete={() => setTimeout(() => setLevelUpAt(null), 1500)}
+          className="fixed inset-0 z-[260] flex items-center justify-center pointer-events-none"
+        >
+          <div className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">Level Up</p>
+            <p className="font-heading text-6xl font-bold bg-gradient-to-r from-red-500 via-orange-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(249,115,22,0.6)]">
+              {levelUpAt}
+            </p>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     <Modal isOpen={isOpen} onClose={onClose} title={`Log ${habit?.categoryName || ''}`}>
       {habit && config && (
         <div className="space-y-5 relative">
@@ -230,5 +263,6 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
         </div>
       )}
     </Modal>
+    </>
   );
 }

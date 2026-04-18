@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { ActivityIcon } from '@/components/ui/AppIcons';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
+import { FeedComments } from '@/components/social/FeedComments';
 import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
 import Link from 'next/link';
 
@@ -186,6 +187,12 @@ export default function FeedPage() {
                   );
                 })}
               </div>
+
+              {/* Comments */}
+              {(() => {
+                const originId = (item as unknown as Record<string, string>).originId;
+                return originId ? <FeedComments originId={originId} actorId={item.actorId} /> : null;
+              })()}
             </div>
             );
           })}

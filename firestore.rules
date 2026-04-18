@@ -162,6 +162,29 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // COMMENTS — subcollection under reactions/{originId}/comments
+    match /reactions/{reactionId}/comments/{commentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.authorId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+    }
+
+    // GROUPS — public communities ("Runners", "Early Risers", etc.)
+    match /groups/{groupId} {
+      allow read: if true;
+      allow create: if isVerifiedUser();
+      allow update: if isAuthenticated();
+      allow delete: if false;
+    }
+    match /groups/{groupId}/members/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow delete: if isOwner(userId);
+      allow update: if isOwner(userId);
+    }
+
     // TOURNAMENTS
     match /tournaments/{tournamentId} {
       allow read: if isAuthenticated();
