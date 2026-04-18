@@ -20,6 +20,7 @@ import { TargetFullIcon, UsersFullIcon } from '@/components/ui/AppIcons';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
 import { getCategoryByName, getCategoryBySlug } from '@/constants/categories';
+import { getLeague } from '@/constants/seasons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { useUIStore } from '@/store/uiStore';
 import { UserHabit } from '@/types/habit';
@@ -74,6 +75,32 @@ export default function DashboardPage() {
             <span className="text-white">Out</span>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-400 to-orange-400">rank</span>
           </h1>
+          {/* League crest — lives under the Outrank title so the TopBar stays uncluttered */}
+          {(() => {
+            const lg = getLeague(user.weeklyXP || 0);
+            return (
+              <Link
+                href="/profile"
+                className="mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border"
+                style={{
+                  background: `linear-gradient(135deg, ${lg.color}25, #10101a 80%)`,
+                  borderColor: `${lg.color}55`,
+                }}
+                title={`${lg.name} league · tap for details`}
+              >
+                <span
+                  className="w-2.5 h-3 inline-block"
+                  style={{
+                    clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)',
+                    background: lg.color,
+                  }}
+                />
+                <span className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: lg.color }}>
+                  {lg.name}
+                </span>
+              </Link>
+            );
+          })()}
         </div>
         <div className="flex items-center gap-3">
           <StreakFire streak={Math.max(...habits.map(h => h.currentStreak), 0)} size={45} />

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LEVEL_REWARDS, LevelReward } from '@/constants/levelRewards';
 import { LEVELS } from '@/constants/levels';
@@ -25,6 +26,33 @@ const tierStyles: Record<LevelReward['tier'], { text: string; bg: string; border
 };
 
 export function LevelRewardsModal({ isOpen, onClose, currentLevel, currentXP }: Props) {
+  // Progress toward the next level — animated from 0 to actual on open.
+  const currentLevelXP = xpForLevel(currentLevel);
+  const nextLevelXP = xpForLevel(currentLevel + 1);
+  const xpInLevel = Math.max(0, currentXP - currentLevelXP);
+  const xpNeeded = Math.max(1, nextLevelXP - currentLevelXP);
+  const progress = nextLevelXP > 0 ? Math.min(1, xpInLevel / xpNeeded) : 1;
+
+  const [animatedProgress, setAnimatedProgress] = useState(0);
+  const [animatedXP, setAnimatedXP] = useState(0);
+  useEffect(() => {
+    if (!isOpen) { setAnimatedProgress(0); setAnimatedXP(0); return; }
+    // Animate to the actual progress over ~900ms
+    const start = performance.now();
+    const duration = 900;
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      // Ease-out quad
+      const eased = 1 - (1 - t) * (1 - t);
+      setAnimatedProgress(progress * eased);
+      setAnimatedXP(Math.round(xpInLevel * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isOpen, progress, xpInLevel]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -60,6 +88,27 @@ export function LevelRewardsModal({ isOpen, onClose, currentLevel, currentXP }: 
                 >
                   Close
                 </button>
+              </div>
+
+              {/* Animated progress bar toward the next level */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                  <span>Progress to Level {currentLevel + 1}</span>
+                  <span className="font-mono">
+                    {animatedXP.toLocaleString()} / {xpNeeded.toLocaleString()} XP
+                  </span>
+                </div>
+                <div className="h-2.5 bg-[#18182a] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.max(2, animatedProgress * 100)}%`,
+                      background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24)',
+                      boxShadow: '0 0 10px rgba(249,115,22,0.7)',
+                      transition: 'width 40ms linear',
+                    }}
+                  />
+                </div>
               </div>
             </div>
 

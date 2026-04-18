@@ -26,7 +26,8 @@ export default function BattlePassPage() {
   const currentTier = getSeasonPassTier(seasonPassXP);
   const season = getCurrentSeason();
   const daysLeft = getSeasonDaysLeft();
-  const isPremium = (userRaw?.seasonPassPremium as boolean) || false;
+  // Premium track is permanently locked for now (coming soon).
+  const isPremium = false;
   const claimed = (userRaw?.claimedPassTiers as number[]) || [];
 
   const [claiming, setClaiming] = useState<string | null>(null);
@@ -112,21 +113,14 @@ export default function BattlePassPage() {
           </div>
         </div>
 
-        {!isPremium && (
-          <button
-            onClick={async () => {
-              try {
-                await updateDocument('users', user.uid, { seasonPassPremium: true });
-                addToast({ type: 'success', message: 'Premium track unlocked!' });
-              } catch {
-                addToast({ type: 'error', message: 'Could not unlock' });
-              }
-            }}
-            className="relative mt-4 w-full rounded-xl py-2.5 text-sm font-bold text-white bg-gradient-to-r from-pink-600 via-orange-500 to-yellow-400 hover:opacity-90 transition-opacity"
-          >
-            Unlock Premium Track
-          </button>
-        )}
+        {/* Premium track — locked for now */}
+        <div className="relative mt-4 w-full rounded-xl py-2.5 px-3 text-center border border-pink-500/20 bg-gradient-to-r from-pink-600/10 via-orange-500/10 to-yellow-400/10 flex items-center justify-center gap-2">
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-300">
+            <rect x="3" y="11" width="18" height="11" rx="2" />
+            <path d="M7 11V7a5 5 0 0110 0v4" />
+          </svg>
+          <span className="text-xs font-semibold text-pink-300">Premium Track — coming soon</span>
+        </div>
       </div>
 
       {/* Track legend */}
