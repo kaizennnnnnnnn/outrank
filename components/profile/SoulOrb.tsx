@@ -733,7 +733,6 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
 
       {!hideLabel && <div className="mt-2 text-center">
         <p className="text-xs font-heading text-orange-400">{config.name}</p>
-        <p className="text-[10px] text-slate-600">{intensity}% — {config.description}</p>
       </div>}
 
       <AnimatePresence>

@@ -473,3 +473,50 @@ body {
 .animate-awaken-aurora {
   animation: awaken-aurora 1.5s linear forwards;
 }
+
+/* --- Awakening progress bar animations --- */
+
+/* Fill gradient flow — moves the multi-stop background laterally. */
+@keyframes awakening-fill-flow {
+  0%   { background-position:   0% 50%; }
+  100% { background-position: 220% 50%; }
+}
+
+/* Shimmer sweep — bright streak that scrolls across the fill then hides. */
+@keyframes awakening-shimmer {
+  0%   { transform: translateX(-200%); }
+  55%  { transform: translateX(350%); }
+  100% { transform: translateX(350%); }
+}
+
+/* Progress-head pulse — scale + brightness, anchored with no X/Y transform
+   (position is handled by CSS `left` / negative margins on the element). */
+@keyframes awakening-head {
+  0%, 100% { transform: scale(1);    filter: brightness(1); }
+  50%      { transform: scale(1.35); filter: brightness(1.4); }
+}
+
+/* --- Shop card glow (pseudo-layer replacement for animate-shop-*-border) ---
+   The old border animations animated box-shadow every frame for every visible
+   card. We moved the shadow onto a separate sibling div and animate its
+   OPACITY instead — same pulsing-halo look, compositor-only workload. */
+@keyframes shop-card-glow {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1;   }
+}
+
+.shop-card-glow-mythic {
+  border-radius: inherit;
+  box-shadow:
+    0 0 38px rgba(236,72,153,0.9),
+    0 0 58px rgba(168,85,247,0.55);
+  animation: shop-card-glow 2.8s ease-in-out infinite;
+  will-change: opacity;
+}
+
+.shop-card-glow-legendary {
+  border-radius: inherit;
+  box-shadow: 0 0 28px rgba(251,191,36,0.85);
+  animation: shop-card-glow 2.6s ease-in-out infinite;
+  will-change: opacity;
+}

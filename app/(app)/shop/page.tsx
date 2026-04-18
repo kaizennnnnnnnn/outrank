@@ -42,11 +42,15 @@ interface ShopItem {
 }
 
 // ---- Rarity → price tiers (auto-pricing for color items) --------------------
-const BASE_PRICE: Record<Rarity, number>  = { common: 0, rare: 40,  epic: 110, legendary: 220, mythic: 550 };
-const PULSE_PRICE: Record<Rarity, number> = { common: 0, rare: 40,  epic: 100, legendary: 200, mythic: 550 };
-const RING_PRICE: Record<Rarity, number>  = { common: 0, rare: 45,  epic: 115, legendary: 240, mythic: 650 };
-const FRAME_PRICE: Record<Rarity, number> = { common: 25, rare: 60,  epic: 150, legendary: 340, mythic: 750 };
-const NAME_PRICE: Record<Rarity, number>  = { common: 0,  rare: 50,  epic: 130, legendary: 300, mythic: 700 };
+// Calibrated so a typical active day (~125 fragments from daily-habits-done +
+// chest + evolve) makes epic ~2 days, legendary ~5-7 days, and mythic ~12-16
+// days of play. Prices pre-balance are 2-3× smaller; the user explicitly
+// asked for mythics/legendaries to feel aspirational.
+const BASE_PRICE: Record<Rarity, number>  = { common: 0,  rare: 80,  epic: 240, legendary: 625, mythic: 1500 };
+const PULSE_PRICE: Record<Rarity, number> = { common: 0,  rare: 80,  epic: 220, legendary: 575, mythic: 1500 };
+const RING_PRICE: Record<Rarity, number>  = { common: 0,  rare: 90,  epic: 260, legendary: 700, mythic: 1750 };
+const FRAME_PRICE: Record<Rarity, number> = { common: 50, rare: 125, epic: 325, legendary: 825, mythic: 2000 };
+const NAME_PRICE: Record<Rarity, number>  = { common: 0,  rare: 100, epic: 290, legendary: 775, mythic: 1800 };
 
 // Canonical rarity per color id. Groups colors into families so the shop can
 // be filtered/sorted without duplicating metadata inside orbColors.ts.
@@ -145,14 +149,14 @@ const generatedCosmetics: ShopItem[] = [
 
 const utilityItems: ShopItem[] = [
   // ---- BOOSTS ----
-  { id: 'boost_1h',  name: '1h Quick Boost', description: '2× XP for one hour', price: 20, type: 'power_boost_1h',  tab: 'boosts', rarity: 'common' },
-  { id: 'boost_24h', name: '24h XP Boost',   description: '2× XP on every log for a full day', price: 75, type: 'power_boost_24h', tab: 'boosts', rarity: 'rare' },
-  { id: 'daily_x2',  name: 'Daily Challenge ×2', description: 'Doubles the bonus XP on your next daily challenge', price: 35, type: 'daily_challenge_x2', tab: 'boosts', rarity: 'rare' },
+  { id: 'boost_1h',  name: '1h Quick Boost', description: '2× XP for one hour', price: 45, type: 'power_boost_1h',  tab: 'boosts', rarity: 'common' },
+  { id: 'boost_24h', name: '24h XP Boost',   description: '2× XP on every log for a full day', price: 180, type: 'power_boost_24h', tab: 'boosts', rarity: 'rare' },
+  { id: 'daily_x2',  name: 'Daily Challenge ×2', description: 'Doubles the bonus XP on your next daily challenge', price: 75, type: 'daily_challenge_x2', tab: 'boosts', rarity: 'rare' },
 
   // ---- UTILITIES ----
-  { id: 'freeze_1',       name: 'Streak Freeze',     description: 'Skip a day without losing your streak', price: 15, type: 'streak_freeze', tab: 'utilities', payload: 1, rarity: 'common' },
-  { id: 'freeze_3',       name: '3× Streak Freezes', description: 'Three freezes at a bulk discount',       price: 35, type: 'streak_freeze', tab: 'utilities', payload: 3, rarity: 'rare' },
-  { id: 'instant_evolve', name: 'Instant Evolution', description: 'Skip the grind — evolve your orb now',    price: 200, type: 'instant_evolve', tab: 'utilities', rarity: 'legendary' },
+  { id: 'freeze_1',       name: 'Streak Freeze',     description: 'Skip a day without losing your streak', price: 30, type: 'streak_freeze', tab: 'utilities', payload: 1, rarity: 'common' },
+  { id: 'freeze_3',       name: '3× Streak Freezes', description: 'Three freezes at a bulk discount',       price: 75, type: 'streak_freeze', tab: 'utilities', payload: 3, rarity: 'rare' },
+  { id: 'instant_evolve', name: 'Instant Evolution', description: 'Skip the grind — evolve your orb now',    price: 500, type: 'instant_evolve', tab: 'utilities', rarity: 'legendary' },
 ];
 
 const SHOP_ITEMS: ShopItem[] = [...generatedColors, ...generatedCosmetics, ...utilityItems];
@@ -814,14 +818,24 @@ function ShopCard({
   };
 
   return (
-    <div
-      className={cn(
-        'relative overflow-hidden rounded-xl p-3 transition-all',
-        isMythic && 'animate-shop-mythic-border',
-        isLegendary && !isMythic && 'animate-shop-legendary-border',
+    <div className="relative">
+      {/* Pulsing glow halo — sibling of the card so the shadow can extend past
+          its overflow-clipped edge. Animates opacity only (GPU-composited)
+          instead of box-shadow, which used to re-rasterize every frame across
+          dozens of mythic cards. Visually identical. */}
+      {(isMythic || isLegendary) && (
+        <div
+          aria-hidden
+          className={cn(
+            'absolute inset-0 rounded-xl pointer-events-none',
+            isMythic ? 'shop-card-glow-mythic' : 'shop-card-glow-legendary',
+          )}
+        />
       )}
-      style={cardStyle}
-    >
+      <div
+        className="relative overflow-hidden rounded-xl p-3 transition-all"
+        style={cardStyle}
+      >
       {/* --- Layered decorations by rarity --- */}
 
       {/* Mythic: subtle dot-matrix sparkle field (4 fixed sparkles) */}
@@ -984,6 +998,7 @@ function ShopCard({
       >
         {label}
       </Button>
+      </div>
     </div>
   );
 }

@@ -194,41 +194,20 @@ export default function ProfilePage() {
       {/* Awakening progress bar — persistent 0-100 counter, survives evolve +
           ascend. Only Full Awakening resets it. Higher % = bigger rewards on
           every regular evolve you do. */}
-      <div className="-mt-3 max-w-sm mx-auto">
-        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5">
-          <span className={localAwakening >= 100 ? 'text-pink-300 animate-frame-pulse' : 'text-slate-500'}>
-            Awakening
-          </span>
-          <span className="font-mono text-slate-400">{localAwakening}%</span>
-        </div>
-        <div className="w-full h-1.5 bg-[#0b0b14] rounded-full overflow-hidden border border-[#1e1e30]">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${localAwakening}%`,
-              background: localAwakening >= 100
-                ? 'linear-gradient(90deg, #fde047, #f9a8d4, #a855f7, #22d3ee, #fde047)'
-                : 'linear-gradient(90deg, #7c3aed, #ec4899, #fbbf24)',
-              backgroundSize: localAwakening >= 100 ? '200% 100%' : undefined,
-              animation: localAwakening >= 100 ? 'shop-mythic-bg 3s linear infinite' : undefined,
-              boxShadow: localAwakening >= 60 ? '0 0 10px rgba(236,72,153,0.55)' : undefined,
-            }}
-          />
-        </div>
-        {localCharges === 0 && localTier < 10 ? (
-          <p className="text-[10px] text-center text-slate-500 mt-2 leading-relaxed">
-            Log <b className="text-orange-400">every habit today</b> for +1 evolution, +30 frags, +50 XP — and +5% awakening.
-          </p>
-        ) : localAwakening >= 100 ? (
-          <p className="text-[10px] text-center mt-2 leading-relaxed">
-            <b className="text-pink-300">100% reached.</b> Full Awaken for a permanent XP bonus + exclusive skin.
-          </p>
-        ) : (
-          <p className="text-[10px] text-center text-slate-500 mt-2 leading-relaxed">
-            Evolve now for <b className="text-orange-400">+{25 + Math.floor(localAwakening * 0.5)} frags</b>, <b className="text-orange-400">+{20 + Math.floor(localAwakening * 0.5)} XP</b>. Higher awakening = bigger prize.
-          </p>
-        )}
-      </div>
+      <AwakeningBar awakening={localAwakening} />
+      {localCharges === 0 && localTier < 10 ? (
+        <p className="text-[10px] text-center text-slate-500 -mt-3 max-w-sm mx-auto leading-relaxed">
+          Log <b className="text-orange-400">every habit today</b> for extra rewards.
+        </p>
+      ) : localAwakening >= 100 ? (
+        <p className="text-[10px] text-center -mt-3 max-w-sm mx-auto leading-relaxed">
+          <b className="text-pink-300">100% reached.</b> Full Awaken for a permanent XP bonus + exclusive skin.
+        </p>
+      ) : (
+        <p className="text-[10px] text-center text-slate-500 -mt-3 max-w-sm mx-auto leading-relaxed">
+          Evolve now for <b className="text-orange-400">+{25 + Math.floor(localAwakening * 0.5)} frags</b>, <b className="text-orange-400">+{20 + Math.floor(localAwakening * 0.5)} XP</b>. Higher awakening = bigger prize.
+        </p>
+      )}
       <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
 
       {/* Orb nickname + mood */}
@@ -359,6 +338,191 @@ export default function ProfilePage() {
         currentLevel={level.level}
         currentXP={user.totalXP}
       />
+    </div>
+  );
+}
+
+/**
+ * Premium awakening progress bar. Multi-layered animation intentionally
+ * builds anticipation — the closer you are to 100%, the more dramatic it
+ * gets. At 100% the whole bar goes rainbow and emits sparkles.
+ *
+ *   Base track    — static dark pill with subtle colored glow backdrop
+ *   Outer halo    — soft radial glow, intensity scales with %
+ *   Fill          — gradient that flows horizontally (bg-position animation)
+ *   Shimmer sweep — bright diagonal streak scrolls across the fill
+ *   Progress head — pulsing gem-dot at the end of the fill
+ *   Milestones    — 4 dots (25/50/75/100) below the bar, light up as passed
+ *   Ready badge   — shows only at 100%, floats over the head with sparkles
+ *
+ * Every animation is GPU-composited (transform + opacity + bg-position) so
+ * rendering is cheap even though the composition looks rich.
+ */
+function AwakeningBar({ awakening }: { awakening: number }) {
+  const pct = Math.max(0, Math.min(100, awakening));
+  const atMax = pct >= 100;
+  const milestones = [25, 50, 75, 100];
+
+  return (
+    <div className="-mt-3 max-w-sm mx-auto relative">
+      {/* Outer halo — grows with progress, subtle at low %, intense at max. */}
+      <div
+        className="absolute -inset-2 rounded-full pointer-events-none"
+        style={{
+          background: atMax
+            ? 'radial-gradient(ellipse at center, rgba(253,224,71,0.35), rgba(236,72,153,0.25) 40%, transparent 75%)'
+            : `radial-gradient(ellipse at center, rgba(236,72,153,${Math.min(0.35, pct / 400)}), transparent 75%)`,
+          filter: 'blur(6px)',
+          opacity: atMax ? 1 : pct / 100,
+        }}
+      />
+
+      {/* Header row */}
+      <div className="relative flex items-center justify-between mb-1.5">
+        <span
+          className={cn(
+            'text-[10px] font-bold uppercase tracking-[0.25em]',
+            atMax ? 'bg-clip-text text-transparent' : 'text-pink-300/90'
+          )}
+          style={
+            atMax
+              ? {
+                  background: 'linear-gradient(90deg, #fde047, #f9a8d4, #a855f7, #22d3ee, #fde047)',
+                  backgroundSize: '200% 100%',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  animation: 'awakening-fill-flow 2.5s linear infinite',
+                }
+              : undefined
+          }
+        >
+          {atMax ? 'Awakening · Ready!' : 'Awakening'}
+        </span>
+        <span
+          className="font-heading text-base font-bold bg-clip-text text-transparent tabular-nums"
+          style={{
+            background: atMax
+              ? 'linear-gradient(90deg, #fde047, #f9a8d4, #22d3ee, #fde047)'
+              : 'linear-gradient(90deg, #fbbf24, #ec4899, #a855f7)',
+            backgroundSize: atMax ? '200% 100%' : undefined,
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            animation: atMax ? 'awakening-fill-flow 2.5s linear infinite' : undefined,
+            filter: `drop-shadow(0 0 ${Math.min(8, pct / 14)}px rgba(236,72,153,${Math.min(0.8, pct / 140)}))`,
+          }}
+        >
+          {pct}%
+        </span>
+      </div>
+
+      {/* The track */}
+      <div
+        className="relative h-3 rounded-full overflow-hidden border"
+        style={{
+          background:
+            'radial-gradient(ellipse at 50% -20%, rgba(236,72,153,0.12), transparent 60%), #06060c',
+          borderColor: atMax ? 'rgba(253,224,71,0.6)' : 'rgba(236,72,153,0.22)',
+          boxShadow: atMax
+            ? 'inset 0 0 12px rgba(253,224,71,0.4), 0 0 14px rgba(253,224,71,0.45)'
+            : 'inset 0 1px 2px rgba(0,0,0,0.6)',
+        }}
+      >
+        {/* The fill — gradient that flows laterally */}
+        <div
+          className="absolute left-0 top-0 bottom-0 rounded-full transition-[width] duration-700 ease-out overflow-hidden"
+          style={{
+            width: `${pct}%`,
+            background: atMax
+              ? 'linear-gradient(90deg, #fde047, #f472b6, #a855f7, #22d3ee, #fde047, #f472b6)'
+              : 'linear-gradient(90deg, #7c3aed, #ec4899, #fbbf24, #ec4899, #7c3aed)',
+            backgroundSize: '220% 100%',
+            animation: `awakening-fill-flow ${atMax ? '2.2s' : '3.2s'} linear infinite`,
+            willChange: 'background-position',
+          }}
+        >
+          {/* Diagonal shimmer sweep — sweeps across fill every 2.2s */}
+          <div
+            className="absolute inset-y-0 w-1/3 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(95deg, transparent, rgba(255,255,255,0.65), transparent)',
+              animation: 'awakening-shimmer 2.2s ease-in-out infinite',
+              willChange: 'transform',
+            }}
+          />
+        </div>
+
+        {/* Progress head — bright gem at the tip of the fill */}
+        {pct > 0 && (
+          <div
+            className="absolute top-1/2 pointer-events-none rounded-full"
+            style={{
+              left: `${pct}%`,
+              width: atMax ? 14 : 12,
+              height: atMax ? 14 : 12,
+              marginLeft: atMax ? -10 : -8,
+              marginTop: atMax ? -7 : -6,
+              background: atMax
+                ? 'radial-gradient(circle, #ffffff 0%, #fde047 40%, #ec4899 80%, transparent 100%)'
+                : 'radial-gradient(circle, #ffffff 0%, #f9a8d4 50%, #ec4899 100%)',
+              boxShadow: atMax
+                ? '0 0 18px #fde047, 0 0 10px #ec4899, 0 0 4px #ffffff'
+                : '0 0 12px #ec4899, 0 0 5px #ffffff',
+              animation: `awakening-head 1.4s ease-in-out infinite`,
+              willChange: 'transform, opacity',
+            }}
+          />
+        )}
+
+        {/* At 100%: extra twinkle sparkles inside the track */}
+        {atMax && (
+          <>
+            {[15, 38, 62, 85].map((x, i) => (
+              <span
+                key={x}
+                className="absolute top-1/2 w-1 h-1 rounded-full animate-frame-spark pointer-events-none"
+                style={{
+                  left: `${x}%`,
+                  marginLeft: -2,
+                  marginTop: -2,
+                  background: ['#fde047', '#f9a8d4', '#22d3ee', '#fde047'][i],
+                  boxShadow: `0 0 6px ${['#fde047', '#f9a8d4', '#22d3ee', '#fde047'][i]}, 0 0 2px #ffffff`,
+                  animationDelay: `${i * 0.15}s`,
+                }}
+              />
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Milestone markers — light up as you cross them */}
+      <div className="relative mt-1.5 h-2">
+        {milestones.map((m) => {
+          const reached = pct >= m;
+          const isMax = m === 100;
+          return (
+            <div
+              key={m}
+              className="absolute top-0"
+              style={{ left: `${m}%`, transform: 'translateX(-50%)' }}
+            >
+              <div
+                className="rounded-full transition-all"
+                style={{
+                  width: reached ? (isMax ? 5 : 4) : 3,
+                  height: reached ? (isMax ? 5 : 4) : 3,
+                  background: reached
+                    ? (isMax ? '#fde047' : '#ec4899')
+                    : '#1e1e30',
+                  boxShadow: reached
+                    ? `0 0 ${isMax ? 8 : 5}px ${isMax ? '#fde047' : '#ec4899'}`
+                    : 'none',
+                }}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
