@@ -8,133 +8,155 @@ interface StreakFlameProps {
 }
 
 type Palette = {
-  outer: string; mid: string; inner: string; core: string; tip: string;
-  glow: string; text: string;
+  core: string; inner: string; mid: string; outer: string; ember: string;
+  glow: string; textClass: string;
 };
 
-function getFlameColors(streak: number): Palette {
+function paletteOf(streak: number): Palette {
   if (streak >= 100) return {
-    outer: '#7f1d1d', mid: '#dc2626', inner: '#f97316', core: '#fde047', tip: '#ffffff',
-    glow: 'rgba(220,38,38,0.65)', text: 'from-amber-200 via-red-500 to-rose-600',
+    core: '#ffffff', inner: '#fde047', mid: '#dc2626', outer: '#450a0a',
+    ember: '#fde047', glow: 'rgba(220,38,38,0.6)',
+    textClass: 'from-amber-200 via-red-500 to-rose-600',
   };
   if (streak >= 30) return {
-    outer: '#7f1d1d', mid: '#dc2626', inner: '#ef4444', core: '#fb923c', tip: '#fde68a',
-    glow: 'rgba(220,38,38,0.48)', text: 'from-red-400 to-rose-600',
+    core: '#fef3c7', inner: '#fb923c', mid: '#dc2626', outer: '#7f1d1d',
+    ember: '#f97316', glow: 'rgba(220,38,38,0.45)',
+    textClass: 'from-red-400 to-rose-600',
   };
   if (streak >= 7) return {
-    outer: '#9a3412', mid: '#ea580c', inner: '#f97316', core: '#fbbf24', tip: '#fef9c3',
-    glow: 'rgba(249,115,22,0.42)', text: 'from-orange-400 to-red-600',
+    core: '#fef9c3', inner: '#fbbf24', mid: '#f97316', outer: '#9a3412',
+    ember: '#fb923c', glow: 'rgba(249,115,22,0.42)',
+    textClass: 'from-orange-400 to-red-600',
   };
   return {
-    outer: '#78350f', mid: '#d97706', inner: '#f59e0b', core: '#fde047', tip: '#fef3c7',
-    glow: 'rgba(245,158,11,0.4)', text: 'from-yellow-300 to-orange-600',
+    core: '#fef3c7', inner: '#fbbf24', mid: '#f59e0b', outer: '#b45309',
+    ember: '#fde047', glow: 'rgba(245,158,11,0.4)',
+    textClass: 'from-yellow-300 to-orange-600',
   };
 }
 
-const iconSizes = { sm: 22, md: 30, lg: 44 };
+const iconSizes = { sm: 22, md: 30, lg: 42 };
 const textSizes = { sm: 'text-sm', md: 'text-base', lg: 'text-2xl' };
 
 /**
- * Classic teardrop flame — smooth organic curves (no shards this time), a
- * radial-gradient core so it reads as 3D, a small highlight near the top,
- * and a single ember that rises from the tip and fades. Gentle flicker via
- * transform + filter animations. Pure SVG + CSS, no framer-motion per
- * instance so it stays cheap when the habit list renders several side by
- * side.
+ * Compact CSS flame for per-habit streak badges. Same recipe as the big
+ * StreakFire on the dashboard — three stacked radial-gradient bodies that
+ * breathe at different rates, an under-pool glow, and a trio of embers
+ * floating up — just scaled for badge-size use.
+ *
+ * Keyframes (fire-breathe, fire-breathe-alt, fire-pool, fire-ember) are
+ * already defined in globals.css and shared with StreakFire, so adding
+ * instances here doesn't cost extra CSS.
  */
 export function StreakFlame({ streak, size = 'md' }: StreakFlameProps) {
   if (streak === 0) return null;
-  const c = getFlameColors(streak);
-  const s = iconSizes[size];
-  const id = `flame-${streak}-${size}`;
+  const p = paletteOf(streak);
+  const W = iconSizes[size];
+  const H = Math.round(W * 1.1);
 
   return (
     <div className="inline-flex items-center gap-1.5">
       <div
         className="relative"
         style={{
-          width: s,
-          height: s,
-          filter: `drop-shadow(0 0 ${s * 0.22}px ${c.glow})`,
+          width: W,
+          height: H,
+          filter: `drop-shadow(0 0 ${W * 0.22}px ${p.glow})`,
         }}
       >
-        <svg width={s} height={s} viewBox="0 0 40 50">
-          <defs>
-            {/* Main body gradient — hot core at the bottom-middle, darker at edges + tip */}
-            <radialGradient id={`${id}-body`} cx="0.5" cy="0.72" r="0.62">
-              <stop offset="0"    stopColor={c.core} />
-              <stop offset="0.32" stopColor={c.inner} />
-              <stop offset="0.65" stopColor={c.mid} />
-              <stop offset="1"    stopColor={c.outer} />
-            </radialGradient>
-            {/* Inner core gradient — brighter, tighter */}
-            <radialGradient id={`${id}-core`} cx="0.5" cy="0.7" r="0.5">
-              <stop offset="0"    stopColor={c.tip} />
-              <stop offset="0.4"  stopColor={c.core} />
-              <stop offset="1"    stopColor={c.inner} stopOpacity="0" />
-            </radialGradient>
-          </defs>
+        {/* Under-pool — bright ground glow */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: W * 0.75,
+            height: H * 0.16,
+            left: W * 0.125,
+            bottom: 0,
+            background: `radial-gradient(ellipse, ${p.mid} 0%, ${p.outer}77 55%, transparent 95%)`,
+            filter: 'blur(2px)',
+            animation: 'fire-pool 1.6s ease-in-out infinite',
+            willChange: 'transform, opacity',
+          }}
+        />
 
-          {/* Soft base halo — the glow pool under the flame */}
-          <ellipse cx="20" cy="46" rx="10" ry="2.5" fill={c.inner} opacity="0.55" />
+        {/* Outer body */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: W * 0.62,
+            height: H * 0.85,
+            left: W * 0.19,
+            bottom: H * 0.06,
+            background: `radial-gradient(ellipse 48% 60% at 50% 70%, ${p.mid}dd 0%, ${p.outer}aa 48%, transparent 82%)`,
+            filter: 'blur(1.5px)',
+            transformOrigin: 'center bottom',
+            animation: 'fire-breathe 1.25s ease-in-out infinite',
+            willChange: 'transform',
+          }}
+        />
 
-          {/* Outer flame body — teardrop shape with one side subtly wider than
-              the other so it doesn't look perfectly symmetrical (reads more
-              alive). Scales and slightly wobbles via CSS. */}
-          <path
-            d="M20 3
-               Q 10 14  9 26
-               Q 10 40 20 47
-               Q 31 40 32 25
-               Q 31 14 20 3 Z"
-            fill={`url(#${id}-body)`}
+        {/* Mid body — narrower, hotter */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: W * 0.42,
+            height: H * 0.7,
+            left: W * 0.29,
+            bottom: H * 0.08,
+            background: `radial-gradient(ellipse 55% 62% at 50% 75%, ${p.inner}ee 0%, ${p.mid}99 55%, transparent 88%)`,
+            filter: 'blur(1px)',
+            transformOrigin: 'center bottom',
+            animation: 'fire-breathe-alt 0.88s ease-in-out infinite',
+            animationDelay: '0.08s',
+            willChange: 'transform',
+          }}
+        />
+
+        {/* Core — small and hot */}
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: W * 0.22,
+            height: H * 0.5,
+            left: W * 0.39,
+            bottom: H * 0.13,
+            background: `radial-gradient(ellipse 60% 70% at 50% 80%, ${p.core} 0%, ${p.inner}cc 55%, transparent 92%)`,
+            transformOrigin: 'center bottom',
+            animation: 'fire-breathe 0.7s ease-in-out infinite',
+            willChange: 'transform',
+          }}
+        />
+
+        {/* Embers — 3 tiny drift dots on staggered loops */}
+        {[
+          { x: 0.36, delay: 0.0, drift: -1.5 },
+          { x: 0.52, delay: 0.9, drift:  1.5 },
+          { x: 0.44, delay: 1.7, drift: -1 },
+        ].map((e, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full pointer-events-none"
             style={{
-              transformOrigin: '20px 46px',
-              animation: 'flame-breathe 1.3s ease-in-out infinite',
-            }}
+              width: 2,
+              height: 2,
+              left: W * e.x,
+              bottom: H * 0.2,
+              background: p.ember,
+              boxShadow: `0 0 3px ${p.ember}`,
+              animation: 'fire-ember 2.6s linear infinite',
+              animationDelay: `${e.delay}s`,
+              ['--drift' as string]: `${e.drift}px`,
+              willChange: 'transform, opacity',
+            } as React.CSSProperties}
           />
-
-          {/* Inner bright core — smaller, offset, its own rhythm */}
-          <path
-            d="M20 13
-               Q 15 22 15 30
-               Q 16 38 20 43
-               Q 25 38 26 30
-               Q 26 22 20 13 Z"
-            fill={`url(#${id}-core)`}
-            style={{
-              transformOrigin: '20px 43px',
-              animation: 'flame-core-pulse 0.9s ease-in-out infinite',
-            }}
-          />
-
-          {/* Highlight ellipse near the top — the "shine" spot that makes
-              the flame read as volumetric rather than flat */}
-          <ellipse
-            cx="20" cy="28"
-            rx="3" ry="5"
-            fill={c.tip}
-            opacity="0.55"
-            style={{ animation: 'flame-highlight 1.3s ease-in-out infinite' }}
-          />
-
-          {/* Ember — a single tiny spark rising off the tip and fading */}
-          <circle
-            cx="20" cy="4" r="1"
-            fill={c.core}
-            style={{
-              animation: 'flame-ember-rise 2.2s ease-out infinite',
-              transformBox: 'fill-box',
-              transformOrigin: 'center',
-            }}
-          />
-        </svg>
+        ))}
       </div>
+
       <span
         className={cn(
           'font-heading font-bold bg-clip-text text-transparent bg-gradient-to-b',
           textSizes[size],
-          c.text,
+          p.textClass,
           streak >= 100 && 'animate-shimmer',
         )}
       >
