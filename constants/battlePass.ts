@@ -103,3 +103,43 @@ export function buildBattlePass(): PassRow[] {
 }
 
 export const BATTLE_PASS = buildBattlePass();
+
+// --- MISSIONS ---
+// Battle pass XP doesn't come from random habit logs alone anymore — these
+// missions pay out fat chunks of seasonPassXP when completed + claimed, so
+// tier progression has clear "I earned that" beats. Progress is derived from
+// existing user data (habits, streaks, weeklyXP) so no extra aggregation.
+
+export type MissionKind = 'daily' | 'weekly' | 'permanent';
+
+export interface Mission {
+  id: string;
+  kind: MissionKind;
+  /** User-visible text */
+  text: string;
+  /** Goal value — what progress needs to reach to be claimable */
+  goal: number;
+  /** Battle-pass XP paid out on claim */
+  reward: number;
+  /** Short description / hint */
+  hint?: string;
+}
+
+export const MISSIONS: Mission[] = [
+  // Daily — reset each calendar day
+  { id: 'log_3',     kind: 'daily',     text: 'Log 3 habits today',        goal: 3,   reward: 30,  hint: 'Any three logs count' },
+  { id: 'log_all',   kind: 'daily',     text: 'Finish every habit today',  goal: 1,   reward: 50,  hint: 'Daily completion bonus' },
+  // Weekly — reset Mondays
+  { id: 'weekly_xp', kind: 'weekly',    text: 'Earn 500 XP this week',     goal: 500, reward: 200, hint: 'Logs count toward this' },
+  // Permanent — one-time achievements, huge payout
+  { id: 'streak_7',  kind: 'permanent', text: 'Reach a 7-day streak',      goal: 7,   reward: 300, hint: 'On any single habit' },
+  { id: 'streak_30', kind: 'permanent', text: 'Reach a 30-day streak',     goal: 30,  reward: 750, hint: 'On any single habit' },
+];
+
+/** ISO-like week key for weekly mission claim tracking. */
+export function isoWeekKey(d: Date = new Date()): string {
+  const start = new Date(d.getFullYear(), 0, 1);
+  const days = Math.floor((d.getTime() - start.getTime()) / 86_400_000);
+  const week = Math.ceil((days + start.getDay() + 1) / 7);
+  return `${d.getFullYear()}-W${String(week).padStart(2, '0')}`;
+}

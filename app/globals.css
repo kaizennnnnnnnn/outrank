@@ -506,7 +506,10 @@ body {
 }
 
 .shop-card-glow-mythic {
-  border-radius: inherit;
+  /* Explicit radius matches Tailwind's rounded-xl so the drop-shadow halo
+     comes out rounded. `border-radius: inherit` was picking up 0 from the
+     wrapper (no rounded utility) and producing square-cornered halos. */
+  border-radius: 0.75rem;
   box-shadow:
     0 0 38px rgba(236,72,153,0.9),
     0 0 58px rgba(168,85,247,0.55);
@@ -515,8 +518,63 @@ body {
 }
 
 .shop-card-glow-legendary {
-  border-radius: inherit;
+  border-radius: 0.75rem;
   box-shadow: 0 0 28px rgba(251,191,36,0.85);
   animation: shop-card-glow 2.6s ease-in-out infinite;
   will-change: opacity;
+}
+
+/* --- New streak-flame animations ---
+   StreakFlame = per-habit geometric SVG shard, StreakFire = dashboard
+   volumetric CSS flame. Each uses its own keyframes so the two designs
+   stay visually distinct. */
+
+@keyframes shard-sway {
+  0%, 100% { transform: scaleY(1)    translateX(0);    }
+  50%      { transform: scaleY(1.06) translateX(0.4px); }
+}
+@keyframes shard-sway-alt {
+  0%, 100% { transform: scaleY(1)    translateX(0);     }
+  50%      { transform: scaleY(0.94) translateX(-0.4px); }
+}
+@keyframes shard-spark {
+  0%, 100% { opacity: 0.45; transform: translateY(0) scale(1); }
+  50%      { opacity: 1;    transform: translateY(-2px) scale(1.25); }
+}
+
+@keyframes fire-breathe {
+  0%, 100% { transform: scaleY(1)    scaleX(1);    opacity: 1; }
+  40%      { transform: scaleY(1.12) scaleX(0.92); opacity: 0.92; }
+  70%      { transform: scaleY(0.96) scaleX(1.05); opacity: 0.98; }
+}
+@keyframes fire-breathe-alt {
+  0%, 100% { transform: scaleY(1)    scaleX(1);    }
+  50%      { transform: scaleY(1.08) scaleX(0.92); }
+}
+@keyframes fire-pool {
+  0%, 100% { opacity: 0.9; transform: scaleX(1);   }
+  50%      { opacity: 1;   transform: scaleX(1.1); }
+}
+@keyframes fire-ember {
+  0%   { transform: translate(0, 0)                     scale(0.8); opacity: 0; }
+  15%  { transform: translate(calc(var(--drift) * 0.3), -6px)  scale(1);   opacity: 1; }
+  60%  { transform: translate(calc(var(--drift) * 0.7), -22px) scale(0.7); opacity: 0.9; }
+  100% { transform: translate(var(--drift), -34px)             scale(0.2); opacity: 0; }
+}
+
+/* --- Notification card animations --- */
+@keyframes notif-unread-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.0); }
+  50%      { box-shadow: 0 0 0 4px rgba(239,68,68,0.18); }
+}
+.animate-notif-unread-pulse {
+  animation: notif-unread-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes notif-dot-pulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 4px currentColor; }
+  50%      { transform: scale(1.35); box-shadow: 0 0 10px currentColor; }
+}
+.animate-notif-dot-pulse {
+  animation: notif-dot-pulse 1.4s ease-in-out infinite;
 }

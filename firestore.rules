@@ -210,5 +210,33 @@ service cloud.firestore {
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
     }
+
+    // MESSAGES — direct 1:1 chat between friends.
+    // Thread id = alphabetically-sorted(uidA, uidB) joined by '_'. Each
+    // message carries the participants array so list queries can filter
+    // `array-contains` on the current user and the security rule can
+    // check membership without a document fetch.
+    match /messages/{threadId}/items/{messageId} {
+      allow read: if isAuthenticated()
+        && request.auth.uid in resource.data.participants;
+      allow create: if isVerifiedUser()
+        && request.resource.data.senderId == request.auth.uid
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2;
+      allow update, delete: if false;
+    }
+
+    // MESSAGE THREADS — metadata doc per pair (lastMessage, lastAt,
+    // unread-by-participant). Either participant can read + write.
+    match /messageThreads/{threadId} {
+      allow read: if isAuthenticated()
+        && request.auth.uid in resource.data.participants;
+      allow create: if isVerifiedUser()
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2;
+      allow update: if isAuthenticated()
+        && request.auth.uid in resource.data.participants;
+      allow delete: if false;
+    }
   }
 }

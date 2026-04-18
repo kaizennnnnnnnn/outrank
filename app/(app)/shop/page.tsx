@@ -860,25 +860,10 @@ function ShopCard({
         />
       )}
 
-      {/* Mythic: corner gem in top-right */}
-      {isMythic && (
-        <div className="absolute top-0 right-0 pointer-events-none">
-          <svg width={44} height={44} viewBox="0 0 44 44" fill="none" style={{ filter: 'drop-shadow(0 0 6px rgba(236,72,153,0.8))' }}>
-            <path d="M44 0 L44 14 L30 0 Z" fill="rgba(236,72,153,0.35)" />
-            <path d="M44 0 L44 10 L34 0 Z" fill="rgba(253,224,71,0.5)" />
-          </svg>
-        </div>
-      )}
-
-      {/* Legendary: warm gold corner shine */}
-      {isLegendary && (
-        <div className="absolute top-0 right-0 pointer-events-none">
-          <svg width={36} height={36} viewBox="0 0 36 36" fill="none" style={{ filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.7))' }}>
-            <path d="M36 0 L36 12 L24 0 Z" fill="rgba(251,191,36,0.32)" />
-            <path d="M36 0 L36 8  L28 0 Z" fill="rgba(254,240,138,0.6)" />
-          </svg>
-        </div>
-      )}
+      {/* Top corner gems intentionally removed — they were sharp triangles
+          clipped by the card's rounded-xl overflow, producing a visible
+          notch against the rounded corner. The inner rim glow + rarity pill
+          already carry the premium signal. */}
 
       {/* Legendary: slow diagonal shine */}
       {isLegendary && (

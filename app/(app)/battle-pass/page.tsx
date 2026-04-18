@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { BATTLE_PASS, PassRow } from '@/constants/battlePass';
-import { getCurrentSeason, getSeasonDaysLeft, getSeasonPassTier, SEASON_PASS_TIERS } from '@/constants/seasons';
+import { useHabits } from '@/hooks/useHabits';
+import { BATTLE_PASS, PassRow, MISSIONS, Mission, isoWeekKey } from '@/constants/battlePass';
+import { getCurrentSeason, getSeasonDaysLeft, getSeasonPassTier, SEASON_PASS_TIERS, SEASON_PASS_XP_PER_TIER } from '@/constants/seasons';
 import { updateDocument } from '@/lib/firestore';
 import { increment, arrayUnion } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
@@ -19,6 +20,7 @@ const rankStyles = {
 
 export default function BattlePassPage() {
   const { user } = useAuth();
+  const { habits } = useHabits();
   const addToast = useUIStore((s) => s.addToast);
 
   const userRaw = user as unknown as Record<string, unknown> | undefined;
@@ -26,11 +28,72 @@ export default function BattlePassPage() {
   const currentTier = getSeasonPassTier(seasonPassXP);
   const season = getCurrentSeason();
   const daysLeft = getSeasonDaysLeft();
+  // XP position within the current tier — used for the progress bar so the
+  // user can see exactly how much is needed to tier up. Before this, pass
+  // progression was invisible.
+  const xpInTier = seasonPassXP % SEASON_PASS_XP_PER_TIER;
+  const xpToNext = SEASON_PASS_XP_PER_TIER - xpInTier;
+  const tierProgress = (xpInTier / SEASON_PASS_XP_PER_TIER) * 100;
   // Premium track is permanently locked for now (coming soon).
   const isPremium = false;
   const claimed = (userRaw?.claimedPassTiers as number[]) || [];
 
   const [claiming, setClaiming] = useState<string | null>(null);
+
+  // ---- Mission progress + claim bookkeeping ----
+  const todayStr = new Date().toDateString();
+  const weekStr = isoWeekKey();
+  const dailyClaimed = (userRaw?.dailyMissionsClaimed as Record<string, string>) || {};
+  const weeklyClaimed = (userRaw?.weeklyMissionsClaimed as Record<string, string>) || {};
+  const permClaimed = (userRaw?.permanentMissionsClaimed as string[]) || [];
+
+  const habitsLoggedToday = habits.filter(
+    (h) => h.lastLogDate?.toDate?.()?.toDateString?.() === todayStr,
+  ).length;
+  const allHabitsDoneToday =
+    (userRaw?.lastDailyBonusDate as { toDate?: () => Date } | undefined)?.toDate?.()?.toDateString?.() ===
+    todayStr;
+  const weeklyXP = (userRaw?.weeklyXP as number) || 0;
+  const longestCurrentStreak = Math.max(...habits.map((h) => h.currentStreak), 0);
+
+  const missionProgress = (m: Mission): number => {
+    switch (m.id) {
+      case 'log_3':     return Math.min(habitsLoggedToday, m.goal);
+      case 'log_all':   return allHabitsDoneToday ? 1 : 0;
+      case 'weekly_xp': return Math.min(weeklyXP, m.goal);
+      case 'streak_7':
+      case 'streak_30': return Math.min(longestCurrentStreak, m.goal);
+    }
+    return 0;
+  };
+
+  const missionClaimed = (m: Mission): boolean => {
+    if (m.kind === 'daily')     return dailyClaimed[m.id] === todayStr;
+    if (m.kind === 'weekly')    return weeklyClaimed[m.id] === weekStr;
+    if (m.kind === 'permanent') return permClaimed.includes(m.id);
+    return false;
+  };
+
+  const handleClaimMission = async (m: Mission) => {
+    if (!user) return;
+    if (missionClaimed(m)) return;
+    if (missionProgress(m) < m.goal) return;
+    setClaiming(`mission-${m.id}`);
+    try {
+      const update: Record<string, unknown> = {
+        seasonPassXP: increment(m.reward),
+      };
+      if (m.kind === 'daily')     update[`dailyMissionsClaimed.${m.id}`]  = todayStr;
+      if (m.kind === 'weekly')    update[`weeklyMissionsClaimed.${m.id}`] = weekStr;
+      if (m.kind === 'permanent') update.permanentMissionsClaimed = arrayUnion(m.id);
+      await updateDocument('users', user.uid, update);
+      addToast({ type: 'success', message: `Mission claimed · +${m.reward} Pass XP` });
+    } catch {
+      addToast({ type: 'error', message: 'Could not claim mission' });
+    } finally {
+      setClaiming(null);
+    }
+  };
 
   const claimKey = (row: PassRow) => `${row.tier}-${row.track}`;
 
@@ -153,18 +216,19 @@ export default function BattlePassPage() {
             </div>
           </div>
 
-          {/* Progress bar with segment ticks */}
+          {/* Season progress bar — tiers 0 → 60 */}
           <div className="relative mt-5">
             <div className="h-3 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30] relative">
               <div
-                className="h-full rounded-full transition-all"
+                className="h-full rounded-full transition-all duration-700"
                 style={{
                   width: `${Math.max(3, (currentTier / SEASON_PASS_TIERS) * 100)}%`,
                   background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24, #ec4899)',
+                  backgroundSize: '200% 100%',
+                  animation: 'awakening-fill-flow 3.5s linear infinite',
                   boxShadow: '0 0 16px rgba(251,191,36,0.55)',
                 }}
               />
-              {/* Milestone notches */}
               {[10, 20, 30, 40, 50].map((n) => (
                 <span
                   key={n}
@@ -177,6 +241,46 @@ export default function BattlePassPage() {
               <span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span>
             </div>
           </div>
+
+          {/* Current-tier XP bar — shows exactly how close you are to the
+              next tier, so progress stops feeling "random". */}
+          {currentTier < SEASON_PASS_TIERS && (
+            <div className="relative mt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-yellow-200/90">
+                  Tier {currentTier} → {currentTier + 1}
+                </span>
+                <span className="text-[11px] font-mono text-yellow-200">
+                  <b>{xpInTier}</b>
+                  <span className="text-slate-500"> / {SEASON_PASS_XP_PER_TIER}</span>
+                </span>
+              </div>
+              <div className="h-2 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30] relative">
+                <div
+                  className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
+                  style={{
+                    width: `${Math.max(2, tierProgress)}%`,
+                    background: 'linear-gradient(90deg, #fbbf24, #f97316, #ec4899)',
+                    backgroundSize: '200% 100%',
+                    animation: 'awakening-fill-flow 2.4s linear infinite',
+                    boxShadow: '0 0 10px rgba(251,191,36,0.6)',
+                  }}
+                >
+                  <div
+                    className="absolute inset-y-0 w-1/3 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(95deg, transparent, rgba(255,255,255,0.55), transparent)',
+                      animation: 'awakening-shimmer 2.4s ease-in-out infinite',
+                      willChange: 'transform',
+                    }}
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1.5 text-center">
+                <b className="text-yellow-200">{xpToNext} Pass XP</b> to tier {currentTier + 1}. Complete missions below for chunky rewards.
+              </p>
+            </div>
+          )}
 
           {/* Premium track — locked banner */}
           <div
@@ -198,6 +302,16 @@ export default function BattlePassPage() {
           </div>
         </div>
       </div>
+
+      {/* Missions — primary way to earn Pass XP. Separate from random habit
+          logging so the user always has concrete "claim +200" tasks visible. */}
+      <MissionsPanel
+        missions={MISSIONS}
+        progressFor={missionProgress}
+        claimedFor={missionClaimed}
+        onClaim={handleClaimMission}
+        claimingId={claiming}
+      />
 
       {/* Column headers */}
       <div className="grid grid-cols-[52px_1fr_1fr] gap-2 px-1">
@@ -336,6 +450,177 @@ function RewardCell({
           Claim
         </Button>
       )}
+    </div>
+  );
+}
+
+// ---- Missions panel ----
+
+const kindAccent: Record<Mission['kind'], { label: string; color: string; chipBg: string; chipBorder: string }> = {
+  daily:     { label: 'Daily',     color: '#f97316', chipBg: 'rgba(249,115,22,0.14)', chipBorder: 'rgba(249,115,22,0.45)' },
+  weekly:    { label: 'Weekly',    color: '#60a5fa', chipBg: 'rgba(96,165,250,0.14)', chipBorder: 'rgba(96,165,250,0.45)' },
+  permanent: { label: 'Milestone', color: '#fbbf24', chipBg: 'rgba(251,191,36,0.16)', chipBorder: 'rgba(251,191,36,0.55)' },
+};
+
+function MissionsPanel({
+  missions, progressFor, claimedFor, onClaim, claimingId,
+}: {
+  missions: Mission[];
+  progressFor: (m: Mission) => number;
+  claimedFor: (m: Mission) => boolean;
+  onClaim: (m: Mission) => void;
+  claimingId: string | null;
+}) {
+  // Sort: ready-to-claim first, then in-progress, then claimed
+  const ready = missions.filter((m) => !claimedFor(m) && progressFor(m) >= m.goal);
+  const inProgress = missions.filter((m) => !claimedFor(m) && progressFor(m) < m.goal);
+  const done = missions.filter((m) => claimedFor(m));
+  const ordered = [...ready, ...inProgress, ...done];
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span
+          className="w-1.5 h-1.5 rounded-full animate-pulse"
+          style={{ background: '#fbbf24', boxShadow: '0 0 8px #fbbf24' }}
+        />
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-yellow-200">
+          Missions
+        </p>
+        {ready.length > 0 && (
+          <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400 bg-orange-500/15 border border-orange-500/40 px-1.5 py-0.5 rounded animate-notif-dot-pulse">
+            {ready.length} ready
+          </span>
+        )}
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {ordered.map((m) => (
+          <MissionCard
+            key={m.id}
+            mission={m}
+            progress={progressFor(m)}
+            claimed={claimedFor(m)}
+            claiming={claimingId === `mission-${m.id}`}
+            onClaim={() => onClaim(m)}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MissionCard({
+  mission, progress, claimed, claiming, onClaim,
+}: {
+  mission: Mission;
+  progress: number;
+  claimed: boolean;
+  claiming: boolean;
+  onClaim: () => void;
+}) {
+  const accent = kindAccent[mission.kind];
+  const pct = Math.min(100, (progress / mission.goal) * 100);
+  const ready = !claimed && progress >= mission.goal;
+
+  return (
+    <div
+      className={cn(
+        'relative rounded-xl p-3 border overflow-hidden transition-all',
+        ready && 'animate-notif-unread-pulse',
+      )}
+      style={{
+        background: claimed
+          ? 'linear-gradient(145deg, rgba(16,185,129,0.08), #0b0b14 70%)'
+          : ready
+            ? `linear-gradient(145deg, ${accent.chipBg}, ${accent.chipBg.replace('0.14', '0.06').replace('0.16', '0.06')} 60%, #0b0b14 100%)`
+            : 'linear-gradient(145deg, #10101a, #0b0b14 80%)',
+        borderColor: claimed
+          ? 'rgba(16,185,129,0.3)'
+          : ready
+            ? accent.chipBorder
+            : '#1e1e30',
+        boxShadow: ready ? `inset 0 0 12px ${accent.color}22` : undefined,
+      }}
+    >
+      {/* Accent stripe */}
+      <div
+        className="absolute top-0 left-0 bottom-0 w-[2px]"
+        style={{
+          background: claimed ? '#10b981' : accent.color,
+          opacity: claimed ? 0.8 : ready ? 1 : 0.5,
+          boxShadow: ready ? `0 0 6px ${accent.color}` : undefined,
+        }}
+      />
+
+      <div className="relative">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <span
+              className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-block"
+              style={{
+                background: accent.chipBg,
+                color: accent.color,
+                border: `1px solid ${accent.chipBorder}`,
+              }}
+            >
+              {accent.label}
+            </span>
+            <p className={cn('text-sm font-semibold mt-1.5 leading-tight', claimed ? 'text-slate-500 line-through' : 'text-white')}>
+              {mission.text}
+            </p>
+            {mission.hint && !claimed && (
+              <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{mission.hint}</p>
+            )}
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Pass XP</p>
+            <p
+              className="font-mono text-lg font-bold leading-none mt-0.5"
+              style={{ color: claimed ? '#64748b' : accent.color }}
+            >
+              +{mission.reward}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-2.5">
+          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
+            <span>{progress} / {mission.goal}</span>
+            <span>{Math.floor(pct)}%</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden bg-[#08080f] border border-[#1e1e30]">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.max(2, pct)}%`,
+                background: claimed
+                  ? 'linear-gradient(90deg, #10b981, #34d399)'
+                  : `linear-gradient(90deg, ${accent.color}, ${accent.color}cc)`,
+                boxShadow: ready ? `0 0 8px ${accent.color}` : undefined,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Action */}
+        <div className="mt-2.5">
+          {claimed ? (
+            <p className="text-[10px] text-center text-emerald-400 font-bold uppercase tracking-widest py-1">
+              Claimed ✓
+            </p>
+          ) : ready ? (
+            <Button size="sm" className="w-full" loading={claiming} onClick={onClaim}>
+              Claim +{mission.reward} XP
+            </Button>
+          ) : (
+            <p className="text-[10px] text-center text-slate-600 py-1">
+              {mission.goal - progress} to go
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
