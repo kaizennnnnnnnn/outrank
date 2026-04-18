@@ -5,11 +5,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreateDuelModal } from '@/components/competition/CreateDuelModal';
+import { FramedAvatar } from '@/components/profile/FramedAvatar';
+import { NamePlate } from '@/components/profile/NamePlate';
+import { MiniOrb } from '@/components/profile/MiniOrb';
 import { getCollection, getDocument, setDocument, updateDocument, removeDocument, createDocument, where, Timestamp } from '@/lib/firestore';
 import { increment } from 'firebase/firestore';
 import { sanitizeUsername } from '@/lib/security';
@@ -19,10 +21,20 @@ import { UsersFullIcon, SwordsCrossIcon } from '@/components/ui/AppIcons';
 import { FriendHabitModal } from '@/components/social/FriendHabitModal';
 import Link from 'next/link';
 
-// Resolved friend = friendship data + actual user profile
+// Cosmetic fields aren't declared on UserProfile but live on the same doc.
+interface FriendCosmetics {
+  equippedFrame?: string;
+  equippedNameEffect?: string;
+  orbTier?: number;
+  orbBaseColor?: string;
+  orbPulseColor?: string;
+  orbRingColor?: string;
+}
+
+// Resolved friend = friendship data + actual user profile (+ cosmetic fields)
 interface ResolvedFriend {
   friendId: string;
-  profile: UserProfile | null;
+  profile: (UserProfile & FriendCosmetics) | null;
   since: string;
 }
 
@@ -34,7 +46,7 @@ export default function FriendsPage() {
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [searching, setSearching] = useState(false);
   const [resolvedFriends, setResolvedFriends] = useState<ResolvedFriend[]>([]);
-  const [resolvedPending, setResolvedPending] = useState<{ id: string; profile: UserProfile | null; direction: string }[]>([]);
+  const [resolvedPending, setResolvedPending] = useState<{ id: string; profile: (UserProfile & FriendCosmetics) | null; direction: string }[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
 
   // Remove confirmation
@@ -52,10 +64,11 @@ export default function FriendsPage() {
     async function resolveProfiles() {
       if (loading) return;
 
-      // Resolve accepted friends
+      // Resolve accepted friends — cast return type to include cosmetic fields
+      // which live on the user doc but aren't in UserProfile
       const resolved: ResolvedFriend[] = [];
       for (const f of friends) {
-        const profile = await getDocument<UserProfile>('users', f.id);
+        const profile = await getDocument<UserProfile & FriendCosmetics>('users', f.id);
         resolved.push({
           friendId: f.id,
           profile,
@@ -67,7 +80,7 @@ export default function FriendsPage() {
       // Resolve pending requests
       const pendingResolved = [];
       for (const p of pending.filter((p) => p.direction === 'received')) {
-        const profile = await getDocument<UserProfile>('users', p.id);
+        const profile = await getDocument<UserProfile & FriendCosmetics>('users', p.id);
         pendingResolved.push({ id: p.id, profile, direction: p.direction });
       }
       setResolvedPending(pendingResolved);
@@ -187,14 +200,20 @@ export default function FriendsPage() {
           {searchResults.map((u) => {
             const isFriend = friendIds.includes(u.uid);
             const isPending = allConnectionIds.includes(u.uid) && !isFriend;
+            const uc = u as unknown as UserProfile & FriendCosmetics;
             return (
               <div key={u.uid} className="flex items-center gap-3 glass-card rounded-xl p-3">
                 <Link href={`/profile/${u.username}`}>
-                  <Avatar src={u.avatarUrl} alt={u.username} size="md" />
+                  <FramedAvatar src={u.avatarUrl} alt={u.username} size="md" frameId={uc.equippedFrame} />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/profile/${u.username}`}>
-                    <p className="text-sm font-medium text-white hover:text-orange-400">{u.username}</p>
+                  <Link href={`/profile/${u.username}`} className="flex items-center gap-1.5 min-w-0">
+                    <span className="min-w-0 truncate">
+                      <NamePlate name={u.username} effectId={uc.equippedNameEffect} size="sm" className="hover:text-orange-400" />
+                    </span>
+                    {uc.orbTier !== undefined && (
+                      <MiniOrb tier={uc.orbTier} baseColorId={uc.orbBaseColor} pulseColorId={uc.orbPulseColor} ringColorId={uc.orbRingColor} size={16} />
+                    )}
                   </Link>
                   <p className="text-xs text-slate-500">Lv.{u.level} &bull; {u.totalXP.toLocaleString()} XP</p>
                 </div>
@@ -226,9 +245,16 @@ export default function FriendsPage() {
           <h2 className="text-sm font-bold text-yellow-400">Pending Requests</h2>
           {resolvedPending.map((req) => (
             <div key={req.id} className="flex items-center gap-3 glass-card rounded-xl p-3 border border-yellow-500/10">
-              <Avatar src={req.profile?.avatarUrl} alt={req.profile?.username || '?'} size="md" />
+              <FramedAvatar src={req.profile?.avatarUrl} alt={req.profile?.username || '?'} size="md" frameId={req.profile?.equippedFrame} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">{req.profile?.username || 'Unknown user'}</p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="min-w-0 truncate">
+                    <NamePlate name={req.profile?.username || 'Unknown user'} effectId={req.profile?.equippedNameEffect} size="sm" />
+                  </span>
+                  {req.profile?.orbTier !== undefined && (
+                    <MiniOrb tier={req.profile.orbTier} baseColorId={req.profile.orbBaseColor} pulseColorId={req.profile.orbPulseColor} ringColorId={req.profile.orbRingColor} size={16} />
+                  )}
+                </div>
                 <p className="text-xs text-slate-500">Lv.{req.profile?.level || 1} &bull; {(req.profile?.totalXP || 0).toLocaleString()} XP</p>
               </div>
               <div className="flex gap-2">
@@ -259,13 +285,32 @@ export default function FriendsPage() {
               {/* Top row: avatar + info */}
               <div className="flex items-center gap-3">
                 <Link href={`/profile/${friend.profile?.username || friend.friendId}`}>
-                  <Avatar src={friend.profile?.avatarUrl} alt={friend.profile?.username || '?'} size="md" />
+                  <FramedAvatar
+                    src={friend.profile?.avatarUrl}
+                    alt={friend.profile?.username || '?'}
+                    size="md"
+                    frameId={friend.profile?.equippedFrame}
+                  />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/profile/${friend.profile?.username || friend.friendId}`}>
-                    <p className="text-sm font-semibold text-white hover:text-orange-400 truncate">
-                      {friend.profile?.username || 'Unknown'}
-                    </p>
+                  <Link href={`/profile/${friend.profile?.username || friend.friendId}`} className="flex items-center gap-1.5 min-w-0">
+                    <span className="min-w-0 truncate">
+                      <NamePlate
+                        name={friend.profile?.username || 'Unknown'}
+                        effectId={friend.profile?.equippedNameEffect}
+                        size="sm"
+                        className="hover:text-orange-400"
+                      />
+                    </span>
+                    {friend.profile?.orbTier !== undefined && (
+                      <MiniOrb
+                        tier={friend.profile.orbTier}
+                        baseColorId={friend.profile.orbBaseColor}
+                        pulseColorId={friend.profile.orbPulseColor}
+                        ringColorId={friend.profile.orbRingColor}
+                        size={18}
+                      />
+                    )}
                   </Link>
                   <p className="text-xs text-slate-500">
                     Lv.{friend.profile?.level || 1} {friend.profile?.currentTitle || 'Rookie'} &bull; {(friend.profile?.totalXP || 0).toLocaleString()} XP

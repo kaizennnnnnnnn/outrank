@@ -75,7 +75,7 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
   return (
     <div
       className={cn(
-        'relative inline-flex items-center justify-center',
+        'relative inline-block',
         intensity >= 4 && 'animate-frame-aurora',
         className,
       )}
@@ -209,8 +209,19 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
         </div>
       )}
 
-      {/* The avatar itself, centered — flush to the frame, no black gap */}
-      <div className="relative z-10">
+      {/* The avatar itself — absolutely positioned to match the inner cutout
+          pixel-for-pixel. Using inline-flex/items-center for centering had a
+          subtle vertical offset on some browsers (caused by inline baseline
+          metrics on the Avatar's `inline-flex` wrapper). Pinning via `inset`
+          and giving the wrapper explicit size eliminates the drift. */}
+      <div
+        className="absolute z-10 flex items-center justify-center leading-none"
+        style={{
+          inset: pad,
+          width: outer - pad * 2,
+          height: outer - pad * 2,
+        }}
+      >
         <Avatar src={src} alt={alt} size={size} />
       </div>
     </div>

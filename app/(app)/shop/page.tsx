@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { updateDocument } from '@/lib/firestore';
 import { increment, arrayUnion, Timestamp } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
@@ -196,6 +197,7 @@ export default function ShopPage() {
   const [buying, setBuying] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('base');
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>(defaultRarityFor['base']);
+  const [confirm, setConfirm] = useState<ShopItem | null>(null);
 
   const userData = user as unknown as Record<string, unknown> | undefined;
   const fragments = (userData?.fragments as number) || 0;
@@ -234,11 +236,34 @@ export default function ShopPage() {
     return false;
   };
 
-  const handleBuy = async (item: ShopItem) => {
+  // Click handler on each card — decides whether to open the confirmation
+  // dialog or just equip immediately. Equipping something already owned is
+  // free and reversible, so we skip confirmation there. Anything that costs
+  // fragments opens a yes/no dialog.
+  const handleBuy = (item: ShopItem) => {
     if (!user) return;
     const owned = isOwned(item);
     const equipped = isEquipped(item);
     if (equipped) return;
+
+    if (owned) {
+      void performBuy(item);
+      return;
+    }
+
+    if (fragments < item.price) {
+      addToast({ type: 'error', message: 'Not enough fragments' });
+      return;
+    }
+
+    // Ask before spending fragments
+    setConfirm(item);
+  };
+
+  const performBuy = async (item: ShopItem) => {
+    if (!user) return;
+    const owned = isOwned(item);
+    setConfirm(null);
 
     if (owned) {
       setBuying(item.id);
@@ -255,11 +280,6 @@ export default function ShopPage() {
       } finally {
         setBuying(null);
       }
-      return;
-    }
-
-    if (fragments < item.price) {
-      addToast({ type: 'error', message: 'Not enough fragments' });
       return;
     }
 
@@ -445,7 +465,133 @@ export default function ShopPage() {
       ) : (
         <RaritySection rarity={activeRarityFilter} items={visible} tab={tab} fragments={fragments} buying={buying} onBuy={handleBuy} isOwned={isOwned} isEquipped={isEquipped} showBanner />
       )}
+
+      <BuyConfirmModal
+        item={confirm}
+        fragments={fragments}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => confirm && performBuy(confirm)}
+      />
     </div>
+  );
+}
+
+/**
+ * Yes/no dialog shown before spending fragments. Shows the item's preview
+ * (orb / frame / name / icon), name, description, price, and the user's
+ * fragment balance before and after purchase so the cost is obvious.
+ */
+function BuyConfirmModal({
+  item, fragments, onClose, onConfirm,
+}: {
+  item: ShopItem | null;
+  fragments: number;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  if (!item) {
+    return <Modal isOpen={false} onClose={onClose} title="" size="sm">{null}</Modal>;
+  }
+  const accent = rarityAccent[item.rarity];
+  const after = fragments - item.price;
+
+  let preview: React.ReactNode;
+  if (item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color') {
+    preview = (
+      <OrbColorPreview
+        colorSet={getOrbSet(item)}
+        variant={item.type === 'ring_color' ? 'ring' : 'orb'}
+        id={colorIdForPreview(item)}
+        size={72}
+        rarity={item.rarity}
+      />
+    );
+  } else if (item.type === 'frame') {
+    preview = <FramedAvatar alt={item.name} size="lg" frameId={item.id} />;
+  } else if (item.type === 'name_effect') {
+    preview = (
+      <div
+        className="w-20 h-20 rounded-2xl flex items-center justify-center border"
+        style={{
+          background: `linear-gradient(145deg, ${accent.border}22, #0b0b14 80%)`,
+          borderColor: `${accent.border}55`,
+          boxShadow: `inset 0 0 14px ${accent.border}22`,
+        }}
+      >
+        <NamePlate name="Aa" effectId={item.id} size="xl" />
+      </div>
+    );
+  } else {
+    preview = (
+      <div
+        className="w-20 h-20 rounded-2xl flex items-center justify-center"
+        style={{
+          background: `linear-gradient(145deg, ${accent.border}33, ${accent.border}11 70%)`,
+          color: accent.text,
+          border: `1px solid ${accent.border}55`,
+          boxShadow: `0 0 14px -2px ${accent.border}55, inset 0 0 8px ${accent.border}33`,
+        }}
+      >
+        {iconFor(item.type)}
+      </div>
+    );
+  }
+
+  return (
+    <Modal isOpen={!!item} onClose={onClose} title="Confirm purchase" size="sm">
+      <div className="space-y-4">
+        {/* Preview + name */}
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0">{preview}</div>
+          <div className="flex-1 min-w-0">
+            <span
+              className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-block mb-1"
+              style={{
+                background: `${accent.border}22`,
+                color: accent.text,
+                border: `1px solid ${accent.border}55`,
+              }}
+            >
+              {rarityLabels[item.rarity]}
+            </span>
+            <p className="text-base font-bold text-white truncate">{item.name}</p>
+            <p className="text-[11px] text-slate-500 leading-tight line-clamp-2">{item.description}</p>
+          </div>
+        </div>
+
+        {/* Fragments ledger */}
+        <div
+          className="rounded-xl p-3 border flex items-center justify-between"
+          style={{
+            background: 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 70%)',
+            borderColor: 'rgba(249,115,22,0.22)',
+          }}
+        >
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Cost</p>
+            <p className="font-mono text-xl font-bold text-orange-400">{item.price}</p>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
+            <path d="M5 12h14" />
+            <path d="M13 6l6 6-6 6" />
+          </svg>
+          <div className="text-right">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">After</p>
+            <p className={`font-mono text-xl font-bold ${after < 0 ? 'text-red-400' : 'text-white'}`}>{after}</p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <Button variant="ghost" className="flex-1" onClick={onClose}>
+            No
+          </Button>
+          <Button variant="primary" className="flex-[1.5]" onClick={onConfirm}>
+            Yes · Buy for {item.price}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
