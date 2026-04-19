@@ -9,12 +9,13 @@ import {
   serverTimestamp, limit, Timestamp,
 } from 'firebase/firestore';
 import { threadIdFor } from '@/lib/messaging';
-import { sanitizeNote } from '@/lib/security';
+import { sanitize } from '@/lib/security';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { formatRelativeTime, cn } from '@/lib/utils';
+import { useUIStore } from '@/store/uiStore';
 
 interface Message {
   id: string;
@@ -41,6 +42,7 @@ export default function DirectMessageThread({
 }) {
   const { friendId } = use(params);
   const { user } = useAuth();
+  const addToast = useUIStore((s) => s.addToast);
   const [friend, setFriend] = useState<FriendProfile | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
@@ -95,14 +97,28 @@ export default function DirectMessageThread({
   }, [messages.length]);
 
   const send = async () => {
-    if (!user || !threadId || !friend) return;
-    const text = sanitizeNote(draft).trim();
+    if (!user) {
+      addToast({ type: 'error', message: 'Not signed in' });
+      return;
+    }
+    if (!threadId || !friend) {
+      addToast({ type: 'error', message: 'Could not load friend — refresh the page.' });
+      return;
+    }
+    const text = sanitize(draft).slice(0, MAX_LEN).trim();
     if (!text) return;
-    if (text.length > MAX_LEN) return;
+
     setSending(true);
     try {
-      // Ensure a thread metadata doc exists so both users' thread lists work.
-      // Either side can create it; setDoc with merge is idempotent.
+      // Ensure thread metadata doc exists (setDoc+merge — create or update).
+      // Write messages first so the message count doesn't lag behind lastAt
+      // if the thread write fails but the message write succeeds.
+      await addDoc(collection(db, `messages/${threadId}/items`), {
+        senderId: user.uid,
+        content: text,
+        createdAt: serverTimestamp(),
+        participants: [user.uid, friend.uid],
+      });
       await setDoc(
         doc(db, `messageThreads/${threadId}`),
         {
@@ -113,15 +129,21 @@ export default function DirectMessageThread({
         },
         { merge: true },
       );
-      await addDoc(collection(db, `messages/${threadId}/items`), {
-        senderId: user.uid,
-        content: text,
-        createdAt: serverTimestamp(),
-        participants: [user.uid, friend.uid],
-      });
       setDraft('');
-    } catch {
-      // Silent — message didn't send. The user can retry.
+    } catch (err) {
+      // Surface the failure — previously swallowed, which is why "click
+      // send and nothing happens" was the user-visible symptom.
+      const rawMsg = err instanceof Error ? err.message : String(err);
+      console.error('Message send failed:', err);
+      const isPermission =
+        rawMsg.toLowerCase().includes('permission') ||
+        rawMsg.toLowerCase().includes('insufficient');
+      addToast({
+        type: 'error',
+        message: isPermission
+          ? 'Messaging blocked by server rules. Admin must deploy the latest firestore.rules.'
+          : `Couldn't send: ${rawMsg.slice(0, 120)}`,
+      });
     } finally {
       setSending(false);
     }
