@@ -24,6 +24,21 @@ export function PushNotificationHandler() {
     }
   }, [user]);
 
+  // Self-heal: if the user has already granted browser permission but
+  // doesn't have an fcmToken yet (they hit the old race-condition bug
+  // where the initial Allow wouldn't finish setup), silently re-run the
+  // full registration so push actually starts working — no need to make
+  // them hunt for the Settings button.
+  useEffect(() => {
+    if (!user) return;
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    const userRaw = user as unknown as Record<string, unknown>;
+    if (typeof userRaw.fcmToken === 'string' && userRaw.fcmToken.length > 0) return;
+    // Fire and forget — runs once per session for users missing a token.
+    requestNotificationPermission(user.uid).catch(() => { /* silent */ });
+  }, [user]);
+
   // Save the user's timezone so the server can fire scheduled reminders at
   // their local time. Runs once per session; only writes if missing/changed.
   useEffect(() => {
