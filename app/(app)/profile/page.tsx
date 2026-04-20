@@ -71,92 +71,77 @@ export default function ProfilePage() {
   // determines the size of the bonus on each regular evolve).
   const orbIntensity = localAwakening;
 
-  // ===========================================================================
-  // TEST MODE — orb economy is intentionally stripped of rewards for testing.
-  // The real reward structure is preserved as commented-out blocks below each
-  // handler; delete the "TEST MODE" wrapper + restore the commented payload
-  // to flip back.
-  //
-  // Production rewards (for reference — DO NOT DELETE):
-  //   Evolve:       -1 charge, +(25..75) fragments + (20..70) XP
-  //                 scaling with awakening (0%..100%).
-  //   Ascend:       +1 orbAscensions, +500 fragments, unlock frame_ascension
-  //                 + name_ascendant cosmetics.
-  //   Full Awaken:  awakening→0, +1 fullAwakenings, +0.05 awakeningBonus
-  //                 (permanent XP multiplier, stackable), +2000 fragments,
-  //                 +1000 XP (all ladders), +2 orbEvolutionCharges, and on
-  //                 the first awakening: unlock + equip frame_awakened +
-  //                 name_awakened.
-  // ===========================================================================
-
   const handleEvolve = async () => {
-    if (localTier >= 10) return;
+    if (localTier >= 10 || localCharges <= 0) return;
     const newTier = localTier + 1;
-    // TEST MODE: each evolve nudges the awakening bar a bit so we can see it
-    // move even without real grinding. Persistent progression bar only.
-    const awakeningBump = 10;
-    const newAwakening = Math.min(100, localAwakening + awakeningBump);
+    // Rewards scale with current awakening. 0% = tiny, 100% = hefty.
+    const bonusFrags = 25 + Math.floor(localAwakening * 0.5); // 25..75
+    const bonusXP    = 20 + Math.floor(localAwakening * 0.5); // 20..70
     try {
       const { updateDocument } = await import('@/lib/firestore');
+      const { increment } = await import('firebase/firestore');
       await updateDocument('users', user.uid, {
         orbTier: newTier,
-        awakening: newAwakening,
-        // PROD: orbEvolutionCharges: increment(-1),
-        // PROD: fragments: increment(25 + Math.floor(localAwakening * 0.5)),
-        // PROD: totalXP / weeklyXP / monthlyXP / seasonPassXP: increment(20 + Math.floor(localAwakening * 0.5)),
+        orbEvolutionCharges: increment(-1),
+        fragments: increment(bonusFrags),
+        totalXP: increment(bonusXP),
+        weeklyXP: increment(bonusXP),
+        monthlyXP: increment(bonusXP),
+        seasonPassXP: increment(bonusXP),
       });
     } catch { /* silent */ }
     setLocalTier(newTier);
-    setLocalAwakening(newAwakening);
-    // PROD: setLocalCharges((c) => Math.max(0, c - 1));
-  };
-
-  // TEST MODE: manual reset to tier 1 so we can re-run the evolution chain
-  // without needing to grind through all 10 tiers + ascend each time. Not
-  // shown in prod — there's no intended "reset your orb" user action outside
-  // of Ascend, which has its own ceremony.
-  const handleResetTier = async () => {
-    if (!user) return;
-    try {
-      const { updateDocument } = await import('@/lib/firestore');
-      await updateDocument('users', user.uid, { orbTier: 1 });
-    } catch { /* silent */ }
-    setLocalTier(1);
+    setLocalCharges((c) => Math.max(0, c - 1));
   };
 
   const handleAscend = async () => {
     if (!user) return;
     try {
       const { updateDocument } = await import('@/lib/firestore');
-      const { increment } = await import('firebase/firestore');
+      const { increment, arrayUnion } = await import('firebase/firestore');
       await updateDocument('users', user.uid, {
         orbTier: 1,
         orbAscensions: increment(1),
-        // PROD: fragments: increment(500),
-        // PROD: ownedCosmetics: arrayUnion('frame_ascension', 'name_ascendant'),
+        fragments: increment(500),
+        ownedCosmetics: arrayUnion('frame_ascension', 'name_ascendant'),
       });
       setLocalTier(1);
     } catch { /* silent */ }
   };
 
+  // Full Awakening — special cash-out at 100% awakening. Grants a permanent
+  // +5% XP multiplier (stackable), mythic Awakened cosmetics on the first
+  // awakening, a big fragment + XP payout, and 2 evolution charges. Then
+  // resets awakening to 0 so the user can climb again for another
+  // stack of the permanent bonus.
   const handleFullAwaken = async () => {
     if (!user || localAwakening < 100) return;
+    const userRaw = user as unknown as Record<string, number>;
+    const firstTime = (userRaw.fullAwakenings || 0) === 0;
     try {
       const { updateDocument } = await import('@/lib/firestore');
-      const { increment } = await import('firebase/firestore');
+      const { increment, arrayUnion } = await import('firebase/firestore');
       await updateDocument('users', user.uid, {
         awakening: 0,
         fullAwakenings: increment(1),
-        // PROD: awakeningBonus: increment(0.05),
-        // PROD: fragments: increment(2000),
-        // PROD: totalXP / weeklyXP / monthlyXP / seasonPassXP: increment(1000),
-        // PROD: orbEvolutionCharges: increment(2),
-        // PROD: (firstTime only) ownedCosmetics: arrayUnion('frame_awakened', 'name_awakened'),
-        // PROD: (firstTime only) equippedFrame: 'frame_awakened', equippedNameEffect: 'name_awakened',
+        awakeningBonus: increment(0.05),
+        fragments: increment(2000),
+        totalXP: increment(1000),
+        weeklyXP: increment(1000),
+        monthlyXP: increment(1000),
+        seasonPassXP: increment(1000),
+        orbEvolutionCharges: increment(2),
+        ...(firstTime
+          ? {
+              ownedCosmetics: arrayUnion('frame_awakened', 'name_awakened'),
+              equippedFrame: 'frame_awakened',
+              equippedNameEffect: 'name_awakened',
+            }
+          : {}),
       });
     } catch { /* silent */ }
     setLocalAwakening(0);
-    // PROD: setLocalCharges((c) => c + 2);
+    setLocalCharges((c) => c + 2);
   };
 
   return (
@@ -167,9 +152,7 @@ export default function ProfilePage() {
           intensity={orbIntensity}
           tier={localTier}
           size={300}
-          // TEST MODE: Evolve is always on (no charge gate).
-          // PROD: localCharges > 0 ? handleEvolve : undefined
-          onEvolve={handleEvolve}
+          onEvolve={localCharges > 0 ? handleEvolve : undefined}
           onAscend={handleAscend}
           onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
           baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
@@ -205,14 +188,6 @@ export default function ProfilePage() {
         )}
         <button onClick={() => setShowOrbHistory(true)} className="text-[10px] text-slate-500 hover:text-orange-400 transition-colors underline">
           View Orb Details
-        </button>
-        {/* TEST MODE: reset tier to 1 so we can replay 1→10 without ascending. */}
-        <button
-          onClick={handleResetTier}
-          className="text-[10px] text-slate-500 hover:text-red-400 transition-colors underline"
-          title="Reset orb to tier 1 (testing)"
-        >
-          Reset Tier
         </button>
       </div>
 
