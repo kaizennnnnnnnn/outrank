@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
 import {
   collection, doc, onSnapshot, orderBy, query, addDoc, setDoc, getDoc,
-  serverTimestamp, limit, Timestamp,
+  limit, Timestamp,
 } from 'firebase/firestore';
 import { threadIdFor } from '@/lib/messaging';
 import { sanitize } from '@/lib/security';
@@ -113,10 +113,16 @@ export default function DirectMessageThread({
       // Ensure thread metadata doc exists (setDoc+merge — create or update).
       // Write messages first so the message count doesn't lag behind lastAt
       // if the thread write fails but the message write succeeds.
+      // Client-side timestamps so the message appears instantly in the
+      // orderBy('createdAt') snapshot query. serverTimestamp() leaves the
+      // field null while pending, which pushes the doc to an undefined
+      // position in the ordered result and hides it until the server
+      // round-trip completes.
+      const now = Timestamp.now();
       await addDoc(collection(db, `messages/${threadId}/items`), {
         senderId: user.uid,
         content: text,
-        createdAt: serverTimestamp(),
+        createdAt: now,
         participants: [user.uid, friend.uid],
       });
       await setDoc(
@@ -124,7 +130,7 @@ export default function DirectMessageThread({
         {
           participants: [user.uid, friend.uid],
           lastMessage: text.slice(0, 140),
-          lastAt: serverTimestamp(),
+          lastAt: now,
           lastSenderId: user.uid,
         },
         { merge: true },
