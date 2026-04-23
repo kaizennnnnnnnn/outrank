@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 interface SplashScreenProps {
   show: boolean;
@@ -35,6 +36,17 @@ const LETTERS = [
 ];
 
 export function SplashScreen({ show }: SplashScreenProps) {
+  // Gate all animated content behind a client-only flag. The SSR HTML
+  // renders only the dark backdrop — no phoenix, no letters — so nothing
+  // is visible before hydration. Once mounted, framer-motion plays the
+  // full entrance from its true initial state. This kills the
+  // "phoenix pops out, vanishes, then animates back in" flash.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   return (
     <AnimatePresence>
       {show && (
@@ -44,6 +56,8 @@ export function SplashScreen({ show }: SplashScreenProps) {
           transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
           className="fixed inset-0 z-[300] bg-[#06060c] flex flex-col items-center justify-center overflow-hidden"
         >
+          {mounted && (
+            <>
           {/* Ember particles rising */}
           {EMBERS.map((p, i) => (
             <motion.div
@@ -98,8 +112,12 @@ export function SplashScreen({ show }: SplashScreenProps) {
             className="absolute w-24 h-24 rounded-full border border-amber-400/25"
           />
 
-          {/* Phoenix SVG — dramatic entrance with wobble + continuous wing flap */}
+          {/* Phoenix SVG — dramatic entrance with wobble + continuous wing flap.
+              style={{opacity:0}} matches framer's initial so SSR HTML doesn't
+              render the phoenix visible for a frame before hydration (that's
+              the "pops out, disappears, then animates in" flash). */}
           <motion.div
+            style={{ opacity: 0 }}
             initial={{ opacity: 0, scale: 0.2, y: 40, rotate: -4 }}
             animate={{
               opacity: 1,
@@ -306,6 +324,8 @@ export function SplashScreen({ show }: SplashScreenProps) {
               />
             </motion.div>
           </motion.div>
+            </>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
