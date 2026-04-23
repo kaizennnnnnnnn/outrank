@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { haptic } from '@/lib/haptics';
 import { ParticleBurst } from '@/components/effects/ParticleBurst';
 import { Competition, CompetitionParticipant } from '@/types/competition';
+import { getDuelRewards } from '@/lib/duelRewards';
 
 interface OrbSkin {
   tier?: number;
@@ -30,23 +31,6 @@ interface DuelResultModalProps {
 
 type Phase = 'intro' | 'clash' | 'reveal' | 'claimed';
 
-/**
- * Prize tiers scale with duel duration so longer commitments pay more.
- * 3d baseline · 7d ≈ 1.5× · 14d ≈ 2× · 30d ≈ 3×.
- */
-function getDurationMult(days: number | undefined): number {
-  const d = days ?? 7;
-  if (d >= 28) return 3;
-  if (d >= 14) return 2;
-  if (d >= 7) return 1.5;
-  return 1;
-}
-const BASE = {
-  win:  { xp: 100, fragments: 50 },
-  tie:  { xp: 35,  fragments: 15 },
-  loss: { xp: 15,  fragments: 5 },
-};
-
 export function DuelResultModal({
   isOpen, onClose, competition, currentUserId, onClaim,
   myOrb, opponentOrb,
@@ -58,10 +42,10 @@ export function DuelResultModal({
   const tie = myScore === oppScore;
   const won = !tie && myScore > oppScore;
 
-  const mult = getDurationMult(competition.durationDays);
-  const base = won ? BASE.win : tie ? BASE.tie : BASE.loss;
-  const xp = Math.round(base.xp * mult);
-  const fragments = Math.round(base.fragments * mult);
+  const { xp, fragments } = getDuelRewards(
+    won ? 'win' : tie ? 'tie' : 'loss',
+    competition.durationDays,
+  );
 
   const [phase, setPhase] = useState<Phase>('intro');
   const [burst, setBurst] = useState(0);

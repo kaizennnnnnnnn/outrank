@@ -12,6 +12,7 @@ import { increment, arrayUnion } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { SwordsCrossIcon } from '@/components/ui/AppIcons';
 import { DuelResultModal } from '@/components/competition/DuelResultModal';
+import { DuelEndedCard } from '@/components/competition/DuelEndedCard';
 import { Competition } from '@/types/competition';
 import Link from 'next/link';
 
@@ -179,49 +180,19 @@ export default function CompetePage() {
       )}
 
       {/* Ended — claim rewards */}
-      {endedUnclaimed.length > 0 && (
+      {endedUnclaimed.length > 0 && user && (
         <section className="space-y-3">
           <h2 className="text-sm font-bold text-orange-400 uppercase tracking-wider">
             Duels Ended — Claim Rewards ({endedUnclaimed.length})
           </h2>
-          {endedUnclaimed.map((comp) => {
-            const me = comp.participants.find((p) => p.userId === user?.uid);
-            const opp = comp.participants.find((p) => p.userId !== user?.uid);
-            if (!me || !opp) return null;
-            const myScore = me.score, oppScore = opp.score;
-            const tie = myScore === oppScore;
-            const won = !tie && myScore > oppScore;
-            return (
-              <button
-                key={comp.id}
-                onClick={() => setResultDuel(comp as Competition)}
-                className="w-full text-left glass-card rounded-2xl p-4 border border-orange-500/30 hover:border-orange-500/60 transition-colors shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar src={me.avatarUrl} alt={me.username} size="md" />
-                    <div>
-                      <p className="text-sm font-bold text-white">{me.username}</p>
-                      <p className="font-mono text-lg text-orange-400">{myScore}</p>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-orange-400">
-                      {tie ? 'Draw' : won ? 'You won' : 'Defeat'}
-                    </span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Tap to claim</p>
-                  </div>
-                  <div className="flex items-center gap-3 text-right">
-                    <div>
-                      <p className="text-sm font-bold text-white">{opp.username}</p>
-                      <p className="font-mono text-lg text-orange-400">{oppScore}</p>
-                    </div>
-                    <Avatar src={opp.avatarUrl} alt={opp.username} size="md" />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+          {endedUnclaimed.map((comp) => (
+            <DuelEndedCard
+              key={comp.id}
+              comp={comp as Competition}
+              currentUserId={user.uid}
+              onClaim={(c) => setResultDuel(c)}
+            />
+          ))}
         </section>
       )}
 
