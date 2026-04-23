@@ -112,22 +112,12 @@ export function SplashScreen({ show }: SplashScreenProps) {
             className="absolute w-24 h-24 rounded-full border border-amber-400/25"
           />
 
-          {/* Phoenix SVG — dramatic entrance with wobble + continuous wing flap */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.2, y: 40, rotate: -4 }}
-            animate={{
-              opacity: 1,
-              scale: [0.2, 1.25, 0.95, 1.02, 1],
-              y: [40, -15, 2, -1, 0],
-              rotate: [-4, 3, -1, 0, 0],
-            }}
-            transition={{
-              duration: 1.0,
-              ease: [0.16, 1, 0.3, 1],
-              times: [0, 0.4, 0.65, 0.85, 1],
-            }}
-            className="relative z-10"
-          >
+          {/* Phoenix SVG — dramatic entrance via CSS keyframes (see
+              .animate-splash-phoenix-in in globals.css for the rationale).
+              Using framer's motion.div here caused the "appears, disappears,
+              reappears" flash because framer applies initial in a useEffect
+              that runs after first paint. */}
+          <div className="relative z-10 animate-splash-phoenix-in">
             {/* Breathing glow */}
             <motion.div
               animate={{ opacity: [0.25, 0.6, 0.25], scale: [0.95, 1.2, 0.95] }}
@@ -248,9 +238,8 @@ export function SplashScreen({ show }: SplashScreenProps) {
                 </defs>
               </svg>
             </motion.div>
-          </motion.div>
+          </div>
 
-          {/* Letter-by-letter logo reveal */}
           {/* Letter reveal */}
           <div className="mt-5 relative z-10 flex gap-[1px]">
             {LETTERS.map((l, i) => (

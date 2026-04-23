@@ -74,6 +74,28 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* --- Splash phoenix entrance ---
+   CSS-driven on purpose. Framer-Motion applies `initial` inside a
+   useEffect, which runs AFTER the first paint — so there's always one
+   frame where the motion.div renders at its default visible state
+   before the opacity:0 initial lands. Hence "the logo appears, then
+   disappears, then animates in." CSS animations set `opacity:0` via
+   the class from the first style calculation, so no flash is possible.
+   `forwards` pins the final state so the phoenix stays at scale(1) /
+   opacity(1) once the entrance completes — nothing snaps back. */
+@keyframes splash-phoenix-in {
+  0%   { opacity: 0; transform: scale(0.2) translateY(40px) rotate(-4deg); }
+  40%  { opacity: 1; transform: scale(1.25) translateY(-15px) rotate(3deg); }
+  65%  { opacity: 1; transform: scale(0.95) translateY(2px) rotate(-1deg); }
+  85%  { opacity: 1; transform: scale(1.02) translateY(-1px) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+}
+.animate-splash-phoenix-in {
+  opacity: 0;
+  animation: splash-phoenix-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
 @keyframes flame {
   0%, 100% { transform: scaleY(1) scaleX(1); }
   25% { transform: scaleY(1.1) scaleX(0.95); }
