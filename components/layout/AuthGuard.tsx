@@ -18,7 +18,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading) {
-      const timer = setTimeout(() => setShowSplash(false), 1800);
+      const timer = setTimeout(() => setShowSplash(false), 2100);
       return () => clearTimeout(timer);
     }
   }, [loading]);
