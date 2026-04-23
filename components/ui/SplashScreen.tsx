@@ -112,12 +112,8 @@ export function SplashScreen({ show }: SplashScreenProps) {
             className="absolute w-24 h-24 rounded-full border border-amber-400/25"
           />
 
-          {/* Phoenix SVG — dramatic entrance with wobble + continuous wing flap.
-              style={{opacity:0}} matches framer's initial so SSR HTML doesn't
-              render the phoenix visible for a frame before hydration (that's
-              the "pops out, disappears, then animates in" flash). */}
+          {/* Phoenix SVG — dramatic entrance with wobble + continuous wing flap */}
           <motion.div
-            style={{ opacity: 0 }}
             initial={{ opacity: 0, scale: 0.2, y: 40, rotate: -4 }}
             animate={{
               opacity: 1,
@@ -255,17 +251,12 @@ export function SplashScreen({ show }: SplashScreenProps) {
           </motion.div>
 
           {/* Letter-by-letter logo reveal */}
-          {/* Letter reveal — inline `style={{opacity:0}}` makes the SSR HTML
-              match the framer initial state, so there's no "visible on SSR,
-              then vanish, then re-animate" flash during hydration. Framer's
-              animate prop takes over on mount. Kept initial simple (no
-              filter: blur) since complex filter values aren't reliably
-              serialized into the SSR style attribute. */}
+          {/* Letter reveal */}
           <div className="mt-5 relative z-10 flex gap-[1px]">
             {LETTERS.map((l, i) => (
               <motion.span
                 key={i}
-                style={{ opacity: 0, display: 'inline-block' }}
+                style={{ display: 'inline-block' }}
                 initial={{ opacity: 0, y: 22, scale: 0.5, rotate: -14 }}
                 animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
                 transition={{
@@ -286,7 +277,6 @@ export function SplashScreen({ show }: SplashScreenProps) {
           </div>
 
           <motion.p
-            style={{ opacity: 0 }}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.4 }}
@@ -297,7 +287,6 @@ export function SplashScreen({ show }: SplashScreenProps) {
 
           {/* Loading bar with shimmer */}
           <motion.div
-            style={{ opacity: 0, transform: 'scaleX(0)' }}
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: 1, scaleX: 1 }}
             transition={{ delay: 0.9, duration: 0.25 }}
