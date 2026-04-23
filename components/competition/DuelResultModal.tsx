@@ -108,6 +108,9 @@ export function DuelResultModal({
 
   const title = tie ? 'Draw' : won ? 'Victory' : 'Defeat';
   const color = tie ? '#fbbf24' : won ? '#f97316' : '#64748b';
+  // The winning orb ALWAYS glows warm — using slate gray as a box-shadow
+  // color painted a dull dark disc around the opponent orb on defeat.
+  const winnerGlow = tie ? '#fbbf24' : '#f97316';
 
   return (
     <AnimatePresence>
@@ -147,12 +150,13 @@ export function DuelResultModal({
               <p className="text-xs text-slate-500 mt-1">{competition.title}</p>
             </div>
 
-            {/* Orb arena — fully transparent, soft ambient glow behind the clash so the
-                canvas edges of the two orbs never feel like bare rectangles. */}
+            {/* Orb arena — layered warm ambient glow so canvas edges blend
+                into the background instead of reading as a flat dark disc. */}
             <div
               className="relative h-52 flex items-center justify-center my-6 rounded-2xl overflow-hidden"
               style={{
-                background: 'radial-gradient(ellipse at center, rgba(249,115,22,0.07), transparent 65%)',
+                background:
+                  'radial-gradient(ellipse 70% 90% at 50% 50%, rgba(249,115,22,0.12), rgba(220,38,38,0.06) 45%, transparent 75%)',
               }}
             >
               {/* My orb — starts far left, flies to center on clash, outcome decides final state */}
@@ -165,13 +169,22 @@ export function DuelResultModal({
                       : won
                         ? { x: 0, scale: 1.35 }
                         : tie
-                          ? { x: -45, scale: 1.05 }
+                          ? { x: -75, scale: 1.05 }
                           : { x: 0, scale: 0.25, opacity: 0 }
                 }
                 transition={{ type: 'spring', stiffness: 220, damping: 14 }}
                 className="absolute flex flex-col items-center"
               >
                 <div className="relative">
+                  {/* Soft warm halo behind the canvas to hide any edge */}
+                  <div
+                    className="absolute -inset-4 rounded-full pointer-events-none"
+                    style={{
+                      background:
+                        'radial-gradient(circle, rgba(249,115,22,0.25) 0%, rgba(249,115,22,0.08) 45%, transparent 75%)',
+                      filter: 'blur(2px)',
+                    }}
+                  />
                   <SoulOrb
                     intensity={100}
                     tier={myOrb?.tier ?? 1}
@@ -185,18 +198,25 @@ export function DuelResultModal({
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"
                       animate={{ boxShadow: [
-                        `0 0 40px ${color}aa`,
-                        `0 0 90px ${color}ff`,
-                        `0 0 40px ${color}aa`,
+                        `0 0 40px ${winnerGlow}aa`,
+                        `0 0 90px ${winnerGlow}ff`,
+                        `0 0 40px ${winnerGlow}aa`,
                       ]}}
                       transition={{ duration: 1.2, repeat: Infinity }}
                     />
                   )}
                 </div>
-                {/* Name label UNDER the orb */}
+                {/* Name label UNDER the orb. Hidden during clash (both orbs
+                    stacked at center) and for the loser during reveal. */}
                 <motion.p
-                  animate={{ opacity: phase === 'reveal' && !won && !tie ? 0 : 1 }}
-                  className={`text-center text-xs mt-2 font-semibold whitespace-nowrap ${won ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}
+                  animate={{
+                    opacity:
+                      phase === 'clash' ||
+                      (phase === 'reveal' && !won && !tie)
+                        ? 0
+                        : 1,
+                  }}
+                  className={`text-center text-xs mt-2 font-semibold whitespace-nowrap pointer-events-none ${won ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}
                 >
                   You <span className="font-mono ml-1">{myScore}</span>
                 </motion.p>
@@ -269,13 +289,21 @@ export function DuelResultModal({
                       : !won && !tie
                         ? { x: 0, scale: 1.35 }
                         : tie
-                          ? { x: 45, scale: 1.05 }
+                          ? { x: 75, scale: 1.05 }
                           : { x: 0, scale: 0.25, opacity: 0 }
                 }
                 transition={{ type: 'spring', stiffness: 220, damping: 14 }}
                 className="absolute flex flex-col items-center"
               >
                 <div className="relative">
+                  <div
+                    className="absolute -inset-4 rounded-full pointer-events-none"
+                    style={{
+                      background:
+                        'radial-gradient(circle, rgba(249,115,22,0.25) 0%, rgba(249,115,22,0.08) 45%, transparent 75%)',
+                      filter: 'blur(2px)',
+                    }}
+                  />
                   <SoulOrb
                     intensity={100}
                     tier={opponentOrb?.tier ?? 1}
@@ -289,17 +317,20 @@ export function DuelResultModal({
                     <motion.div
                       className="absolute inset-0 rounded-full pointer-events-none"
                       animate={{ boxShadow: [
-                        `0 0 40px ${color}aa`,
-                        `0 0 90px ${color}ff`,
-                        `0 0 30px ${color}77`,
+                        `0 0 40px ${winnerGlow}aa`,
+                        `0 0 90px ${winnerGlow}ff`,
+                        `0 0 30px ${winnerGlow}77`,
                       ]}}
                       transition={{ duration: 1.2, repeat: Infinity }}
                     />
                   )}
                 </div>
                 <motion.p
-                  animate={{ opacity: phase === 'reveal' && won ? 0 : 1 }}
-                  className={`text-center text-xs mt-2 font-semibold whitespace-nowrap ${!won && !tie ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}
+                  animate={{
+                    opacity:
+                      phase === 'clash' || (phase === 'reveal' && won) ? 0 : 1,
+                  }}
+                  className={`text-center text-xs mt-2 font-semibold whitespace-nowrap pointer-events-none ${!won && !tie ? 'text-orange-400' : tie ? 'text-yellow-400' : 'text-slate-500'}`}
                 >
                   {opp.username} <span className="font-mono ml-1">{oppScore}</span>
                 </motion.p>
