@@ -24,6 +24,10 @@ export default function HabitsPage() {
   const addToast = useUIStore((s) => s.addToast);
   const [showBrowser, setShowBrowser] = useState(false);
   const [adding, setAdding] = useState<string | null>(null);
+  // Edit mode toggles the persistent remove buttons on every habit card.
+  // Without this, the only way to drop a habit on mobile was the hover X,
+  // which is invisible on touch devices.
+  const [editMode, setEditMode] = useState(false);
 
   const subscribedSlugs = habits.map((h) => h.categorySlug);
   const level = user ? getLevelForXP(user.totalXP) : { level: 1 };
@@ -79,8 +83,8 @@ export default function HabitsPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-white font-heading">My Habits</h1>
           <p className="text-sm text-slate-500">
             {slotsUsed}/{maxHabits} slots used
@@ -91,10 +95,31 @@ export default function HabitsPage() {
             )}
           </p>
         </div>
-        <Button onClick={() => setShowBrowser(true)} disabled={slotsFull}>
-          {slotsFull ? 'Slots Full' : '+ Add Habit'}
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {habits.length > 0 && (
+            <Button
+              variant={editMode ? 'primary' : 'secondary'}
+              onClick={() => setEditMode((e) => !e)}
+            >
+              {editMode ? 'Done' : 'Edit'}
+            </Button>
+          )}
+          <Button onClick={() => setShowBrowser(true)} disabled={slotsFull}>
+            {slotsFull ? 'Slots Full' : '+ Add'}
+          </Button>
+        </div>
       </div>
+      {editMode && (
+        <div
+          className="rounded-xl border px-3 py-2 text-[11px] text-orange-200/90"
+          style={{
+            background: 'linear-gradient(145deg, rgba(249,115,22,0.12), #0b0b14 70%)',
+            borderColor: 'rgba(249,115,22,0.35)',
+          }}
+        >
+          Tap × on any habit to remove it. Slots free up instantly — use <b>+ Add</b> to pick a new one.
+        </div>
+      )}
 
       {loading ? (
         <div className="grid sm:grid-cols-2 gap-3">
@@ -126,31 +151,61 @@ export default function HabitsPage() {
                 style={{ background: habit.color }}
               />
 
-              {/* Remove button — subtle X in corner */}
+              {/* Remove button — always visible in edit mode; hover-only
+                  otherwise so it doesn't clutter the card. The bigger
+                  red-pill styling in edit mode makes it an unambiguous
+                  tap target on touch devices. */}
               <button
-                onClick={() => removeHabit(habit.categorySlug)}
-                className="absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-slate-700 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  removeHabit(habit.categorySlug);
+                }}
+                className={cn(
+                  'absolute top-3 right-3 z-10 rounded-full flex items-center justify-center transition-all',
+                  editMode
+                    ? 'w-8 h-8 bg-red-500/15 text-red-400 border border-red-500/50 shadow-[0_0_12px_-2px_rgba(239,68,68,0.6)] animate-pulse'
+                    : 'w-7 h-7 text-slate-700 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100',
+                )}
                 aria-label="Remove habit"
               >
-                <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <svg width={editMode ? 16 : 14} height={editMode ? 16 : 14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
                   <line x1="6" y1="6" x2="18" y2="18" />
                   <line x1="18" y1="6" x2="6" y2="18" />
                 </svg>
               </button>
 
-              <Link href={`/habits/${habit.categorySlug}`} className="relative flex items-start gap-4">
-                <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
-                <div className="flex-1 min-w-0 pt-1">
-                  <p className="text-base font-bold text-white group-hover:text-orange-400 transition-colors truncate">
-                    {habit.categoryName}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    <span className="font-mono text-slate-400">{habit.goal}</span>
-                    <span className="mx-1">{habit.unit}</span>
-                    <span className="text-slate-600">/ {habit.goalPeriod}</span>
-                  </p>
+              {editMode ? (
+                // In edit mode, suppress navigation — tapping a card should
+                // not route away while the user is managing the roster.
+                <div className="relative flex items-start gap-4 opacity-75">
+                  <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
+                  <div className="flex-1 min-w-0 pt-1">
+                    <p className="text-base font-bold text-white truncate">
+                      {habit.categoryName}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      <span className="font-mono text-slate-400">{habit.goal}</span>
+                      <span className="mx-1">{habit.unit}</span>
+                      <span className="text-slate-600">/ {habit.goalPeriod}</span>
+                    </p>
+                  </div>
                 </div>
-              </Link>
+              ) : (
+                <Link href={`/habits/${habit.categorySlug}`} className="relative flex items-start gap-4">
+                  <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
+                  <div className="flex-1 min-w-0 pt-1">
+                    <p className="text-base font-bold text-white group-hover:text-orange-400 transition-colors truncate">
+                      {habit.categoryName}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      <span className="font-mono text-slate-400">{habit.goal}</span>
+                      <span className="mx-1">{habit.unit}</span>
+                      <span className="text-slate-600">/ {habit.goalPeriod}</span>
+                    </p>
+                  </div>
+                </Link>
+              )}
 
               {/* Stats — pill-style badges */}
               <div className="relative flex items-center gap-2 mt-4 flex-wrap">

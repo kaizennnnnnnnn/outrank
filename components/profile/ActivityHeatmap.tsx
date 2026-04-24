@@ -39,15 +39,18 @@ function getWeeks(): Date[][] {
   return weeks;
 }
 
-// Inline RGB so count=1 is genuinely visible. Original Tailwind opacity
-// classes were so low the single-log cells disappeared into the background.
+// Inline RGB so count=1 is genuinely visible. Earlier we used #7c2d12 for
+// the first step which was still too close to the #14141f background on
+// high-contrast displays — single-log days basically disappeared. Lifted
+// the whole ramp so each step is clearly distinct from the next *and*
+// from the baseline.
 function cellColor(count: number): string {
-  if (count === 0) return '#14141f';
-  if (count === 1) return '#7c2d12';     // deep orange-red, clearly visible
-  if (count === 2) return '#b91c1c';     // red-700
-  if (count <= 4) return '#dc2626';      // red-600
-  if (count <= 6) return '#ef4444';      // red-500
-  return '#f97316';                       // orange-500 — peak activity
+  if (count === 0) return '#18182a';     // slightly lifted from pure-dark so the grid is visible
+  if (count === 1) return '#b91c1c';     // red-700 — unmistakably active at a glance
+  if (count === 2) return '#dc2626';     // red-600
+  if (count <= 4) return '#ef4444';      // red-500
+  if (count <= 6) return '#f97316';      // orange-500
+  return '#fb923c';                       // orange-400 — peak
 }
 
 // Try every reasonable shape a Firestore timestamp might arrive in.
@@ -125,16 +128,23 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
     );
   }
 
-  // Diagnostic line — always visible while we debug missing data
-  const diagnostic = loading
-    ? 'Loading…'
-    : totalDocs === 0
-    ? 'No logs found'
-    : parsedDocs === 0
-    ? `Found ${totalDocs} logs but none have a valid timestamp`
-    : `${parsedDocs} log${parsedDocs === 1 ? '' : 's'}${latestKey ? ` • latest ${latestKey}` : ''}`;
-
   const todayKey = dateKey(new Date());
+  const hasNoLogs = !loading && totalDocs === 0;
+  const brokenTimestamps = !loading && totalDocs > 0 && parsedDocs === 0;
+
+  // Clear, actionable empty state — the earlier "No logs found" one-liner
+  // was tiny and easy to miss, and the grid of flat dark squares read as
+  // a rendering bug, not "you haven't logged anything yet."
+  if (hasNoLogs) {
+    return (
+      <div className="rounded-xl border border-[#1e1e30] bg-[#0b0b14] p-5 text-center">
+        <p className="text-sm font-semibold text-slate-300">Nothing to show yet</p>
+        <p className="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto">
+          Log a habit from the Home tab and cells will start lighting up here — one per day, brighter the more you log.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full overflow-x-auto">
@@ -155,7 +165,7 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
                   )}
                   style={{
                     background: loading ? '#18182a' : cellColor(count),
-                    boxShadow: count >= 4 ? `0 0 4px ${cellColor(count)}aa` : undefined,
+                    boxShadow: count >= 3 ? `0 0 5px ${cellColor(count)}aa` : undefined,
                   }}
                   title={`${key}: ${count} log${count === 1 ? '' : 's'}${isToday ? ' (today)' : ''}`}
                 />
@@ -164,7 +174,7 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-1 mt-2 text-[10px] text-slate-600 flex-wrap">
+      <div className="flex items-center gap-1 mt-2 text-[10px] text-slate-500 flex-wrap">
         <span>Less</span>
         <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(0) }} />
         <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(1) }} />
@@ -172,7 +182,16 @@ export function ActivityHeatmap({ userId }: ActivityHeatmapProps) {
         <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(5) }} />
         <div className="w-[14px] h-[14px] rounded-[2px]" style={{ background: cellColor(7) }} />
         <span>More</span>
-        <span className="ml-2 text-slate-500">{diagnostic}</span>
+        {!loading && !brokenTimestamps && (
+          <span className="ml-auto text-slate-500">
+            {parsedDocs} log{parsedDocs === 1 ? '' : 's'}{latestKey ? ` · last ${latestKey}` : ''}
+          </span>
+        )}
+        {brokenTimestamps && (
+          <span className="ml-auto text-amber-500">
+            {totalDocs} log{totalDocs === 1 ? '' : 's'} found but missing timestamps
+          </span>
+        )}
       </div>
     </div>
   );

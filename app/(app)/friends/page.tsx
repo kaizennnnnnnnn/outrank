@@ -178,19 +178,60 @@ export default function FriendsPage() {
   const friendIds = friends.map((f) => f.id);
   const allConnectionIds = [...friends.map((f) => f.id), ...pending.map((p) => p.id)];
 
+  const friendCount = resolvedFriends.length;
+  const pendingCount = resolvedPending.length;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-white font-heading">Friends</h1>
+      {/* Premium header — matches the Orb / Messages page treatment */}
+      <div
+        className="relative overflow-hidden rounded-2xl p-5 border"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(249,115,22,0.24), transparent 55%),' +
+            'radial-gradient(ellipse 60% 60% at 0% 100%, rgba(236,72,153,0.14), transparent 60%),' +
+            'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
+          borderColor: 'rgba(249,115,22,0.28)',
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-300">Your Circle</p>
+            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-0.5">Friends</h1>
+            <p className="text-[11px] text-slate-500 mt-1 max-w-sm">
+              Build an inner circle. Challenge, message, and race them across the leaderboards.
+            </p>
+          </div>
+          {/* Stat chips: friends / pending */}
+          <div className="flex gap-2 shrink-0">
+            <StatChip label="Friends" value={friendCount} tint="#f97316" />
+            {pendingCount > 0 && (
+              <StatChip label="Pending" value={pendingCount} tint="#fbbf24" />
+            )}
+          </div>
+        </div>
+      </div>
 
-      {/* Search */}
-      <div className="flex gap-2">
-        <Input
-          placeholder="Search by username..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-        />
-        <Button onClick={handleSearch} loading={searching}>Search</Button>
+      {/* Search — styled to feel like a primary CTA */}
+      <div
+        className="rounded-2xl p-3 border"
+        style={{
+          background: 'linear-gradient(145deg, #10101a, #0b0b14)',
+          borderColor: 'rgba(249,115,22,0.16)',
+        }}
+      >
+        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 mb-2 px-1">
+          Find someone
+        </p>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Search by username..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          />
+          <Button onClick={handleSearch} loading={searching}>Search</Button>
+        </div>
       </div>
 
       {/* Search Results */}
@@ -412,6 +453,28 @@ export default function FriendsPage() {
           friendAvatar={habitTarget.avatar}
         />
       )}
+    </div>
+  );
+}
+
+function StatChip({ label, value, tint }: { label: string; value: number; tint: string }) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center rounded-xl px-3 py-1.5 border min-w-[56px]"
+      style={{
+        background: `linear-gradient(145deg, ${tint}1a, #0b0b14 80%)`,
+        borderColor: `${tint}44`,
+      }}
+    >
+      <span
+        className="font-mono text-lg font-bold leading-none"
+        style={{ color: tint }}
+      >
+        {value}
+      </span>
+      <span className="text-[9px] uppercase tracking-widest text-slate-500 mt-0.5">
+        {label}
+      </span>
     </div>
   );
 }
