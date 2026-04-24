@@ -5,8 +5,11 @@ import type { CosmeticRarity } from '@/constants/cosmetics';
 
 interface Props {
   colorSet: OrbColorSet;
-  /** 'orb' for base/pulse, 'ring' for ring-color preview */
-  variant: 'orb' | 'ring';
+  /** 'orb' = full sphere (base-color preview). 'ring' = dark body with
+   *  only the orbital rings showing. 'pulse' = dark body with only the
+   *  pulse wave rings radiating outward — lets the pulse color be seen
+   *  in isolation without the base-color sphere mixing in. */
+  variant: 'orb' | 'ring' | 'pulse';
   /** Pixel size of the circle (width = height). Default 48. */
   size?: number;
   /** If this color id is a rainbow variant, render a rainbow preview */
@@ -221,6 +224,64 @@ export function OrbColorPreview({ colorSet, variant, size = 48, id, rarity }: Pr
         </div>
       );
     }
+  } else if (variant === 'pulse') {
+    // Pulse variant — dark body with expanding concentric pulse rings
+    // radiating from the center. Shows the pulse color in isolation
+    // (no base-color sphere, no orbital rings). Three rings offset in
+    // time so at any moment the viewer sees the wave animating outward.
+    const pulseColor = isRainbow ? '#ec4899' : colorSet.inner;
+    const pulseCore  = isRainbow ? '#ffffff' : colorSet.core;
+    const waves = [
+      { delay: '0s',   dur: '1.8s' },
+      { delay: '0.6s', dur: '1.8s' },
+      { delay: '1.2s', dur: '1.8s' },
+    ];
+    sphere = (
+      <div
+        className="rounded-full relative overflow-hidden"
+        style={{
+          width: s,
+          height: s,
+          background:
+            'radial-gradient(circle at 35% 30%, #1a1a28 0%, #0b0b14 70%)',
+          boxShadow: `0 0 16px -4px ${pulseColor}80, inset 0 -4px 8px rgba(0,0,0,0.55)`,
+        }}
+      >
+        {/* Expanding pulse waves */}
+        {waves.map((w, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full pointer-events-none"
+            style={{
+              left: '50%',
+              top: '50%',
+              width: s * 0.2,
+              height: s * 0.2,
+              marginLeft: -(s * 0.1),
+              marginTop: -(s * 0.1),
+              border: `1.5px solid ${pulseColor}`,
+              boxShadow: `0 0 6px ${pulseColor}`,
+              animation: `preview-pulse-wave ${w.dur} ease-out ${w.delay} infinite`,
+            }}
+          />
+        ))}
+        {/* Bright core dot — the origin of the pulse */}
+        <span
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            left: '50%',
+            top: '50%',
+            width: s * 0.14,
+            height: s * 0.14,
+            marginLeft: -(s * 0.07),
+            marginTop: -(s * 0.07),
+            background: `radial-gradient(circle, ${pulseCore} 0%, ${pulseColor} 55%, transparent 100%)`,
+            boxShadow: `0 0 10px ${pulseColor}, 0 0 3px #ffffff`,
+            animation: 'preview-pulse-core 1.6s ease-in-out infinite',
+          }}
+        />
+      </div>
+    );
   } else {
     // Ring variant
     if (isRainbow) {

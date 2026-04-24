@@ -240,27 +240,14 @@ export default function ShopPage() {
     return false;
   };
 
-  // Click handler on each card — decides whether to open the confirmation
-  // dialog or just equip immediately. Equipping something already owned is
-  // free and reversible, so we skip confirmation there. Anything that costs
-  // fragments opens a yes/no dialog.
+  // Every card tap opens the preview modal. The modal itself decides
+  // what action button to show (Equipped / Equip / Buy / Need X more)
+  // based on owned + equipped + afford state. Previously the flow
+  // short-circuited — equipping skipped the modal entirely and already-
+  // equipped items were dead — so there was no way to actually preview
+  // anything you already owned. That's what the user asked for.
   const handleBuy = (item: ShopItem) => {
     if (!user) return;
-    const owned = isOwned(item);
-    const equipped = isEquipped(item);
-    if (equipped) return;
-
-    if (owned) {
-      void performBuy(item);
-      return;
-    }
-
-    if (fragments < item.price) {
-      addToast({ type: 'error', message: 'Not enough fragments' });
-      return;
-    }
-
-    // Ask before spending fragments
     setConfirm(item);
   };
 
@@ -470,9 +457,11 @@ export default function ShopPage() {
         <RaritySection rarity={activeRarityFilter} items={visible} tab={tab} fragments={fragments} buying={buying} onBuy={handleBuy} isOwned={isOwned} isEquipped={isEquipped} showBanner />
       )}
 
-      <BuyConfirmModal
+      <ItemPreviewModal
         item={confirm}
         fragments={fragments}
+        owned={confirm ? isOwned(confirm) : false}
+        equipped={confirm ? isEquipped(confirm) : false}
         onClose={() => setConfirm(null)}
         onConfirm={() => confirm && performBuy(confirm)}
       />
@@ -481,15 +470,24 @@ export default function ShopPage() {
 }
 
 /**
- * Yes/no dialog shown before spending fragments. Shows the item's preview
- * (orb / frame / name / icon), name, description, price, and the user's
- * fragment balance before and after purchase so the cost is obvious.
+ * Preview modal — opens on every card tap so the user can actually see
+ * what they're buying/equipping. Shows a large, isolated preview of the
+ * item (base color → full sphere, pulse → only the pulse wave,
+ * ring → only the orbital rings, frame → framed avatar, name effect →
+ * big nameplate). The primary button switches based on state:
+ *   - already equipped        → just a disabled "Equipped" indicator
+ *   - owned but not equipped  → "Equip"
+ *   - can afford              → "Buy for X"  (+ cost ledger)
+ *   - cannot afford           → "Need X more" (disabled)
+ *   - free items (price 0)    → "Equip" directly
  */
-function BuyConfirmModal({
-  item, fragments, onClose, onConfirm,
+function ItemPreviewModal({
+  item, fragments, owned, equipped, onClose, onConfirm,
 }: {
   item: ShopItem | null;
   fragments: number;
+  owned: boolean;
+  equipped: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -497,43 +495,69 @@ function BuyConfirmModal({
     return <Modal isOpen={false} onClose={onClose} title="" size="sm">{null}</Modal>;
   }
   const accent = rarityAccent[item.rarity];
+  const canAfford = fragments >= item.price;
   const after = fragments - item.price;
+  const isFree = item.price === 0;
 
+  // Isolated, big preview per item type. Rings show ring only, pulses
+  // show pulse only — matches the user's request that "only polls should
+  // be visible as the preview" etc.
   let preview: React.ReactNode;
-  if (item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color') {
+  if (item.type === 'base_color') {
     preview = (
       <OrbColorPreview
         colorSet={getOrbSet(item)}
-        variant={item.type === 'ring_color' ? 'ring' : 'orb'}
+        variant="orb"
         id={colorIdForPreview(item)}
-        size={72}
+        size={140}
+        rarity={item.rarity}
+      />
+    );
+  } else if (item.type === 'pulse_color') {
+    preview = (
+      <OrbColorPreview
+        colorSet={getOrbSet(item)}
+        variant="pulse"
+        id={colorIdForPreview(item)}
+        size={140}
+        rarity={item.rarity}
+      />
+    );
+  } else if (item.type === 'ring_color') {
+    preview = (
+      <OrbColorPreview
+        colorSet={getOrbSet(item)}
+        variant="ring"
+        id={colorIdForPreview(item)}
+        size={140}
         rarity={item.rarity}
       />
     );
   } else if (item.type === 'frame') {
-    preview = <FramedAvatar alt={item.name} size="lg" frameId={item.id} />;
+    preview = <FramedAvatar alt={item.name} size="xl" frameId={item.id} />;
   } else if (item.type === 'name_effect') {
     preview = (
       <div
-        className="w-20 h-20 rounded-2xl flex items-center justify-center border"
+        className="px-6 py-8 rounded-2xl flex items-center justify-center border"
         style={{
           background: `linear-gradient(145deg, ${accent.border}22, #0b0b14 80%)`,
           borderColor: `${accent.border}55`,
-          boxShadow: `inset 0 0 14px ${accent.border}22`,
+          boxShadow: `inset 0 0 20px ${accent.border}33`,
         }}
       >
-        <NamePlate name="Aa" effectId={item.id} size="xl" />
+        <NamePlate name="Example" effectId={item.id} size="xl" />
       </div>
     );
   } else {
     preview = (
       <div
-        className="w-20 h-20 rounded-2xl flex items-center justify-center"
+        className="w-28 h-28 rounded-2xl flex items-center justify-center"
         style={{
-          background: `linear-gradient(145deg, ${accent.border}33, ${accent.border}11 70%)`,
+          background: `linear-gradient(145deg, ${accent.border}44, ${accent.border}11 70%)`,
           color: accent.text,
-          border: `1px solid ${accent.border}55`,
-          boxShadow: `0 0 14px -2px ${accent.border}55, inset 0 0 8px ${accent.border}33`,
+          border: `1px solid ${accent.border}66`,
+          boxShadow: `0 0 24px -2px ${accent.border}66, inset 0 0 12px ${accent.border}44`,
+          transform: 'scale(1.6)',
         }}
       >
         {iconFor(item.type)}
@@ -541,57 +565,87 @@ function BuyConfirmModal({
     );
   }
 
-  return (
-    <Modal isOpen={!!item} onClose={onClose} title="Confirm purchase" size="sm">
-      <div className="space-y-4">
-        {/* Preview + name */}
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0">{preview}</div>
-          <div className="flex-1 min-w-0">
-            <span
-              className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-block mb-1"
-              style={{
-                background: `${accent.border}22`,
-                color: accent.text,
-                border: `1px solid ${accent.border}55`,
-              }}
-            >
-              {rarityLabels[item.rarity]}
-            </span>
-            <p className="text-base font-bold text-white truncate">{item.name}</p>
-            <p className="text-[11px] text-slate-500 leading-tight line-clamp-2">{item.description}</p>
-          </div>
-        </div>
+  // Action button label + handler based on state
+  let primaryLabel = '';
+  let primaryDisabled = false;
+  if (equipped) {
+    primaryLabel = 'Equipped';
+    primaryDisabled = true;
+  } else if (owned) {
+    primaryLabel = 'Equip';
+  } else if (canAfford || isFree) {
+    primaryLabel = isFree ? 'Equip' : `Buy for ${item.price}`;
+  } else {
+    primaryLabel = `Need ${item.price - fragments} more`;
+    primaryDisabled = true;
+  }
 
-        {/* Fragments ledger */}
+  return (
+    <Modal isOpen={!!item} onClose={onClose} title="Preview" size="sm">
+      <div className="space-y-4">
+        {/* Big preview — centered so the isolated item gets full attention */}
         <div
-          className="rounded-xl p-3 border flex items-center justify-between"
+          className="flex items-center justify-center rounded-2xl py-8 px-4 border"
           style={{
-            background: 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 70%)',
-            borderColor: 'rgba(249,115,22,0.22)',
+            background: `radial-gradient(ellipse 80% 70% at 50% 30%, ${accent.border}1a, transparent 65%), linear-gradient(165deg, #0d0d17 0%, #06060c 100%)`,
+            borderColor: `${accent.border}33`,
           }}
         >
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Cost</p>
-            <p className="font-mono text-xl font-bold text-orange-400">{item.price}</p>
-          </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
-            <path d="M5 12h14" />
-            <path d="M13 6l6 6-6 6" />
-          </svg>
-          <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">After</p>
-            <p className={`font-mono text-xl font-bold ${after < 0 ? 'text-red-400' : 'text-white'}`}>{after}</p>
-          </div>
+          {preview}
         </div>
+
+        {/* Name + description + rarity */}
+        <div>
+          <span
+            className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-block mb-1.5"
+            style={{
+              background: `${accent.border}22`,
+              color: accent.text,
+              border: `1px solid ${accent.border}55`,
+            }}
+          >
+            {rarityLabels[item.rarity]}
+          </span>
+          <p className="text-lg font-bold text-white">{item.name}</p>
+          <p className="text-[12px] text-slate-400 leading-snug">{item.description}</p>
+        </div>
+
+        {/* Fragments ledger — only when it's a purchase */}
+        {!owned && !isFree && (
+          <div
+            className="rounded-xl p-3 border flex items-center justify-between"
+            style={{
+              background: 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 70%)',
+              borderColor: 'rgba(249,115,22,0.22)',
+            }}
+          >
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Cost</p>
+              <p className="font-mono text-xl font-bold text-orange-400">{item.price}</p>
+            </div>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
+              <path d="M5 12h14" />
+              <path d="M13 6l6 6-6 6" />
+            </svg>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">After</p>
+              <p className={`font-mono text-xl font-bold ${after < 0 ? 'text-red-400' : 'text-white'}`}>{after}</p>
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-2">
           <Button variant="ghost" className="flex-1" onClick={onClose}>
-            No
+            Close
           </Button>
-          <Button variant="primary" className="flex-[1.5]" onClick={onConfirm}>
-            Yes · Buy for {item.price}
+          <Button
+            variant="primary"
+            className="flex-[1.5]"
+            disabled={primaryDisabled}
+            onClick={onConfirm}
+          >
+            {primaryLabel}
           </Button>
         </div>
       </div>
@@ -927,7 +981,13 @@ function ShopCard({
         {item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color' ? (
           <OrbColorPreview
             colorSet={getOrbSet(item)}
-            variant={item.type === 'ring_color' ? 'ring' : 'orb'}
+            variant={
+              item.type === 'ring_color'
+                ? 'ring'
+                : item.type === 'pulse_color'
+                  ? 'pulse'
+                  : 'orb'
+            }
             id={colorIdForPreview(item)}
             size={48}
             rarity={item.rarity}

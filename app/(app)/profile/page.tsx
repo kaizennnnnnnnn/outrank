@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { LevelBadge } from '@/components/profile/LevelBadge';
 import { XPProgressBar } from '@/components/profile/XPProgressBar';
-import { SoulOrb } from '@/components/profile/SoulOrb';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { ActivityHeatmap } from '@/components/profile/ActivityHeatmap';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
@@ -44,54 +43,15 @@ export default function ProfilePage() {
     );
   }
 
-  const userAny = user as unknown as Record<string, number>;
   const level = getLevelForXP(user.totalXP);
   const totalLogs = habits.reduce((sum, h) => sum + h.totalLogs, 0);
   const longestStreak = Math.max(...habits.map((h) => h.longestStreak), 0);
   const friendCount = friends.length;
 
-  // Profile now shows the orb as a passive visualization only — evolve,
-  // ascend, and awaken live on /orb (reachable from the bottom-nav FAB).
-  // We intentionally pass no onEvolve / onAscend / onFullAwaken handlers
-  // so the orb's internal interaction UI is disabled here. Tapping the
-  // orb goes to /orb.
-  const orbIntensity = Math.min(100, userAny.awakening || 0);
-  const orbTier = userAny.orbTier || 1;
-
+  // Orb is intentionally NOT on this page. Entry is the bottom-nav FAB →
+  // /orb command center. Keeps the profile focused on identity + stats.
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Soul Orb — view-only. Click anywhere on it to jump to the orb
-          command center where you can actually evolve/ascend/awaken. */}
-      <Link
-        href="/orb"
-        className="block relative group"
-        aria-label="Open orb command center"
-      >
-        <SoulOrb
-          intensity={orbIntensity}
-          tier={orbTier}
-          size={300}
-          baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
-          pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
-          ringColorId={(user as unknown as Record<string, string>).orbRingColor}
-        />
-        {/* Invisible click shield — SoulOrb has its own internal click
-            targets (drag-to-rotate etc.) but on profile we want the
-            whole area to navigate. pointer-events-none on the orb
-            itself would kill its render loop too, so we just overlay
-            a transparent anchor area. */}
-        <span
-          aria-hidden
-          className="absolute inset-0"
-          style={{ background: 'transparent' }}
-        />
-        <span className="absolute inset-x-0 -bottom-1 text-center pointer-events-none">
-          <span className="inline-block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 group-hover:text-orange-400 transition-colors">
-            Tap to open orb →
-          </span>
-        </span>
-      </Link>
-
       {/* Season / League / Pass */}
       <SeasonCard user={user} />
 

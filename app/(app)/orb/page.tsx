@@ -41,6 +41,14 @@ export default function OrbPage() {
     );
   }
 
+  // NOTE: we do NOT mutate local state after the awaited writes.
+  // The three useEffect hooks above already sync localTier /
+  // localCharges / localAwakening from the Firestore snapshot
+  // (via `user` through useAuth). If we *also* decrement locally,
+  // the manual update stacks on top of the snapshot update —
+  // which is why "Evolve once, lose two charges" was happening
+  // (server went 3→2 via increment(-1), snapshot set local to 2,
+  // then manual `c - 1` dragged it down to 1).
   const handleEvolve = async () => {
     if (localTier >= 10 || localCharges <= 0) return;
     const newTier = localTier + 1;
@@ -59,8 +67,6 @@ export default function OrbPage() {
         seasonPassXP: increment(bonusXP),
       });
     } catch { /* silent */ }
-    setLocalTier(newTier);
-    setLocalCharges((c) => Math.max(0, c - 1));
   };
 
   const handleAscend = async () => {
@@ -74,7 +80,6 @@ export default function OrbPage() {
         fragments: increment(500),
         ownedCosmetics: arrayUnion('frame_ascension', 'name_ascendant'),
       });
-      setLocalTier(1);
     } catch { /* silent */ }
   };
 
@@ -104,8 +109,6 @@ export default function OrbPage() {
           : {}),
       });
     } catch { /* silent */ }
-    setLocalAwakening(0);
-    setLocalCharges((c) => c + 2);
   };
 
   const fragments = (user as unknown as Record<string, number>).fragments || 0;
