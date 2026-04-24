@@ -78,11 +78,13 @@ export function TopBar() {
               <path d="M16 10a4 4 0 01-8 0" />
             </svg>
           </Link>
-          <Link href="/inventory" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Inventory">
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-              <rect x="3" y="7" width="18" height="13" rx="2" />
-              <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
-              <path d="M3 12h18" />
+          {/* Ranks moved here from the bottom nav to make room for the
+              orb FAB. Inventory is still reachable from /shop and /profile. */}
+          <Link href="/leaderboard" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Ranks">
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400">
+              <path d="M4 4h4l1.5 10a3 3 0 006 0L17 4h4" />
+              <path d="M9 22h6" />
+              <path d="M12 14v8" />
             </svg>
           </Link>
           <Link href="/friends" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Friends">

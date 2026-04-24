@@ -8,11 +8,31 @@ import { useAuth } from '@/hooks/useAuth';
 import { Avatar } from '@/components/ui/Avatar';
 import { Logo } from '@/components/ui/Logo';
 import { HomeIcon, TargetIcon, TrophyIcon, SwordsIcon, LeagueIcon, UsersIcon, FeedIcon, BellIcon, SettingsIcon } from '@/components/ui/Icons';
+
+// Small SVG orb glyph for the sidebar "My Orb" entry — avoids importing the
+// full MiniOrb (which reads user state) into a static nav list.
+function OrbSidebarIcon() {
+  return (
+    <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <defs>
+        <radialGradient id="orbSidebarGrad" cx="35%" cy="30%">
+          <stop offset="0%" stopColor="#fde68a" />
+          <stop offset="35%" stopColor="#f97316" />
+          <stop offset="80%" stopColor="#b91c1c" />
+          <stop offset="100%" stopColor="#450a0a" />
+        </radialGradient>
+      </defs>
+      <circle cx="12" cy="12" r="8" fill="url(#orbSidebarGrad)" />
+      <ellipse cx="9.5" cy="9" rx="2.2" ry="1.3" fill="rgba(255,255,255,0.55)" />
+    </svg>
+  );
+}
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { ReactNode } from 'react';
 
 const navItems: { href: string; label: string; icon: ReactNode }[] = [
   { href: '/dashboard', label: 'Dashboard', icon: <HomeIcon /> },
+  { href: '/orb', label: 'My Orb', icon: <OrbSidebarIcon /> },
   { href: '/habits', label: 'Habits', icon: <TargetIcon /> },
   { href: '/leaderboard', label: 'Leaderboard', icon: <TrophyIcon /> },
   { href: '/compete', label: 'Compete', icon: <SwordsIcon /> },
