@@ -50,18 +50,17 @@ export function MobileNav() {
         >
           <div className="relative -top-5 flex flex-col items-center">
             {/* Black half-circle cradle — anchors the raised FAB to the nav
-                bar so the orb doesn't read as floating in space. The shape
-                is a rounded-top, flat-bottom pill in the nav's own
-                background color, sized so the FAB sits cleanly inside it. */}
+                bar so the orb doesn't read as floating in space. Sized to
+                wrap the 58px FAB bezel cleanly. */}
             <span
               aria-hidden
               className="absolute left-1/2 -translate-x-1/2 bg-[#08080f] border-t border-x border-[#1e1e30]"
               style={{
-                width: 66,
-                height: 34,
-                bottom: 16,
-                borderTopLeftRadius: 40,
-                borderTopRightRadius: 40,
+                width: 74,
+                height: 38,
+                bottom: 14,
+                borderTopLeftRadius: 44,
+                borderTopRightRadius: 44,
                 borderBottomLeftRadius: 0,
                 borderBottomRightRadius: 0,
               }}
@@ -79,32 +78,42 @@ export function MobileNav() {
             />
             <div
               className={cn(
-                'relative rounded-full p-0.5 transition-transform overflow-hidden',
+                'relative rounded-full transition-transform flex items-center justify-center',
                 orbActive && 'scale-[1.08]',
               )}
               style={{
-                background: 'linear-gradient(145deg, #1a1a2a, #0b0b14)',
+                // Thicker solid black bezel — 4px ring of pure nav-color all
+                // around the orb so it reads as set INTO the dashboard rather
+                // than floating on top of it. The accent ring color sits on
+                // top of the bezel so the orb still carries brand color.
+                background: '#050509',
+                padding: 4,
+                width: 58,
+                height: 58,
                 boxShadow: orbActive
-                  ? '0 8px 24px -6px rgba(249,115,22,0.55), inset 0 0 0 1px rgba(251,146,60,0.55)'
-                  : '0 6px 18px -8px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(236,72,153,0.25)',
-                width: 52,
-                height: 52,
+                  ? '0 8px 24px -6px rgba(249,115,22,0.55), 0 0 0 1px #000, inset 0 0 0 1px rgba(251,146,60,0.55)'
+                  : '0 6px 18px -8px rgba(0,0,0,0.95), 0 0 0 1px #000, inset 0 0 0 1px rgba(236,72,153,0.30)',
               }}
             >
-              {/* Real canvas SoulOrb in miniature — identical rendering to
-                  what the user sees on the /orb page. interactive={false}
-                  disables drag + the evolve/ascend/awaken button cluster so
-                  it behaves as a pure visual preview in the nav. */}
-              <SoulOrb
-                tier={orbTier}
-                size={48}
-                intensity={awakening}
-                interactive={false}
-                hideLabel
-                baseColorId={userAny?.orbBaseColor as unknown as string}
-                pulseColorId={userAny?.orbPulseColor as unknown as string}
-                ringColorId={userAny?.orbRingColor as unknown as string}
-              />
+              <div
+                className="relative rounded-full overflow-hidden"
+                style={{ width: 50, height: 50 }}
+              >
+                {/* Real canvas SoulOrb in miniature — identical rendering to
+                    what the user sees on the /orb page. interactive={false}
+                    disables drag + the evolve/ascend/awaken button cluster so
+                    it behaves as a pure visual preview in the nav. */}
+                <SoulOrb
+                  tier={orbTier}
+                  size={50}
+                  intensity={awakening}
+                  interactive={false}
+                  hideLabel
+                  baseColorId={userAny?.orbBaseColor as unknown as string}
+                  pulseColorId={userAny?.orbPulseColor as unknown as string}
+                  ringColorId={userAny?.orbRingColor as unknown as string}
+                />
+              </div>
             </div>
             {/* Alert dot — only visible when there's an action pending */}
             {hasOrbAction && (

@@ -69,8 +69,13 @@ export function HabitCard({ habit, isLoggedToday, onLog }: HabitCardProps) {
         {/* Mastery ring around the category icon */}
         <div className="relative flex-shrink-0">
           {mastery && (
+            // Concentric rounded rects need radius = innerRadius + offset for
+            // the corners to stay parallel. CategoryIcon at size='md' is
+            // rounded-2xl (16px). Offset is 3px per side, so the ring radius
+            // must be 19px — previously was 14px which made the corners pinch
+            // inward and the gap widen at the corners.
             <div
-              className="absolute -inset-[3px] rounded-[14px] pointer-events-none"
+              className="absolute -inset-[3px] rounded-[19px] pointer-events-none"
               style={{
                 border: `1.5px solid ${masteryColor}`,
                 boxShadow: masteryTier >= 5 ? `0 0 10px ${masteryColor}70` : undefined,

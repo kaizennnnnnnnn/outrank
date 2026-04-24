@@ -72,12 +72,24 @@ export function TopBar() {
             </svg>
           </Link>
           {/* Ranks moved here from the bottom nav to make room for the
-              orb FAB. Inventory is still reachable from /shop and /profile. */}
+              orb FAB. Symmetric podium glyph — reads instantly as a
+              ranking screen, unlike the earlier off-balance chalice. */}
           <Link href="/leaderboard" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Ranks">
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400">
-              <path d="M4 4h4l1.5 10a3 3 0 006 0L17 4h4" />
-              <path d="M9 22h6" />
-              <path d="M12 14v8" />
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" className="text-yellow-400">
+              {/* Left 2nd-place pillar */}
+              <rect x="2" y="11" width="6" height="10" rx="1" fill="currentColor" opacity="0.55" />
+              {/* Right 3rd-place pillar */}
+              <rect x="16" y="14" width="6" height="7" rx="1" fill="currentColor" opacity="0.35" />
+              {/* Center 1st-place pillar — tallest */}
+              <rect x="9" y="7" width="6" height="14" rx="1" fill="currentColor" />
+              {/* Crown on the 1st-place pillar */}
+              <path
+                d="M9 5 L10.5 3 L12 4.5 L13.5 3 L15 5 L14.6 6 H9.4 Z"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth="0.5"
+                strokeLinejoin="round"
+              />
             </svg>
           </Link>
           <Link href="/friends" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Friends">

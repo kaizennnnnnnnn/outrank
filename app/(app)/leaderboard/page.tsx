@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuth } from '@/hooks/useAuth';
+import { useFriends } from '@/hooks/useFriends';
 import { CATEGORIES } from '@/constants/categories';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
@@ -19,7 +20,7 @@ import { UserProfile } from '@/types/user';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-type View = 'global' | 'category';
+type View = 'global' | 'friends' | 'category';
 
 const periods: { value: LeaderboardPeriod; label: string }[] = [
   { value: 'weekly', label: 'Weekly' },
@@ -48,6 +49,7 @@ function MedalIcon({ rank, className }: { rank: number; className?: string }) {
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
+  const { friends } = useFriends();
   const [view, setView] = useState<View>('global');
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
   const [selectedCategory, setSelectedCategory] = useState('gym');
@@ -55,6 +57,13 @@ export default function LeaderboardPage() {
   // Global leaderboard: query users ordered by selected-period XP field
   const [globalEntries, setGlobalEntries] = useState<UserProfile[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
+
+  // Friends leaderboard: pulls each accepted friend's user doc (plus the
+  // current user's) and sorts them locally by the active XP field. N is
+  // typically small (<50), so a batch of getDoc reads is fine and lets us
+  // avoid maintaining a separate friends-XP projection in Firestore.
+  const [friendsEntries, setFriendsEntries] = useState<UserProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(true);
 
   useEffect(() => {
     if (view !== 'global') return;
@@ -85,6 +94,42 @@ export default function LeaderboardPage() {
       })
       .finally(() => setGlobalLoading(false));
   }, [view, period]);
+
+  useEffect(() => {
+    if (view !== 'friends' || !user?.uid) return;
+    setFriendsLoading(true);
+    const ids = [user.uid, ...friends.map((f) => f.id)];
+    const field =
+      period === 'weekly' ? 'weeklyXP' :
+      period === 'monthly' ? 'monthlyXP' :
+      'totalXP';
+    Promise.all(
+      ids.map((id) =>
+        getDoc(doc(db, `users/${id}`)).then((snap) => {
+          if (!snap.exists()) return null;
+          return { uid: id, ...(snap.data() as Record<string, unknown>) } as unknown as UserProfile;
+        }),
+      ),
+    )
+      .then((rows) => {
+        const visible = rows.filter((r): r is UserProfile => {
+          if (!r) return false;
+          const banned = (r as unknown as Record<string, boolean>).isBanned;
+          return !banned;
+        });
+        visible.sort((a, b) => {
+          const av = (a as unknown as Record<string, number>)[field] || 0;
+          const bv = (b as unknown as Record<string, number>)[field] || 0;
+          return bv - av;
+        });
+        setFriendsEntries(visible);
+      })
+      .catch((err) => {
+        console.error('friends leaderboard load failed', err);
+        setFriendsEntries([]);
+      })
+      .finally(() => setFriendsLoading(false));
+  }, [view, period, user?.uid, friends]);
 
   const { entries: catEntries, loading: catLoading } = useLeaderboard(
     view === 'category' ? selectedCategory : '__none__',
@@ -141,7 +186,7 @@ export default function LeaderboardPage() {
         <button
           onClick={() => setView('global')}
           className={cn(
-            'flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all',
+            'flex-1 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all',
             view === 'global'
               ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_6px_20px_-10px_rgba(239,68,68,0.8)]'
               : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
@@ -150,9 +195,20 @@ export default function LeaderboardPage() {
           Global
         </button>
         <button
+          onClick={() => setView('friends')}
+          className={cn(
+            'flex-1 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all',
+            view === 'friends'
+              ? 'bg-gradient-to-r from-pink-600 to-fuchsia-500 text-white shadow-[0_6px_20px_-10px_rgba(236,72,153,0.8)]'
+              : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
+          )}
+        >
+          Friends
+        </button>
+        <button
           onClick={() => setView('category')}
           className={cn(
-            'flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all',
+            'flex-1 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all',
             view === 'category'
               ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_6px_20px_-10px_rgba(239,68,68,0.8)]'
               : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
@@ -218,6 +274,40 @@ export default function LeaderboardPage() {
           ) : (
             <div className="divide-y divide-[#1e1e30]">
               {globalEntries.map((entry, i) => {
+                const rank = i + 1;
+                const isMe = entry.uid === user?.uid;
+                const score = (entry as unknown as Record<string, number>)[activeField] || 0;
+                const u = entry as unknown as Record<string, unknown>;
+                return (
+                  <Row
+                    key={entry.uid}
+                    index={i}
+                    rank={rank}
+                    isMe={isMe}
+                    username={entry.username}
+                    avatarUrl={entry.avatarUrl}
+                    score={score}
+                    frameId={u.equippedFrame as string | undefined}
+                    nameEffectId={u.equippedNameEffect as string | undefined}
+                    orbTier={(u.orbTier as number) || 1}
+                    orbBaseColor={u.orbBaseColor as string | undefined}
+                    orbPulseColor={u.orbPulseColor as string | undefined}
+                    orbRingColor={u.orbRingColor as string | undefined}
+                  />
+                );
+              })}
+            </div>
+          )
+        ) : view === 'friends' ? (
+          friendsLoading ? (
+            <div className="p-4 space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
+            </div>
+          ) : friendsEntries.length === 0 ? (
+            <FriendsEmpty />
+          ) : (
+            <div className="divide-y divide-[#1e1e30]">
+              {friendsEntries.map((entry, i) => {
                 const rank = i + 1;
                 const isMe = entry.uid === user?.uid;
                 const score = (entry as unknown as Record<string, number>)[activeField] || 0;
@@ -342,6 +432,22 @@ function EmptyState() {
     <div className="p-12 text-center">
       <div className="mb-3"><TrophyIconFull size={40} className="text-yellow-400 mx-auto" /></div>
       <p className="text-slate-500">No entries yet. Be the first!</p>
+    </div>
+  );
+}
+
+function FriendsEmpty() {
+  return (
+    <div className="p-12 text-center">
+      <div className="mb-3"><TrophyIconFull size={40} className="text-pink-400 mx-auto" /></div>
+      <p className="text-slate-300 font-semibold">Just you here — for now</p>
+      <p className="text-slate-500 text-sm mt-1">Add friends to race them across weekly, monthly, and all-time XP.</p>
+      <Link
+        href="/friends"
+        className="inline-block mt-4 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border border-pink-500/40 bg-pink-500/10 text-pink-300 hover:bg-pink-500/20 transition-colors"
+      >
+        Find friends
+      </Link>
     </div>
   );
 }
