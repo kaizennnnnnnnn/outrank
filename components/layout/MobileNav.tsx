@@ -49,10 +49,28 @@ export function MobileNav() {
           aria-label="Open orb command center"
         >
           <div className="relative -top-5 flex flex-col items-center">
-            {/* Pedestal ring that anchors the orb into the nav bar */}
+            {/* Black half-circle cradle — anchors the raised FAB to the nav
+                bar so the orb doesn't read as floating in space. The shape
+                is a rounded-top, flat-bottom pill in the nav's own
+                background color, sized so the FAB sits cleanly inside it. */}
             <span
               aria-hidden
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full"
+              className="absolute left-1/2 -translate-x-1/2 bg-[#08080f] border-t border-x border-[#1e1e30]"
+              style={{
+                width: 66,
+                height: 34,
+                bottom: 16,
+                borderTopLeftRadius: 40,
+                borderTopRightRadius: 40,
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+              }}
+            />
+            {/* Warm ring glow that escapes the cradle so the orb still feels
+                alive against the black scoop. */}
+            <span
+              aria-hidden
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full pointer-events-none"
               style={{
                 background:
                   'radial-gradient(circle, rgba(236,72,153,0.18) 0%, rgba(249,115,22,0.10) 40%, transparent 70%)',

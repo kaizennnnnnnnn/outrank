@@ -463,6 +463,7 @@ export default function ShopPage() {
         fragments={fragments}
         owned={confirm ? isOwned(confirm) : false}
         equipped={confirm ? isEquipped(confirm) : false}
+        currentBaseColorId={equippedBase}
         onClose={() => setConfirm(null)}
         onConfirm={() => confirm && performBuy(confirm)}
       />
@@ -483,12 +484,16 @@ export default function ShopPage() {
  *   - free items (price 0)    → "Equip" directly
  */
 function ItemPreviewModal({
-  item, fragments, owned, equipped, onClose, onConfirm,
+  item, fragments, owned, equipped, currentBaseColorId, onClose, onConfirm,
 }: {
   item: ShopItem | null;
   fragments: number;
   owned: boolean;
   equipped: boolean;
+  /** User's currently-equipped base color. Used as the body under pulse
+   *  previews so the pulse wave has an actual orb to travel through
+   *  (matching what the user's real orb will look like after purchase). */
+  currentBaseColorId: string;
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -525,6 +530,13 @@ function ItemPreviewModal({
       />
     );
   } else if (item.type === 'pulse_color') {
+    // Pulse = the wave of energy that travels THROUGH the orb. The preview
+    // needs the actual orb body rendered so the wave has something to ride
+    // through — an empty dark disc doesn't read as a pulse, just as a
+    // generic ripple. We render the full orb (body + glow) using the user's
+    // currently-equipped base color, then hide the rings so the pulse wave
+    // is the dominant visual. Result: exactly what the user's orb will look
+    // like with this pulse equipped.
     preview = (
       <SoulOrb
         size={160}
@@ -532,8 +544,8 @@ function ItemPreviewModal({
         intensity={100}
         interactive={false}
         hideLabel
-        hideBody
         hideRings
+        baseColorId={currentBaseColorId}
         pulseColorId={colorIdForPreview(item)}
       />
     );

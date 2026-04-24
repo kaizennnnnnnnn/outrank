@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { LevelBadge } from '@/components/profile/LevelBadge';
 import { XPProgressBar } from '@/components/profile/XPProgressBar';
+import { SoulOrb } from '@/components/profile/SoulOrb';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { ActivityHeatmap } from '@/components/profile/ActivityHeatmap';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
@@ -43,15 +44,34 @@ export default function ProfilePage() {
     );
   }
 
+  const userAny = user as unknown as Record<string, number>;
   const level = getLevelForXP(user.totalXP);
   const totalLogs = habits.reduce((sum, h) => sum + h.totalLogs, 0);
   const longestStreak = Math.max(...habits.map((h) => h.longestStreak), 0);
   const friendCount = friends.length;
 
-  // Orb is intentionally NOT on this page. Entry is the bottom-nav FAB →
-  // /orb command center. Keeps the profile focused on identity + stats.
+  // Orb is VIEW-ONLY here. interactive={false} kills drag + hides the
+  // evolve/ascend/awaken button cluster so there's no way to manage the
+  // orb from this screen — the only entry point for interaction is the
+  // bottom-nav orb FAB → /orb command center.
+  const orbTier = userAny.orbTier || 1;
+  const orbIntensity = Math.min(100, userAny.awakening || 0);
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Soul Orb — passive visualization, no interactions possible */}
+      <div className="flex justify-center">
+        <SoulOrb
+          size={280}
+          tier={orbTier}
+          intensity={orbIntensity}
+          interactive={false}
+          baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
+          pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+          ringColorId={(user as unknown as Record<string, string>).orbRingColor}
+        />
+      </div>
+
       {/* Season / League / Pass */}
       <SeasonCard user={user} />
 
