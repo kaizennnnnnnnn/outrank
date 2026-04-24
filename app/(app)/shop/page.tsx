@@ -10,6 +10,7 @@ import { useUIStore } from '@/store/uiStore';
 import { ORB_BASE_COLORS, ORB_PULSE_COLORS, ORB_RING_COLORS, OrbColorSet } from '@/constants/orbColors';
 import { PFP_FRAMES, NAME_EFFECTS, CosmeticRarity } from '@/constants/cosmetics';
 import { OrbColorPreview } from '@/components/profile/OrbColorPreview';
+import { SoulOrb } from '@/components/profile/SoulOrb';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { cn } from '@/lib/utils';
@@ -499,38 +500,54 @@ function ItemPreviewModal({
   const after = fragments - item.price;
   const isFree = item.price === 0;
 
-  // Isolated, big preview per item type. Rings show ring only, pulses
-  // show pulse only — matches the user's request that "only polls should
-  // be visible as the preview" etc.
+  // Isolated, big preview per item type. We use the REAL SoulOrb canvas
+  // for base / pulse / ring so the preview actually matches what the
+  // user's orb will render as — not a separate CSS approximation. The
+  // hideBody / hideRings / hidePulse props isolate just the layer the
+  // user is shopping for:
+  //   - base  : particles + glow visible, rings + pulse hidden
+  //   - ring  : rings visible, body + pulse hidden
+  //   - pulse : pulse waves visible, body + rings hidden
+  // Tier is forced to 3 so rings are available to draw (previews run
+  // at size > 100 so the "isSmall auto-hide rings" path doesn't fire).
   let preview: React.ReactNode;
   if (item.type === 'base_color') {
     preview = (
-      <OrbColorPreview
-        colorSet={getOrbSet(item)}
-        variant="orb"
-        id={colorIdForPreview(item)}
-        size={140}
-        rarity={item.rarity}
+      <SoulOrb
+        size={160}
+        tier={3}
+        intensity={100}
+        interactive={false}
+        hideLabel
+        hideRings
+        hidePulse
+        baseColorId={colorIdForPreview(item)}
       />
     );
   } else if (item.type === 'pulse_color') {
     preview = (
-      <OrbColorPreview
-        colorSet={getOrbSet(item)}
-        variant="pulse"
-        id={colorIdForPreview(item)}
-        size={140}
-        rarity={item.rarity}
+      <SoulOrb
+        size={160}
+        tier={3}
+        intensity={100}
+        interactive={false}
+        hideLabel
+        hideBody
+        hideRings
+        pulseColorId={colorIdForPreview(item)}
       />
     );
   } else if (item.type === 'ring_color') {
     preview = (
-      <OrbColorPreview
-        colorSet={getOrbSet(item)}
-        variant="ring"
-        id={colorIdForPreview(item)}
-        size={140}
-        rarity={item.rarity}
+      <SoulOrb
+        size={160}
+        tier={3}
+        intensity={100}
+        interactive={false}
+        hideLabel
+        hideBody
+        hidePulse
+        ringColorId={colorIdForPreview(item)}
       />
     );
   } else if (item.type === 'frame') {

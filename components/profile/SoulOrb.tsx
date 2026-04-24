@@ -19,9 +19,18 @@ interface SoulOrbProps {
   pulseColorId?: string;
   ringColorId?: string;
   hideLabel?: boolean;
+  /** Skip body particles. Used by shop "ring only" and "pulse only" previews. */
+  hideBody?: boolean;
+  /** Skip ring particles. Used by shop "base only" and "pulse only" previews. */
+  hideRings?: boolean;
+  /** Skip pulse spawning. Used by shop "base only" and "ring only" previews. */
+  hidePulse?: boolean;
+  /** When false, disables drag, evolve/ascend/awaken buttons, and related UI.
+   *  Meant for static previews (shop modal, nav FAB). Defaults to true. */
+  interactive?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -159,20 +168,27 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
 
     type P = { phi: number; theta: number; size: number; phase: number; speed: number; layer: number };
     const particles: P[] = [];
-    for (let i = 0; i < numP; i++) {
-      particles.push({
-        phi: Math.acos(1 - 2 * (i + 0.5) / numP),
-        theta: Math.PI * (1 + Math.sqrt(5)) * i,
-        size: (1.0 + Math.random() * 2.0) * particleScale,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.4 + Math.random() * 0.5,
-        layer: Math.random(),
-      });
+    // hideBody skips allocating AND drawing body particles — used by shop
+    // "ring only" and "pulse only" previews.
+    if (!hideBody) {
+      for (let i = 0; i < numP; i++) {
+        particles.push({
+          phi: Math.acos(1 - 2 * (i + 0.5) / numP),
+          theta: Math.PI * (1 + Math.sqrt(5)) * i,
+          size: (1.0 + Math.random() * 2.0) * particleScale,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.4 + Math.random() * 0.5,
+          layer: Math.random(),
+        });
+      }
     }
 
     type Rng = { angle: number; radius: number; tiltX: number; speedMul: number; size: number; phase: number; colorIdx: number };
     const rings: Rng[] = [];
-    const ringCount = isSmall ? 0 : config.rings; // No rings for small orbs
+    // hideRings skips allocating AND drawing rings — for "base only" and
+    // "pulse only" previews. For previews rings still render even at small
+    // sizes, so we only gate on the explicit hideRings flag there.
+    const ringCount = hideRings ? 0 : (isSmall && interactive ? 0 : config.rings);
     for (let r = 0; r < ringCount; r++) {
       const tiltX = (r - 1) * 0.5 + Math.random() * 0.3;
       const radius = R + 10 + r * 8;
@@ -278,13 +294,17 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     const ts = (e: TouchEvent) => { e.preventDefault(); onStart(e.touches[0].clientX, e.touches[0].clientY); };
     const tm = (e: TouchEvent) => { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); };
 
-    canvas.addEventListener('mousedown', md);
-    canvas.addEventListener('mousemove', mm);
-    canvas.addEventListener('mouseup', onEnd);
-    canvas.addEventListener('mouseleave', onEnd);
-    canvas.addEventListener('touchstart', ts, { passive: false });
-    canvas.addEventListener('touchmove', tm, { passive: false });
-    canvas.addEventListener('touchend', onEnd);
+    // Drag-to-rotate only attaches for interactive orbs. Previews in the
+    // shop and the nav FAB stay still.
+    if (interactive) {
+      canvas.addEventListener('mousedown', md);
+      canvas.addEventListener('mousemove', mm);
+      canvas.addEventListener('mouseup', onEnd);
+      canvas.addEventListener('mouseleave', onEnd);
+      canvas.addEventListener('touchstart', ts, { passive: false });
+      canvas.addEventListener('touchmove', tm, { passive: false });
+      canvas.addEventListener('touchend', onEnd);
+    }
 
     function frame() {
       t += 0.012;
@@ -316,30 +336,58 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
 
       ctx.clearRect(0, 0, W, H);
 
-      // Core glow — brighter during burst
-      const glowBoost = burstPhase ? 2.5 : (contractPhase ? 1.5 : 1.0);
-      const gp = (sin(t * 1.2) * 0.02 + 0.06 + pct * config.glowIntensity * 0.08) * glowBoost;
-      const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, R + 25);
-      g1.addColorStop(0, `rgba(${colMid[0]}, ${colMid[1]}, ${colMid[2]}, ${min(gp, 0.4)})`);
-      g1.addColorStop(0.6, `rgba(${floor(colMid[0] * 0.4)}, ${floor(colMid[1] * 0.4)}, ${floor(colMid[2] * 0.3)}, ${min(gp * 0.3, 0.15)})`);
-      g1.addColorStop(1, 'transparent');
-      ctx.fillStyle = g1;
-      ctx.fillRect(0, 0, W, H);
+      // Core glow — brighter during burst. Part of the BODY signature, so
+      // skip when hideBody (ring-only / pulse-only previews) so the
+      // isolated layer reads clearly.
+      if (!hideBody) {
+        const glowBoost = burstPhase ? 2.5 : (contractPhase ? 1.5 : 1.0);
+        const gp = (sin(t * 1.2) * 0.02 + 0.06 + pct * config.glowIntensity * 0.08) * glowBoost;
+        const g1 = ctx.createRadialGradient(cx, cy, 0, cx, cy, R + 25);
+        g1.addColorStop(0, `rgba(${colMid[0]}, ${colMid[1]}, ${colMid[2]}, ${min(gp, 0.4)})`);
+        g1.addColorStop(0.6, `rgba(${floor(colMid[0] * 0.4)}, ${floor(colMid[1] * 0.4)}, ${floor(colMid[2] * 0.3)}, ${min(gp * 0.3, 0.15)})`);
+        g1.addColorStop(1, 'transparent');
+        ctx.fillStyle = g1;
+        ctx.fillRect(0, 0, W, H);
+      }
 
-      // Rhythmic pulse wave through the orb — uses pulse color, expands from center
-      if (!isEvolving) {
+      // Rhythmic pulse wave through the orb — uses pulse color, expands from center.
+      // This is the pulse's dedicated visual (doesn't need body particles), so when
+      // previewing a pulse color we render this at full strength + force pct to
+      // 1 so the wave is clearly visible.
+      if (!isEvolving && !hidePulse) {
         const beatT = (t * 0.8) % 1;
         const beatRadius = beatT * R * 1.3;
-        const beatAlpha = (1 - beatT) * 0.45 * pct;
+        // Boost alpha when body is hidden (pulse-only preview) so the wave is
+        // clearly visible against empty space instead of half-transparent.
+        const pulseAlphaMult = hideBody ? 2.2 : pct;
+        const beatAlpha = (1 - beatT) * 0.45 * pulseAlphaMult;
         if (beatAlpha > 0.01) {
           const pw = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius - R * 0.2), cx, cy, beatRadius + R * 0.1);
           pw.addColorStop(0, 'transparent');
-          pw.addColorStop(0.7, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${beatAlpha * 0.6})`);
+          pw.addColorStop(0.7, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${Math.min(beatAlpha * 0.6, 0.7)})`);
           pw.addColorStop(1, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, 0)`);
           ctx.fillStyle = pw;
           ctx.beginPath();
           ctx.arc(cx, cy, beatRadius + R * 0.1, 0, PI2);
           ctx.fill();
+        }
+        // Second offset wave — gives the preview a richer "multi-wave" look
+        // that was missing with just the single beat wave. Only when hideBody
+        // (so it doesn't muddy the full-orb render).
+        if (hideBody) {
+          const beatT2 = ((t * 0.8) + 0.5) % 1;
+          const beatRadius2 = beatT2 * R * 1.3;
+          const beatAlpha2 = (1 - beatT2) * 0.45 * pulseAlphaMult;
+          if (beatAlpha2 > 0.01) {
+            const pw2 = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius2 - R * 0.2), cx, cy, beatRadius2 + R * 0.1);
+            pw2.addColorStop(0, 'transparent');
+            pw2.addColorStop(0.7, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, ${Math.min(beatAlpha2 * 0.55, 0.6)})`);
+            pw2.addColorStop(1, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, 0)`);
+            ctx.fillStyle = pw2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, beatRadius2 + R * 0.1, 0, PI2);
+            ctx.fill();
+          }
         }
       }
 
@@ -347,11 +395,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       const rx = sin(t * 0.2) * 0.3 + 0.4 + dragRef.current.rotX;
       const cry = cos(ry), sry = sin(ry), crx = cos(rx), srx = sin(rx);
 
-      // Spawn
-      if (pulses.length < 6 && random() < config.pulseChance * pct && !isEvolving) {
+      // Spawn — gated so preview modes don't churn on arrays they'll never draw.
+      if (!hidePulse && pulses.length < 6 && random() < config.pulseChance * pct && !isEvolving) {
         pulses.push({ lat: (random() - 0.5) * PI, lon: random() * PI2, radius: 0, speed: 1.5 + random() * 2, maxRadius: 1.2 });
       }
-      if (arcs.length < config.maxArcs && random() < config.arcChance * pct) {
+      if (!hideBody && arcs.length < config.maxArcs && random() < config.arcChance * pct) {
         const i = floor(random() * particles.length);
         const j = (i + 1 + floor(random() * 10)) % particles.length;
         arcs.push({ from: i, to: j, life: 1, decay: 0.02 + random() * 0.03 });
@@ -578,15 +626,17 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     animRef.current = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(animRef.current);
-      canvas.removeEventListener('mousedown', md);
-      canvas.removeEventListener('mousemove', mm);
-      canvas.removeEventListener('mouseup', onEnd);
-      canvas.removeEventListener('mouseleave', onEnd);
-      canvas.removeEventListener('touchstart', ts);
-      canvas.removeEventListener('touchmove', tm);
-      canvas.removeEventListener('touchend', onEnd);
+      if (interactive) {
+        canvas.removeEventListener('mousedown', md);
+        canvas.removeEventListener('mousemove', mm);
+        canvas.removeEventListener('mouseup', onEnd);
+        canvas.removeEventListener('mouseleave', onEnd);
+        canvas.removeEventListener('touchstart', ts);
+        canvas.removeEventListener('touchmove', tm);
+        canvas.removeEventListener('touchend', onEnd);
+      }
     };
-  }, [intensity, tier, size, baseColorId, pulseColorId, ringColorId]);
+  }, [intensity, tier, size, baseColorId, pulseColorId, ringColorId, hideBody, hideRings, hidePulse, interactive]);
 
   const config = getOrbTier(tier);
 
@@ -735,6 +785,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         <p className="text-xs font-heading text-orange-400">{config.name}</p>
       </div>}
 
+      {/* Non-interactive preview mode (shop modal / nav FAB) short-circuits
+          before the evolve / ascend / awaken button cluster — nothing below
+          makes sense for a static render. */}
+      {!interactive ? null : (
+      <>
       <AnimatePresence>
         {/* Full Awaken takes top billing when available — even ahead of Ascend.
             This is the long-road 100% payoff and should feel like THE button. */}
@@ -823,6 +878,8 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         onClose={() => setShowFullAwakenConfirm(false)}
         onConfirm={triggerFullAwaken}
       />
+      </>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { HomeIcon, TargetIcon, SwordsIcon, FeedIcon } from '@/components/ui/Icons';
 import { useAuth } from '@/hooks/useAuth';
-import { MiniOrb } from '@/components/profile/MiniOrb';
+import { SoulOrb } from '@/components/profile/SoulOrb';
 import { ReactNode } from 'react';
 
 // 4 regular tab items split around a raised central orb FAB.
@@ -61,7 +61,7 @@ export function MobileNav() {
             />
             <div
               className={cn(
-                'relative rounded-full p-1 transition-transform',
+                'relative rounded-full p-0.5 transition-transform overflow-hidden',
                 orbActive && 'scale-[1.08]',
               )}
               style={{
@@ -69,11 +69,20 @@ export function MobileNav() {
                 boxShadow: orbActive
                   ? '0 8px 24px -6px rgba(249,115,22,0.55), inset 0 0 0 1px rgba(251,146,60,0.55)'
                   : '0 6px 18px -8px rgba(0,0,0,0.9), inset 0 0 0 1px rgba(236,72,153,0.25)',
+                width: 52,
+                height: 52,
               }}
             >
-              <MiniOrb
+              {/* Real canvas SoulOrb in miniature — identical rendering to
+                  what the user sees on the /orb page. interactive={false}
+                  disables drag + the evolve/ascend/awaken button cluster so
+                  it behaves as a pure visual preview in the nav. */}
+              <SoulOrb
                 tier={orbTier}
-                size={46}
+                size={48}
+                intensity={awakening}
+                interactive={false}
+                hideLabel
                 baseColorId={userAny?.orbBaseColor as unknown as string}
                 pulseColorId={userAny?.orbPulseColor as unknown as string}
                 ringColorId={userAny?.orbRingColor as unknown as string}

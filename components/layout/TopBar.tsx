@@ -21,7 +21,7 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-30 bg-[#08080f]/80 backdrop-blur-xl border-b border-[#1e1e30]">
-      <div className="flex items-center justify-between px-4 lg:px-6 h-14">
+      <div className="flex items-center justify-between px-2 lg:px-6 h-14 gap-1 lg:gap-0">
         {/* Mobile Logo */}
         <div className="lg:hidden">
           <Logo size="sm" showText={false} />
@@ -61,16 +61,9 @@ export function TopBar() {
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
           </Link>
-          <Link href="/battle-pass" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Battle Pass">
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400">
-              <path d="M6 9H4.5a2.5 2.5 0 010-5H6" />
-              <path d="M18 9h1.5a2.5 2.5 0 000-5H18" />
-              <path d="M4 22h16" />
-              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-              <path d="M18 2H6v7a6 6 0 0012 0V2z" />
-            </svg>
-          </Link>
+          {/* Battle Pass removed from mobile TopBar to make room for the avatar
+              at the right edge (was getting clipped). Still reachable from the
+              desktop sidebar and the dashboard. */}
           <Link href="/shop" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Shop">
             <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400">
               <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
@@ -91,7 +84,7 @@ export function TopBar() {
             <UsersIcon size={16} className="text-orange-400" />
           </Link>
           <NotificationBell count={unreadCount} />
-          <Link href="/profile" className="lg:hidden ml-0.5">
+          <Link href="/profile" className="lg:hidden ml-0.5 shrink-0 mr-0.5">
             <Avatar src={user.avatarUrl} alt={user.username} size="sm" />
           </Link>
         </div>
