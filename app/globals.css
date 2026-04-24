@@ -74,6 +74,60 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* --- Landing hero animations (marketing page only) --- */
+@keyframes landing-aurora-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(40px, -30px, 0) scale(1.15); }
+}
+.animate-landing-aurora { animation: landing-aurora-drift 22s ease-in-out infinite; }
+
+@keyframes landing-aurora-drift-alt {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%      { transform: translate3d(-50px, 40px, 0) scale(0.95); }
+}
+.animate-landing-aurora-alt { animation: landing-aurora-drift-alt 28s ease-in-out infinite; }
+
+@keyframes landing-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.animate-landing-shimmer {
+  background-size: 200% auto;
+  animation: landing-shimmer 4.5s linear infinite;
+}
+
+@keyframes landing-pill-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35), 0 0 18px -2px rgba(239, 68, 68, 0.25); }
+  50%      { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0), 0 0 30px 2px rgba(249, 115, 22, 0.45); }
+}
+.animate-landing-pill { animation: landing-pill-pulse 2.8s ease-in-out infinite; }
+
+@keyframes landing-ember {
+  0%   { transform: translate3d(0, 0, 0) scale(0.6); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translate3d(var(--drift, 0px), -120vh, 0) scale(1.2); opacity: 0; }
+}
+.animate-landing-ember { animation: landing-ember var(--dur, 9s) linear infinite; will-change: transform, opacity; }
+
+@keyframes landing-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+.animate-landing-marquee { animation: landing-marquee 40s linear infinite; }
+
+@keyframes landing-marquee-reverse {
+  from { transform: translate3d(-50%, 0, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+.animate-landing-marquee-reverse { animation: landing-marquee-reverse 48s linear infinite; }
+
+@keyframes landing-cta-glow {
+  0%, 100% { box-shadow: 0 0 28px -6px rgba(239,68,68,0.55), 0 8px 24px -8px rgba(220,38,38,0.5); }
+  50%      { box-shadow: 0 0 44px -2px rgba(249,115,22,0.8), 0 8px 30px -4px rgba(239,68,68,0.6); }
+}
+.animate-landing-cta { animation: landing-cta-glow 3.2s ease-in-out infinite; }
+
 /* --- Splash phoenix entrance ---
    CSS-driven on purpose. Framer-Motion applies `initial` inside a
    useEffect, which runs AFTER the first paint — so there's always one
