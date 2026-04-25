@@ -69,15 +69,17 @@ export function OverallProgressGraph() {
   const todayIdx = data.length - 1;
 
   return (
+    // Border + heavy box-shadow dropped on purpose — when stacked on a
+    // page next to other sections, that frame made the dashboard feel
+    // like a deck of identical cards. The internal content (gradient
+    // wash + bar chart) carries the section's identity already.
     <div
-      className="relative overflow-hidden rounded-2xl p-5 border"
+      className="relative overflow-hidden rounded-2xl p-5"
       style={{
         background:
-          'radial-gradient(ellipse 90% 60% at 100% 0%, rgba(249,115,22,0.12), transparent 55%),' +
-          'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(220,38,38,0.08), transparent 60%),' +
-          'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
-        borderColor: 'rgba(249,115,22,0.22)',
-        boxShadow: '0 0 30px -16px rgba(249,115,22,0.5), inset 0 1px 0 rgba(249,115,22,0.08)',
+          'radial-gradient(ellipse 90% 60% at 100% 0%, rgba(249,115,22,0.10), transparent 55%),' +
+          'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(220,38,38,0.06), transparent 60%),' +
+          'linear-gradient(165deg, rgba(16,16,26,0.55) 0%, rgba(11,11,20,0.45) 100%)',
       }}
     >
       <div className="flex items-center justify-between mb-4">

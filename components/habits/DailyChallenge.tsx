@@ -62,14 +62,17 @@ export function DailyChallenge() {
   if (completed) return null; // Hide after completion
 
   return (
+    // Daily challenge keeps a faint colored hairline (so it reads as
+    // its own pinned-quest item) but the heavy border + glow are gone.
+    // It already carries category color through its internal layout.
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="relative overflow-hidden rounded-2xl p-4"
       style={{
-        background: `linear-gradient(135deg, ${cat.color}18 0%, rgba(249,115,22,0.08) 40%, #10101a 90%)`,
-        border: `1px solid ${cat.color}30`,
-        boxShadow: `0 0 24px -12px ${cat.color}40, inset 0 1px 0 ${cat.color}15`,
+        background: `linear-gradient(135deg, ${cat.color}1a 0%, rgba(249,115,22,0.05) 40%, rgba(16,16,26,0.5) 90%)`,
+        borderTop: `1px solid ${cat.color}30`,
+        borderBottom: `1px solid ${cat.color}18`,
       }}
     >
       {/* Ambient glow */}

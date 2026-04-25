@@ -58,8 +58,24 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Premium header banner — gradient backdrop, league crest + streak + orb, XP progress integrated */}
+    <div className="relative max-w-4xl mx-auto">
+      {/* Page atmosphere — soft warm radial gradient anchored to the hero
+          that bleeds down the page. Replaces the previous "stack of
+          identical bordered cards" look with one continuous canvas. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-[480px] pointer-events-none -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(249,115,22,0.12), transparent 65%),' +
+            'radial-gradient(ellipse 60% 50% at 100% 30%, rgba(236,72,153,0.06), transparent 65%)',
+        }}
+      />
+
+      <div className="space-y-7">
+      {/* Hero — the only fully-framed card on the page. It anchors
+          identity (orb / league / level / streak / XP). Everything below
+          flows on the canvas without competing borders. */}
       <div
         className="relative overflow-hidden rounded-2xl border"
         style={{
@@ -159,75 +175,64 @@ export default function DashboardPage() {
       {/* Daily Challenge */}
       <DailyChallenge />
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Today's Habits — wrapped in a premium container */}
-        <div className="lg:col-span-2 min-w-0">
-          <div
-            className="relative overflow-hidden rounded-2xl p-4 sm:p-5 border"
-            style={{
-              background:
-                'radial-gradient(ellipse 90% 60% at 0% 0%, rgba(220,38,38,0.08), transparent 55%),' +
-                'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
-              borderColor: 'rgba(249,115,22,0.18)',
-              boxShadow: 'inset 0 1px 0 rgba(249,115,22,0.06)',
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
-                />
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
-                  Today&rsquo;s Habits
-                </p>
-                {!habitsLoading && habits.length > 0 && (
-                  <span className="text-[10px] font-mono text-slate-500 ml-1">
-                    · {habits.filter((h) => h.lastLogDate && new Date(h.lastLogDate.toDate()).toDateString() === new Date().toDateString()).length}/{habits.length}
-                  </span>
-                )}
-              </div>
-              <Link href="/habits">
-                <Button variant="ghost" size="sm">Manage</Button>
-              </Link>
-            </div>
-
-            {habitsLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
-              </div>
-            ) : habits.length === 0 ? (
-              <EmptyState
-                icon={<TargetFullIcon size={40} className="text-orange-400" />}
-                title="No habits yet"
-                description="Add your first habit to start tracking and competing."
-                action={
-                  <Link href="/habits">
-                    <Button>Browse Categories</Button>
-                  </Link>
-                }
-              />
-            ) : (
-              <div className="space-y-2">
-                {habits.map((habit) => {
-                  const isLoggedToday = habit.lastLogDate
-                    ? new Date(habit.lastLogDate.toDate()).toDateString() === new Date().toDateString()
-                    : false;
-
-                  return (
-                    <HabitCard
-                      key={habit.categorySlug}
-                      habit={habit}
-                      isLoggedToday={isLoggedToday}
-                      onLog={() => openLogModal(habit)}
-                    />
-                  );
-                })}
-              </div>
+      {/* Today's Habits — no wrapper card. Inline section header on the
+          page, then the habit list flows directly. Each HabitCard already
+          has its own warm gradient + mastery treatment, so an outer
+          container was redundant boxiness. */}
+      <section>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
+            />
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
+              Today&rsquo;s Habits
+            </p>
+            {!habitsLoading && habits.length > 0 && (
+              <span className="text-[10px] font-mono text-slate-500 ml-1">
+                · {habits.filter((h) => h.lastLogDate && new Date(h.lastLogDate.toDate()).toDateString() === new Date().toDateString()).length}/{habits.length}
+              </span>
             )}
           </div>
+          <Link href="/habits">
+            <Button variant="ghost" size="sm">Manage</Button>
+          </Link>
         </div>
 
+        {habitsLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : habits.length === 0 ? (
+          <EmptyState
+            icon={<TargetFullIcon size={40} className="text-orange-400" />}
+            title="No habits yet"
+            description="Add your first habit to start tracking and competing."
+            action={
+              <Link href="/habits">
+                <Button>Browse Categories</Button>
+              </Link>
+            }
+          />
+        ) : (
+          <div className="space-y-2">
+            {habits.map((habit) => {
+              const isLoggedToday = habit.lastLogDate
+                ? new Date(habit.lastLogDate.toDate()).toDateString() === new Date().toDateString()
+                : false;
+              return (
+                <HabitCard
+                  key={habit.categorySlug}
+                  habit={habit}
+                  isLoggedToday={isLoggedToday}
+                  onLog={() => openLogModal(habit)}
+                />
+              );
+            })}
+          </div>
+        )}
+      </section>
       </div>
 
       {/* Quick Log Modal */}

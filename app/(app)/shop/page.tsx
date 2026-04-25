@@ -915,8 +915,23 @@ function ShopCard({
           )}
         />
       )}
+      {/* The whole card is now the tap target for the preview modal —
+          previously only the inner Button triggered onBuy, so users
+          couldn't see what an item looked like without committing to
+          the buy/equip flow. Using role=button on a div (instead of a
+          real <button>) because the card already contains an inner
+          Button — nesting <button> inside <button> is invalid HTML. */}
       <div
-        className="relative overflow-hidden rounded-xl p-3 transition-all"
+        role="button"
+        tabIndex={0}
+        onClick={() => onBuy(item)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onBuy(item);
+          }
+        }}
+        className="relative overflow-hidden rounded-xl p-3 transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
         style={cardStyle}
       >
       {/* --- Layered decorations by rarity --- */}
@@ -1068,7 +1083,12 @@ function ShopCard({
         variant={primary ? 'primary' : 'secondary'}
         disabled={disabled}
         loading={buying === item.id}
-        onClick={() => onBuy(item)}
+        onClick={(e) => {
+          // Outer card already opens the preview modal; stopping here
+          // prevents a redundant double-fire onto the same setConfirm.
+          e.stopPropagation();
+          onBuy(item);
+        }}
       >
         {label}
       </Button>
