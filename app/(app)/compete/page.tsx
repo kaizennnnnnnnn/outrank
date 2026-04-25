@@ -13,7 +13,10 @@ import { useUIStore } from '@/store/uiStore';
 import { SwordsCrossIcon } from '@/components/ui/AppIcons';
 import { DuelResultModal } from '@/components/competition/DuelResultModal';
 import { DuelEndedCard } from '@/components/competition/DuelEndedCard';
+import { DuelActiveCard } from '@/components/competition/DuelActiveCard';
 import { Competition } from '@/types/competition';
+import { CATEGORIES } from '@/constants/categories';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import Link from 'next/link';
 
 export default function CompetePage() {
@@ -219,7 +222,7 @@ export default function CompetePage() {
         <h2 className="text-sm font-bold text-orange-400 uppercase tracking-wider">Active Duels</h2>
         {loading ? (
           <div className="space-y-2">
-            {[1, 2].map((i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+            {[1, 2].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
           </div>
         ) : activeComps.length === 0 ? (
           <EmptyState
@@ -228,38 +231,13 @@ export default function CompetePage() {
             description="Challenge a friend to a duel from the leaderboard or their profile."
           />
         ) : (
-          activeComps.map((comp) => {
-            const me = comp.participants.find((p) => p.userId === user?.uid);
-            const opponent = comp.participants.find((p) => p.userId !== user?.uid);
-            if (!me || !opponent) return null;
-
-            return (
-              <Link key={comp.id} href={`/compete/duel/${comp.id}`}>
-                <div className="glass-card rounded-2xl p-4 glow-hover transition-all">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar src={me.avatarUrl} alt={me.username} size="md" />
-                      <div>
-                        <p className="text-sm font-bold text-white">{me.username}</p>
-                        <p className="font-mono text-lg text-orange-400">{me.score}</p>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <span className="font-heading text-xl text-slate-500">VS</span>
-                      <p className="text-[10px] text-slate-600">{comp.title}</p>
-                    </div>
-                    <div className="flex items-center gap-3 text-right">
-                      <div>
-                        <p className="text-sm font-bold text-white">{opponent.username}</p>
-                        <p className="font-mono text-lg text-orange-400">{opponent.score}</p>
-                      </div>
-                      <Avatar src={opponent.avatarUrl} alt={opponent.username} size="md" />
-                    </div>
-                  </div>
-                </div>
+          activeComps.map((comp) => (
+            user && (
+              <Link key={comp.id} href={`/compete/duel/${comp.id}`} className="block">
+                <DuelActiveCard comp={comp as Competition} currentUserId={user.uid} />
               </Link>
-            );
-          })
+            )
+          ))
         )}
       </section>
 
@@ -269,14 +247,51 @@ export default function CompetePage() {
           <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Waiting for Response</h2>
           {sentChallenges.map((comp) => {
             const opponent = comp.participants.find((p) => p.userId !== user?.uid);
+            const cat = CATEGORIES.find((c) => c.slug === comp.categorySlug);
             return (
-              <div key={comp.id} className="glass-card rounded-2xl p-4 opacity-60">
-                <div className="flex items-center gap-3">
-                  <SwordsCrossIcon size={20} className="text-slate-500" />
-                  <div className="flex-1">
-                    <p className="text-sm text-white">{comp.title}</p>
-                    <p className="text-xs text-slate-600">Waiting for {opponent?.username} to respond...</p>
+              <div
+                key={comp.id}
+                className="relative rounded-2xl p-3.5 border overflow-hidden"
+                style={{
+                  background: 'linear-gradient(160deg, #10101a 0%, #07070c 100%)',
+                  borderColor: 'rgba(100,116,139,0.30)',
+                }}
+              >
+                {/* Slow drifting "pending" stripes — signals wait without
+                    feeling like a flat disabled card. */}
+                <div
+                  aria-hidden
+                  className="absolute inset-0 opacity-30 pointer-events-none"
+                  style={{
+                    backgroundImage:
+                      'repeating-linear-gradient(115deg, transparent 0 14px, rgba(148,163,184,0.10) 14px 28px)',
+                    animation: 'duel-pending-drift 22s linear infinite',
+                  }}
+                />
+                <div className="relative flex items-center gap-3">
+                  <CategoryIcon
+                    icon={cat?.icon ?? '⚔️'}
+                    color={cat?.color ?? '#64748b'}
+                    size="sm"
+                    slug={cat?.slug}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-white truncate">
+                      {cat?.name ?? comp.title}
+                    </p>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      Waiting for <span className="text-slate-300 font-semibold">{opponent?.username}</span> to accept
+                    </p>
                   </div>
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-[0.18em] px-2 py-1 rounded-md text-slate-300"
+                    style={{
+                      background: 'rgba(148,163,184,0.10)',
+                      border: '1px solid rgba(148,163,184,0.30)',
+                    }}
+                  >
+                    Pending
+                  </span>
                 </div>
               </div>
             );

@@ -151,10 +151,14 @@ export default function HabitsPage() {
                 style={{ background: habit.color }}
               />
 
-              {/* Remove button — always visible in edit mode; hover-only
-                  otherwise so it doesn't clutter the card. The bigger
-                  red-pill styling in edit mode makes it an unambiguous
-                  tap target on touch devices. */}
+              {/* Remove button. Edit mode = always visible (mobile can't
+                  hover); idle mode = ghost-on-hover so it doesn't clutter
+                  the card. Edit-mode treatment uses the same warm
+                  red-orange gradient as the rest of the app's primary
+                  CTAs and a trash glyph instead of a bare X — fits the
+                  fire/phoenix palette and reads as "delete," not as a
+                  generic close. The faint warm halo behind it draws the
+                  eye without the harsh pulse the previous version used. */}
               <button
                 onClick={(e) => {
                   e.preventDefault();
@@ -162,17 +166,42 @@ export default function HabitsPage() {
                   removeHabit(habit.categorySlug);
                 }}
                 className={cn(
-                  'absolute top-3 right-3 z-10 rounded-full flex items-center justify-center transition-all',
+                  'absolute top-3 right-3 z-10 rounded-full flex items-center justify-center transition-all overflow-visible',
                   editMode
-                    ? 'w-8 h-8 bg-red-500/15 text-red-400 border border-red-500/50 shadow-[0_0_12px_-2px_rgba(239,68,68,0.6)] animate-pulse'
-                    : 'w-7 h-7 text-slate-700 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100',
+                    ? 'w-9 h-9 text-white shadow-[0_4px_14px_-2px_rgba(239,68,68,0.55)] hover:shadow-[0_6px_22px_-2px_rgba(249,115,22,0.7)] active:scale-95'
+                    : 'w-7 h-7 text-slate-700 hover:text-orange-400 hover:bg-orange-500/10 opacity-0 group-hover:opacity-100',
                 )}
+                style={editMode ? {
+                  background: 'linear-gradient(145deg, #f97316 0%, #dc2626 60%, #7f1d1d 100%)',
+                  border: '1px solid rgba(254, 215, 170, 0.4)',
+                } : undefined}
                 aria-label="Remove habit"
               >
-                <svg width={editMode ? 16 : 14} height={editMode ? 16 : 14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                </svg>
+                {editMode && (
+                  <span
+                    aria-hidden
+                    className="absolute -inset-1.5 rounded-full pointer-events-none"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(249,115,22,0.45), transparent 70%)',
+                      filter: 'blur(4px)',
+                      animation: 'frame-pulse 2.4s ease-in-out infinite',
+                    }}
+                  />
+                )}
+                {editMode ? (
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                    <path d="M10 11v6" />
+                    <path d="M14 11v6" />
+                  </svg>
+                ) : (
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                  </svg>
+                )}
               </button>
 
               {editMode ? (
