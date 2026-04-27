@@ -13,6 +13,13 @@ interface DayXP {
   logs: number;
 }
 
+/**
+ * Flowing section, no container. The dashboard owns surrounding spacing
+ * and the section eyebrow lives here so the chart's own data drives the
+ * total-XP value beside it. Drop the gradient wash + rounded frame —
+ * stacking framed cards was the source of the "deck of identical boxes"
+ * look on the dashboard.
+ */
 export function OverallProgressGraph() {
   const { user } = useAuth();
   const [data, setData] = useState<DayXP[]>([]);
@@ -60,7 +67,7 @@ export function OverallProgressGraph() {
     fetch();
   }, [user]);
 
-  if (loading) return <Skeleton className="h-40 rounded-2xl" />;
+  if (loading) return <Skeleton className="h-40" />;
 
   const maxXP = Math.max(...data.map((d) => d.xp), 1);
   const totalXP = data.reduce((sum, d) => sum + d.xp, 0);
@@ -69,39 +76,34 @@ export function OverallProgressGraph() {
   const todayIdx = data.length - 1;
 
   return (
-    // Border + heavy box-shadow dropped on purpose — when stacked on a
-    // page next to other sections, that frame made the dashboard feel
-    // like a deck of identical cards. The internal content (gradient
-    // wash + bar chart) carries the section's identity already.
-    <div
-      className="relative overflow-hidden rounded-2xl p-5"
-      style={{
-        background:
-          'radial-gradient(ellipse 90% 60% at 100% 0%, rgba(249,115,22,0.10), transparent 55%),' +
-          'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(220,38,38,0.06), transparent 60%),' +
-          'linear-gradient(165deg, rgba(16,16,26,0.55) 0%, rgba(11,11,20,0.45) 100%)',
-      }}
-    >
-      <div className="flex items-center justify-between mb-4">
+    <section>
+      {/* Unified section eyebrow — same shape as Today's Habits below */}
+      <div className="flex items-end justify-between mb-4 px-1">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400/90">
-            Weekly Overview
-          </p>
-          <p className="font-heading text-2xl font-bold text-white mt-0.5">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
+            />
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
+              Weekly Overview
+            </p>
+          </div>
+          <p className="font-heading text-3xl font-bold mt-1 leading-none">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">
               {totalXP.toLocaleString()}
             </span>
-            <span className="text-slate-500 text-sm font-mono ml-1">XP</span>
+            <span className="text-slate-500 text-sm font-mono ml-1.5">XP</span>
           </p>
         </div>
         <div className="text-right">
           <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Logs</p>
-          <p className="font-heading text-lg font-bold text-white">{totalLogs}</p>
+          <p className="font-heading text-lg font-bold text-white mt-0.5">{totalLogs}</p>
         </div>
       </div>
 
       {/* Bar chart */}
-      <div className="flex items-end justify-between gap-1.5 h-24">
+      <div className="flex items-end justify-between gap-1.5 h-24 px-1">
         {data.map((day, i) => {
           const barHeight = maxXP > 0 ? (day.xp / maxXP) * 100 : 0;
           const isBest = i === bestIdx && day.xp > 0;
@@ -138,7 +140,7 @@ export function OverallProgressGraph() {
       </div>
 
       {/* Labels */}
-      <div className="flex justify-between mt-2">
+      <div className="flex justify-between mt-2 px-1">
         {data.map((day, i) => (
           <div key={i} className="flex-1 text-center">
             <p className={cn(
@@ -154,6 +156,6 @@ export function OverallProgressGraph() {
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

@@ -45,7 +45,6 @@ export function DailyChallenge() {
         avatarUrl: user.avatarUrl || '',
       });
 
-      // Mark as completed in localStorage
       const key = `dc_${new Date().toDateString()}`;
       localStorage.setItem(key, 'done');
       setCompleted(true);
@@ -59,58 +58,56 @@ export function DailyChallenge() {
   };
 
   if (!cat || !challenge) return null;
-  if (completed) return null; // Hide after completion
+  if (completed) return null;
 
   return (
-    // Daily challenge keeps a faint colored hairline (so it reads as
-    // its own pinned-quest item) but the heavy border + glow are gone.
-    // It already carries category color through its internal layout.
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
+    // Pinned-quest banner: lives between sections without claiming card status.
+    // Visual signal is the colored left edge bar + a faint horizontal tint —
+    // no rounded frame, no border, no glow. Sits on the page like a Linear
+    // inbox item, distinct because of color not because of enclosure.
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl p-4"
-      style={{
-        background: `linear-gradient(135deg, ${cat.color}1a 0%, rgba(249,115,22,0.05) 40%, rgba(16,16,26,0.5) 90%)`,
-        borderTop: `1px solid ${cat.color}30`,
-        borderBottom: `1px solid ${cat.color}18`,
-      }}
     >
-      {/* Ambient glow */}
-      <div
-        className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-[0.12] blur-3xl pointer-events-none"
-        style={{ background: cat.color }}
-      />
-
-      <div className="relative flex items-center justify-between gap-2 mb-2.5">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ background: cat.color, boxShadow: `0 0 6px ${cat.color}` }}
-          />
-          <span className="text-[10px] font-bold text-orange-400 uppercase tracking-[0.15em]">
-            Daily Challenge
-          </span>
-        </div>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
-          <svg width={10} height={10} viewBox="0 0 24 24" fill="currentColor" className="text-orange-400">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-          </svg>
-          <span className="text-[10px] font-mono font-bold text-orange-400">+{challenge.bonusXP} XP</span>
-        </span>
+      <div className="flex items-center gap-2 mb-2.5 px-1">
+        <div
+          className="w-1.5 h-1.5 rounded-full animate-pulse"
+          style={{ background: cat.color, boxShadow: `0 0 6px ${cat.color}` }}
+        />
+        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
+          Daily Challenge
+        </p>
       </div>
 
-      <div className="relative flex items-center gap-3">
+      <div
+        className="relative flex items-center gap-3 py-2.5 pl-4 pr-2"
+        style={{
+          background: `linear-gradient(90deg, ${cat.color}14 0%, transparent 70%)`,
+          borderLeft: `2px solid ${cat.color}`,
+        }}
+      >
         <CategoryIcon slug={cat.slug} name={cat.name} icon={cat.icon} color={cat.color} size="md" />
+
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white leading-tight">{challenge.text}</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">
-            {cat.name} &middot; {challenge.value} {cat.unit}
-          </p>
+          <p className="text-sm font-bold text-white leading-tight truncate">{challenge.text}</p>
+          <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500">
+            <span>{cat.name}</span>
+            <span className="text-slate-700">·</span>
+            <span>{challenge.value} {cat.unit}</span>
+            <span className="text-slate-700">·</span>
+            <span className="inline-flex items-center gap-0.5 text-orange-400 font-mono font-bold">
+              <svg width={9} height={9} viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              +{challenge.bonusXP} XP
+            </span>
+          </div>
         </div>
+
         <Button size="sm" onClick={handleComplete} loading={completing}>
           Complete
         </Button>
       </div>
-    </motion.div>
+    </motion.section>
   );
 }
