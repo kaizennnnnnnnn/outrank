@@ -13,6 +13,8 @@ import { Timestamp } from 'firebase/firestore';
 import { arrayUnion, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { ReactionEmoji, FeedItem } from '@/types/feed';
+import { RecapFeedItem } from '@/types/recap';
+import { RecapFeedCard } from '@/components/recap/RecapFeedCard';
 import { cn } from '@/lib/utils';
 import { ActivityIcon } from '@/components/ui/AppIcons';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
@@ -209,18 +211,37 @@ export default function FeedPage() {
       ) : (
         <div className="space-y-3">
           <AnimatePresence initial={false}>
-            {visibleItems.map((item, i) => (
-              <FeedCard
-                key={item.id}
-                item={item}
-                index={i}
-                isMine={item.actorId === user?.uid}
-                cosm={actorCosm[item.actorId] || {}}
-                sharedReactions={sharedReactions}
-                currentUid={user?.uid}
-                onReact={handleReaction}
-              />
-            ))}
+            {visibleItems.map((item, i) => {
+              // New-shape recap items (one per published day) and legacy
+              // per-log items coexist while old data drains. Branch on type.
+              if (item.type === 'recap') {
+                const recapItem = item as unknown as RecapFeedItem;
+                return (
+                  <RecapFeedCard
+                    key={item.id}
+                    item={recapItem}
+                    index={i}
+                    isMine={item.actorId === user?.uid}
+                    cosm={actorCosm[item.actorId] || {}}
+                    sharedReactions={sharedReactions}
+                    currentUid={user?.uid}
+                    onReact={handleReaction}
+                  />
+                );
+              }
+              return (
+                <FeedCard
+                  key={item.id}
+                  item={item}
+                  index={i}
+                  isMine={item.actorId === user?.uid}
+                  cosm={actorCosm[item.actorId] || {}}
+                  sharedReactions={sharedReactions}
+                  currentUid={user?.uid}
+                  onReact={handleReaction}
+                />
+              );
+            })}
           </AnimatePresence>
         </div>
       )}

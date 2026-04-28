@@ -126,6 +126,19 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // RECAPS — one per (user, local-date). Doc id IS the YYYY-MM-DD date
+    // string. Drafts (status == 'draft') are private to the owner; once
+    // published, friends can read. Only the owner can write — clients
+    // mutate via `lib/recap.ts`. Edit-after-publish window is enforced
+    // client-side (24h); the rule allows updates from the owner anytime.
+    match /recaps/{userId}/items/{recapId} {
+      allow read: if isOwner(userId)
+        || (isFriend(userId) && resource.data.status == 'published');
+      allow create: if isOwner(userId) && isNotBanned();
+      allow update: if isOwner(userId) && isNotBanned();
+      allow delete: if false;
+    }
+
     // NOTIFICATIONS
     match /notifications/{userId}/items/{notificationId} {
       allow read: if isOwner(userId);

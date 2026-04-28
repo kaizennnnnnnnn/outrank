@@ -1,6 +1,8 @@
 import { Timestamp } from 'firebase/firestore';
 
-export type FeedItemType = 'log' | 'badge' | 'levelup' | 'duel_win' | 'streak_milestone';
+// 'log' is legacy — kept so existing items render. New activity comes
+// through 'recap' (one feed item per published daily recap, not per log).
+export type FeedItemType = 'log' | 'recap' | 'badge' | 'levelup' | 'duel_win' | 'streak_milestone';
 
 export type ReactionEmoji = '🔥' | '💪' | '👏' | '⚡' | '🤝';
 

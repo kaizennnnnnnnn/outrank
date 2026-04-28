@@ -12,6 +12,8 @@ import {
   Timestamp,
   increment,
 } from 'firebase/firestore';
+import { appendLogToRecap } from './recap';
+import { RecapEntry } from '@/types/recap';
 
 const XP_LOG = 10;
 const XP_LOG_VERIFIED = 15;
@@ -330,62 +332,29 @@ export async function logHabit(params: LogHabitParams) {
 
   } catch (err) { console.error('Leaderboard update failed:', err); }
 
-  // 7. Create feed item for friends to see
+  // 7. Append this log to today's draft Recap.
+  //
+  // Replaces the old per-log feed fan-out (one feed item per friend per
+  // log + one notification per friend per log → spam). Friends now see
+  // a single curated recap when the user taps "Submit Today's Record"
+  // on the dashboard. See `lib/recap.ts`.
   try {
-  // Generate a shared origin ID so reactions are shared across all copies
-  const originId = `${userId}_${habitSlug}_${Date.now()}`;
-
-  const feedItem = {
-    type: 'log',
-    actorId: userId,
-    actorUsername: username,
-    actorAvatar: avatarUrl,
-    categoryName: habit.categoryName || habitSlug,
-    categoryIcon: habit.categoryIcon || '',
-    categorySlug: habitSlug,
-    categoryColor: habit.color || '#f97316',
-    value,
-    // Proof image + verified flag so the feed can show the photo and a
-    // "verified" badge on logs that were submitted with evidence.
-    proofImageUrl: proofImageUrl || '',
-    verified: hasProof,
-    message: `${username} logged ${value} ${habit.unit || ''} of ${habit.categoryName || habitSlug}`,
-    originId,
-    reactions: {},
-    createdAt: Timestamp.now(),
-  };
-
-  // Initialize shared reactions document
-  await setDoc(doc(db, `reactions/${originId}`), { reactions: {} });
-
-  // Write to own feed
-  await addDoc(collection(db, `feed/${userId}/items`), feedItem);
-
-  // Write to all friends' feeds so they can see it
-  try {
-    const friendsSnap = await getDocs(
-      query(
-        collection(db, `friendships/${userId}/friends`),
-        where('status', '==', 'accepted')
-      )
-    );
-    for (const friendDoc of friendsSnap.docs) {
-      await addDoc(collection(db, `feed/${friendDoc.id}/items`), feedItem);
-      // Notify friend
-      await addDoc(collection(db, `notifications/${friendDoc.id}/items`), {
-        type: 'friend_logged',
-        message: `${username} logged ${value} ${habit.unit || ''} of ${habit.categoryName || habitSlug}`,
-        isRead: false,
-        relatedId: habitSlug,
-        actorId: userId,
-        actorAvatar: avatarUrl,
-        createdAt: Timestamp.now(),
-      });
-    }
-  } catch (err) {
-    console.error('Failed to write to friends feeds:', err);
-  }
-  } catch (err) { console.error('Feed/notifications failed:', err); }
+    const entry: RecapEntry = {
+      logId: logRef.id,
+      habitSlug,
+      categoryName: habit.categoryName || habitSlug,
+      categoryIcon: habit.categoryIcon || '',
+      categoryColor: habit.color || '#f97316',
+      value,
+      unit: habit.unit || '',
+      note,
+      proofImageUrl: proofImageUrl || '',
+      verified: hasProof,
+      xpEarned: totalXP,
+      loggedAt: Timestamp.now(),
+    };
+    await appendLogToRecap({ userId, username, avatarUrl, entry });
+  } catch (err) { console.error('Recap append failed:', err); }
 
   return {
     xpEarned: totalXP,

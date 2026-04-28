@@ -18,6 +18,7 @@ import { getLeague } from '@/constants/seasons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { UserHabit } from '@/types/habit';
 import { OverallProgressGraph } from '@/components/habits/OverallProgressGraph';
+import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -239,6 +240,11 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+
+        {/* TODAY'S RECORD — closing CTA. After logging, this is where the
+            user submits their day. Replaces the per-log feed spam with
+            one curated recap fan-out. */}
+        <RecapDraftPanel />
       </div>
 
       {/* Quick Log Modal */}
