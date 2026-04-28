@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Recap, RecapEntry } from '@/types/recap';
@@ -7,7 +8,16 @@ import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
 import { FeedComments } from '@/components/social/FeedComments';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { formatRelativeTime } from '@/lib/utils';
-import { canEdit } from '@/lib/recap';
+import {
+  canEdit,
+  getEntryVerifications,
+  addEntryVerification,
+  removeEntryVerification,
+  EntryVerification,
+} from '@/lib/recap';
+import { useAuth } from '@/hooks/useAuth';
+import { useUIStore } from '@/store/uiStore';
+import { haptic } from '@/lib/haptics';
 
 interface Props {
   recap: Recap;
@@ -16,17 +26,34 @@ interface Props {
 
 /**
  * Full story view of a published Recap. Header with day stats, then a
- * scroll-through of each entry (photo + note + meta), then the comments
- * thread at the bottom.
+ * scroll-through of each entry (photo + note + meta + per-entry
+ * verification controls), then the comments thread at the bottom.
  *
- * Verification UI for friends (Confirm / Flag swipe) is stubbed — wire-up
- * lands with the verification ladder phase. Schema fields are already in
- * place on `RecapEntry.confirmedBy` / `flaggedBy`.
+ * Verification: friends can Confirm or Flag any entry. State lives in
+ * `/reactions/{recapOriginId}_{logId}` — same collection comments and
+ * the standard reactions use, so no new rules. Confirms upgrade the
+ * entry toward tier-2 in the verification ladder; flags raise it for
+ * review (UI surfaces only — moderation pipeline is later).
  */
 export function RecapDetailView({ recap, isOwner }: Props) {
+  const { user } = useAuth();
   const heroColor = recap.entries[0]?.categoryColor || '#f97316';
   const dateLabel = formatDateLong(recap.localDate);
   const editable = isOwner && canEdit(recap);
+
+  // Bulk-load verifications once when the recap renders. Optimistic
+  // updates after that — taps hit the local map, then write through.
+  const [verifications, setVerifications] = useState<Record<string, EntryVerification>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    getEntryVerifications(recap)
+      .then((map) => {
+        if (!cancelled) setVerifications(map);
+      })
+      .catch(() => { /* non-fatal — UI just won't show counts */ });
+    return () => { cancelled = true; };
+  }, [recap]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -92,11 +119,27 @@ export function RecapDetailView({ recap, isOwner }: Props) {
           <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
             The Day
           </p>
+          {!isOwner && (
+            <span className="text-[10px] font-mono text-slate-600 ml-1">
+              · tap an entry to confirm or flag
+            </span>
+          )}
         </div>
 
         <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
           {recap.entries.map((entry, i) => (
-            <RecapEntryRow key={entry.logId} entry={entry} index={i} />
+            <RecapEntryRow
+              key={entry.logId}
+              entry={entry}
+              index={i}
+              isOwner={isOwner}
+              currentUid={user?.uid}
+              recapOriginId={recap.originId}
+              verification={verifications[entry.logId] || { confirm: [], flag: [] }}
+              onVerificationChange={(logId, next) =>
+                setVerifications((m) => ({ ...m, [logId]: next }))
+              }
+            />
           ))}
         </div>
       </section>
@@ -120,7 +163,72 @@ export function RecapDetailView({ recap, isOwner }: Props) {
   );
 }
 
-function RecapEntryRow({ entry, index }: { entry: RecapEntry; index: number }) {
+interface RowProps {
+  entry: RecapEntry;
+  index: number;
+  isOwner: boolean;
+  currentUid?: string;
+  recapOriginId: string;
+  verification: EntryVerification;
+  onVerificationChange: (logId: string, next: EntryVerification) => void;
+}
+
+function RecapEntryRow({
+  entry,
+  index,
+  isOwner,
+  currentUid,
+  recapOriginId,
+  verification,
+  onVerificationChange,
+}: RowProps) {
+  const addToast = useUIStore((s) => s.addToast);
+
+  const myConfirm = currentUid ? verification.confirm.includes(currentUid) : false;
+  const myFlag = currentUid ? verification.flag.includes(currentUid) : false;
+  const confirmCount = verification.confirm.length;
+  const flagCount = verification.flag.length;
+
+  // Tier 2 = "verified by friend" — at least one non-owner has confirmed.
+  // Self-confirms (owner confirming their own entry) don't count.
+  const friendConfirms = verification.confirm.filter((u) => u !== entry.logId && u !== currentUid);
+  const hasFriendConfirm = verification.confirm.some((u) => u !== currentUid);
+
+  const handleVerify = async (kind: 'confirm' | 'flag') => {
+    if (!currentUid || isOwner) return;
+    const isOn = kind === 'confirm' ? myConfirm : myFlag;
+
+    // Optimistic update so the tap feels immediate.
+    const next: EntryVerification = {
+      confirm:
+        kind === 'confirm'
+          ? isOn
+            ? verification.confirm.filter((u) => u !== currentUid)
+            : [...verification.confirm, currentUid]
+          : verification.confirm,
+      flag:
+        kind === 'flag'
+          ? isOn
+            ? verification.flag.filter((u) => u !== currentUid)
+            : [...verification.flag, currentUid]
+          : verification.flag,
+    };
+    onVerificationChange(entry.logId, next);
+
+    try {
+      if (isOn) {
+        await removeEntryVerification(recapOriginId, entry.logId, currentUid, kind);
+      } else {
+        await addEntryVerification(recapOriginId, entry.logId, currentUid, kind);
+        haptic(kind === 'confirm' ? 'success' : 'tap');
+      }
+    } catch {
+      addToast({ type: 'error', message: 'Could not save' });
+      // Revert on failure
+      onVerificationChange(entry.logId, verification);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
@@ -137,7 +245,38 @@ function RecapEntryRow({ entry, index }: { entry: RecapEntry; index: number }) {
           size="md"
         />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white truncate">{entry.categoryName}</p>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-sm font-bold text-white truncate">{entry.categoryName}</p>
+            {hasFriendConfirm && (
+              <span
+                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded inline-flex items-center gap-1"
+                style={{
+                  color: '#34d399',
+                  background: 'rgba(34,197,94,0.15)',
+                  border: '1px solid rgba(34,197,94,0.4)',
+                }}
+                title={`Verified by ${friendConfirms.length || confirmCount} ${(friendConfirms.length || confirmCount) === 1 ? 'friend' : 'friends'}`}
+              >
+                <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Verified
+              </span>
+            )}
+            {flagCount > 0 && (
+              <span
+                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
+                style={{
+                  color: '#fbbf24',
+                  background: 'rgba(245,158,11,0.15)',
+                  border: '1px solid rgba(245,158,11,0.4)',
+                }}
+                title={`Flagged by ${flagCount} ${flagCount === 1 ? 'friend' : 'friends'}`}
+              >
+                ⚠ Flagged · {flagCount}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 mt-0.5">
             <span style={{ color: entry.categoryColor }} className="font-bold">
               {entry.value}{entry.unit}
@@ -162,7 +301,81 @@ function RecapEntryRow({ entry, index }: { entry: RecapEntry; index: number }) {
           <ProofImage src={entry.proofImageUrl} alt={`${entry.categoryName} proof`} />
         </div>
       )}
+
+      {/* Friend-only verification controls. Owner sees the counts only. */}
+      {!isOwner && currentUid && (
+        <div className="pl-12 flex items-center gap-2 pt-1">
+          <VerifyChip
+            kind="confirm"
+            active={myConfirm}
+            count={confirmCount}
+            onClick={() => handleVerify('confirm')}
+          />
+          <VerifyChip
+            kind="flag"
+            active={myFlag}
+            count={flagCount}
+            onClick={() => handleVerify('flag')}
+          />
+        </div>
+      )}
+      {isOwner && (confirmCount > 0 || flagCount > 0) && (
+        <div className="pl-12 flex items-center gap-3 text-[10px] font-mono text-slate-500 pt-1">
+          {confirmCount > 0 && (
+            <span className="text-emerald-400">
+              ✓ {confirmCount} confirm{confirmCount === 1 ? '' : 's'}
+            </span>
+          )}
+          {flagCount > 0 && (
+            <span className="text-amber-400">
+              ⚠ {flagCount} flag{flagCount === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
+      )}
     </motion.div>
+  );
+}
+
+function VerifyChip({
+  kind,
+  active,
+  count,
+  onClick,
+}: {
+  kind: 'confirm' | 'flag';
+  active: boolean;
+  count: number;
+  onClick: () => void;
+}) {
+  const color = kind === 'confirm' ? '#22c55e' : '#f59e0b';
+  const label = kind === 'confirm' ? 'Confirm' : 'Flag';
+  return (
+    <motion.button
+      whileTap={{ scale: 0.92 }}
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono transition-all border"
+      style={{
+        borderColor: active ? color : '#1e1e30',
+        background: active ? `${color}22` : '#0b0b14',
+        color: active ? color : '#94a3b8',
+        boxShadow: active ? `0 0 10px -2px ${color}66, inset 0 1px 0 ${color}22` : undefined,
+      }}
+    >
+      {kind === 'confirm' ? (
+        <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : (
+        <span className="text-[11px] leading-none">⚠</span>
+      )}
+      <span className="font-bold">{label}</span>
+      {count > 0 && (
+        <span className="font-mono text-[10px]" style={{ color: active ? color : '#64748b' }}>
+          {count}
+        </span>
+      )}
+    </motion.button>
   );
 }
 

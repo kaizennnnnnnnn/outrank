@@ -7,6 +7,8 @@ import {
   updateDoc,
   query,
   where,
+  arrayUnion,
+  arrayRemove,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -268,6 +270,91 @@ export async function editEntry(
     proofCount: newEntries.filter((e) => !!e.proofImageUrl).length,
     lastEditedAt: Timestamp.now(),
   });
+}
+
+/**
+ * Per-entry origin id for verification reactions. Lives in the
+ * existing `/reactions/{originId}` collection alongside the recap's
+ * own reactions/comments — no new infra, no new rules. The "confirm"
+ * and "flag" arrays inside `reactions` work the same as 🔥 / 💪 / etc.
+ */
+export function entryVerificationOriginId(recapOriginId: string, logId: string): string {
+  return `${recapOriginId}_${logId}`;
+}
+
+export type VerificationKind = 'confirm' | 'flag';
+
+/**
+ * Add the current user to an entry's confirm or flag list. Idempotent
+ * via arrayUnion. The recap doc itself stays owner-only — this writes
+ * to /reactions, which all authenticated users can write to.
+ *
+ * Used by the recap detail view's per-entry verification UI: a friend
+ * tapping "Confirm" upgrades the log toward tier-2 (verified by
+ * friend) per the verification ladder.
+ */
+export async function addEntryVerification(
+  recapOriginId: string,
+  logId: string,
+  uid: string,
+  kind: VerificationKind,
+): Promise<void> {
+  const ref = doc(db, `reactions/${entryVerificationOriginId(recapOriginId, logId)}`);
+  await setDoc(
+    ref,
+    { reactions: { [kind]: arrayUnion(uid) } },
+    { merge: true },
+  );
+}
+
+/** Undo a confirm or flag. */
+export async function removeEntryVerification(
+  recapOriginId: string,
+  logId: string,
+  uid: string,
+  kind: VerificationKind,
+): Promise<void> {
+  const ref = doc(db, `reactions/${entryVerificationOriginId(recapOriginId, logId)}`);
+  await updateDoc(ref, { [`reactions.${kind}`]: arrayRemove(uid) });
+}
+
+export interface EntryVerification {
+  confirm: string[];
+  flag: string[];
+}
+
+/**
+ * Bulk-fetch verification state for every entry in a recap. Returned
+ * map is keyed by logId. Missing entries (no confirms or flags yet)
+ * default to empty arrays.
+ *
+ * One-shot read — the detail view doesn't need real-time updates for
+ * v1; tap Confirm/Flag → optimistic state update + write.
+ */
+export async function getEntryVerifications(
+  recap: Recap,
+): Promise<Record<string, EntryVerification>> {
+  const map: Record<string, EntryVerification> = {};
+  await Promise.all(
+    recap.entries.map(async (entry) => {
+      const id = entryVerificationOriginId(recap.originId, entry.logId);
+      try {
+        const snap = await getDoc(doc(db, `reactions/${id}`));
+        if (snap.exists()) {
+          const data = snap.data() as { reactions?: Record<string, string[]> };
+          map[entry.logId] = {
+            confirm: data.reactions?.confirm || [],
+            flag: data.reactions?.flag || [],
+          };
+        } else {
+          map[entry.logId] = { confirm: [], flag: [] };
+        }
+      } catch {
+        map[entry.logId] = { confirm: [], flag: [] };
+      }
+    }),
+  );
+  return map;
 }
 
 /** Remove an entry from a published recap (within the 24h window). */
