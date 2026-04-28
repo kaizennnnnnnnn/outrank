@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { haptic } from '@/lib/haptics';
 import { ParticleBurst } from '@/components/effects/ParticleBurst';
+import { getRecapDropPoint } from '@/components/recap/RecapLogFlight';
 
 interface QuickLogModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface QuickLogModalProps {
 
 export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalProps) {
   const addToast = useUIStore((s) => s.addToast);
+  const triggerRecapFlight = useUIStore((s) => s.triggerRecapFlight);
   const { user } = useAuth();
   const { habits: allHabits } = useHabits();
   const [value, setValue] = useState(1);
@@ -102,9 +104,30 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
         setLevelUpAt(result.newLevel);
         haptic('double');
       }
+
       setTimeout(() => {
         setShowXP(false);
         onClose();
+        // Fly the logged habit into today's record. Fired as the modal
+        // closes so the destination panel is actually visible behind
+        // the flight. Source is viewport center; destination is the
+        // RecapDraftPanel via [data-recap-drop], or bottom-center as a
+        // fallback if the user is logging from a non-dashboard page.
+        if (typeof window !== 'undefined') {
+          const dest = getRecapDropPoint();
+          triggerRecapFlight({
+            fromX: window.innerWidth / 2,
+            fromY: window.innerHeight / 2,
+            toX: dest.x,
+            toY: dest.y,
+            categoryName: habit.categoryName,
+            categoryIcon: habit.categoryIcon,
+            categoryColor: habit.color,
+            categorySlug: habit.categorySlug,
+            value,
+            unit: habit.unit || '',
+          });
+        }
         resetForm();
         const streakMsg = result.newStreak > 1 ? ` · ${result.newStreak}d streak` : '';
         const freezeMsg = result.freezeUsed ? ' · Streak freeze auto-applied' : '';

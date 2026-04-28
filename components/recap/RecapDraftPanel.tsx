@@ -47,7 +47,7 @@ export function RecapDraftPanel() {
   const showRetro = canPublishYesterday(yesterday);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-recap-drop>
       {showRetro && yesterday && (
         <YesterdayRetroBanner
           recap={yesterday}
@@ -200,10 +200,18 @@ function DraftState({
 }
 
 function PublishedState({ recap }: { recap: Recap }) {
-  const editable = canEdit(recap);
-  const editHoursLeft = recap.publishedAt
-    ? Math.max(0, Math.ceil((recap.publishedAt.toDate().getTime() + 24 * 60 * 60 * 1000 - Date.now()) / (60 * 60 * 1000)))
-    : 0;
+  // State initializer so Date.now() is touched once at mount, satisfying
+  // the React purity rule. The countdown is coarse (whole hours) and
+  // doesn't need to tick — re-mounts on dashboard re-entry refresh it.
+  const [editView] = useState(() => {
+    const ed = canEdit(recap);
+    const hoursLeft = recap.publishedAt
+      ? Math.max(0, Math.ceil((recap.publishedAt.toDate().getTime() + 24 * 60 * 60 * 1000 - Date.now()) / (60 * 60 * 1000)))
+      : 0;
+    return { editable: ed, editHoursLeft: hoursLeft };
+  });
+  const editable = editView.editable;
+  const editHoursLeft = editView.editHoursLeft;
 
   return (
     <div

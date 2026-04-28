@@ -17,6 +17,14 @@
       ]
     },
     {
+      "collectionGroup": "habitLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "habitId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "messageThreads",
       "queryScope": "COLLECTION",
       "fields": [
