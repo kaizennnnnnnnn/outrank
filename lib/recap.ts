@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Recap, RecapEntry, RecapFeedItem } from '@/types/recap';
+import { advancePactsForUser } from './pacts';
 
 /**
  * Daily Recap helpers.
@@ -237,6 +238,17 @@ export async function publishRecap(userId: string, dateKey: string = localDateKe
     );
   } catch (err) {
     console.error('Recap fan-out failed:', err);
+  }
+
+  // Advance any active pacts this user is in. For each pact whose
+  // habitSlug appears in the recap, mark today's cell logged for this
+  // user; then re-evaluate and resolve broken / succeeded states.
+  // Best-effort — failures don't block the publish.
+  try {
+    const slugs = new Set(recap.entries.map((e) => e.habitSlug));
+    await advancePactsForUser(userId, slugs);
+  } catch (err) {
+    console.error('Pact advance failed:', err);
   }
 }
 
