@@ -17,7 +17,6 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { getLeague } from '@/constants/seasons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { UserHabit } from '@/types/habit';
-import { OverallProgressGraph } from '@/components/habits/OverallProgressGraph';
 import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
 import Link from 'next/link';
 
@@ -175,9 +174,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-
-        {/* WEEKLY OVERVIEW — flowing section, no container */}
-        <OverallProgressGraph />
 
         {/* DAILY CHALLENGE — pinned-quest banner */}
         <DailyChallenge />
