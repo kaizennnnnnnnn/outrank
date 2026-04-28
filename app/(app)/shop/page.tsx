@@ -126,7 +126,9 @@ const generatedColors: ShopItem[] = [
 ];
 
 const generatedCosmetics: ShopItem[] = [
-  ...PFP_FRAMES.filter((f) => f.id !== 'frame_none').map<ShopItem>((f) => ({
+  // grantOnly frames (e.g. frame_pact_holder, awarded for completing a
+  // 30-day pact) are earned only — never purchasable from the shop.
+  ...PFP_FRAMES.filter((f) => f.id !== 'frame_none' && !f.grantOnly).map<ShopItem>((f) => ({
     id: f.id,
     name: f.name,
     description: f.description,

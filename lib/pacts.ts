@@ -10,6 +10,7 @@ import {
   where,
   Timestamp,
   increment,
+  arrayUnion,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { localDateKey } from './recap';
@@ -34,7 +35,10 @@ export const PACTS_COLLECTION = 'pacts';
 export const PACT_REWARDS: Record<PactDurationDays, PactReward> = {
   7:  { xp: 200,  fragments: 100 },
   14: { xp: 450,  fragments: 225 },
-  30: { xp: 1200, fragments: 600, cosmeticId: 'pact-holder-frame' },
+  // The cosmetic id matches a grantOnly frame in PFP_FRAMES (see
+  // constants/cosmetics.ts). Earned cosmetics flow into ownedCosmetics
+  // via arrayUnion in applyPactResolution.
+  30: { xp: 1200, fragments: 600, cosmeticId: 'frame_pact_holder' },
 };
 
 /** Penalty for pact break — both sides lose this many fragments. */
@@ -277,18 +281,27 @@ export async function applyPactResolution(pact: Pact, evalResult: PactEvaluation
       status: 'succeeded',
       resolvedAt: Timestamp.now(),
     });
-    // Both participants earn the reward
+    // Both participants earn the reward. Cosmetic (only present on
+    // 30-day pacts in v1) goes into ownedCosmetics via arrayUnion so
+    // re-grants are no-ops — won't duplicate if the user has already
+    // earned this frame from another pact.
     await Promise.all(
       pact.participants.map(async (uid) => {
-        await updateDoc(doc(db, 'users', uid), {
+        const update: Record<string, unknown> = {
           totalXP: increment(reward.xp),
           weeklyXP: increment(reward.xp),
           monthlyXP: increment(reward.xp),
           fragments: increment(reward.fragments),
-        });
+        };
+        if (reward.cosmeticId) {
+          update.ownedCosmetics = arrayUnion(reward.cosmeticId);
+        }
+        await updateDoc(doc(db, 'users', uid), update);
+
+        const cosmeticLine = reward.cosmeticId ? ' · "Pact Holder" frame unlocked' : '';
         await addDoc(collection(db, `notifications/${uid}/items`), {
           type: 'pact_succeeded',
-          message: `Pact complete · +${reward.xp} XP · +${reward.fragments} fragments`,
+          message: `Pact complete · +${reward.xp} XP · +${reward.fragments} fragments${cosmeticLine}`,
           isRead: false,
           relatedId: pact.id || '',
           actorId: '',

@@ -34,6 +34,12 @@ export interface PfpFrame {
   style: 'ring' | 'double' | 'conic' | 'wreath' | 'halo';
   /** Animated (adds subtle spin / pulse). */
   animated?: boolean;
+  /**
+   * Earned-only — cannot be purchased from the shop. Granted by
+   * specific events (pact completions, awakening milestones, etc.).
+   * Shop catalogs filter these out via `!f.grantOnly`.
+   */
+  grantOnly?: boolean;
   description: string;
 }
 
@@ -101,6 +107,10 @@ export const PFP_FRAMES: PfpFrame[] = [
   { id: 'frame_celestial',   name: 'Celestial Crown', rarity: 'mythic',    colors: ['#fde047', '#ffffff', '#a78bfa', '#ffffff'], style: 'wreath', animated: true, description: 'Worn by the constellations.' },
   { id: 'frame_void',        name: 'Void Halo',       rarity: 'mythic',    colors: ['#000000', '#4c1d95', '#ec4899', '#f5d0fe'], style: 'conic',  animated: true, description: 'A ring carved from pure darkness.' },
   { id: 'frame_awakened',    name: 'Awakened Crown',  rarity: 'mythic',    colors: ['#fef3c7', '#fde047', '#f9a8d4', '#c084fc', '#22d3ee', '#fde047'], style: 'conic', animated: true, description: 'Earned at 100% awakening — radiant at every tier.' },
+  // Two-tone halo: gold (achievement) + amber (warmth/trust) interlinked.
+  // Earned only by completing a 30-day pact with a friend — both sides
+  // get the frame. Hidden from the shop via `grantOnly: true`.
+  { id: 'frame_pact_holder', name: 'Pact Holder',     rarity: 'mythic',    colors: ['#fbbf24', '#fde047', '#f97316', '#fbbf24'], style: 'halo',   animated: true, grantOnly: true, description: 'Earned with a friend — survived a 30-day pact together.' },
 ];
 
 // ---------------------------------------------------------------------------
