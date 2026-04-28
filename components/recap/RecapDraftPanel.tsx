@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useTodaysDraft, useYesterdaysRecap } from '@/hooks/useRecap';
@@ -26,6 +26,7 @@ export function RecapDraftPanel() {
   const { recap: today, loading: todayLoading } = useTodaysDraft();
   const { recap: yesterday } = useYesterdaysRecap();
   const addToast = useUIStore((s) => s.addToast);
+  const panelPulse = useUIStore((s) => s.panelPulse);
   const [publishing, setPublishing] = useState(false);
 
   if (!user || todayLoading) return null;
@@ -47,7 +48,29 @@ export function RecapDraftPanel() {
   const showRetro = canPublishYesterday(yesterday);
 
   return (
-    <div className="space-y-3" data-recap-drop>
+    <div className="relative space-y-3" data-recap-drop>
+      {/* Border-glow flash when a flight lands here. Keyed on the pulse
+          id so a fresh log retriggers the animation; pointer-events-none
+          and absolute so it never blocks input. */}
+      <AnimatePresence>
+        {panelPulse && (
+          <motion.div
+            key={panelPulse.id}
+            className="absolute inset-0 rounded-2xl pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.85, times: [0, 0.25, 1], ease: 'easeOut' }}
+            style={{
+              boxShadow:
+                `0 0 0 2px ${panelPulse.color}66,` +
+                `0 0 28px 4px ${panelPulse.color}88,` +
+                `inset 0 0 32px ${panelPulse.color}33`,
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {showRetro && yesterday && (
         <YesterdayRetroBanner
           recap={yesterday}

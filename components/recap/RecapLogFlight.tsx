@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUIStore, RecapFlight } from '@/store/uiStore';
+import { useUIStore } from '@/store/uiStore';
+import type { RecapFlight } from '@/store/uiStore';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 /**
@@ -41,6 +42,7 @@ const SPLASH_DURATION = 0.55;
 
 function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () => void }) {
   const [landed, setLanded] = useState(false);
+  const bumpPanelPulse = useUIStore((s) => s.bumpPanelPulse);
 
   // A modest lift before the drop. The arc midpoint sits ~80px above the
   // higher of the two endpoints — visible enough to read as motion, not
@@ -48,20 +50,68 @@ function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () =>
   const arcLiftY = Math.min(flight.fromY, flight.toY) - 80;
   const arcMidX = (flight.fromX + flight.toX) / 2;
 
+  // Fire the panel pulse the moment the chip lands — the destination
+  // panel's border-glow flash overlaps with the splash burst, doubling
+  // the "received" signal across the chip's last frames and the
+  // panel's first frames of acknowledgement.
+  const handleLanded = () => {
+    setLanded(true);
+    bumpPanelPulse(flight.categoryColor);
+  };
+
   return (
     <>
-      <FlightTrail
-        flight={flight}
-        arcMidX={arcMidX}
-        arcLiftY={arcLiftY}
-      />
-      <FlightChip
-        flight={flight}
-        arcMidX={arcMidX}
-        arcLiftY={arcLiftY}
-        onLanded={() => setLanded(true)}
-      />
+      <FlightLiftoff flight={flight} />
+      <FlightTrail flight={flight} arcMidX={arcMidX} arcLiftY={arcLiftY} />
+      <FlightChip flight={flight} arcMidX={arcMidX} arcLiftY={arcLiftY} onLanded={handleLanded} />
       {landed && <FlightSplash flight={flight} onDone={onDone} />}
+    </>
+  );
+}
+
+/**
+ * Brief "launch" ripple at the source point. Two concentric rings expand
+ * outward as the chip leaves — gives the chip a sense of weight, like
+ * it pushed off the modal rather than just floated upward.
+ */
+function FlightLiftoff({ flight }: { flight: RecapFlight }) {
+  return (
+    <>
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          left: 0,
+          top: 0,
+          width: 28,
+          height: 28,
+          marginLeft: -14,
+          marginTop: -14,
+          border: `1.5px solid ${flight.categoryColor}`,
+          boxShadow: `0 0 18px ${flight.categoryColor}88`,
+          x: flight.fromX,
+          y: flight.fromY,
+        }}
+        initial={{ scale: 0.4, opacity: 0.85 }}
+        animate={{ scale: 2.6, opacity: 0 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      />
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          left: 0,
+          top: 0,
+          width: 18,
+          height: 18,
+          marginLeft: -9,
+          marginTop: -9,
+          background: `radial-gradient(circle, ${flight.categoryColor}aa 0%, ${flight.categoryColor}00 70%)`,
+          x: flight.fromX,
+          y: flight.fromY,
+        }}
+        initial={{ scale: 0.6, opacity: 1 }}
+        animate={{ scale: 2, opacity: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
+      />
     </>
   );
 }

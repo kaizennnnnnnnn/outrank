@@ -6,6 +6,13 @@ interface UIState {
   modalData: Record<string, unknown> | null;
   toasts: Toast[];
   recapFlights: RecapFlight[];
+  /**
+   * Last successful recap-drop event. The RecapDraftPanel watches this
+   * to play a brief border-glow flash in the dropped pillar's color —
+   * the destination's "I got it" confirmation, distinct from the
+   * splash particles on top of it.
+   */
+  panelPulse: { id: string; color: string } | null;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   openModal: (modal: string, data?: Record<string, unknown>) => void;
@@ -14,6 +21,7 @@ interface UIState {
   removeToast: (id: string) => void;
   triggerRecapFlight: (flight: Omit<RecapFlight, 'id'>) => void;
   clearRecapFlight: (id: string) => void;
+  bumpPanelPulse: (color: string) => void;
 }
 
 export interface Toast {
@@ -49,6 +57,7 @@ export const useUIStore = create<UIState>((set) => ({
   modalData: null,
   toasts: [],
   recapFlights: [],
+  panelPulse: null,
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   openModal: (modal, data) => set({ activeModal: modal, modalData: data ?? null }),
@@ -65,4 +74,6 @@ export const useUIStore = create<UIState>((set) => ({
     })),
   clearRecapFlight: (id) =>
     set((s) => ({ recapFlights: s.recapFlights.filter((f) => f.id !== id) })),
+  bumpPanelPulse: (color) =>
+    set({ panelPulse: { id: crypto.randomUUID(), color } }),
 }));
