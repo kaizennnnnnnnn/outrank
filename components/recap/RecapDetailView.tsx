@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Recap, RecapEntry } from '@/types/recap';
@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { haptic } from '@/lib/haptics';
+import { RecapEditEntryModal } from './RecapEditEntryModal';
 
 interface Props {
   recap: Recap;
@@ -41,6 +42,23 @@ export function RecapDetailView({ recap, isOwner }: Props) {
   const dateLabel = formatDateLong(recap.localDate);
   const editable = isOwner && canEdit(recap);
 
+  // Hours-left in the edit window (whole hours, snapshot at mount). The
+  // canEdit gate above keeps this >= 0 when shown. State initializer
+  // touches Date.now() once, satisfying React 19's purity rule the same
+  // way RecapDraftPanel does.
+  const [editHoursLeft] = useState(() => {
+    if (!editable || !recap.publishedAt) return 0;
+    return Math.max(
+      0,
+      Math.ceil(
+        (recap.publishedAt.toDate().getTime() + 24 * 60 * 60 * 1000 - Date.now()) /
+          (60 * 60 * 1000),
+      ),
+    );
+  });
+
+  const [editingEntry, setEditingEntry] = useState<RecapEntry | null>(null);
+
   // Bulk-load verifications once when the recap renders. Optimistic
   // updates after that — taps hit the local map, then write through.
   const [verifications, setVerifications] = useState<Record<string, EntryVerification>>({});
@@ -54,6 +72,10 @@ export function RecapDetailView({ recap, isOwner }: Props) {
       .catch(() => { /* non-fatal — UI just won't show counts */ });
     return () => { cancelled = true; };
   }, [recap]);
+
+  // Memoize the entries copy so re-renders during the edit modal's
+  // open/close don't trigger downstream re-mounts.
+  const entries = useMemo(() => recap.entries, [recap.entries]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -101,9 +123,9 @@ export function RecapDetailView({ recap, isOwner }: Props) {
           <span>
             <span className="text-slate-300 font-bold">{recap.proofCount}</span> photo{recap.proofCount === 1 ? '' : 's'}
           </span>
-          {editable && (
+          {editable && editHoursLeft > 0 && (
             <span className="ml-auto text-[10px] uppercase tracking-widest text-emerald-400">
-              You can still edit
+              Editable for {editHoursLeft}h
             </span>
           )}
         </div>
@@ -127,12 +149,14 @@ export function RecapDetailView({ recap, isOwner }: Props) {
         </div>
 
         <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
-          {recap.entries.map((entry, i) => (
+          {entries.map((entry, i) => (
             <RecapEntryRow
               key={entry.logId}
               entry={entry}
               index={i}
               isOwner={isOwner}
+              canEdit={editable}
+              onEdit={() => setEditingEntry(entry)}
               currentUid={user?.uid}
               recapOriginId={recap.originId}
               verification={verifications[entry.logId] || { confirm: [], flag: [] }}
@@ -159,6 +183,17 @@ export function RecapDetailView({ recap, isOwner }: Props) {
           <FeedComments originId={recap.originId} actorId={recap.userId} />
         </div>
       </section>
+
+      {/* Owner-only edit modal. Mounted unconditionally so the
+          open/close animation runs from a stable parent — entry is
+          set on Edit tap, cleared on close. canEdit gating happens at
+          the row's button level, not here. */}
+      <RecapEditEntryModal
+        isOpen={!!editingEntry}
+        onClose={() => setEditingEntry(null)}
+        recapDateKey={recap.localDate}
+        entry={editingEntry}
+      />
     </div>
   );
 }
@@ -167,6 +202,8 @@ interface RowProps {
   entry: RecapEntry;
   index: number;
   isOwner: boolean;
+  canEdit: boolean;
+  onEdit: () => void;
   currentUid?: string;
   recapOriginId: string;
   verification: EntryVerification;
@@ -177,6 +214,8 @@ function RecapEntryRow({
   entry,
   index,
   isOwner,
+  canEdit,
+  onEdit,
   currentUid,
   recapOriginId,
   verification,
@@ -319,7 +358,7 @@ function RecapEntryRow({
           />
         </div>
       )}
-      {isOwner && (confirmCount > 0 || flagCount > 0) && (
+      {isOwner && (confirmCount > 0 || flagCount > 0 || canEdit) && (
         <div className="pl-12 flex items-center gap-3 text-[10px] font-mono text-slate-500 pt-1">
           {confirmCount > 0 && (
             <span className="text-emerald-400">
@@ -330,6 +369,14 @@ function RecapEntryRow({
             <span className="text-amber-400">
               ⚠ {flagCount} flag{flagCount === 1 ? '' : 's'}
             </span>
+          )}
+          {canEdit && (
+            <button
+              onClick={onEdit}
+              className="ml-auto text-[10px] font-bold uppercase tracking-widest text-orange-400 hover:text-orange-300"
+            >
+              Edit ↗
+            </button>
           )}
         </div>
       )}
