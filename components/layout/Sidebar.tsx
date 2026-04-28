@@ -38,6 +38,8 @@ const navItems: { href: string; label: string; icon: ReactNode }[] = [
   { href: '/compete', label: 'Compete', icon: <SwordsIcon /> },
   { href: '/leagues', label: 'Leagues', icon: <LeagueIcon /> },
   { href: '/friends', label: 'Friends', icon: <UsersIcon /> },
+  { href: '/pacts', label: 'Pacts', icon: <SwordsIcon /> },
+  { href: '/friends-league', label: 'Friends League', icon: <TrophyIcon /> },
   { href: '/feed', label: 'Feed', icon: <FeedIcon /> },
   { href: '/groups', label: 'Groups', icon: <UsersIcon /> },
   { href: '/battle-pass', label: 'Battle Pass', icon: <TrophyIcon /> },

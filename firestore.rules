@@ -170,6 +170,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // FRIENDS LEAGUE SNAPSHOTS — weekly settlement docs. Owner-readable;
+    // writes only via the admin SDK from the friendsLeagueSettle Cloud
+    // Function (rules deny direct client writes — keeps the reward
+    // payout off-limits to forgery).
+    match /friendsLeagues/{userId}/items/{weekKey} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
     // NOTIFICATIONS
     match /notifications/{userId}/items/{notificationId} {
       allow read: if isOwner(userId);
