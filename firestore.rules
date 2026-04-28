@@ -139,6 +139,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // GYM WORKOUTS — owner-only. The workout doc lives at
+    // gymWorkouts/{uid}/items/{workoutId} and is mutated mid-session
+    // by the active-workout page. Friends don't read these directly;
+    // a workout's summary surfaces through the gym pillar's recap
+    // entry instead.
+    match /gymWorkouts/{userId}/items/{workoutId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isNotBanned();
+      allow update: if isOwner(userId) && isNotBanned();
+      allow delete: if isOwner(userId);
+    }
+
     // NOTIFICATIONS
     match /notifications/{userId}/items/{notificationId} {
       allow read: if isOwner(userId);

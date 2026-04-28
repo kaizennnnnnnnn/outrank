@@ -18,6 +18,7 @@ import { UserHabit } from '@/types/habit';
 import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
 import { PillarPlaceholderRow } from '@/components/habits/PillarPlaceholderRow';
 import { WaterPillarRow } from '@/components/habits/WaterPillarRow';
+import { GymPillarRow } from '@/components/habits/GymPillarRow';
 import { PILLARS, isPillarSlug } from '@/constants/pillars';
 import Link from 'next/link';
 
@@ -233,9 +234,20 @@ export default function DashboardPage() {
                 // Pillar-specific row variants. Water needs near-zero
                 // friction logging (you sip throughout the day) so it
                 // gets inline +0.25/+0.5/+1 chips instead of a modal.
+                // Gym is a full training experience — tap routes into
+                // the /gym surface (program picker / today's workout).
                 if (pillar.slug === 'water') {
                   return (
                     <WaterPillarRow
+                      key={pillar.slug}
+                      habit={habit}
+                      isLoggedToday={isLoggedToday}
+                    />
+                  );
+                }
+                if (pillar.slug === 'gym') {
+                  return (
+                    <GymPillarRow
                       key={pillar.slug}
                       habit={habit}
                       isLoggedToday={isLoggedToday}
