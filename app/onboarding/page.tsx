@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
-import { CATEGORIES, CATEGORY_SECTIONS, getGoalConfig } from '@/constants/categories';
-import { isPillarSlug } from '@/constants/pillars';
+import { CATEGORIES, getGoalConfig } from '@/constants/categories';
+import { PILLARS } from '@/constants/pillars';
 import { seedAllPillars } from '@/lib/seedPillar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -14,12 +14,21 @@ import { setDocument, Timestamp } from '@/lib/firestore';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUIStore } from '@/store/uiStore';
-import { cn } from '@/lib/utils';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { RocketIcon } from '@/components/ui/AppIcons';
 
-const STEPS = ['Username', 'Categories', 'Goals', 'Friends', 'Tutorial'];
+const STEPS = ['Username', 'Pillars', 'Friends', 'Tutorial'];
 
+/**
+ * Four-step onboarding. The category-picker step from the original
+ * flow has been removed — the five pillars (gym, steps, water, sleep,
+ * focus) are now first-class and seed automatically. Custom habits
+ * remain available from /habits after onboarding.
+ *
+ * Pillars step is read-only on the WHAT (the five are non-negotiable)
+ * but read-write on the HOW MUCH — users tweak goals inline before
+ * sealing them with the seed call.
+ */
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, firebaseUser } = useAuth();
@@ -27,16 +36,19 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Step 1: Username
+  // Step 0: Username
   const [username, setUsername] = useState('');
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
 
-  // Step 2: Categories
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
-  // Step 3: Goals
-  const [goals, setGoals] = useState<Record<string, number>>({});
+  // Step 1: Pillar goals — each pillar pre-fills with its default
+  const [goals, setGoals] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {};
+    for (const p of PILLARS) {
+      initial[p.slug] = getGoalConfig(p.slug).defaultGoal;
+    }
+    return initial;
+  });
 
   const checkUsername = async (value: string) => {
     const sanitized = sanitizeUsername(value).toLowerCase();
@@ -55,51 +67,14 @@ export default function OnboardingPage() {
     }
   };
 
-  const toggleCategory = (slug: string) => {
-    setSelectedCategories((prev) => {
-      if (prev.includes(slug)) return prev.filter((s) => s !== slug);
-      if (prev.length >= 5) return prev;
-      return [...prev, slug];
-    });
-  };
-
   const handleFinish = async () => {
     if (!firebaseUser) return;
     setLoading(true);
     try {
-      // The five pillars are always seeded — they're the spine of the
-      // app. After they're in place, any extra categories the user
-      // selected as personal habits get created too (skipping pillar
-      // slugs to avoid clobbering the just-seeded defaults).
-      await seedAllPillars(firebaseUser.uid);
-
-      for (const slug of selectedCategories) {
-        if (isPillarSlug(slug)) continue;
-        const cat = CATEGORIES.find((c) => c.slug === slug);
-        if (!cat) continue;
-
-        await setDocument(
-          `habits/${firebaseUser.uid}/userHabits`,
-          slug,
-          {
-            categoryId: slug,
-            categoryName: cat.name,
-            categoryIcon: cat.icon,
-            categorySlug: cat.slug,
-            goal: goals[slug] ?? getGoalConfig(slug).defaultGoal,
-            goalPeriod: 'daily',
-            isPublic: true,
-            currentStreak: 0,
-            longestStreak: 0,
-            totalLogs: 0,
-            lastLogDate: null,
-            createdAt: Timestamp.now(),
-            color: cat.color,
-            unit: cat.unit,
-          },
-          false
-        );
-      }
+      // Seed all five pillars with the user's chosen goals.
+      // No more selectedCategories — the pillar set is fixed; custom
+      // habits get added from /habits later.
+      await seedAllPillars(firebaseUser.uid, goals);
 
       // Create user profile if it doesn't exist (e.g. redirected from dashboard)
       if (!user && firebaseUser) {
@@ -148,10 +123,9 @@ export default function OnboardingPage() {
   const canProceed = () => {
     switch (step) {
       case 0: return username.length >= 3 && usernameAvailable === true;
-      case 1: return selectedCategories.length >= 3;
+      case 1: return true; // pillars are auto-seeded; goals have defaults
       case 2: return true;
       case 3: return true;
-      case 4: return true;
       default: return false;
     }
   };
@@ -227,10 +201,12 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Categories */}
+            {/* Step 2: Pillars + goals — replaces the old Categories +
+                Goals two-step. The five are non-negotiable; users
+                customize how much of each. */}
             {step === 1 && (
               <motion.div
-                key="categories"
+                key="pillars"
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -50 }}
@@ -238,103 +214,66 @@ export default function OnboardingPage() {
               >
                 <div className="text-center">
                   <span className="text-5xl mb-4 block">🎯</span>
-                  <h1 className="font-heading text-2xl font-bold text-white mb-2">Choose Your Arenas</h1>
-                  <p className="text-slate-500">Pick at least 3 categories to track. You can add more later.</p>
-                  <p className="text-xs text-orange-400 mt-1">{selectedCategories.length}/5 selected</p>
+                  <h1 className="font-heading text-2xl font-bold text-white mb-2">Your five pillars</h1>
+                  <p className="text-slate-500 max-w-md mx-auto">
+                    Every account tracks the same five core habits. Set your daily target for each —
+                    you can adjust any of these later.
+                  </p>
                 </div>
-                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                  {CATEGORY_SECTIONS.map((section) => (
-                    <div key={section}>
-                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{section}</h3>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {CATEGORIES.filter((c) => c.section === section).map((cat) => {
-                          const isSelected = selectedCategories.includes(cat.slug);
-                          return (
-                            <motion.button
-                              key={cat.slug}
-                              whileTap={{ scale: 0.93 }}
-                              whileHover={{ scale: 1.03 }}
-                              onClick={() => toggleCategory(cat.slug)}
-                              className={cn(
-                                'flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all text-center relative',
-                                isSelected
-                                  ? 'border-transparent'
-                                  : 'border-[#1e1e30] bg-[#0c0c16] hover:border-[#2d2d45]'
-                              )}
-                              style={isSelected ? {
-                                borderColor: `${cat.color}40`,
-                                background: `linear-gradient(135deg, ${cat.color}12 0%, ${cat.color}05 100%)`,
-                                boxShadow: `0 4px 20px ${cat.color}15`,
-                              } : undefined}
-                            >
-                              <CategoryIcon icon={cat.icon} color={cat.color} size="md" slug={cat.slug} selected={isSelected} />
-                              <span className={cn(
-                                'text-[10px] leading-tight font-medium',
-                                isSelected ? 'text-white' : 'text-slate-400'
-                              )}>
-                                {cat.name}
-                              </span>
-                              {isSelected && (
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
-                                  style={{ background: cat.color }}
-                                >
-                                  <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                    <polyline points="20 6 9 17 4 12" />
-                                  </svg>
-                                </motion.div>
-                              )}
-                            </motion.button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 3: Goals */}
-            {step === 2 && (
-              <motion.div
-                key="goals"
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                className="space-y-6"
-              >
-                <div className="text-center">
-                  <span className="text-5xl mb-4 block">📊</span>
-                  <h1 className="font-heading text-2xl font-bold text-white mb-2">Set Your Goals</h1>
-                  <p className="text-slate-500">Set a target for each habit you picked.</p>
-                </div>
-                <div className="space-y-3">
-                  {selectedCategories.map((slug) => {
-                    const cat = CATEGORIES.find((c) => c.slug === slug);
+                <div className="space-y-2">
+                  {PILLARS.map((pillar) => {
+                    const cat = CATEGORIES.find((c) => c.slug === pillar.slug);
                     if (!cat) return null;
-                    const config = getGoalConfig(slug);
-                    const currentGoal = goals[slug] ?? config.defaultGoal;
+                    const config = getGoalConfig(pillar.slug);
+                    const currentGoal = goals[pillar.slug] ?? config.defaultGoal;
                     return (
-                      <div key={slug} className="flex items-center gap-3 bg-[#0c0c16] border border-[#1e1e30] rounded-2xl p-4">
-                        <CategoryIcon icon={cat.icon} color={cat.color} size="md" slug={cat.slug} />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-white">{cat.name}</p>
-                          <p className="text-xs text-slate-500">{config.dailyLabel}</p>
+                      <div
+                        key={pillar.slug}
+                        className="flex items-center gap-3 rounded-2xl p-3"
+                        style={{
+                          background: `linear-gradient(135deg, ${cat.color}10 0%, rgba(11,11,20,0.6) 70%)`,
+                          border: `1px solid ${cat.color}33`,
+                        }}
+                      >
+                        <CategoryIcon icon={cat.icon} color={cat.color} size="md" slug={pillar.slug} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="text-sm font-bold text-white truncate">{pillar.name}</p>
+                            <span
+                              className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
+                              style={{
+                                color: cat.color,
+                                background: `${cat.color}18`,
+                                border: `1px solid ${cat.color}55`,
+                              }}
+                            >
+                              Pillar
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{config.dailyLabel}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
-                            onClick={() => setGoals((g) => ({ ...g, [slug]: Math.max(config.min, (g[slug] ?? config.defaultGoal) - config.step) }))}
+                            onClick={() =>
+                              setGoals((g) => ({
+                                ...g,
+                                [pillar.slug]: Math.max(config.min, (g[pillar.slug] ?? config.defaultGoal) - config.step),
+                              }))
+                            }
                             className="w-8 h-8 rounded-lg bg-[#18182a] border border-[#2d2d45] text-white flex items-center justify-center hover:bg-[#1e1e30]"
                           >
-                            -
+                            −
                           </button>
-                          <span className="font-mono text-lg font-bold text-white min-w-[48px] text-center">
+                          <span className="font-mono text-base font-bold text-white min-w-[44px] text-center">
                             {currentGoal.toLocaleString()}
                           </span>
                           <button
-                            onClick={() => setGoals((g) => ({ ...g, [slug]: Math.min(config.max, (g[slug] ?? config.defaultGoal) + config.step) }))}
+                            onClick={() =>
+                              setGoals((g) => ({
+                                ...g,
+                                [pillar.slug]: Math.min(config.max, (g[pillar.slug] ?? config.defaultGoal) + config.step),
+                              }))
+                            }
                             className="w-8 h-8 rounded-lg bg-[#18182a] border border-[#2d2d45] text-white flex items-center justify-center hover:bg-[#1e1e30]"
                           >
                             +
@@ -344,11 +283,15 @@ export default function OnboardingPage() {
                     );
                   })}
                 </div>
+                <p className="text-[10px] text-slate-600 text-center">
+                  Want a niche habit too? Add custom ones from the Habits page after setup —
+                  they stay personal and won&rsquo;t appear on a friend&rsquo;s record.
+                </p>
               </motion.div>
             )}
 
-            {/* Step 4: Friends */}
-            {step === 3 && (
+            {/* Step 3: Friends */}
+            {step === 2 && (
               <motion.div
                 key="friends"
                 initial={{ opacity: 0, x: 50 }}
@@ -383,8 +326,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {/* Step 5: Tutorial */}
-            {step === 4 && (
+            {/* Step 4: Tutorial */}
+            {step === 3 && (
               <motion.div
                 key="tutorial"
                 initial={{ opacity: 0, x: 50 }}
@@ -399,11 +342,11 @@ export default function OnboardingPage() {
                 </div>
                 <div className="space-y-3">
                   {[
-                    { title: 'Log daily', desc: 'Tap the log button to record your habits each day.' },
+                    { title: 'Log throughout the day', desc: 'Tap a pillar to log it. Logs go into a private draft.' },
+                    { title: 'Submit your day', desc: 'When you\'re done, publish one curated record — friends see that, not every log.' },
                     { title: 'Build streaks', desc: 'Consecutive days build your streak. Don\'t break it!' },
-                    { title: 'Earn XP', desc: 'Every log earns XP. Level up to unlock titles and badges.' },
-                    { title: 'Challenge friends', desc: 'Start duels to see who can outperform in any category.' },
-                    { title: 'Climb ranks', desc: 'Compete on weekly leaderboards across all categories.' },
+                    { title: 'Pacts with friends', desc: 'Both win or both lose — commit to a pillar together for 7, 14, or 30 days.' },
+                    { title: 'Climb the league', desc: 'Top 3 in your friends league split fragments every Monday.' },
                   ].map((item) => (
                     <div key={item.title} className="flex items-start gap-3 bg-[#10101a] border border-[#1e1e30] rounded-xl p-4">
                       <div>
