@@ -18,6 +18,7 @@ import { useHabits } from '@/hooks/useHabits';
 import { haptic } from '@/lib/haptics';
 import { ParticleBurst } from '@/components/effects/ParticleBurst';
 import { getRecapDropPoint } from '@/components/recap/RecapLogFlight';
+import { SleepTimeEntry } from './SleepTimeEntry';
 
 interface QuickLogModalProps {
   isOpen: boolean;
@@ -216,27 +217,35 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
             <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
           </div>
 
-          {/* Value Stepper */}
-          <div className="flex items-center justify-center gap-6">
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setValue(Math.max(config.min, value - config.step))}
-              className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
-            >
-              -
-            </motion.button>
-            <div className="text-center min-w-[80px]">
-              <span className="font-mono text-5xl font-bold text-white">{value.toLocaleString()}</span>
-              <p className="text-xs text-slate-500 mt-1">{config.dailyLabel}</p>
+          {/* Value entry — sleep gets bed-time / wake-up pickers
+              instead of the +/- stepper because that's how people
+              actually think about a night of sleep. The computed
+              hours feed the standard `value` state so the rest of
+              the log flow (XP, leaderboards, recap) is unchanged. */}
+          {habit.categorySlug === 'sleep' ? (
+            <SleepTimeEntry onChange={setValue} />
+          ) : (
+            <div className="flex items-center justify-center gap-6">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setValue(Math.max(config.min, value - config.step))}
+                className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
+              >
+                -
+              </motion.button>
+              <div className="text-center min-w-[80px]">
+                <span className="font-mono text-5xl font-bold text-white">{value.toLocaleString()}</span>
+                <p className="text-xs text-slate-500 mt-1">{config.dailyLabel}</p>
+              </div>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setValue(Math.min(config.max, value + config.step))}
+                className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
+              >
+                +
+              </motion.button>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setValue(Math.min(config.max, value + config.step))}
-              className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
-            >
-              +
-            </motion.button>
-          </div>
+          )}
 
           {/* Goal progress indicator */}
           {habit.goal > 0 && (
