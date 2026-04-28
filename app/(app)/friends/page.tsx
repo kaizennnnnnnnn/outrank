@@ -9,6 +9,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { CreateDuelModal } from '@/components/competition/CreateDuelModal';
+import { PactCreateModal } from '@/components/pacts/PactCreateModal';
+import { useUserPacts } from '@/hooks/usePacts';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { MiniOrb } from '@/components/profile/MiniOrb';
@@ -58,6 +60,15 @@ export default function FriendsPage() {
   // Duel challenge
   const [duelTarget, setDuelTarget] = useState<{ id: string; username: string; avatar: string } | null>(null);
   const [challengedIds, setChallengedIds] = useState<string[]>([]);
+
+  // Pact invite — opens the standard create modal pre-picked to this
+  // friend, skipping the modal's own friend-picker step.
+  const [pactTarget, setPactTarget] = useState<UserProfile | null>(null);
+
+  // Active pacts — used to show a small "Active pact" pill on the
+  // friend card so the user knows when they already have a commitment
+  // running. usePacts already filters to participant-only.
+  const { active: activePacts } = useUserPacts();
 
   // Resolve friend IDs to actual profiles
   useEffect(() => {
@@ -181,6 +192,19 @@ export default function FriendsPage() {
   const friendCount = resolvedFriends.length;
   const pendingCount = resolvedPending.length;
 
+  // friendId → active pact (most recent one if multiple — rare).
+  // Lets the friend card show a tiny pact-active pill + skip the
+  // "Pact" CTA when one's already running.
+  const activePactByFriend = new Map<string, typeof activePacts[number]>();
+  if (user) {
+    for (const p of activePacts) {
+      const partnerId = p.participants.find((id) => id !== user.uid);
+      if (partnerId && !activePactByFriend.has(partnerId)) {
+        activePactByFriend.set(partnerId, p);
+      }
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Premium header — matches the Orb / Messages page treatment */}
@@ -211,6 +235,44 @@ export default function FriendsPage() {
           </div>
         </div>
       </div>
+
+      {/* Friends League + Pacts shortcuts — the social-stakes surfaces */}
+      {friendCount > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            href="/friends-league"
+            className="relative overflow-hidden rounded-2xl p-3 border transition-colors hover:border-violet-500/40"
+            style={{
+              background: 'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(168,85,247,0.18), transparent 55%), linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
+              borderColor: 'rgba(168,85,247,0.22)',
+            }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-violet-400">
+              Weekly
+            </p>
+            <p className="font-heading text-base font-bold text-white mt-0.5">Friends League</p>
+            <p className="text-[10px] font-mono text-slate-500 mt-1">Top 3 split fragments →</p>
+          </Link>
+          <Link
+            href="/pacts"
+            className="relative overflow-hidden rounded-2xl p-3 border transition-colors hover:border-orange-500/40"
+            style={{
+              background: 'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(249,115,22,0.18), transparent 55%), linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
+              borderColor: 'rgba(249,115,22,0.22)',
+            }}
+          >
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
+              Pacts
+            </p>
+            <p className="font-heading text-base font-bold text-white mt-0.5">
+              {activePacts.length} active
+            </p>
+            <p className="text-[10px] font-mono text-slate-500 mt-1">
+              Both win or both lose →
+            </p>
+          </Link>
+        </div>
+      )}
 
       {/* Search — styled to feel like a primary CTA */}
       <div
@@ -321,7 +383,9 @@ export default function FriendsPage() {
             description="Search for friends by username to start competing together."
           />
         ) : (
-          resolvedFriends.map((friend) => (
+          resolvedFriends.map((friend) => {
+            const activePact = activePactByFriend.get(friend.friendId);
+            return (
             <div key={friend.friendId} className="glass-card rounded-xl p-4 space-y-3">
               {/* Top row: avatar + info */}
               <div className="flex items-center gap-3">
@@ -334,7 +398,7 @@ export default function FriendsPage() {
                   />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/profile/${friend.profile?.username || friend.friendId}`} className="flex items-center gap-1.5 min-w-0">
+                  <Link href={`/profile/${friend.profile?.username || friend.friendId}`} className="flex items-center gap-1.5 min-w-0 flex-wrap">
                     <span className="min-w-0 truncate">
                       <NamePlate
                         name={friend.profile?.username || 'Unknown'}
@@ -351,6 +415,19 @@ export default function FriendsPage() {
                         ringColorId={friend.profile.orbRingColor}
                         size={18}
                       />
+                    )}
+                    {activePact && (
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-[1px] rounded"
+                        style={{
+                          color: activePact.habitColor,
+                          background: `${activePact.habitColor}18`,
+                          border: `1px solid ${activePact.habitColor}55`,
+                        }}
+                        title={`${activePact.durationDays}-day ${activePact.habitName} pact in progress`}
+                      >
+                        Pact · {activePact.habitName}
+                      </span>
                     )}
                   </Link>
                   <p className="text-xs text-slate-500">
@@ -389,6 +466,26 @@ export default function FriendsPage() {
                     Message
                   </Button>
                 </Link>
+                {/* Pact button — opens the create modal pre-picked to
+                    this friend. Hides when an active pact already
+                    exists between us (the pill above already advertises
+                    it; another button would be redundant clutter). */}
+                {!activePact ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => friend.profile && setPactTarget(friend.profile)}
+                  >
+                    Pact
+                  </Button>
+                ) : (
+                  <Link href="/pacts" className="flex-1">
+                    <Button size="sm" variant="secondary" className="w-full">
+                      View pact
+                    </Button>
+                  </Link>
+                )}
                 <Button
                   size="sm"
                   variant="secondary"
@@ -414,7 +511,8 @@ export default function FriendsPage() {
                 </Button>
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -453,6 +551,14 @@ export default function FriendsPage() {
           friendAvatar={habitTarget.avatar}
         />
       )}
+
+      {/* Pact creation — friend pre-picked, modal jumps straight to
+          pillar selection. */}
+      <PactCreateModal
+        isOpen={!!pactTarget}
+        onClose={() => setPactTarget(null)}
+        initialFriend={pactTarget || undefined}
+      />
     </div>
   );
 }

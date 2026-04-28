@@ -20,6 +20,12 @@ import { cn } from '@/lib/utils';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  /**
+   * Pre-pick this friend on open. Used by the friends-page "Pact"
+   * button — skips step 1 and lands the user on pillar selection.
+   * Can still be cleared by tapping Back.
+   */
+  initialFriend?: UserProfile;
 }
 
 const DURATIONS: PactDurationDays[] = [7, 14, 30];
@@ -35,7 +41,7 @@ const DURATIONS: PactDurationDays[] = [7, 14, 30];
  * (parallelized) — friendships rows store only the friend's uid, not
  * profile fields, so a quick batch fetch builds the picker.
  */
-export function PactCreateModal({ isOpen, onClose }: Props) {
+export function PactCreateModal({ isOpen, onClose, initialFriend }: Props) {
   const { user } = useAuth();
   const { friends } = useFriends();
   const addToast = useUIStore((s) => s.addToast);
@@ -48,14 +54,21 @@ export function PactCreateModal({ isOpen, onClose }: Props) {
   const [pickedDuration, setPickedDuration] = useState<PactDurationDays>(7);
   const [creating, setCreating] = useState(false);
 
-  // Reset on open
+  // Reset on open. If the caller passed an initialFriend, jump straight
+  // to step 2 — the friend's already chosen, no point in showing the
+  // picker again.
   useEffect(() => {
     if (!isOpen) return;
-    setStep(1);
-    setPickedFriend(null);
+    if (initialFriend) {
+      setPickedFriend(initialFriend);
+      setStep(2);
+    } else {
+      setPickedFriend(null);
+      setStep(1);
+    }
     setPickedSlug(null);
     setPickedDuration(7);
-  }, [isOpen]);
+  }, [isOpen, initialFriend]);
 
   // Resolve usernames + avatars for the user's friends list. Reads once
   // per open; memoized via map.
