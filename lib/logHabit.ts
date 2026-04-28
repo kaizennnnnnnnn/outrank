@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { appendLogToRecap } from './recap';
 import { RecapEntry } from '@/types/recap';
+import { isPillarSlug } from '@/constants/pillars';
 
 const XP_LOG = 10;
 const XP_LOG_VERIFIED = 15;
@@ -332,29 +333,37 @@ export async function logHabit(params: LogHabitParams) {
 
   } catch (err) { console.error('Leaderboard update failed:', err); }
 
-  // 7. Append this log to today's draft Recap.
+  // 7. Append this log to today's draft Recap — pillars only.
+  //
+  // Soft path for custom habits: they still log to /logs and count toward
+  // streaks, totals, and personal stats, but they DON'T flow into the
+  // published recap on a friend's feed. Only the five pillars (gym,
+  // steps, water, sleep, no-social) are recap-eligible. See
+  // `constants/pillars.ts`.
   //
   // Replaces the old per-log feed fan-out (one feed item per friend per
   // log + one notification per friend per log → spam). Friends now see
   // a single curated recap when the user taps "Submit Today's Record"
   // on the dashboard. See `lib/recap.ts`.
-  try {
-    const entry: RecapEntry = {
-      logId: logRef.id,
-      habitSlug,
-      categoryName: habit.categoryName || habitSlug,
-      categoryIcon: habit.categoryIcon || '',
-      categoryColor: habit.color || '#f97316',
-      value,
-      unit: habit.unit || '',
-      note,
-      proofImageUrl: proofImageUrl || '',
-      verified: hasProof,
-      xpEarned: totalXP,
-      loggedAt: Timestamp.now(),
-    };
-    await appendLogToRecap({ userId, username, avatarUrl, entry });
-  } catch (err) { console.error('Recap append failed:', err); }
+  if (isPillarSlug(habitSlug)) {
+    try {
+      const entry: RecapEntry = {
+        logId: logRef.id,
+        habitSlug,
+        categoryName: habit.categoryName || habitSlug,
+        categoryIcon: habit.categoryIcon || '',
+        categoryColor: habit.color || '#f97316',
+        value,
+        unit: habit.unit || '',
+        note,
+        proofImageUrl: proofImageUrl || '',
+        verified: hasProof,
+        xpEarned: totalXP,
+        loggedAt: Timestamp.now(),
+      };
+      await appendLogToRecap({ userId, username, avatarUrl, entry });
+    } catch (err) { console.error('Recap append failed:', err); }
+  }
 
   return {
     xpEarned: totalXP,

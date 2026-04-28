@@ -121,6 +121,22 @@ export default function HabitsPage() {
         </div>
       )}
 
+      {/* Pillar / Personal explainer — surfaces the soft path so users
+          understand why their non-pillar habits don't show up on
+          friends' feeds. */}
+      <div
+        className="rounded-xl border px-3 py-2.5 text-[11px] text-slate-400 leading-relaxed"
+        style={{
+          background: 'linear-gradient(145deg, rgba(249,115,22,0.06), #0b0b14 70%)',
+          borderColor: 'rgba(249,115,22,0.18)',
+        }}
+      >
+        <span className="text-orange-300 font-bold uppercase tracking-widest text-[9px] mr-1.5">
+          Pillars
+        </span>
+        Gym, Steps, Water, Sleep, and Focus are your <b className="text-slate-300">five core pillars</b> — only their logs appear on a friend&rsquo;s daily record. Anything else stays personal-only. You can still add custom habits below to track them privately.
+      </div>
+
       {loading ? (
         <div className="grid sm:grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}

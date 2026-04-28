@@ -12,12 +12,12 @@ import { QuickLogModal } from '@/components/habits/QuickLogModal';
 import { HabitCard } from '@/components/habits/HabitCard';
 import { SoulOrb } from '@/components/profile/SoulOrb';
 import { StreakFire } from '@/components/habits/StreakFire';
-import { TargetFullIcon } from '@/components/ui/AppIcons';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { getLeague } from '@/constants/seasons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { UserHabit } from '@/types/habit';
 import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
+import { PillarPlaceholderRow } from '@/components/habits/PillarPlaceholderRow';
+import { PILLARS, isPillarSlug } from '@/constants/pillars';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -51,9 +51,21 @@ export default function DashboardPage() {
 
   const level = getLevelForXP(user.totalXP);
   const xpProgress = getXPProgress(user.totalXP);
-  const loggedTodayCount = habits.filter(
-    (h) => h.lastLogDate && new Date(h.lastLogDate.toDate()).toDateString() === new Date().toDateString()
-  ).length;
+
+  // Split user's habits into the 5 pillars vs personal/custom. Pillars
+  // are the only ones whose logs go on a friend's recap; customs are
+  // private-only.
+  const pillarHabitsBySlug = new Map<string, UserHabit>();
+  const personalHabits: UserHabit[] = [];
+  for (const h of habits) {
+    if (isPillarSlug(h.categorySlug)) pillarHabitsBySlug.set(h.categorySlug, h);
+    else personalHabits.push(h);
+  }
+  const todayStr = new Date().toDateString();
+  const pillarsLoggedToday = PILLARS.reduce((acc, p) => {
+    const h = pillarHabitsBySlug.get(p.slug);
+    return acc + (h?.lastLogDate?.toDate?.()?.toDateString?.() === todayStr ? 1 : 0);
+  }, 0);
 
   const openLogModal = (habit: UserHabit) => {
     setSelectedHabit(habit);
@@ -178,7 +190,10 @@ export default function DashboardPage() {
         {/* DAILY CHALLENGE — pinned-quest banner */}
         <DailyChallenge />
 
-        {/* TODAY'S HABITS — section header + list with hairline dividers */}
+        {/* TODAY'S PILLARS — fixed five-row list. Each pillar is either
+            an active HabitCard (logs flow into the published recap) or a
+            placeholder row inviting setup. Always five rows, always in
+            canonical order. */}
         <section>
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center gap-2">
@@ -187,11 +202,11 @@ export default function DashboardPage() {
                 style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
               />
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
-                Today&rsquo;s Habits
+                Today&rsquo;s Pillars
               </p>
-              {!habitsLoading && habits.length > 0 && (
+              {!habitsLoading && (
                 <span className="text-[10px] font-mono text-slate-500 ml-1">
-                  · {loggedTodayCount}/{habits.length}
+                  · {pillarsLoggedToday}/{PILLARS.length}
                 </span>
               )}
             </div>
@@ -204,25 +219,52 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
             </div>
-          ) : habits.length === 0 ? (
-            <EmptyState
-              icon={<TargetFullIcon size={40} className="text-orange-400" />}
-              title="No habits yet"
-              description="Add your first habit to start tracking and competing."
-              action={
-                <Link href="/habits">
-                  <Button>Browse Categories</Button>
-                </Link>
-              }
-            />
           ) : (
-            // Single subtle list container — barely-there background +
-            // hairline dividers between rows. Replaces 5 floating bordered
-            // cards with one cohesive list.
             <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
-              {habits.map((habit) => {
+              {PILLARS.map((pillar) => {
+                const habit = pillarHabitsBySlug.get(pillar.slug);
+                if (!habit) {
+                  return <PillarPlaceholderRow key={pillar.slug} pillar={pillar} />;
+                }
                 const isLoggedToday = habit.lastLogDate
-                  ? new Date(habit.lastLogDate.toDate()).toDateString() === new Date().toDateString()
+                  ? new Date(habit.lastLogDate.toDate()).toDateString() === todayStr
+                  : false;
+                return (
+                  <HabitCard
+                    key={pillar.slug}
+                    habit={habit}
+                    isLoggedToday={isLoggedToday}
+                    onLog={() => openLogModal(habit)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* PERSONAL HABITS — non-pillar customs. Logs are private (don't
+            appear on a friend's recap). Section is hidden if the user
+            has no customs. */}
+        {!habitsLoading && personalHabits.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: '#64748b', boxShadow: '0 0 6px #64748b' }}
+                />
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400">
+                  Personal Habits
+                </p>
+                <span className="text-[10px] font-mono text-slate-600 ml-1">
+                  · private — won&rsquo;t appear in your record
+                </span>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
+              {personalHabits.map((habit) => {
+                const isLoggedToday = habit.lastLogDate
+                  ? new Date(habit.lastLogDate.toDate()).toDateString() === todayStr
                   : false;
                 return (
                   <HabitCard
@@ -234,8 +276,8 @@ export default function DashboardPage() {
                 );
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* TODAY'S RECORD — closing CTA. After logging, this is where the
             user submits their day. Replaces the per-log feed spam with

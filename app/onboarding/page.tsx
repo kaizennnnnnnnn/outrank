@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { CATEGORIES, CATEGORY_SECTIONS, getGoalConfig } from '@/constants/categories';
+import { isPillarSlug } from '@/constants/pillars';
+import { seedAllPillars } from '@/lib/seedPillar';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { sanitizeUsername } from '@/lib/security';
@@ -65,8 +67,14 @@ export default function OnboardingPage() {
     if (!firebaseUser) return;
     setLoading(true);
     try {
-      // Create habits for each selected category
+      // The five pillars are always seeded — they're the spine of the
+      // app. After they're in place, any extra categories the user
+      // selected as personal habits get created too (skipping pillar
+      // slugs to avoid clobbering the just-seeded defaults).
+      await seedAllPillars(firebaseUser.uid);
+
       for (const slug of selectedCategories) {
+        if (isPillarSlug(slug)) continue;
         const cat = CATEGORIES.find((c) => c.slug === slug);
         if (!cat) continue;
 
