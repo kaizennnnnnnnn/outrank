@@ -13,6 +13,7 @@ import { StatCard } from '@/components/profile/StatCard';
 import { LeagueCrest } from '@/components/profile/RanksModal';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { PillarTip } from '@/components/habits/PillarTip';
 import { UserHabit } from '@/types/habit';
 import { FireIcon, TrophyIconFull, ChartBarIcon, TargetFullIcon, SearchIcon } from '@/components/ui/AppIcons';
 import { LeaderboardPeriod } from '@/types/leaderboard';
@@ -90,6 +91,9 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
           )}
         </div>
       </div>
+
+      {/* Daily rotating tip — pillars only, returns null otherwise */}
+      <PillarTip slug={category.slug} color={category.color} />
 
       {/* My Stats */}
       {habitLoading ? (

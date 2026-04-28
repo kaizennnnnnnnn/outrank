@@ -17,6 +17,7 @@ import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { UserHabit } from '@/types/habit';
 import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
 import { PillarPlaceholderRow } from '@/components/habits/PillarPlaceholderRow';
+import { WaterPillarRow } from '@/components/habits/WaterPillarRow';
 import { PILLARS, isPillarSlug } from '@/constants/pillars';
 import Link from 'next/link';
 
@@ -229,6 +230,18 @@ export default function DashboardPage() {
                 const isLoggedToday = habit.lastLogDate
                   ? new Date(habit.lastLogDate.toDate()).toDateString() === todayStr
                   : false;
+                // Pillar-specific row variants. Water needs near-zero
+                // friction logging (you sip throughout the day) so it
+                // gets inline +0.25/+0.5/+1 chips instead of a modal.
+                if (pillar.slug === 'water') {
+                  return (
+                    <WaterPillarRow
+                      key={pillar.slug}
+                      habit={habit}
+                      isLoggedToday={isLoggedToday}
+                    />
+                  );
+                }
                 return (
                   <HabitCard
                     key={pillar.slug}
