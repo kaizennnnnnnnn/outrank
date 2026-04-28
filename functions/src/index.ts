@@ -9,3 +9,4 @@ export { weeklyRecap } from './weeklyRecap';
 export { onNotificationCreated } from './onNotificationCreated';
 export { onMessageCreated } from './onMessageCreated';
 export { scheduleNotifier } from './scheduleNotifier';
+export { pillarReminders } from './pillarReminders';

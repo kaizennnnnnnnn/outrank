@@ -14,6 +14,7 @@ import { LeagueCrest } from '@/components/profile/RanksModal';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PillarTip } from '@/components/habits/PillarTip';
+import { PillarReminderSettings } from '@/components/habits/PillarReminderSettings';
 import { UserHabit } from '@/types/habit';
 import { FireIcon, TrophyIconFull, ChartBarIcon, TargetFullIcon, SearchIcon } from '@/components/ui/AppIcons';
 import { LeaderboardPeriod } from '@/types/leaderboard';
@@ -94,6 +95,14 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
 
       {/* Daily rotating tip — pillars only, returns null otherwise */}
       <PillarTip slug={category.slug} color={category.color} />
+
+      {/* Reminder settings — water + sleep only. The pillarReminders
+          Cloud Function (every 15 min) reads pillarSettings on the
+          user doc to fire pushes inside the waking window / before
+          bedtime. */}
+      {(category.slug === 'water' || category.slug === 'sleep') && (
+        <PillarReminderSettings pillar={category.slug} color={category.color} />
+      )}
 
       {/* My Stats */}
       {habitLoading ? (
