@@ -196,7 +196,11 @@ service cloud.firestore {
 
     match /userBadges/{userId}/earned/{badgeId} {
       allow read: if isOwner(userId) || isFriend(userId);
-      allow write: if false;
+      // Owner can create badge entries client-side (since onLogCreated
+      // moved to logHabit.ts client-side; same trust precedent as XP).
+      // Earned badges are immutable once created — no update/delete.
+      allow create: if isOwner(userId) && isNotBanned();
+      allow update, delete: if false;
     }
 
     // REPORTS

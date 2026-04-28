@@ -172,6 +172,41 @@ export const friendsLeagueSettle = functions.pubsub
           });
         }
 
+        // Achievements — only fires when the user wins (rank 1).
+        // leagueWins counter on the user doc + threshold-keyed badges
+        // (weekly-champ at 1, league-legend at 5). Idempotent via the
+        // earned-doc existence check inside awardBadge.
+        if (me.rank === 1) {
+          try {
+            await db.collection('users').doc(uid).update({
+              leagueWins: admin.firestore.FieldValue.increment(1),
+            });
+            const refreshed = await db.collection('users').doc(uid).get();
+            const wins = (refreshed.data()?.leagueWins as number) || 0;
+            const tiers: Array<{ id: string; threshold: number; xp: number }> = [
+              { id: 'weekly-champ',  threshold: 1, xp: 50 },
+              { id: 'league-legend', threshold: 5, xp: 100 },
+            ];
+            for (const t of tiers) {
+              if (wins < t.threshold) continue;
+              const earnedRef = db.collection(`userBadges/${uid}/earned`).doc(t.id);
+              const exists = await earnedRef.get();
+              if (exists.exists) continue;
+              await earnedRef.set({
+                badgeId: t.id,
+                earnedAt: admin.firestore.Timestamp.now(),
+              });
+              await db.collection('users').doc(uid).update({
+                totalXP: admin.firestore.FieldValue.increment(t.xp),
+                weeklyXP: admin.firestore.FieldValue.increment(t.xp),
+                monthlyXP: admin.firestore.FieldValue.increment(t.xp),
+              });
+            }
+          } catch (err) {
+            console.error(`league badge grant failed for ${uid}`, err);
+          }
+        }
+
         // Notify the user. Different copy depending on outcome.
         let message = '';
         if (me.rank === 1) message = `League winner this week — +${me.reward} fragments 👑`;

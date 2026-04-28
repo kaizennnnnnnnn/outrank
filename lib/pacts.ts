@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { localDateKey } from './recap';
+import { awardBadge, awardThreshold } from './badges';
 import { Pact, PactDayMap, PactDurationDays, PactReward } from '@/types/pact';
 
 /**
@@ -285,6 +286,11 @@ export async function applyPactResolution(pact: Pact, evalResult: PactEvaluation
     // 30-day pacts in v1) goes into ownedCosmetics via arrayUnion so
     // re-grants are no-ops — won't duplicate if the user has already
     // earned this frame from another pact.
+    //
+    // pactsWon counter increments here so the threshold-based badges
+    // (pact-pioneer 1, pact-trio 3) fire alongside reward distribution.
+    // pact-veteran is keyed off durationDays (30) so it only awards on
+    // the long pact regardless of total wins.
     await Promise.all(
       pact.participants.map(async (uid) => {
         const update: Record<string, unknown> = {
@@ -292,6 +298,7 @@ export async function applyPactResolution(pact: Pact, evalResult: PactEvaluation
           weeklyXP: increment(reward.xp),
           monthlyXP: increment(reward.xp),
           fragments: increment(reward.fragments),
+          pactsWon: increment(1),
         };
         if (reward.cosmeticId) {
           update.ownedCosmetics = arrayUnion(reward.cosmeticId);
@@ -308,6 +315,23 @@ export async function applyPactResolution(pact: Pact, evalResult: PactEvaluation
           actorAvatar: '',
           createdAt: Timestamp.now(),
         });
+
+        // Achievements — best-effort. The increment + read-back gives
+        // us this user's running win count for threshold checks; the
+        // 30-day badge fires off durationDays directly.
+        try {
+          const userSnap = await getDoc(doc(db, 'users', uid));
+          const wins = (userSnap.data()?.pactsWon as number) || 0;
+          await awardThreshold(uid, wins, [
+            { badgeId: 'pact-pioneer', threshold: 1 },
+            { badgeId: 'pact-trio',    threshold: 3 },
+          ]);
+          if (pact.durationDays === 30) {
+            await awardBadge(uid, 'pact-veteran');
+          }
+        } catch (err) {
+          console.error(`Pact badge grant failed for ${uid}`, err);
+        }
       }),
     );
   } else if (evalResult.kind === 'broken') {

@@ -36,6 +36,31 @@ export const BADGES: Badge[] = [
   { id: 'complete', name: 'Complete', description: 'Earn a badge in every category section', icon: '🌟', rarity: 'legendary', xpReward: 250, condition: 'all_sections_badge' },
   { id: 'max-level', name: 'Max Level', description: 'Reach Level 50', icon: '⭐', rarity: 'legendary', xpReward: 250, condition: 'level_50' },
   { id: 'undefeated', name: 'Undefeated', description: 'Win 20 duels without a loss', icon: '🛡️', rarity: 'legendary', xpReward: 250, condition: 'duel_wins_20_no_loss' },
+
+  // ---------------------------------------------------------------------------
+  // RECAP MECHANIC — earned by publishing daily records.
+  // ---------------------------------------------------------------------------
+  { id: 'first-recap',     name: 'First Record',      description: 'Publish your first daily record',         icon: '📰',  rarity: 'common', xpReward: 20,  condition: 'recap_publish_1' },
+  { id: 'recap-week',      name: 'On the Record',     description: 'Publish 7 daily records',                  icon: '📅',  rarity: 'rare',   xpReward: 50,  condition: 'recap_publish_7' },
+  { id: 'recap-month',     name: 'Documented',        description: 'Publish 30 daily records',                 icon: '📚',  rarity: 'epic',   xpReward: 100, condition: 'recap_publish_30' },
+
+  // ---------------------------------------------------------------------------
+  // PACTS — both win or both lose.
+  // ---------------------------------------------------------------------------
+  { id: 'pact-pioneer',    name: 'Pact Pioneer',      description: 'Complete your first pact with a friend',  icon: '🤜',  rarity: 'rare',   xpReward: 50,  condition: 'pact_won_1' },
+  { id: 'pact-veteran',    name: 'Pact Veteran',      description: 'Survive a 30-day pact',                    icon: '⛓️',  rarity: 'epic',   xpReward: 100, condition: 'pact_30_day_won' },
+  { id: 'pact-trio',       name: 'Three\'s a Promise', description: 'Complete 3 pacts',                         icon: '🔱',  rarity: 'epic',   xpReward: 100, condition: 'pact_won_3' },
+
+  // ---------------------------------------------------------------------------
+  // FRIENDS LEAGUE — weekly competition.
+  // ---------------------------------------------------------------------------
+  { id: 'weekly-champ',    name: 'Weekly Champ',      description: 'Win a Friends League week',                icon: '🥇',  rarity: 'rare',   xpReward: 50,  condition: 'league_wins_1' },
+  { id: 'league-legend',   name: 'League Legend',     description: 'Win 5 Friends League weeks',               icon: '🏆',  rarity: 'epic',   xpReward: 100, condition: 'league_wins_5' },
+
+  // ---------------------------------------------------------------------------
+  // VERIFICATION — keep your friends honest.
+  // ---------------------------------------------------------------------------
+  { id: 'verifier',        name: 'Verifier',          description: 'Confirm 25 of your friends\' entries',     icon: '🔎',  rarity: 'rare',   xpReward: 50,  condition: 'verify_confirms_25' },
 ];
 
 export const getBadgeById = (id: string) => BADGES.find((b) => b.id === id);

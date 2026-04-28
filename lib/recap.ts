@@ -9,11 +9,13 @@ import {
   where,
   arrayUnion,
   arrayRemove,
+  increment,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Recap, RecapEntry, RecapFeedItem } from '@/types/recap';
 import { advancePactsForUser } from './pacts';
+import { awardBadge, awardThreshold } from './badges';
 
 /**
  * Daily Recap helpers.
@@ -250,6 +252,24 @@ export async function publishRecap(userId: string, dateKey: string = localDateKe
   } catch (err) {
     console.error('Pact advance failed:', err);
   }
+
+  // Increment the user's published-recaps counter and check the
+  // achievement thresholds (1 / 7 / 30). Best-effort — failures
+  // don't block the publish.
+  try {
+    await updateDoc(doc(db, 'users', userId), {
+      publishedRecaps: increment(1),
+    });
+    const userDocSnap = await getDoc(doc(db, 'users', userId));
+    const total = (userDocSnap.data()?.publishedRecaps as number) || 0;
+    await awardThreshold(userId, total, [
+      { badgeId: 'first-recap', threshold: 1 },
+      { badgeId: 'recap-week', threshold: 7 },
+      { badgeId: 'recap-month', threshold: 30 },
+    ]);
+  } catch (err) {
+    console.error('Recap badge grant failed:', err);
+  }
 }
 
 /**
@@ -304,6 +324,13 @@ export type VerificationKind = 'confirm' | 'flag';
  * Used by the recap detail view's per-entry verification UI: a friend
  * tapping "Confirm" upgrades the log toward tier-2 (verified by
  * friend) per the verification ladder.
+ *
+ * Side effect: confirms increment the actor's `verifyConfirms` counter
+ * and trip the Verifier achievement at 25. The arrayUnion above keeps
+ * confirms idempotent at the doc level, but the counter +1 always
+ * fires — accepted tradeoff for v1 since the cost is just slightly
+ * inflated counters from re-taps. Tightening to "only +1 if actually
+ * new" would require a get-then-write, which doubles the round trips.
  */
 export async function addEntryVerification(
   recapOriginId: string,
@@ -317,6 +344,21 @@ export async function addEntryVerification(
     { reactions: { [kind]: arrayUnion(uid) } },
     { merge: true },
   );
+
+  if (kind === 'confirm') {
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        verifyConfirms: increment(1),
+      });
+      const userSnap = await getDoc(doc(db, 'users', uid));
+      const total = (userSnap.data()?.verifyConfirms as number) || 0;
+      if (total >= 25) {
+        await awardBadge(uid, 'verifier');
+      }
+    } catch (err) {
+      console.error('Verifier badge grant failed:', err);
+    }
+  }
 }
 
 /** Undo a confirm or flag. */
