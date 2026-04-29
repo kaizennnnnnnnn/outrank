@@ -15,6 +15,7 @@ import { ActivityHeatmap } from '@/components/profile/ActivityHeatmap';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
 import { OverallProgressGraph } from '@/components/habits/OverallProgressGraph';
 import { ProfileRecapCalendar } from '@/components/profile/ProfileRecapCalendar';
+import { ProfileSocialBlock } from '@/components/profile/ProfileSocialBlock';
 import { StreakFlame } from '@/components/habits/StreakFlame';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { BoltFullIcon, ChartBarIcon, UsersFullIcon, FireIcon } from '@/components/ui/AppIcons';
@@ -151,6 +152,10 @@ export default function ProfilePage() {
           heat-map shading. Tap a filled cell to open the day's
           detail. */}
       <ProfileRecapCalendar uid={user.uid} isOwner={true} />
+
+      {/* Social-stakes summary — active pacts + last league finish.
+          Self-hides if neither exist yet. */}
+      <ProfileSocialBlock />
 
       {/* Activity Heatmap */}
       <div className="glass-card rounded-2xl p-4">
