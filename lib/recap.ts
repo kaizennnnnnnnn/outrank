@@ -253,13 +253,14 @@ export async function publishRecap(userId: string, dateKey: string = localDateKe
     console.error('Recap fan-out failed:', err);
   }
 
-  // Advance any active pacts this user is in. For each pact whose
-  // habitSlug appears in the recap, mark today's cell logged for this
-  // user; then re-evaluate and resolve broken / succeeded states.
-  // Best-effort — failures don't block the publish.
+  // Advance any active pacts this user is in. Threads `dateKey` so a
+  // retro-publish (yesterday's record) marks the correct day cell on
+  // the pact, not today's. The resolvePact Cloud Function decides
+  // whether the pact is still-active, freeze-consuming, succeeded, or
+  // broken, and pays both sides server-side.
   try {
     const slugs = new Set(recap.entries.map((e) => e.habitSlug));
-    await advancePactsForUser(userId, slugs);
+    await advancePactsForUser(userId, slugs, dateKey);
   } catch (err) {
     console.error('Pact advance failed:', err);
   }

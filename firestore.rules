@@ -152,12 +152,18 @@ service cloud.firestore {
     }
 
     // PACTS — top-level docs shared between two participants. Either
-    // can read or write the doc; we trust the client (and Firestore's
-    // membership check) to keep updates honest. Status flips, dayStatus
-    // mutations, and reward distribution all happen client-side via
-    // lib/pacts.ts. v1 only enforces participant membership at the
-    // rule level — finer-grained per-field checks (e.g. "you can only
-    // mark your own cell logged") are deferred until abuse appears.
+    // can read; updates restricted to legitimate transitions because
+    // earlier rules let either participant flip status to
+    // 'succeeded'/'broken' directly and self-grant rewards.
+    //
+    // Allowed client transitions:
+    //   pending → active   (only the recipient — not the initiator)
+    //   pending → declined (either participant)
+    //   active → active    (dayStatus + freeze fields, no status change)
+    //
+    // Resolution to succeeded/broken happens in the resolvePact Cloud
+    // Function (admin SDK bypasses rules). Clients can never write
+    // those states directly.
     match /pacts/{pactId} {
       allow read: if isAuthenticated()
         && request.auth.uid in resource.data.participants;
@@ -166,7 +172,16 @@ service cloud.firestore {
         && request.resource.data.status == 'pending'
         && request.resource.data.participants.size() == 2;
       allow update: if isAuthenticated() && isNotBanned()
-        && request.auth.uid in resource.data.participants;
+        && request.auth.uid in resource.data.participants
+        // Block client-side resolution flips — admin SDK in
+        // resolvePact handles these.
+        && !(request.resource.data.status in ['succeeded', 'broken'])
+        // The initiator can't accept their own pact (pending → active).
+        // They can still flip to declined, or modify dayStatus on an
+        // already-active pact.
+        && !(resource.data.status == 'pending'
+             && request.resource.data.status == 'active'
+             && request.auth.uid == resource.data.initiatorId);
       allow delete: if false;
     }
 

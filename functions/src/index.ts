@@ -11,3 +11,4 @@ export { onMessageCreated } from './onMessageCreated';
 export { scheduleNotifier } from './scheduleNotifier';
 export { pillarReminders } from './pillarReminders';
 export { friendsLeagueSettle } from './friendsLeagueSettle';
+export { resolvePact } from './resolvePact';

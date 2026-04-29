@@ -1,4 +1,4 @@
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, runTransaction, increment } from 'firebase/firestore';
 import { db } from './firebase';
 import { UserHabit } from '@/types/habit';
 
@@ -52,38 +52,45 @@ export async function repairStreak(userId: string, habitSlug: string): Promise<R
   const habitRef = doc(db, `habits/${userId}/userHabits/${habitSlug}`);
   const userRef = doc(db, 'users', userId);
 
-  const habitSnap = await getDoc(habitRef);
-  if (!habitSnap.exists()) throw new Error('Habit not found');
-  const habit = habitSnap.data() as UserHabit;
-  const previousStreak = habit.previousStreak || 0;
-  if (previousStreak < STREAK_REPAIR_MIN) throw new Error('Nothing to repair');
+  // Wrapped in a transaction so a rapid double-click (or cross-device
+  // race) can't double-spend fragments. The transaction re-reads the
+  // habit's previousStreak on retry — once the first repair clears it,
+  // the second invocation aborts cleanly with "Nothing to repair."
+  return runTransaction(db, async (tx) => {
+    const habitSnap = await tx.get(habitRef);
+    if (!habitSnap.exists()) throw new Error('Habit not found');
+    const habit = habitSnap.data() as UserHabit;
 
-  const brokenAt = habit.streakBrokenAt?.toDate?.();
-  if (!brokenAt || Date.now() - brokenAt.getTime() > STREAK_REPAIR_WINDOW_MS) {
-    throw new Error('Repair window expired');
-  }
+    const previousStreak = habit.previousStreak || 0;
+    if (previousStreak < STREAK_REPAIR_MIN) throw new Error('Nothing to repair');
 
-  const cost = streakRepairCost(previousStreak);
-  const userSnap = await getDoc(userRef);
-  const fragments = (userSnap.data()?.fragments as number) || 0;
-  if (fragments < cost) throw new Error(`Not enough fragments — need ${cost}`);
+    const brokenAt = habit.streakBrokenAt?.toDate?.();
+    if (!brokenAt || Date.now() - brokenAt.getTime() > STREAK_REPAIR_WINDOW_MS) {
+      throw new Error('Repair window expired');
+    }
 
-  // Today's log already counted as currentStreak = 1; stitching the
-  // saved history back on lifts it to previousStreak + 1.
-  const restoredTo = previousStreak + 1;
-  const longestStreak = Math.max(habit.longestStreak || 0, restoredTo);
+    const cost = streakRepairCost(previousStreak);
+    const userSnap = await tx.get(userRef);
+    const fragments = (userSnap.data()?.fragments as number) || 0;
+    if (fragments < cost) throw new Error(`Not enough fragments — need ${cost}`);
 
-  await updateDoc(habitRef, {
-    currentStreak: restoredTo,
-    longestStreak,
-    previousStreak: null,
-    streakBrokenAt: null,
+    // Today's log already counted as currentStreak = 1; stitching the
+    // saved history back on lifts it to previousStreak + 1.
+    const restoredTo = previousStreak + 1;
+    const longestStreak = Math.max(habit.longestStreak || 0, restoredTo);
+
+    tx.update(habitRef, {
+      currentStreak: restoredTo,
+      longestStreak,
+      previousStreak: null,
+      streakBrokenAt: null,
+    });
+    tx.update(userRef, {
+      fragments: increment(-cost),
+    });
+
+    return { cost, restoredTo };
   });
-  await updateDoc(userRef, {
-    fragments: increment(-cost),
-  });
-
-  return { cost, restoredTo };
 }
 
 /**

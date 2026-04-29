@@ -9,12 +9,10 @@ import {
   query,
   where,
   Timestamp,
-  increment,
-  arrayUnion,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from './firebase';
 import { localDateKey } from './recap';
-import { awardBadge, awardThreshold } from './badges';
 import { Pact, PactDayMap, PactDurationDays, PactReward } from '@/types/pact';
 
 /**
@@ -309,120 +307,37 @@ export function evaluatePact(pact: Pact): PactEvaluation {
 }
 
 /**
- * Persist the result of a pact evaluation: flip status, distribute
- * rewards / penalties to both users. Idempotent — calling on a pact
- * already in succeeded/broken status is a no-op.
+ * Fan-out called from `publishRecap` after a recap is published.
+ *
+ * For each active pact this user is in:
+ *   1. If `dateKey` falls in the pact window AND the pact's habitSlug
+ *      appears in the recap → mark that user's cell for that date as
+ *      logged.
+ *   2. Invoke the `resolvePact` Cloud Function. The function (admin
+ *      SDK) reads the latest pact state, runs evaluatePact, and
+ *      atomically: persists freeze consumption / flips status to
+ *      succeeded or broken / pays both sides their rewards or penalty
+ *      / awards badges.
+ *
+ * Threading `dateKey` (instead of always using today's local date) is
+ * critical for the retro-publish-yesterday's-record path — without it,
+ * publishing yesterday would mark TODAY's cell, leave yesterday's
+ * pending, and the pact would burn its freeze (or break) on next
+ * evaluation.
+ *
+ * Resolution moved server-side because client rules forbid writing to
+ * the OTHER participant's user doc / userBadges. Without the function,
+ * only the publishing user got their rewards while the friend got
+ * silently nothing. Same Cloud Function path also closes the
+ * unilateral-status-flip exploit at the rule level.
+ *
+ * Best-effort — failures don't block the publish.
  */
-export async function applyPactResolution(pact: Pact, evalResult: PactEvaluation): Promise<void> {
-  if (!pact.id) return;
-  if (evalResult.kind === 'still-active') return;
-  if (pact.status !== 'active') return;
-
-  const ref = doc(db, PACTS_COLLECTION, pact.id);
-
-  if (evalResult.kind === 'succeeded') {
-    const reward = PACT_REWARDS[pact.durationDays];
-    // Persist the freeze record alongside the success flip — covers the
-    // case where the freeze was consumed in the very same walk that
-    // completed the pact (last day's miss covered + everything else
-    // logged). For pacts where freeze was already persisted earlier,
-    // these fields no-op against existing values.
-    const update: Record<string, unknown> = {
-      status: 'succeeded',
-      resolvedAt: Timestamp.now(),
-    };
-    if (evalResult.freezeUsedOn && !pact.freezeUsedOn) {
-      update.freezeAvailable = false;
-      update.freezeUsedOn = evalResult.freezeUsedOn;
-      update.freezeUsedBy = evalResult.freezeUsedBy || null;
-    }
-    await updateDoc(ref, update);
-    // Both participants earn the reward. Cosmetic (only present on
-    // 30-day pacts in v1) goes into ownedCosmetics via arrayUnion so
-    // re-grants are no-ops — won't duplicate if the user has already
-    // earned this frame from another pact.
-    //
-    // pactsWon counter increments here so the threshold-based badges
-    // (pact-pioneer 1, pact-trio 3) fire alongside reward distribution.
-    // pact-veteran is keyed off durationDays (30) so it only awards on
-    // the long pact regardless of total wins.
-    await Promise.all(
-      pact.participants.map(async (uid) => {
-        const update: Record<string, unknown> = {
-          totalXP: increment(reward.xp),
-          weeklyXP: increment(reward.xp),
-          monthlyXP: increment(reward.xp),
-          fragments: increment(reward.fragments),
-          pactsWon: increment(1),
-        };
-        if (reward.cosmeticId) {
-          update.ownedCosmetics = arrayUnion(reward.cosmeticId);
-        }
-        await updateDoc(doc(db, 'users', uid), update);
-
-        const cosmeticLine = reward.cosmeticId ? ' · "Pact Holder" frame unlocked' : '';
-        await addDoc(collection(db, `notifications/${uid}/items`), {
-          type: 'pact_succeeded',
-          message: `Pact complete · +${reward.xp} XP · +${reward.fragments} fragments${cosmeticLine}`,
-          isRead: false,
-          relatedId: pact.id || '',
-          actorId: '',
-          actorAvatar: '',
-          createdAt: Timestamp.now(),
-        });
-
-        // Achievements — best-effort. The increment + read-back gives
-        // us this user's running win count for threshold checks; the
-        // 30-day badge fires off durationDays directly.
-        try {
-          const userSnap = await getDoc(doc(db, 'users', uid));
-          const wins = (userSnap.data()?.pactsWon as number) || 0;
-          await awardThreshold(uid, wins, [
-            { badgeId: 'pact-pioneer', threshold: 1 },
-            { badgeId: 'pact-trio',    threshold: 3 },
-          ]);
-          if (pact.durationDays === 30) {
-            await awardBadge(uid, 'pact-veteran');
-          }
-        } catch (err) {
-          console.error(`Pact badge grant failed for ${uid}`, err);
-        }
-      }),
-    );
-  } else if (evalResult.kind === 'broken') {
-    await updateDoc(ref, {
-      status: 'broken',
-      brokenBy: evalResult.brokenBy,
-      brokenAt: Timestamp.now(),
-      resolvedAt: Timestamp.now(),
-    });
-    await Promise.all(
-      pact.participants.map(async (uid) => {
-        await updateDoc(doc(db, 'users', uid), {
-          fragments: increment(-PACT_BREAK_PENALTY_FRAGMENTS),
-        });
-        await addDoc(collection(db, `notifications/${uid}/items`), {
-          type: 'pact_broken',
-          message: `Pact broken — both sides lost ${PACT_BREAK_PENALTY_FRAGMENTS} fragments.`,
-          isRead: false,
-          relatedId: pact.id || '',
-          actorId: evalResult.brokenBy,
-          actorAvatar: pact.participantsMeta[evalResult.brokenBy]?.avatarUrl || '',
-          createdAt: Timestamp.now(),
-        });
-      }),
-    );
-  }
-}
-
-/**
- * Fan-out called from `publishRecap`: for every active pact this user
- * is in, mark today's cell logged if the pact's habitSlug appears in
- * the published recap; then re-evaluate and resolve if the verdict is
- * succeeded or broken. Best-effort — failures don't block the publish.
- */
-export async function advancePactsForUser(userId: string, recapHabitSlugs: Set<string>): Promise<void> {
-  const today = localDateKey();
+export async function advancePactsForUser(
+  userId: string,
+  recapHabitSlugs: Set<string>,
+  dateKey: string = localDateKey(),
+): Promise<void> {
   const snap = await getDocs(
     query(
       collection(db, PACTS_COLLECTION),
@@ -431,61 +346,29 @@ export async function advancePactsForUser(userId: string, recapHabitSlugs: Set<s
     ),
   );
 
+  const resolveFn = httpsCallable<{ pactId: string }, { kind: string }>(
+    functions,
+    'resolvePact',
+  );
+
   await Promise.all(
     snap.docs.map(async (pactDoc) => {
       const pact = { id: pactDoc.id, ...(pactDoc.data() as Omit<Pact, 'id'>) };
-      // Skip if today is outside the pact window
-      if (today < pact.startDate || today > pact.endDate) {
-        // But still evaluate — could be a fully-elapsed unresolved pact
-        const verdict = evaluatePact(pact);
-        if (verdict.kind !== 'still-active') {
-          await applyPactResolution(pact, verdict);
-        }
-        return;
+
+      // Mark the cell only if dateKey is in window AND this recap
+      // covers the pact's pillar.
+      const inWindow = dateKey >= pact.startDate && dateKey <= pact.endDate;
+      if (inWindow && recapHabitSlugs.has(pact.habitSlug)) {
+        await markPactDayLogged(pactDoc.id, userId, dateKey);
       }
 
-      if (recapHabitSlugs.has(pact.habitSlug)) {
-        await markPactDayLogged(pactDoc.id, userId, today);
-      }
-
-      // Re-read so we evaluate against the freshly-merged dayStatus
-      const refreshed = await getDoc(doc(db, PACTS_COLLECTION, pactDoc.id));
-      if (!refreshed.exists()) return;
-      const next = { id: pactDoc.id, ...(refreshed.data() as Omit<Pact, 'id'>) };
-      const verdict = evaluatePact(next);
-
-      // Mid-window freeze consumption: persist the rescue immediately
-      // so subsequent walks see it as "used" and won't try to consume
-      // it again. Also fires a notification to both sides — losing a
-      // day quietly would be worse UX than telling them they just
-      // burned the pact's one safety net.
-      if (verdict.kind === 'still-active' && verdict.freezePendingOn) {
-        try {
-          await updateDoc(doc(db, PACTS_COLLECTION, pactDoc.id), {
-            freezeAvailable: false,
-            freezeUsedOn: verdict.freezePendingOn,
-            freezeUsedBy: verdict.freezePendingBy || null,
-          });
-          await Promise.all(
-            next.participants.map((u) =>
-              addDoc(collection(db, `notifications/${u}/items`), {
-                type: 'pact_freeze_used',
-                message: `Pact freeze used — your one rescue is gone. Don't miss another.`,
-                isRead: false,
-                relatedId: pactDoc.id,
-                actorId: '',
-                actorAvatar: '',
-                createdAt: Timestamp.now(),
-              }),
-            ),
-          );
-        } catch (err) {
-          console.error(`Pact freeze persist failed for ${pactDoc.id}`, err);
-        }
-      }
-
-      if (verdict.kind !== 'still-active') {
-        await applyPactResolution(next, verdict);
+      // Always invoke resolution — it's idempotent. Function handles
+      // still-active (with optional freeze persistence), succeeded,
+      // and broken cases including all reward/penalty distribution.
+      try {
+        await resolveFn({ pactId: pactDoc.id });
+      } catch (err) {
+        console.error(`resolvePact callable failed for ${pactDoc.id}`, err);
       }
     }),
   );

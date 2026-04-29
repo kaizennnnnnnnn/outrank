@@ -66,9 +66,11 @@ export function useMonthRecaps(
     }
     fetch();
     return () => { cancelled = true; };
-    // monthKey is the stable derived month identifier; including
-    // monthDate directly would re-fire on every parent render
-  }, [uid, monthKey, isOwner, monthDate]);
+    // monthKey is the stable derived month identifier — derived from
+    // monthDate so including monthDate in deps would re-fire on every
+    // parent render when the parent constructs the Date inline.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, monthKey, isOwner]);
 
   if (!uid) return { byDate: {} as Record<string, Recap>, loading: false };
   return { byDate, loading };

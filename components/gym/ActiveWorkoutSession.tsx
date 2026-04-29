@@ -82,7 +82,6 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
         workout: { ...workout, exercises },
         username: user.username,
         avatarUrl: user.avatarUrl || '',
-        programPath: 'lift', // overridden inside completeWorkout via program lookup; kept for type
       });
       haptic('success');
       setBurst((n) => n + 1);

@@ -16,7 +16,6 @@ import { logHabit } from './logHabit';
 import { getProgram } from '@/constants/gymPrograms';
 import { getExercise } from '@/constants/exercises';
 import {
-  ExercisePath,
   Program,
   ProgramDay,
   Workout,
@@ -158,9 +157,8 @@ export async function completeWorkout(args: {
   workout: Workout;
   username: string;
   avatarUrl: string;
-  programPath: ExercisePath;
 }) {
-  const { userId, workoutId, workout, username, avatarUrl, programPath } = args;
+  const { userId, workoutId, workout, username, avatarUrl } = args;
 
   // Compute aggregates from completed sets only.
   let totalVolume = 0;
@@ -180,15 +178,18 @@ export async function completeWorkout(args: {
     totalSets,
   });
 
-  // Advance the program cycle. Read program length from constants so we
-  // can wrap the index without re-reading state.
+  // Advance the program cycle. Read program (length + path) from
+  // constants so we set the user's gym.path correctly — caller used
+  // to pass programPath, which was hardcoded to 'lift' on the
+  // session page and miscategorised calisthenics users.
   const program = getProgram(workout.programId);
   const scheduleLen = program?.schedule.length || 1;
+  const path = program?.path || 'lift';
   await updateDoc(doc(db, 'users', userId), {
     'gym.lastWorkoutAt': Timestamp.now(),
     'gym.currentDayIndex': ((workout.dayIndex + 1) % scheduleLen),
     'gym.totalWorkouts': increment(1),
-    'gym.path': programPath,
+    'gym.path': path,
   });
 
   // Fire the gym habit log — flows into the draft Recap via the standard

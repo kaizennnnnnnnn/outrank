@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { getFunctions, Functions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -19,4 +20,5 @@ function getFirebaseApp(): FirebaseApp {
 export const auth: Auth = typeof window !== 'undefined' ? getAuth(getFirebaseApp()) : ({} as Auth);
 export const db: Firestore = typeof window !== 'undefined' ? getFirestore(getFirebaseApp()) : ({} as Firestore);
 export const storage: FirebaseStorage = typeof window !== 'undefined' ? getStorage(getFirebaseApp()) : ({} as FirebaseStorage);
+export const functions: Functions = typeof window !== 'undefined' ? getFunctions(getFirebaseApp()) : ({} as Functions);
 export default typeof window !== 'undefined' ? getFirebaseApp() : ({} as FirebaseApp);
