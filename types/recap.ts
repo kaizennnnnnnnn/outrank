@@ -49,6 +49,17 @@ export interface Recap {
   proofCount: number;
   totalXP: number;
 
+  /**
+   * Tiered publish reward — set once when status flips to 'published'.
+   * Scales with `pillarsLogged` (1-5 distinct pillars). null on draft
+   * doc; populated atomically with the status flip.
+   */
+  publishReward?: {
+    xp: number;
+    fragments: number;
+    pillarsLogged: number;
+  } | null;
+
   entries: RecapEntry[];
 
   // Reuses the `/reactions/{originId}` + `/reactions/{originId}/comments`

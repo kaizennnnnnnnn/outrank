@@ -115,7 +115,7 @@ export function RecapDetailView({ recap, isOwner }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 mt-4 text-[11px] font-mono text-slate-500">
+        <div className="flex items-center gap-3 mt-4 text-[11px] font-mono text-slate-500 flex-wrap">
           <span>
             <span className="text-slate-300 font-bold">{recap.logCount}</span> log{recap.logCount === 1 ? '' : 's'}
           </span>
@@ -123,6 +123,19 @@ export function RecapDetailView({ recap, isOwner }: Props) {
           <span>
             <span className="text-slate-300 font-bold">{recap.proofCount}</span> photo{recap.proofCount === 1 ? '' : 's'}
           </span>
+          {recap.publishReward && recap.publishReward.xp > 0 && (
+            <span
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+              style={{
+                color: '#34d399',
+                background: 'rgba(34,197,94,0.12)',
+                border: '1px solid rgba(34,197,94,0.3)',
+              }}
+              title={`Earned at publish for ${recap.publishReward.pillarsLogged}/5 pillars`}
+            >
+              🎁 +{recap.publishReward.xp} XP · +{recap.publishReward.fragments} frags
+            </span>
+          )}
           {editable && editHoursLeft > 0 && (
             <span className="ml-auto text-[10px] uppercase tracking-widest text-emerald-400">
               Editable for {editHoursLeft}h

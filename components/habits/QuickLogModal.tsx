@@ -134,7 +134,7 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
         const freezeMsg = result.freezeUsed ? ' · Streak freeze auto-applied' : '';
         const lvlMsg = result.leveledUp ? ` · Leveled up to ${result.newLevel}` : '';
         const bonusMsg = result.dailyBonusEarned
-          ? ` · All habits done! +${result.bonusFragments} frags · +1 evolution`
+          ? ' · Perfect day! +1 orb evolution charge'
           : '';
         addToast({ type: 'success', message: `Logged · +${result.xpEarned} XP${bonusMsg}${streakMsg}${freezeMsg}${lvlMsg}` });
       }, 1200);
@@ -336,33 +336,19 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
                 />
               )}
               {willCompleteAll && (
-                <>
-                  <RewardChip
-                    icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>}
-                    color="#fbbf24"
-                    label="+30 Fragments"
-                    detail="All habits complete bonus"
-                  />
-                  <RewardChip
-                    icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z" /></svg>}
-                    color="#ec4899"
-                    label="+1 Evolution"
-                    detail="Charge your orb's next rank"
-                  />
-                  <RewardChip
-                    icon={<span>⚡</span>}
-                    color="#f472b6"
-                    label="+50 Bonus XP"
-                    detail="Daily quest reward"
-                  />
-                </>
+                <RewardChip
+                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z" /></svg>}
+                  color="#ec4899"
+                  label="+1 Evolution"
+                  detail="Orb charge — perfect day"
+                />
               )}
             </div>
             {!willCompleteAll && allHabits.length > 0 && !bonusAlreadyClaimedToday && (
               <p className="text-[10px] text-slate-500 mt-2 text-center">
                 {remainingAfter === 1
-                  ? 'One more habit after this to unlock evolution + fragments!'
-                  : `${remainingAfter - 1} habits left today to unlock evolution + fragments.`}
+                  ? 'One more habit to fill today — unlocks an orb evolution charge.'
+                  : `${remainingAfter - 1} habits left to unlock the orb evolution charge.`}
               </p>
             )}
             {bonusAlreadyClaimedToday && (

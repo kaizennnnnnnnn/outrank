@@ -200,13 +200,16 @@ export async function logHabit(params: LogHabitParams) {
   // 4. Update user XP
   const userRef = doc(db, `users/${userId}`);
 
-  // --- Daily all-habits-done reward ---
-  // The orb no longer auto-evolves per log. Instead: when the user logs the
-  // LAST habit of the day (i.e. this log fills the final empty slot), they
-  // earn +1 orbEvolutionCharges, +30 fragments, and +50 bonus XP — once
-  // per calendar day. Evolution is then triggered manually from the profile.
-  const DAILY_BONUS_FRAGMENTS = 30;
-  const DAILY_BONUS_XP = 50;
+  // --- Daily all-habits-done reward (orb evolution charge only) ---
+  // Filling every habit slot for the day still gates the orb evolution
+  // charge — it's the orb-mechanic premium. The XP + fragments piece
+  // moved off this all-or-nothing bonus and onto the recap publish
+  // action (lib/recap.ts publishRecap), where the reward is tiered by
+  // how many pillars the user actually logged. Partial-day publishers
+  // now get a real reward instead of nothing; full-day publishers get
+  // an even bigger one. See constants/publishReward.ts.
+  const DAILY_BONUS_FRAGMENTS = 0;
+  const DAILY_BONUS_XP = 0;
   let dailyBonusEarned = false;
   let bonusXP = 0;
   let bonusFragments = 0;

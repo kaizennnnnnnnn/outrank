@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useTodaysDraft, useYesterdaysRecap } from '@/hooks/useRecap';
+import { countPillarsLogged, getPublishReward } from '@/constants/publishReward';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { publishRecap, canEdit, canPublishYesterday } from '@/lib/recap';
@@ -35,8 +36,16 @@ export function RecapDraftPanel() {
     if (!user) return;
     setPublishing(true);
     try {
+      // Compute the reward client-side to surface in the toast — same
+      // table the server uses inside publishRecap so the values match
+      // what gets persisted.
+      const pillars = countPillarsLogged(recap.entries);
+      const reward = getPublishReward(pillars);
       await publishRecap(user.uid, recap.localDate);
-      addToast({ type: 'success', message: 'Day published — friends can see it now' });
+      const msg = reward.xp > 0
+        ? `Day published · +${reward.xp} XP · +${reward.fragments} frags`
+        : 'Day published — friends can see it now';
+      addToast({ type: 'success', message: msg });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Could not publish';
       addToast({ type: 'error', message: msg });
@@ -206,6 +215,33 @@ function DraftState({
           </div>
         )}
 
+        {/* Tiered publish-reward preview — scales by distinct pillars
+            logged. Updates live as the draft fills. */}
+        {(() => {
+          const pillars = countPillarsLogged(recap.entries);
+          const upcoming = getPublishReward(pillars);
+          if (pillars === 0) return null;
+          return (
+            <div
+              className="mb-3 rounded-xl px-3 py-2 flex items-center gap-3"
+              style={{
+                background: 'linear-gradient(90deg, rgba(34,197,94,0.10), rgba(11,11,20,0.5))',
+                border: '1px solid rgba(34,197,94,0.25)',
+              }}
+            >
+              <span className="text-base">🎁</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold text-emerald-300">
+                  Publish reward: +{upcoming.xp} XP · +{upcoming.fragments} frags
+                </p>
+                <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+                  {pillars}/5 pillars · {pillars < 5 ? `log ${5 - pillars} more for +${getPublishReward(5).xp - upcoming.xp} more` : 'full payout'}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
         <Button
           className="w-full"
           onClick={onPublish}
@@ -274,6 +310,26 @@ function PublishedState({ recap }: { recap: Recap }) {
       <p className="text-sm text-slate-300 mb-3">
         {recap.logCount} log{recap.logCount === 1 ? '' : 's'} · +{recap.totalXP} XP · visible to friends
       </p>
+
+      {recap.publishReward && (recap.publishReward.xp > 0 || recap.publishReward.fragments > 0) && (
+        <div
+          className="mb-3 rounded-xl px-3 py-2 flex items-center gap-3"
+          style={{
+            background: 'linear-gradient(90deg, rgba(34,197,94,0.12), rgba(11,11,20,0.5))',
+            border: '1px solid rgba(34,197,94,0.3)',
+          }}
+        >
+          <span className="text-base">🎁</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-bold text-emerald-300">
+              Publish reward · +{recap.publishReward.xp} XP · +{recap.publishReward.fragments} frags
+            </p>
+            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+              {recap.publishReward.pillarsLogged}/5 pillars submitted
+            </p>
+          </div>
+        </div>
+      )}
 
       {recapStreak > 1 && (
         <div

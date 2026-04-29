@@ -16,6 +16,7 @@ import { db } from './firebase';
 import { Recap, RecapEntry, RecapFeedItem } from '@/types/recap';
 import { advancePactsForUser } from './pacts';
 import { awardBadge, awardThreshold } from './badges';
+import { countPillarsLogged, getPublishReward } from '@/constants/publishReward';
 
 /**
  * Daily Recap helpers.
@@ -180,7 +181,41 @@ export async function publishRecap(userId: string, dateKey: string = localDateKe
   if (recap.logCount === 0) throw new Error('Cannot publish an empty recap');
 
   const publishedAt = Timestamp.now();
-  await updateDoc(ref, { status: 'published', publishedAt });
+
+  // Compute the tiered publish reward before flipping status so the
+  // recap doc carries it into its published state. Reward scales by
+  // distinct pillar coverage (1-5); custom habits don't affect the
+  // tier since they don't reach the recap.
+  const pillarsLogged = countPillarsLogged(recap.entries);
+  const reward = getPublishReward(pillarsLogged);
+  const publishRewardDoc = {
+    xp: reward.xp,
+    fragments: reward.fragments,
+    pillarsLogged,
+  };
+
+  await updateDoc(ref, {
+    status: 'published',
+    publishedAt,
+    publishReward: publishRewardDoc,
+  });
+
+  // Apply the reward to the user. Best-effort — if it fails the recap
+  // is still published and the doc carries the intended reward, so
+  // downstream UI still shows what they earned.
+  try {
+    if (reward.xp > 0 || reward.fragments > 0) {
+      await updateDoc(doc(db, 'users', userId), {
+        totalXP: increment(reward.xp),
+        weeklyXP: increment(reward.xp),
+        monthlyXP: increment(reward.xp),
+        seasonPassXP: increment(reward.xp),
+        fragments: increment(reward.fragments),
+      });
+    }
+  } catch (err) {
+    console.error('Publish reward grant failed:', err);
+  }
 
   // Initialise shared reactions doc so friends can react/comment immediately
   await setDoc(doc(db, `reactions/${recap.originId}`), { reactions: {} }, { merge: true });
