@@ -159,6 +159,10 @@ export async function acceptPact(pactId: string, userId: string): Promise<void> 
     endDate: endKey,
     dayStatus,
     acceptedAt: Timestamp.now(),
+    // One-shot freeze starts available — see evaluatePact for the rules.
+    freezeAvailable: true,
+    freezeUsedOn: null,
+    freezeUsedBy: null,
   });
 
   // Notify initiator
@@ -217,16 +221,35 @@ export async function markPactDayLogged(pactId: string, userId: string, dateKey:
 /**
  * Walk every elapsed day in the pact window. If any *closed* day (i.e.
  * strictly before today's local-date) has a 'pending' cell for either
- * participant → broken. If every day in the window is fully logged →
- * succeeded. Otherwise → still active.
+ * participant → broken (unless the pact's one-shot freeze can absorb
+ * exactly one such miss). If every day in the window is fully logged
+ * (or covered by the freeze) → succeeded. Otherwise → still active.
  *
  * "Closed day" rule: today's pending status doesn't break the pact —
  * the user might still log + publish before midnight.
+ *
+ * Freeze rule:
+ *   • If pact.freezeUsedOn is already set, that date is treated as
+ *     "logged-equivalent" — the freeze persisted from a prior walk.
+ *   • If freezeAvailable !== false (default true), the *first* fresh
+ *     missed-and-closed day in this walk is marked as freezePendingOn
+ *     instead of breaking the pact. The caller persists that
+ *     consumption so subsequent walks see it as "used."
+ *   • A second missed-and-closed day in the same walk → broken.
  */
 export type PactEvaluation =
-  | { kind: 'still-active' }
+  | {
+      kind: 'still-active';
+      /** Set when this walk just used the freeze. Caller persists. */
+      freezePendingOn?: string;
+      freezePendingBy?: string;
+    }
   | { kind: 'broken'; brokenBy: string; brokenOn: string }
-  | { kind: 'succeeded' };
+  | {
+      kind: 'succeeded';
+      freezeUsedOn?: string;
+      freezeUsedBy?: string;
+    };
 
 export function evaluatePact(pact: Pact): PactEvaluation {
   if (pact.status !== 'active') return { kind: 'still-active' };
@@ -234,21 +257,36 @@ export function evaluatePact(pact: Pact): PactEvaluation {
   const today = localDateKey();
   const dateKeys = pactDateKeys(pact.startDate, pact.durationDays);
 
+  // Default: freezeAvailable true unless explicitly false. Old pacts
+  // missing the field count as available.
+  const freezeAvailable = pact.freezeAvailable !== false && !pact.freezeUsedOn;
+
   let anyPendingInOpenWindow = false;
+  let freezePendingOn: string | null = null;
+  let freezePendingBy: string | null = null;
 
   for (const key of dateKeys) {
     const cell = pact.dayStatus[key];
     if (!cell) continue;
+
+    // Day already covered by the persisted freeze — count as logged
+    if (pact.freezeUsedOn === key) continue;
+
     const aLogged = cell[pact.participants[0]] === 'logged';
     const bLogged = cell[pact.participants[1]] === 'logged';
     const isPast = key < today;
 
     if (!aLogged || !bLogged) {
       if (isPast) {
-        // A closed day with a missing log — the pact is broken. Pick the
-        // participant who failed; if both, blame the one whose name is
-        // alphabetically first to avoid double-attribution.
         const blame = !aLogged ? pact.participants[0] : pact.participants[1];
+        // First miss in this walk + freeze available + no pending consumption
+        // already queued → consume the freeze instead of breaking.
+        if (freezeAvailable && !freezePendingOn) {
+          freezePendingOn = key;
+          freezePendingBy = blame;
+          continue;
+        }
+        // Second miss (or freeze unavailable) → broken.
         return { kind: 'broken', brokenBy: blame, brokenOn: key };
       } else {
         anyPendingInOpenWindow = true;
@@ -257,11 +295,17 @@ export function evaluatePact(pact: Pact): PactEvaluation {
   }
 
   if (!anyPendingInOpenWindow) {
-    // All days fully logged → success. (Today's also done, since we'd
-    // have hit the open-window branch otherwise.)
-    return { kind: 'succeeded' };
+    return {
+      kind: 'succeeded',
+      freezeUsedOn: pact.freezeUsedOn || freezePendingOn || undefined,
+      freezeUsedBy: pact.freezeUsedBy || freezePendingBy || undefined,
+    };
   }
-  return { kind: 'still-active' };
+  return {
+    kind: 'still-active',
+    freezePendingOn: freezePendingOn || undefined,
+    freezePendingBy: freezePendingBy || undefined,
+  };
 }
 
 /**
@@ -278,10 +322,21 @@ export async function applyPactResolution(pact: Pact, evalResult: PactEvaluation
 
   if (evalResult.kind === 'succeeded') {
     const reward = PACT_REWARDS[pact.durationDays];
-    await updateDoc(ref, {
+    // Persist the freeze record alongside the success flip — covers the
+    // case where the freeze was consumed in the very same walk that
+    // completed the pact (last day's miss covered + everything else
+    // logged). For pacts where freeze was already persisted earlier,
+    // these fields no-op against existing values.
+    const update: Record<string, unknown> = {
       status: 'succeeded',
       resolvedAt: Timestamp.now(),
-    });
+    };
+    if (evalResult.freezeUsedOn && !pact.freezeUsedOn) {
+      update.freezeAvailable = false;
+      update.freezeUsedOn = evalResult.freezeUsedOn;
+      update.freezeUsedBy = evalResult.freezeUsedBy || null;
+    }
+    await updateDoc(ref, update);
     // Both participants earn the reward. Cosmetic (only present on
     // 30-day pacts in v1) goes into ownedCosmetics via arrayUnion so
     // re-grants are no-ops — won't duplicate if the user has already
@@ -398,6 +453,37 @@ export async function advancePactsForUser(userId: string, recapHabitSlugs: Set<s
       if (!refreshed.exists()) return;
       const next = { id: pactDoc.id, ...(refreshed.data() as Omit<Pact, 'id'>) };
       const verdict = evaluatePact(next);
+
+      // Mid-window freeze consumption: persist the rescue immediately
+      // so subsequent walks see it as "used" and won't try to consume
+      // it again. Also fires a notification to both sides — losing a
+      // day quietly would be worse UX than telling them they just
+      // burned the pact's one safety net.
+      if (verdict.kind === 'still-active' && verdict.freezePendingOn) {
+        try {
+          await updateDoc(doc(db, PACTS_COLLECTION, pactDoc.id), {
+            freezeAvailable: false,
+            freezeUsedOn: verdict.freezePendingOn,
+            freezeUsedBy: verdict.freezePendingBy || null,
+          });
+          await Promise.all(
+            next.participants.map((u) =>
+              addDoc(collection(db, `notifications/${u}/items`), {
+                type: 'pact_freeze_used',
+                message: `Pact freeze used — your one rescue is gone. Don't miss another.`,
+                isRead: false,
+                relatedId: pactDoc.id,
+                actorId: '',
+                actorAvatar: '',
+                createdAt: Timestamp.now(),
+              }),
+            ),
+          );
+        } catch (err) {
+          console.error(`Pact freeze persist failed for ${pactDoc.id}`, err);
+        }
+      }
+
       if (verdict.kind !== 'still-active') {
         await applyPactResolution(next, verdict);
       }

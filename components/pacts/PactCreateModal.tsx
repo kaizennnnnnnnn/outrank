@@ -370,6 +370,9 @@ function DurationStep({
         <p className="text-[10px] font-mono text-slate-500">
           Lose: <span className="text-red-400">−50 fragments each</span> if either side breaks.
         </p>
+        <p className="text-[10px] font-mono text-sky-300 mt-1">
+          ❄ One free miss covered by an auto-freeze. Use it carefully — only one per pact.
+        </p>
       </div>
     </div>
   );

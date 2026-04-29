@@ -52,6 +52,23 @@ export interface Pact {
   brokenBy: string | null;
   brokenAt: Timestamp | null;
 
+  /**
+   * Pact freeze — one-shot forgiveness shared between both
+   * participants. Starts true on accept; flips to false the moment
+   * evaluatePact absorbs a missed day. Without it, a single missed
+   * cell would auto-break the pact; with it, the pair gets one
+   * rescue and the pact stays alive.
+   *
+   * Backwards-compat: pacts created before the freeze landed don't
+   * have these fields. evaluatePact treats `freezeAvailable !== false`
+   * as available, so undefined → available, false → consumed.
+   */
+  freezeAvailable?: boolean;
+  /** Date the freeze rescued, e.g. '2026-04-29'. Null until consumed. */
+  freezeUsedOn?: string | null;
+  /** Participant whose missed cell got covered. Null until consumed. */
+  freezeUsedBy?: string | null;
+
   createdAt: Timestamp;
   acceptedAt: Timestamp | null;
   resolvedAt: Timestamp | null;

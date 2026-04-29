@@ -62,7 +62,7 @@ export function PactCard({ pact }: Props) {
       <div className="relative p-4">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span
                 className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded"
                 style={{
@@ -76,6 +76,12 @@ export function PactCard({ pact }: Props) {
               <span className="text-[10px] font-mono text-slate-500">
                 {pact.durationDays}-day · {pact.habitName}
               </span>
+              {/* Freeze status — only render for active or resolved
+                  pacts where the freeze field is meaningful. Skip for
+                  pending invites + declined where it'd be noise. */}
+              {(pact.status === 'active' || pact.status === 'succeeded' || pact.status === 'broken') && (
+                <FreezePill pact={pact} />
+              )}
             </div>
             <p className="font-heading text-base font-bold text-white leading-tight">
               {meMeta?.username || 'You'} <span className="text-slate-500 font-normal">×</span> {partnerMeta?.username || 'Friend'}
@@ -120,12 +126,19 @@ export function PactCard({ pact }: Props) {
         </div>
 
         {pact.status === 'active' && (
-          <p className="text-[10px] font-mono text-slate-500 mt-3">
-            Win: <span style={{ color: accent }}>+{reward.xp} XP · +{reward.fragments} frags</span>
-            {reward.cosmeticId && <span className="text-slate-500"> · cosmetic</span>}
-            <span className="text-slate-700 mx-1.5">·</span>
-            <span className="text-slate-500">Partner: {partnerStreakDays}/{pact.durationDays} days</span>
-          </p>
+          <>
+            <p className="text-[10px] font-mono text-slate-500 mt-3">
+              Win: <span style={{ color: accent }}>+{reward.xp} XP · +{reward.fragments} frags</span>
+              {reward.cosmeticId && <span className="text-slate-500"> · cosmetic</span>}
+              <span className="text-slate-700 mx-1.5">·</span>
+              <span className="text-slate-500">Partner: {partnerStreakDays}/{pact.durationDays} days</span>
+            </p>
+            {pact.freezeUsedOn && (
+              <p className="text-[10px] font-mono text-sky-300 mt-1">
+                ❄ Freeze used on {pact.freezeUsedOn} — one more miss breaks the pact.
+              </p>
+            )}
+          </>
         )}
         {pact.status === 'broken' && pact.brokenBy && (
           <p className="text-[10px] font-mono text-red-300 mt-3">
@@ -139,6 +152,44 @@ export function PactCard({ pact }: Props) {
         )}
       </div>
     </motion.div>
+  );
+}
+
+/**
+ * Tiny pill summarizing the pact's one-shot freeze state. Three flavors:
+ *   - "🛡 Freeze ready"  — never used, still available
+ *   - "❄ Freeze used"   — consumed; tooltip names the rescued date
+ *   - "× No freeze"     — explicitly false but no record (legacy / impossible v1)
+ */
+function FreezePill({ pact }: { pact: Pact }) {
+  if (pact.freezeUsedOn) {
+    return (
+      <span
+        className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+        title={`Pact freeze used on ${pact.freezeUsedOn}`}
+        style={{
+          color: '#7dd3fc',
+          background: 'rgba(56,189,248,0.12)',
+          border: '1px solid rgba(56,189,248,0.45)',
+        }}
+      >
+        ❄ Used
+      </span>
+    );
+  }
+  // Default = available (covers both true and missing field on legacy pacts)
+  return (
+    <span
+      className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+      title="One free missed day allowed — uses up automatically the first time it's needed."
+      style={{
+        color: '#a3e635',
+        background: 'rgba(132,204,22,0.10)',
+        border: '1px solid rgba(132,204,22,0.4)',
+      }}
+    >
+      🛡 Freeze
+    </span>
   );
 }
 
@@ -196,24 +247,42 @@ function DayRow({
           const isToday = key === today;
           const isPast = key < today;
           const logged = status === 'logged';
-          const missed = isPast && !logged;
+          // The freeze date counts as "saved" for both participants —
+          // even if it was the partner's miss being covered, the day
+          // is no longer a hole on either row visually.
+          const frozen = isPast && !logged && pact.freezeUsedOn === key;
+          const missed = isPast && !logged && !frozen;
           return (
             <div
               key={key}
               className="w-3.5 h-3.5 rounded-sm"
-              title={`${key}: ${logged ? 'logged' : missed ? 'missed' : isToday ? 'today' : 'pending'}`}
+              title={
+                logged ? `${key}: logged`
+                : frozen ? `${key}: rescued by pact freeze`
+                : missed ? `${key}: missed`
+                : isToday ? `${key}: today`
+                : `${key}: pending`
+              }
               style={{
                 background: logged
                   ? accent
-                  : missed
-                    ? 'rgba(239,68,68,0.3)'
-                    : isToday
-                      ? 'rgba(255,255,255,0.06)'
-                      : 'rgba(255,255,255,0.025)',
-                border: isToday
-                  ? `1px solid ${accent}88`
-                  : '1px solid rgba(255,255,255,0.04)',
-                boxShadow: logged ? `0 0 4px ${accent}88` : undefined,
+                  : frozen
+                    ? 'rgba(56,189,248,0.35)'
+                    : missed
+                      ? 'rgba(239,68,68,0.3)'
+                      : isToday
+                        ? 'rgba(255,255,255,0.06)'
+                        : 'rgba(255,255,255,0.025)',
+                border: frozen
+                  ? '1px solid rgba(56,189,248,0.7)'
+                  : isToday
+                    ? `1px solid ${accent}88`
+                    : '1px solid rgba(255,255,255,0.04)',
+                boxShadow: logged
+                  ? `0 0 4px ${accent}88`
+                  : frozen
+                    ? '0 0 4px rgba(56,189,248,0.6)'
+                    : undefined,
               }}
             />
           );
