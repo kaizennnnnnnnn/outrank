@@ -44,37 +44,65 @@ export interface DailyChallengeDef {
 }
 
 export const DAILY_CHALLENGE_POOL: DailyChallengeDef[] = [
-  { id: 'dc_run_3k', text: 'Run at least 3km', category: 'running', value: 3, bonusXP: 25 },
-  { id: 'dc_water_3l', text: 'Drink 3 liters of water', category: 'water', value: 3, bonusXP: 25 },
-  { id: 'dc_meditate_15', text: 'Meditate for 15 minutes', category: 'meditation', value: 15, bonusXP: 25 },
-  { id: 'dc_read_30', text: 'Read for 30 pages', category: 'pages', value: 30, bonusXP: 25 },
-  { id: 'dc_cold_shower', text: 'Take a cold shower', category: 'cold-shower', value: 1, bonusXP: 25 },
-  { id: 'dc_gym', text: 'Hit the gym today', category: 'gym', value: 1, bonusXP: 25 },
-  { id: 'dc_no_social', text: 'Stay off social media today', category: 'no-social', value: 1, bonusXP: 30 },
-  { id: 'dc_journal', text: 'Write a journal entry', category: 'journaling', value: 1, bonusXP: 25 },
-  { id: 'dc_code_3', text: 'Solve 3 coding problems', category: 'coding', value: 3, bonusXP: 25 },
-  { id: 'dc_deep_work_2h', text: 'Do 2 hours of deep work', category: 'deep-work', value: 2, bonusXP: 30 },
-  { id: 'dc_yoga_20', text: 'Do 20 minutes of yoga', category: 'yoga', value: 20, bonusXP: 25 },
-  { id: 'dc_early_wake', text: 'Wake up before 6 AM', category: 'early-wake', value: 1, bonusXP: 30 },
-  { id: 'dc_gratitude_3', text: 'Write 3 things you are grateful for', category: 'gratitude', value: 3, bonusXP: 25 },
-  { id: 'dc_stretch_15', text: 'Stretch for 15 minutes', category: 'stretch', value: 15, bonusXP: 25 },
-  { id: 'dc_walk_30', text: 'Walk outside for 30 minutes', category: 'outside', value: 30, bonusXP: 25 },
+  // Pillar stretch goals — push above the typical default. Pillars are
+  // never filtered out, so these always appear in rotation. Higher
+  // bonusXP than discovery prompts because the user is doing extra,
+  // not just trying a new category.
+  { id: 'dc_water_4l',    text: 'Hit 4L of water today (stretch goal)',    category: 'water',     value: 4,     bonusXP: 35 },
+  { id: 'dc_water_5l',    text: 'Hydrate hard — 5L today',                category: 'water',     value: 5,     bonusXP: 50 },
+  { id: 'dc_sleep_8h',    text: 'Get 8 hours of sleep tonight',           category: 'sleep',     value: 8,     bonusXP: 30 },
+  { id: 'dc_sleep_9h',    text: 'Sleep 9 hours — full recovery',          category: 'sleep',     value: 9,     bonusXP: 45 },
+  { id: 'dc_steps_12k',   text: 'Hit 12,000 steps today',                 category: 'steps',     value: 12000, bonusXP: 35 },
+  { id: 'dc_steps_15k',   text: 'Big walk — 15,000 steps',                category: 'steps',     value: 15000, bonusXP: 50 },
+  { id: 'dc_gym_session', text: 'Get a gym session in',                   category: 'gym',       value: 1,     bonusXP: 30 },
+  { id: 'dc_no_social',   text: 'Stay off social media today',            category: 'no-social', value: 1,     bonusXP: 35 },
+
+  // Discovery prompts — only fire if the user doesn't already track
+  // them. Lower bonus, idea is to nudge breadth.
+  { id: 'dc_run_3k',         text: 'Run at least 3km',                  category: 'running',     value: 3,  bonusXP: 25 },
+  { id: 'dc_meditate_15',    text: 'Meditate for 15 minutes',           category: 'meditation',  value: 15, bonusXP: 25 },
+  { id: 'dc_read_30',        text: 'Read for 30 pages',                 category: 'pages',       value: 30, bonusXP: 25 },
+  { id: 'dc_cold_shower',    text: 'Take a cold shower',                category: 'cold-shower', value: 1,  bonusXP: 25 },
+  { id: 'dc_journal',        text: 'Write a journal entry',             category: 'journaling',  value: 1,  bonusXP: 25 },
+  { id: 'dc_code_3',         text: 'Solve 3 coding problems',           category: 'coding',      value: 3,  bonusXP: 25 },
+  { id: 'dc_deep_work_2h',   text: 'Do 2 hours of deep work',           category: 'deep-work',   value: 2,  bonusXP: 30 },
+  { id: 'dc_yoga_20',        text: 'Do 20 minutes of yoga',             category: 'yoga',        value: 20, bonusXP: 25 },
+  { id: 'dc_early_wake',     text: 'Wake up before 6 AM',               category: 'early-wake',  value: 1,  bonusXP: 30 },
+  { id: 'dc_gratitude_3',    text: 'Write 3 things you are grateful for', category: 'gratitude', value: 3,  bonusXP: 25 },
+  { id: 'dc_stretch_15',     text: 'Stretch for 15 minutes',            category: 'stretch',     value: 15, bonusXP: 25 },
+  { id: 'dc_walk_30',        text: 'Walk outside for 30 minutes',       category: 'outside',     value: 30, bonusXP: 25 },
 ];
 
-// Get today's challenge — deterministic based on day, excluding user's active habits
+// The five pillars are first-class — they always count as eligible
+// challenges regardless of whether the user "has" them as habits
+// (they always do, post-onboarding). Discovery challenges still skip
+// when the user already tracks the matching category.
+const PILLAR_SLUGS_FOR_QUEST: ReadonlySet<string> = new Set([
+  'gym',
+  'steps',
+  'water',
+  'sleep',
+  'no-social',
+]);
+
+/**
+ * Today's challenge — deterministic by day-of-year so everyone on a
+ * given day sees the same prompt. Pillar challenges are always
+ * candidates; discovery challenges drop out if the user already
+ * tracks them (would be redundant with their normal habit log).
+ */
 export function getTodaysChallenge(userHabitSlugs: string[]): DailyChallengeDef | null {
   const today = new Date();
   const dayOfYear = Math.floor(
     (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
   );
 
-  // Filter out challenges that match user's tracked habits
-  const available = DAILY_CHALLENGE_POOL.filter(
-    (c) => !userHabitSlugs.includes(c.category)
-  );
+  const available = DAILY_CHALLENGE_POOL.filter((c) => {
+    if (PILLAR_SLUGS_FOR_QUEST.has(c.category)) return true;
+    return !userHabitSlugs.includes(c.category);
+  });
 
   if (available.length === 0) return null;
 
-  // Pick based on day — deterministic so all users get the same challenge
   return available[dayOfYear % available.length];
 }
