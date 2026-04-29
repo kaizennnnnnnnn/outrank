@@ -111,6 +111,11 @@ export async function logHabit(params: LogHabitParams) {
 
   let newStreak = 1;
   let freezeUsed = false;
+  // Capture a real break (gap > 1, no freeze rescue, prior streak worth
+  // saving). Stored on the habit doc so the dashboard's repair banner
+  // can offer to restore it for fragments. Threshold: 3 days minimum —
+  // below that the repair offer adds noise without meaningful value.
+  let brokenStreakToCapture: number | null = null;
   if (habit.lastLogDate) {
     const lastLog = habit.lastLogDate.toDate();
     lastLog.setHours(0, 0, 0, 0);
@@ -140,16 +145,30 @@ export async function logHabit(params: LogHabitParams) {
       } catch { /* if anything fails, streak resets as before */ }
     }
     // Otherwise (no freeze available / not enough tokens) streak resets to 1
+    if (dayGap > 1 && !freezeUsed && (habit.currentStreak || 0) >= 3) {
+      brokenStreakToCapture = habit.currentStreak;
+    }
   }
 
   const longestStreak = Math.max(newStreak, habit.longestStreak || 0);
 
-  await updateDoc(habitRef, {
+  const habitUpdate: Record<string, unknown> = {
     currentStreak: newStreak,
     longestStreak,
     totalLogs: increment(1),
     lastLogDate: Timestamp.now(),
-  });
+  };
+  if (brokenStreakToCapture !== null) {
+    habitUpdate.previousStreak = brokenStreakToCapture;
+    habitUpdate.streakBrokenAt = Timestamp.now();
+  } else if (newStreak > 1) {
+    // User logged consecutively — clear any stale repair offer that
+    // somehow lingered (e.g. cross-device race) so the banner doesn't
+    // show after the streak's already healing on its own.
+    habitUpdate.previousStreak = null;
+    habitUpdate.streakBrokenAt = null;
+  }
+  await updateDoc(habitRef, habitUpdate);
 
   // 3. Calculate bonus XP from streak milestones
   let totalXP = baseXP;

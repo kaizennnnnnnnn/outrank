@@ -19,6 +19,7 @@ import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
 import { PillarPlaceholderRow } from '@/components/habits/PillarPlaceholderRow';
 import { WaterPillarRow } from '@/components/habits/WaterPillarRow';
 import { GymPillarRow } from '@/components/habits/GymPillarRow';
+import { StreakRepairBanner } from '@/components/habits/StreakRepairBanner';
 import { PILLARS, isPillarSlug } from '@/constants/pillars';
 import Link from 'next/link';
 
@@ -191,6 +192,11 @@ export default function DashboardPage() {
 
         {/* DAILY CHALLENGE — pinned-quest banner */}
         <DailyChallenge />
+
+        {/* STREAK REPAIR — banner only renders if any habit has an
+            active repair offer (broken streak ≥ 3, within 48h window).
+            Self-hides after repair or expiry. */}
+        <StreakRepairBanner />
 
         {/* TODAY'S PILLARS — fixed five-row list. Each pillar is either
             an active HabitCard (logs flow into the published recap) or a

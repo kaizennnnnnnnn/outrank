@@ -33,6 +33,15 @@ export interface UserHabit {
   createdAt: Timestamp;
   color: string;
   unit: string;
+  /**
+   * Streak repair offer fields. When logHabit detects a real break
+   * (gap > 1 day, no freeze tokens, prior streak ≥ 3), it captures
+   * the broken streak length and timestamp. The repair surface
+   * fragment-spends to restore previousStreak. Cleared after repair
+   * or on natural expiry of the 48h window.
+   */
+  previousStreak?: number;
+  streakBrokenAt?: Timestamp | null;
 }
 
 export interface HabitLog {
