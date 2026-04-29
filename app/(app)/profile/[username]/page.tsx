@@ -11,6 +11,7 @@ import { ProfileHighlights } from '@/components/profile/ProfileHighlights';
 import { Button } from '@/components/ui/Button';
 import { XPProgressBar } from '@/components/profile/XPProgressBar';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
+import { ProfileRecapCalendar } from '@/components/profile/ProfileRecapCalendar';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
 import { StatCard } from '@/components/profile/StatCard';
 import { SoulOrb } from '@/components/profile/SoulOrb';
@@ -225,6 +226,9 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
         <StatCard icon={<FireIcon size={24} className="text-orange-400" />} value={`${profile.weeklyXP || 0}`} label="Weekly XP" />
         <StatCard icon={<ChartBarIcon size={24} className="text-red-400" />} value={`${profile.monthlyXP || 0}`} label="Monthly XP" />
       </div>
+
+      {/* Daily Records — published recaps the friend can browse */}
+      <ProfileRecapCalendar uid={profile.uid} isOwner={false} />
 
       {/* Badges */}
       <div className="glass-card rounded-2xl p-4">
