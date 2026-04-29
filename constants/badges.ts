@@ -40,9 +40,11 @@ export const BADGES: Badge[] = [
   // ---------------------------------------------------------------------------
   // RECAP MECHANIC — earned by publishing daily records.
   // ---------------------------------------------------------------------------
-  { id: 'first-recap',     name: 'First Record',      description: 'Publish your first daily record',         icon: '📰',  rarity: 'common', xpReward: 20,  condition: 'recap_publish_1' },
-  { id: 'recap-week',      name: 'On the Record',     description: 'Publish 7 daily records',                  icon: '📅',  rarity: 'rare',   xpReward: 50,  condition: 'recap_publish_7' },
-  { id: 'recap-month',     name: 'Documented',        description: 'Publish 30 daily records',                 icon: '📚',  rarity: 'epic',   xpReward: 100, condition: 'recap_publish_30' },
+  { id: 'first-recap',      name: 'First Record',     description: 'Publish your first daily record',         icon: '📰',  rarity: 'common', xpReward: 20,  condition: 'recap_publish_1' },
+  { id: 'recap-week',       name: 'On the Record',    description: 'Publish 7 daily records',                  icon: '📅',  rarity: 'rare',   xpReward: 50,  condition: 'recap_publish_7' },
+  { id: 'recap-month',      name: 'Documented',       description: 'Publish 30 daily records',                 icon: '📚',  rarity: 'epic',   xpReward: 100, condition: 'recap_publish_30' },
+  { id: 'recap-streak-7',   name: 'Daily Reporter',   description: '7-day recap publishing streak',            icon: '🗞️',  rarity: 'rare',   xpReward: 75,  condition: 'recap_streak_7' },
+  { id: 'recap-streak-30',  name: 'Chronicled',       description: '30-day recap publishing streak',           icon: '📖',  rarity: 'legendary', xpReward: 300, condition: 'recap_streak_30' },
 
   // ---------------------------------------------------------------------------
   // PACTS — both win or both lose.

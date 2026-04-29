@@ -223,6 +223,7 @@ function DraftState({
 }
 
 function PublishedState({ recap }: { recap: Recap }) {
+  const { user } = useAuth();
   // State initializer so Date.now() is touched once at mount, satisfying
   // the React purity rule. The countdown is coarse (whole hours) and
   // doesn't need to tick — re-mounts on dashboard re-entry refresh it.
@@ -235,6 +236,11 @@ function PublishedState({ recap }: { recap: Recap }) {
   });
   const editable = editView.editable;
   const editHoursLeft = editView.editHoursLeft;
+
+  // Recap streak — reads from user doc via the field-fishing pattern
+  // since UserProfile doesn't formally list these fields.
+  const userAny = user as unknown as Record<string, number> | null;
+  const recapStreak = userAny?.recapStreak || 0;
 
   return (
     <div
@@ -268,6 +274,26 @@ function PublishedState({ recap }: { recap: Recap }) {
       <p className="text-sm text-slate-300 mb-3">
         {recap.logCount} log{recap.logCount === 1 ? '' : 's'} · +{recap.totalXP} XP · visible to friends
       </p>
+
+      {recapStreak > 1 && (
+        <div
+          className="mb-3 rounded-xl px-3 py-2 flex items-center gap-2"
+          style={{
+            background: 'linear-gradient(90deg, rgba(249,115,22,0.10), rgba(11,11,20,0.5))',
+            border: '1px solid rgba(249,115,22,0.25)',
+          }}
+        >
+          <span className="text-base">🔥</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-bold text-orange-300">
+              {recapStreak}-day publishing streak
+            </p>
+            <p className="text-[10px] font-mono text-slate-500">
+              Don&rsquo;t miss tomorrow.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <Link href={`/recap/${recap.userId}/${recap.localDate}`} className="flex-1">

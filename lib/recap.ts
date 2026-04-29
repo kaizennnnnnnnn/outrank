@@ -46,6 +46,17 @@ export function yesterdayKey(now: Date = new Date()): string {
   return localDateKey(y);
 }
 
+/**
+ * Day before a given YYYY-MM-DD key. Used by the recap-streak logic
+ * to decide whether the publish extends the streak (publishing day D
+ * after last-published day D-1) without depending on the local clock.
+ */
+export function prevDayOfKey(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const date = new Date(y, m - 1, d - 1);
+  return localDateKey(date);
+}
+
 export function recapPath(userId: string, dateKey: string): string {
   return `recaps/${userId}/items/${dateKey}`;
 }
@@ -256,19 +267,61 @@ export async function publishRecap(userId: string, dateKey: string = localDateKe
   // Increment the user's published-recaps counter and check the
   // achievement thresholds (1 / 7 / 30). Best-effort — failures
   // don't block the publish.
+  //
+  // Also tracks the consecutive-days "publishing streak" — distinct
+  // from the per-habit streaks. recapStreakDay holds the latest
+  // published date; if today is exactly day-after that, the streak
+  // extends; if same day, no change (republish); otherwise reset to 1.
+  // Backfill of an earlier day (retro publish) doesn't move the
+  // forward streak.
   try {
-    await updateDoc(doc(db, 'users', userId), {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
       publishedRecaps: increment(1),
     });
-    const userDocSnap = await getDoc(doc(db, 'users', userId));
-    const total = (userDocSnap.data()?.publishedRecaps as number) || 0;
+    const userDocSnap = await getDoc(userRef);
+    const data = userDocSnap.data() || {};
+    const total = (data.publishedRecaps as number) || 0;
     await awardThreshold(userId, total, [
       { badgeId: 'first-recap', threshold: 1 },
       { badgeId: 'recap-week', threshold: 7 },
       { badgeId: 'recap-month', threshold: 30 },
     ]);
+
+    const lastDay = data.recapStreakDay as string | undefined;
+    const currentStreak = (data.recapStreak as number) || 0;
+    const longest = (data.longestRecapStreak as number) || 0;
+    let newStreak = currentStreak;
+    let shouldUpdate = false;
+
+    if (dateKey === lastDay) {
+      // Republish (edit window) — no change to streak
+    } else if (lastDay && dateKey < lastDay) {
+      // Backfill of an earlier day — no forward extension
+    } else if (lastDay && lastDay === prevDayOfKey(dateKey)) {
+      // Direct continuation
+      newStreak = currentStreak + 1;
+      shouldUpdate = true;
+    } else {
+      // Gap or first publish ever
+      newStreak = 1;
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      const newLongest = Math.max(longest, newStreak);
+      await updateDoc(userRef, {
+        recapStreak: newStreak,
+        recapStreakDay: dateKey,
+        longestRecapStreak: newLongest,
+      });
+      await awardThreshold(userId, newStreak, [
+        { badgeId: 'recap-streak-7', threshold: 7 },
+        { badgeId: 'recap-streak-30', threshold: 30 },
+      ]);
+    }
   } catch (err) {
-    console.error('Recap badge grant failed:', err);
+    console.error('Recap badge / streak update failed:', err);
   }
 }
 

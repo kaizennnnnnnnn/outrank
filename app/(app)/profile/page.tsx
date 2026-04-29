@@ -148,6 +148,42 @@ export default function ProfilePage() {
       {/* Weekly Progress */}
       <OverallProgressGraph />
 
+      {/* Recap publishing streak — small banner above the calendar
+          when there's a streak worth surfacing. The streak
+          counter (`recapStreak` on the user doc) is bumped by
+          publishRecap. */}
+      {(() => {
+        const userAny = user as unknown as Record<string, number>;
+        const streak = userAny.recapStreak || 0;
+        const longest = userAny.longestRecapStreak || 0;
+        if (streak < 2) return null;
+        return (
+          <div
+            className="rounded-xl px-4 py-3 flex items-center gap-3"
+            style={{
+              background: 'linear-gradient(90deg, rgba(249,115,22,0.10), rgba(11,11,20,0.6))',
+              border: '1px solid rgba(249,115,22,0.25)',
+            }}
+          >
+            <span className="text-2xl">🔥</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-orange-300">
+                {streak}-day publishing streak
+              </p>
+              <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+                Submit today&rsquo;s record to keep it alive
+                {longest > streak && (
+                  <>
+                    <span className="text-slate-700 mx-1.5">·</span>
+                    Best ever: {longest}d
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Daily Records calendar — month grid of published recaps with
           heat-map shading. Tap a filled cell to open the day's
           detail. */}
