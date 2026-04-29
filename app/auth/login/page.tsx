@@ -26,11 +26,25 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  /**
+   * If a friend invite was deferred to post-auth (the /invite/[username]
+   * page stashed it in localStorage when the user arrived logged-out),
+   * route there instead of /dashboard so the request fires now.
+   * Falls through to the regular destination otherwise.
+   */
+  const postAuthDestination = (defaultPath: string): string => {
+    try {
+      const pending = window.localStorage.getItem('pendingFriendInvite');
+      if (pending) return `/invite/${encodeURIComponent(pending)}`;
+    } catch { /* storage disabled */ }
+    return defaultPath;
+  };
+
   const onSubmit = async (data: LoginInput) => {
     setLoading(true);
     try {
       await loginWithEmail(data.email, data.password);
-      router.push('/dashboard');
+      router.push(postAuthDestination('/dashboard'));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Login failed';
       addToast({ type: 'error', message });
@@ -43,7 +57,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { isNewUser } = await loginWithGoogle();
-      router.push(isNewUser ? '/onboarding' : '/dashboard');
+      router.push(postAuthDestination(isNewUser ? '/onboarding' : '/dashboard'));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Google sign-in failed';
       addToast({ type: 'error', message });

@@ -294,6 +294,32 @@ export default function FriendsPage() {
           />
           <Button onClick={handleSearch} loading={searching}>Search</Button>
         </div>
+
+        {/* Invite link — share the URL, the receiving end auto-friends. */}
+        {user && (
+          <div className="mt-3 pt-3 border-t border-white/[0.04]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500 mb-1.5 px-1">
+              Or share your invite link
+            </p>
+            <div className="flex items-center gap-2 bg-[#0c0c16] border border-[#1e1e30] rounded-xl px-3 py-2">
+              <span className="text-[12px] text-slate-400 flex-1 truncate font-mono">
+                outrank-ten.vercel.app/invite/{user.username}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `https://outrank-ten.vercel.app/invite/${user.username}`,
+                  );
+                  addToast({ type: 'success', message: 'Invite link copied' });
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search Results */}

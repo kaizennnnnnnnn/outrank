@@ -112,7 +112,15 @@ export default function OnboardingPage() {
       }
 
       addToast({ type: 'success', message: 'You\'re all set! Let\'s go!' });
-      router.push('/dashboard');
+      // Honor a pending invite stashed at /invite/[username] when the
+      // visitor arrived logged-out. Sends them through the invite flow
+      // post-onboarding so the friendship request gets sent immediately.
+      let destination = '/dashboard';
+      try {
+        const pending = window.localStorage.getItem('pendingFriendInvite');
+        if (pending) destination = `/invite/${encodeURIComponent(pending)}`;
+      } catch { /* storage disabled */ }
+      router.push(destination);
     } catch {
       addToast({ type: 'error', message: 'Something went wrong. Try again.' });
     } finally {
@@ -309,13 +317,13 @@ export default function OnboardingPage() {
                   <p className="text-xs text-slate-600 mb-2">Or share your invite link</p>
                   <div className="flex items-center gap-2 bg-[#10101a] border border-[#1e1e30] rounded-xl px-4 py-3">
                     <span className="text-sm text-slate-400 flex-1 truncate">
-                      outrank.app/invite/{user?.username || 'you'}
+                      outrank-ten.vercel.app/invite/{user?.username || 'you'}
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        navigator.clipboard.writeText(`levelup.app/invite/${user?.username || 'you'}`);
+                        navigator.clipboard.writeText(`https://outrank-ten.vercel.app/invite/${user?.username || 'you'}`);
                         addToast({ type: 'success', message: 'Link copied!' });
                       }}
                     >
