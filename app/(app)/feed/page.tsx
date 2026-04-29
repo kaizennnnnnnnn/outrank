@@ -127,59 +127,49 @@ export default function FeedPage() {
     }
   };
 
-  // Visible items — all by default (includes user's own activity)
-  const visibleItems = items.filter((item) => {
-    if (filter === 'friends') return item.actorId !== user?.uid;
-    if (filter === 'mine')    return item.actorId === user?.uid;
-    return true;
-  });
+  // Filter out legacy 'log' type items — those are pre-recap-mechanic
+  // per-log feed items that shouldn't appear anymore. Only 'recap' +
+  // system event types ('badge', 'levelup', etc) stay. The recap is
+  // the canonical social object now.
+  const visibleItems = items
+    .filter((item) => item.type !== 'log')
+    .filter((item) => {
+      if (filter === 'friends') return item.actorId !== user?.uid;
+      if (filter === 'mine')    return item.actorId === user?.uid;
+      return true;
+    });
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      {/* Premium header */}
-      <div
-        className="relative overflow-hidden rounded-2xl p-5 border"
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 80% at 100% 0%, rgba(249,115,22,0.18), transparent 55%),' +
-            'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(249,115,22,0.22)',
-          boxShadow: '0 0 30px -14px rgba(249,115,22,0.4), inset 0 1px 0 rgba(249,115,22,0.08)',
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">
-              Live
-            </p>
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-0.5">Activity Feed</h1>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Every log, streak and milestone from your circle.
-            </p>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <div
+    <div className="max-w-2xl mx-auto space-y-4">
+      {/* Quiet header — typography over chrome */}
+      <header className="px-1">
+        <div className="flex items-baseline justify-between gap-3">
+          <h1 className="font-heading text-2xl font-bold text-white">Feed</h1>
+          <div className="inline-flex items-center gap-1.5">
+            <span
               className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: '#22c55e', boxShadow: '0 0 8px #22c55e' }}
+              style={{ background: '#22c55e' }}
             />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400">Live</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+              Live
+            </span>
           </div>
         </div>
 
-        {/* Filter tabs */}
-        <div className="mt-4 inline-flex items-center gap-1 bg-[#0b0b14] rounded-xl p-1 border border-[#1e1e30]">
+        {/* Filter tabs — text-only, single accent on the active state */}
+        <div className="mt-3 inline-flex items-center gap-3 text-[12px]">
           {(['all', 'friends', 'mine'] as const).map((key) => {
-            const labels = { all: 'All', friends: 'Friends', mine: 'Me' };
+            const labels = { all: 'All', friends: 'Friends', mine: 'You' };
             const active = filter === key;
             return (
               <button
                 key={key}
                 onClick={() => setFilter(key)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all',
+                  'pb-1 font-medium transition-colors border-b',
                   active
-                    ? 'bg-gradient-to-r from-red-600 via-orange-500 to-amber-400 text-white shadow-[0_0_12px_rgba(249,115,22,0.5)]'
-                    : 'text-slate-500 hover:text-white'
+                    ? 'text-white border-orange-400'
+                    : 'text-slate-500 hover:text-slate-300 border-transparent'
                 )}
               >
                 {labels[key]}
@@ -187,7 +177,7 @@ export default function FeedPage() {
             );
           })}
         </div>
-      </div>
+      </header>
 
       {loading ? (
         <div className="space-y-4">
