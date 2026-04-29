@@ -25,6 +25,8 @@ const DEFAULT_SETTINGS: UserSettings = {
     leagueUpdates: true,
     weeklyRecap: true,
     leaderboardChanges: true,
+    pactUpdates: true,
+    pillarReminders: true,
   },
   privacy: {
     isPublic: true,

@@ -3,11 +3,17 @@ import { Timestamp } from 'firebase/firestore';
 export interface UserSettings {
   notifications: {
     streakReminder: boolean;
+    /** Friends publishing daily records / legacy per-log activity. */
     friendActivity: boolean;
     duelUpdates: boolean;
+    /** Friends-league settlements (Monday morning). */
     leagueUpdates: boolean;
     weeklyRecap: boolean;
     leaderboardChanges: boolean;
+    /** Pact invites / accepts / declines / breaks / successes / freezes. */
+    pactUpdates: boolean;
+    /** Water + sleep wind-down reminders fired by pillarReminders fn. */
+    pillarReminders: boolean;
   };
   privacy: {
     isPublic: boolean;

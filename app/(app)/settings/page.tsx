@@ -205,9 +205,11 @@ export default function SettingsPage() {
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Notifications</h2>
         {([
           { key: 'streakReminder', label: 'Streak reminders', desc: 'Get reminded when your streak is at risk' },
-          { key: 'friendActivity', label: 'Friend activity', desc: 'When friends log habits' },
-          { key: 'duelUpdates', label: 'Duel updates', desc: 'Challenge and result notifications' },
-          { key: 'leagueUpdates', label: 'League updates', desc: 'League activity and winners' },
+          { key: 'friendActivity', label: 'Friend records', desc: 'When friends publish a daily record' },
+          { key: 'pactUpdates', label: 'Pacts', desc: 'Invites, breaks, completions, freeze warnings' },
+          { key: 'leagueUpdates', label: 'Friends League', desc: 'Weekly settlement results every Monday' },
+          { key: 'pillarReminders', label: 'Pillar reminders', desc: 'Water sips during the day, wind-down before bed' },
+          { key: 'duelUpdates', label: 'Duels', desc: 'Challenge and result notifications' },
           { key: 'weeklyRecap', label: 'Weekly recap', desc: 'Sunday morning performance summary' },
           { key: 'leaderboardChanges', label: 'Leaderboard changes', desc: 'When someone overtakes you' },
         ] as const).map((item) => (
