@@ -15,6 +15,9 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PillarTip } from '@/components/habits/PillarTip';
 import { PillarReminderSettings } from '@/components/habits/PillarReminderSettings';
+import { PillarStatsCard } from '@/components/habits/PillarStatsCard';
+import { GymPRsBlock } from '@/components/habits/GymPRsBlock';
+import { isPillarSlug } from '@/constants/pillars';
 import { UserHabit } from '@/types/habit';
 import { FireIcon, TrophyIconFull, ChartBarIcon, TargetFullIcon, SearchIcon } from '@/components/ui/AppIcons';
 import { LeaderboardPeriod } from '@/types/leaderboard';
@@ -103,6 +106,13 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
       {(category.slug === 'water' || category.slug === 'sleep') && (
         <PillarReminderSettings pillar={category.slug} color={category.color} />
       )}
+
+      {/* Pillar deep stats — 30-day average / hit rate / mini-bar
+          chart. Pillar-only. */}
+      {habit && isPillarSlug(category.slug) && <PillarStatsCard habit={habit} />}
+
+      {/* Gym personal records — gym-only addendum to the stats card. */}
+      {category.slug === 'gym' && <GymPRsBlock />}
 
       {/* My Stats */}
       {habitLoading ? (
