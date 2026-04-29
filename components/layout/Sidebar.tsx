@@ -46,6 +46,7 @@ const navItems: { href: string; label: string; icon: ReactNode }[] = [
   { href: '/orb-leaderboard', label: 'Orb Rankings', icon: <TrophyIcon /> },
   { href: '/shop', label: 'Shop', icon: <LeagueIcon /> },
   { href: '/inventory', label: 'Inventory', icon: <TargetIcon /> },
+  { href: '/achievements', label: 'Achievements', icon: <TrophyIcon /> },
 ];
 
 const bottomItems: { href: string; label: string; icon: ReactNode }[] = [
