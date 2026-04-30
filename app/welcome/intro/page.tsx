@@ -209,7 +209,9 @@ function OrbCustomizationShowcase() {
       <div
         className={cn(
           phase === 'transitioning' && 'animate-orb-spin-transition',
-          phase === 'rainbow' && 'animate-orb-spin',
+          // 'rainbow' phase is stationary — spin only happens during the
+          // one-shot transition; once the orb has settled into rainbow it
+          // stays still (canvas particle motion still runs internally).
         )}
       >
         <SoulOrb
