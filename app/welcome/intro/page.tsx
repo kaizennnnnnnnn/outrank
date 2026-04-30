@@ -92,18 +92,26 @@ const PAGES: IntroPage[] = [
     body: 'Every habit logged feeds your orb. Watch it awaken, ascend, and become unmistakably yours.',
     visual: (
       <div className="relative flex items-center justify-center">
-        {/* Real fully-evolved canvas Soul Orb at max tier with the
-            colorful Prismatic + Plasma + Supernova combo —
-            pink/purple/teal body, plasma pulse, orange ring burst. */}
+        {/* Outer halo — extra glow ring sells the "fully evolved" feel
+            beyond what the canvas alone can do. */}
+        <div
+          className="absolute inset-0 m-auto w-[260px] h-[260px] rounded-full opacity-60 blur-3xl pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.55), rgba(34,211,238,0.35) 40%, transparent 70%)' }}
+        />
+        {/* Real fully-evolved canvas Soul Orb at max tier. Quasar pulse
+            (mythic pink/yellow) + Cosmic ring (mythic purple/cyan)
+            against the prismatic body. pulseBoost makes the pulse much
+            more visible than default. */}
         <SoulOrb
           tier={MAX_ORB_TIER}
           intensity={1}
           size={220}
           interactive={false}
           hideLabel
+          pulseBoost
           baseColorId="prismatic"
-          pulseColorId="plasma"
-          ringColorId="ring_supernova"
+          pulseColorId="pulse_quasar"
+          ringColorId="ring_cosmic"
         />
       </div>
     ),
@@ -130,13 +138,15 @@ const SHOWCASE_BASES = ['phoenix', 'nebula', 'celestial', 'aurora', 'bloodmoon',
 const SHOWCASE_PULSES = ['pulse_eternal', 'pulse_cosmic', 'pulse_nova', 'pulse_quasar', 'pulse_stargaze', 'pulse_eternal'];
 const SHOWCASE_RINGS = ['ring_supernova', 'ring_cosmic', 'ring_celestial', 'ring_void', 'ring_eternal'];
 
+type ShowcasePhase = 'cycling' | 'transitioning' | 'rainbow';
+
 function OrbCustomizationShowcase() {
   const [config, setConfig] = useState({
     base: SHOWCASE_BASES[0],
     pulse: SHOWCASE_PULSES[0],
     ring: SHOWCASE_RINGS[0],
   });
-  const [spinning, setSpinning] = useState(false);
+  const [phase, setPhase] = useState<ShowcasePhase>('cycling');
 
   useEffect(() => {
     const timeouts: ReturnType<typeof setTimeout>[] = [];
@@ -170,24 +180,45 @@ function OrbCustomizationShowcase() {
     // Brief pause before finale
     t += 300;
 
-    // Phase 4 — rainbow + spin
-    at(t, () => {
-      setConfig({ base: 'rainbow', pulse: 'pulse_rainbow', ring: 'ring_rainbow' });
-      setSpinning(true);
-    });
+    // Transition phase — kick off the one-shot spin + flash. The
+    // animation runs for 1.4s; we swap colors mid-transition (at 0.7s,
+    // when the flash is at peak and the orb is most blurred) so the
+    // user perceives it as the orb fading into rainbow during the spin
+    // rather than a hard color snap.
+    at(t, () => setPhase('transitioning'));
+    at(t + 700, () =>
+      setConfig({ base: 'rainbow', pulse: 'pulse_rainbow', ring: 'ring_rainbow' }),
+    );
+    at(t + 1400, () => setPhase('rainbow'));
 
     return () => timeouts.forEach(clearTimeout);
   }, []);
 
   return (
-    <div className="relative flex items-center justify-center">
-      <div className={cn(spinning && 'animate-orb-spin')}>
+    <div className="relative flex items-center justify-center w-[240px] h-[240px]">
+      {/* Bloom flash overlay — only mounted during the transition phase
+          so the keyframe runs once and unmounts itself. */}
+      {phase === 'transitioning' && (
+        <div
+          className="absolute inset-0 m-auto w-[200px] h-[200px] rounded-full pointer-events-none animate-orb-flash"
+          style={{
+            background: 'radial-gradient(circle, rgba(255,255,255,0.95), rgba(168,85,247,0.55) 40%, transparent 75%)',
+          }}
+        />
+      )}
+      <div
+        className={cn(
+          phase === 'transitioning' && 'animate-orb-spin-transition',
+          phase === 'rainbow' && 'animate-orb-spin',
+        )}
+      >
         <SoulOrb
           tier={MAX_ORB_TIER}
           intensity={1}
           size={200}
           interactive={false}
           hideLabel
+          pulseBoost
           baseColorId={config.base}
           pulseColorId={config.pulse}
           ringColorId={config.ring}

@@ -221,17 +221,41 @@ body {
     mascot-wing-flutter-l 1.4s ease-in-out 2s infinite;
 }
 
-/* Orb showcase spin — used on the customization showcase carousel
-   page after the rainbow finale kicks in. Continuous CSS rotation on
-   the wrapper is fine because the SoulOrb's particle system runs in
-   canvas; we're rotating the rendered output, not redrawing it. */
+/* Orb showcase animations — used on the customization showcase
+   carousel page. The transition phase plays a one-shot spin with a
+   subtle scale pulse + bloom, during which the inside swaps to
+   rainbow colors. The continuous spin then loops indefinitely.
+   CSS rotation on the wrapper is fine because the SoulOrb's particle
+   system runs in canvas; we're rotating the rendered output. */
 @keyframes orb-spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
 .animate-orb-spin {
-  animation: orb-spin 3s linear infinite;
+  animation: orb-spin 3.5s linear infinite;
   will-change: transform;
+}
+
+@keyframes orb-spin-transition {
+  0%   { transform: rotate(0deg)   scale(1);    filter: blur(0); }
+  35%  { transform: rotate(360deg) scale(1.08); filter: blur(2px) brightness(1.2); }
+  60%  { transform: rotate(640deg) scale(1.04); filter: blur(1px) brightness(1.1); }
+  100% { transform: rotate(720deg) scale(1);    filter: blur(0)   brightness(1); }
+}
+.animate-orb-spin-transition {
+  animation: orb-spin-transition 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) forwards;
+  will-change: transform, filter;
+}
+
+@keyframes orb-flash-bloom {
+  0%   { opacity: 0; transform: scale(0.7); }
+  35%  { opacity: 0.85; transform: scale(1.5); }
+  60%  { opacity: 0.5; transform: scale(2); }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+.animate-orb-flash {
+  animation: orb-flash-bloom 1.4s ease-out forwards;
+  will-change: opacity, transform;
 }
 
 @keyframes mascot-tuft-sway {

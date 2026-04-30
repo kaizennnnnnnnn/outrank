@@ -28,9 +28,14 @@ interface SoulOrbProps {
   /** When false, disables drag, evolve/ascend/awaken buttons, and related UI.
    *  Meant for static previews (shop modal, nav FAB). Defaults to true. */
   interactive?: boolean;
+  /** When true, multiplies pulse spawn rate and wave alpha so the pulse
+   *  is much more visible. Used in onboarding showcases where the orb
+   *  is the focal point and the user needs to clearly see the pulse
+   *  feature. No-op for normal gameplay rendering. */
+  pulseBoost?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true, pulseBoost = false }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -359,29 +364,31 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         const beatRadius = beatT * R * 1.3;
         // Boost alpha when body is hidden (pulse-only preview) so the wave is
         // clearly visible against empty space instead of half-transparent.
-        const pulseAlphaMult = hideBody ? 2.2 : pct;
+        // Onboarding showcases set pulseBoost to make the wave pop without
+        // hiding the body.
+        const pulseAlphaMult = hideBody ? 2.2 : (pulseBoost ? 1.9 : pct);
         const beatAlpha = (1 - beatT) * 0.45 * pulseAlphaMult;
         if (beatAlpha > 0.01) {
           const pw = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius - R * 0.2), cx, cy, beatRadius + R * 0.1);
           pw.addColorStop(0, 'transparent');
-          pw.addColorStop(0.7, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${Math.min(beatAlpha * 0.6, 0.7)})`);
+          pw.addColorStop(0.7, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${Math.min(beatAlpha * 0.6, 0.85)})`);
           pw.addColorStop(1, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, 0)`);
           ctx.fillStyle = pw;
           ctx.beginPath();
           ctx.arc(cx, cy, beatRadius + R * 0.1, 0, PI2);
           ctx.fill();
         }
-        // Second offset wave — gives the preview a richer "multi-wave" look
-        // that was missing with just the single beat wave. Only when hideBody
-        // (so it doesn't muddy the full-orb render).
-        if (hideBody) {
+        // Second offset wave — gives the render a richer "multi-wave" look.
+        // Always on for hideBody previews; also on for pulseBoost so onboarding
+        // showcases get the multi-wave feel.
+        if (hideBody || pulseBoost) {
           const beatT2 = ((t * 0.8) + 0.5) % 1;
           const beatRadius2 = beatT2 * R * 1.3;
           const beatAlpha2 = (1 - beatT2) * 0.45 * pulseAlphaMult;
           if (beatAlpha2 > 0.01) {
             const pw2 = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius2 - R * 0.2), cx, cy, beatRadius2 + R * 0.1);
             pw2.addColorStop(0, 'transparent');
-            pw2.addColorStop(0.7, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, ${Math.min(beatAlpha2 * 0.55, 0.6)})`);
+            pw2.addColorStop(0.7, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, ${Math.min(beatAlpha2 * 0.55, 0.7)})`);
             pw2.addColorStop(1, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, 0)`);
             ctx.fillStyle = pw2;
             ctx.beginPath();
@@ -396,7 +403,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       const cry = cos(ry), sry = sin(ry), crx = cos(rx), srx = sin(rx);
 
       // Spawn — gated so preview modes don't churn on arrays they'll never draw.
-      if (!hidePulse && pulses.length < 6 && random() < config.pulseChance * pct && !isEvolving) {
+      // pulseBoost bumps both the spawn rate and the active pulse cap so onboarding
+      // showcases visibly emit pulses every few frames instead of every few seconds.
+      const pulseChance = config.pulseChance * pct * (pulseBoost ? 3.5 : 1);
+      const pulseCap = pulseBoost ? 14 : 6;
+      if (!hidePulse && pulses.length < pulseCap && random() < pulseChance && !isEvolving) {
         pulses.push({ lat: (random() - 0.5) * PI, lon: random() * PI2, radius: 0, speed: 1.5 + random() * 2, maxRadius: 1.2 });
       }
       if (!hideBody && arcs.length < config.maxArcs && random() < config.arcChance * pct) {
@@ -636,7 +647,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         canvas.removeEventListener('touchend', onEnd);
       }
     };
-  }, [intensity, tier, size, baseColorId, pulseColorId, ringColorId, hideBody, hideRings, hidePulse, interactive]);
+  }, [intensity, tier, size, baseColorId, pulseColorId, ringColorId, hideBody, hideRings, hidePulse, interactive, pulseBoost]);
 
   const config = getOrbTier(tier);
 
