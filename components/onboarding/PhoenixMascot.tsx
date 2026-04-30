@@ -232,10 +232,32 @@ export function PhoenixMascot({
         <ellipse cx="80" cy="125" rx="22" ry="24" fill="url(#mascotChest)" />
         {/* Body specular */}
         <ellipse cx="80" cy="115" rx="34" ry="38" fill="url(#mascotBodyShine)" />
-        {/* Subtle feather hint lines on chest */}
-        <path d="M68 122 Q 70 128 72 134" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
-        <path d="M80 124 Q 80 130 80 136" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
-        <path d="M92 122 Q 90 128 88 134" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
+
+        {/* Shoulder tufts — small feather peaks where wings root into
+            the body, suggesting plumage rather than a glued-on wing */}
+        <path d="M52 92 Q 48 88 50 84 Q 54 88 56 92 Z" fill="#dc2626" opacity="0.85" />
+        <path d="M56 90 Q 53 86 55 82 Q 58 86 60 90 Z" fill="#fb923c" opacity="0.85" />
+        <path d="M104 92 Q 108 88 106 84 Q 102 88 100 92 Z" fill="#dc2626" opacity="0.85" />
+        <path d="M100 90 Q 103 86 101 82 Q 98 86 96 90 Z" fill="#fb923c" opacity="0.85" />
+
+        {/* Belly feather pattern — denser scallops suggesting downy
+            chest plumage. Two rows of subtle hint marks. */}
+        <path d="M68 118 Q 69 122 70 126" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.5" />
+        <path d="M74 118 Q 75 122 76 126" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.5" />
+        <path d="M80 118 Q 80 122 80 126" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.5" />
+        <path d="M86 118 Q 85 122 84 126" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.5" />
+        <path d="M92 118 Q 91 122 90 126" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.5" />
+        {/* Lower row, offset */}
+        <path d="M70 130 Q 71 134 72 138" stroke="#fcd34d" strokeWidth="0.55" strokeLinecap="round" fill="none" opacity="0.4" />
+        <path d="M76 130 Q 76 134 76 138" stroke="#fcd34d" strokeWidth="0.55" strokeLinecap="round" fill="none" opacity="0.4" />
+        <path d="M82 130 Q 82 134 82 138" stroke="#fcd34d" strokeWidth="0.55" strokeLinecap="round" fill="none" opacity="0.4" />
+        <path d="M88 130 Q 88 134 88 138" stroke="#fcd34d" strokeWidth="0.55" strokeLinecap="round" fill="none" opacity="0.4" />
+        {/* Side feather hint — small darker scallops along body sides
+            suggesting the body has feather layers, not a smooth blob */}
+        <path d="M50 120 Q 51 124 52 128" stroke="#b91c1c" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.4" />
+        <path d="M50 130 Q 51 134 52 138" stroke="#b91c1c" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.4" />
+        <path d="M110 120 Q 109 124 108 128" stroke="#b91c1c" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.4" />
+        <path d="M110 130 Q 109 134 108 138" stroke="#b91c1c" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.4" />
 
         {/* ─── Real bird feet — short legs + 3 splayed toes w/ claws ─── */}
         {/* Left foot */}
@@ -382,25 +404,28 @@ export function PhoenixMascot({
           />
         </g>
 
-        {/* ─── Feather brows above each eye — small darker arches
-            that give the face a more bird-like presence ─── */}
-        <path
-          d="M64 56 Q 70 53 75 56"
-          stroke="#b91c1c"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          fill="none"
-        />
-        <path
-          d="M85 56 Q 90 53 96 56"
-          stroke="#b91c1c"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-          fill="none"
-        />
-        {/* Subtle highlight on top edge of brows */}
-        <path d="M65 55.4 Q 70 53 74 55.4" stroke="#fb923c" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.7" />
-        <path d="M86 55.4 Q 90 53 95 55.4" stroke="#fb923c" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.7" />
+        {/* ─── Forehead feathers — small overlapping tongues running
+            from the front fringe down toward the brow line. Two rows
+            so the forehead reads as feathered, not bald ─── */}
+        {/* Upper row */}
+        <path d="M62 50 Q 60 44 62 40 Q 64 44 64 50 Z" fill="#fb923c" opacity="0.85" />
+        <path d="M66 51 Q 64 44 66 39 Q 68 44 68 51 Z" fill="#fb923c" />
+        <path d="M70 51 Q 68 44 70 38 Q 72 44 72 51 Z" fill="#f59e0b" />
+        <path d="M76 50 Q 74 43 76 37 Q 78 43 78 50 Z" fill="#fb923c" />
+        <path d="M80 50 Q 78 43 80 37 Q 82 43 82 50 Z" fill="#f59e0b" />
+        <path d="M84 50 Q 82 43 84 37 Q 86 43 86 50 Z" fill="#fb923c" />
+        <path d="M90 51 Q 88 44 90 38 Q 92 44 92 51 Z" fill="#f59e0b" />
+        <path d="M94 51 Q 92 44 94 39 Q 96 44 96 51 Z" fill="#fb923c" />
+        <path d="M98 50 Q 96 44 98 40 Q 100 44 100 50 Z" fill="#fb923c" opacity="0.85" />
+        {/* Lower row — smaller, between the upper row and the eyes */}
+        <path d="M64 55 Q 63 51 65 47 Q 66 51 66 55 Z" fill="#dc2626" opacity="0.55" />
+        <path d="M68 55 Q 67 51 69 47 Q 70 51 70 55 Z" fill="#dc2626" opacity="0.55" />
+        <path d="M73 54 Q 72 50 74 46 Q 75 50 75 54 Z" fill="#dc2626" opacity="0.55" />
+        <path d="M78 54 Q 77 50 79 46 Q 80 50 80 54 Z" fill="#dc2626" opacity="0.55" />
+        <path d="M82 54 Q 81 50 83 46 Q 84 50 84 54 Z" fill="#dc2626" opacity="0.55" />
+        <path d="M87 54 Q 86 50 88 46 Q 89 50 89 54 Z" fill="#dc2626" opacity="0.55" />
+        <path d="M92 55 Q 91 51 93 47 Q 94 51 94 55 Z" fill="#dc2626" opacity="0.55" />
+        <path d="M96 55 Q 95 51 97 47 Q 98 51 98 55 Z" fill="#dc2626" opacity="0.55" />
 
         {/* ─── Eyes ─── */}
         <ellipse cx="70" cy="62" rx="5" ry="6" fill="#0c0c14" />
@@ -439,6 +464,18 @@ export function PhoenixMascot({
         <ellipse cx="81.6" cy="71.4" rx="0.5" ry="0.6" fill="#7c2d12" opacity="0.8" />
         {/* Beak top highlight */}
         <path d="M77.5 70.5 Q 80 69.6 82.5 70.5" stroke="#fef3c7" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.75" />
+
+        {/* Cheek feather wisps — small light strokes suggesting
+            soft feather texture on the cheeks */}
+        <path d="M58 70 Q 60 72 62 73" stroke="#fcd34d" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.65" />
+        <path d="M58 73 Q 60 75 62 76" stroke="#fcd34d" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.55" />
+        <path d="M102 70 Q 100 72 98 73" stroke="#fcd34d" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.65" />
+        <path d="M102 73 Q 100 75 98 76" stroke="#fcd34d" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.55" />
+
+        {/* Chin feathers — small downy wisps below the beak */}
+        <path d="M76 80 Q 75 82 74 84" stroke="#dc2626" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.55" />
+        <path d="M80 80 Q 80 82 80 84" stroke="#dc2626" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.55" />
+        <path d="M84 80 Q 85 82 86 84" stroke="#dc2626" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.55" />
 
         {/* Cheek blush */}
         <ellipse cx="61" cy="68" rx="3.2" ry="2.1" fill="#ef4444" opacity="0.45" />
