@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -11,13 +11,10 @@ import { SoulOrb } from '@/components/profile/SoulOrb';
 import { MAX_ORB_TIER } from '@/constants/orbTiers';
 
 /**
- * Four-page swipeable intro shown after "Get Started." Tells the
- * Outrank pitch in 30 seconds, then hands off to the funnel
- * proper at /onboard/intro (which is built in Phase 2).
- *
- * Pages aren't a full step in the onboarding sense — no answers are
- * captured here — so this isn't part of the wizard shell. It's its
- * own bespoke component.
+ * Five-page swipeable intro shown after "Get Started." Tells the
+ * Outrank pitch in ~40 seconds, then hands off to the funnel proper
+ * at /onboard. Pages aren't a full step in the onboarding sense — no
+ * answers are captured here — so this isn't part of the wizard shell.
  */
 
 interface IntroPage {
@@ -95,23 +92,110 @@ const PAGES: IntroPage[] = [
     body: 'Every habit logged feeds your orb. Watch it awaken, ascend, and become unmistakably yours.',
     visual: (
       <div className="relative flex items-center justify-center">
-        {/* Real fully-evolved canvas Soul Orb at max tier with a premium
-            gold/crimson palette. interactive={false} disables drag and the
-            evolve/ascend/awaken button cluster — this is a static preview. */}
+        {/* Real fully-evolved canvas Soul Orb at max tier with the
+            colorful Prismatic + Plasma + Supernova combo —
+            pink/purple/teal body, plasma pulse, orange ring burst. */}
         <SoulOrb
           tier={MAX_ORB_TIER}
           intensity={1}
           size={220}
           interactive={false}
           hideLabel
-          baseColorId="celestial"
-          pulseColorId="pulse_eternal"
+          baseColorId="prismatic"
+          pulseColorId="plasma"
           ringColorId="ring_supernova"
         />
       </div>
     ),
   },
+  {
+    title: <>Endless<br/><span className="text-orange-400">customization</span>.</>,
+    body: 'Mix bases, pulses, and rings. Hundreds of combinations. Ascend to unlock the rainbow tier.',
+    visual: <OrbCustomizationShowcase />,
+  },
 ];
+
+// ─── Orb customization auto-showcase ─────────────────────────────────────────
+//
+// Cycles the orb through several base colors, then aggressively cycles
+// through pulse colors, then rings, then transitions into a full-rainbow
+// spinning finale. Demonstrates the customizability without making the
+// user click through every combo manually.
+//
+// Timing is chosen so the whole sequence runs ~10s — long enough for the
+// user to notice each phase but short enough that they don't get bored
+// before tapping CONTINUE.
+
+const SHOWCASE_BASES = ['phoenix', 'nebula', 'celestial', 'aurora', 'bloodmoon', 'galactic'];
+const SHOWCASE_PULSES = ['pulse_eternal', 'pulse_cosmic', 'pulse_nova', 'pulse_quasar', 'pulse_stargaze', 'pulse_eternal'];
+const SHOWCASE_RINGS = ['ring_supernova', 'ring_cosmic', 'ring_celestial', 'ring_void', 'ring_eternal'];
+
+function OrbCustomizationShowcase() {
+  const [config, setConfig] = useState({
+    base: SHOWCASE_BASES[0],
+    pulse: SHOWCASE_PULSES[0],
+    ring: SHOWCASE_RINGS[0],
+  });
+  const [spinning, setSpinning] = useState(false);
+
+  useEffect(() => {
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    const at = (ms: number, fn: () => void) => timeouts.push(setTimeout(fn, ms));
+
+    let t = 0;
+    // Phase 1 — cycle bases (650ms each)
+    SHOWCASE_BASES.forEach((b) => {
+      at(t, () => setConfig((c) => ({ ...c, base: b })));
+      t += 650;
+    });
+
+    // Brief pause holding the last base
+    t += 300;
+
+    // Phase 2 — cycle pulses fast & aggressive (350ms each)
+    SHOWCASE_PULSES.forEach((p) => {
+      at(t, () => setConfig((c) => ({ ...c, pulse: p })));
+      t += 350;
+    });
+
+    // Brief pause
+    t += 300;
+
+    // Phase 3 — cycle rings (650ms each)
+    SHOWCASE_RINGS.forEach((r) => {
+      at(t, () => setConfig((c) => ({ ...c, ring: r })));
+      t += 650;
+    });
+
+    // Brief pause before finale
+    t += 300;
+
+    // Phase 4 — rainbow + spin
+    at(t, () => {
+      setConfig({ base: 'rainbow', pulse: 'pulse_rainbow', ring: 'ring_rainbow' });
+      setSpinning(true);
+    });
+
+    return () => timeouts.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="relative flex items-center justify-center">
+      <div className={cn(spinning && 'animate-orb-spin')}>
+        <SoulOrb
+          tier={MAX_ORB_TIER}
+          intensity={1}
+          size={200}
+          interactive={false}
+          hideLabel
+          baseColorId={config.base}
+          pulseColorId={config.pulse}
+          ringColorId={config.ring}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function IntroCarouselPage() {
   const router = useRouter();

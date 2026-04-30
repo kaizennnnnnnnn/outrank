@@ -239,62 +239,37 @@ function NameStep({ value, onChange }: { value: string; onChange: (v: string) =>
 }
 
 /**
- * Tiered fire icon for the experience step. Same flame silhouette
- * across all four levels — only the fill, inner core, side tongues,
- * and outer glow change with intensity. Reads as a "fire gauge."
+ * Four equal-height vertical level bars. `filled` is the count of
+ * activated bars (0–4). Used on the experience step as a clean signal
+ * gauge — Never=0, Beginner=2, Intermediate=3, Advanced=4.
  */
-function FlameLevel({ level }: { level: 0 | 1 | 2 | 3 }) {
-  const gradId = `flame-grad-${level}`;
-  const coreId = `flame-core-${level}`;
+function LevelBars({ filled }: { filled: 0 | 1 | 2 | 3 | 4 }) {
   return (
-    <svg width={36} height={40} viewBox="0 0 32 36" className="flex-shrink-0">
-      <defs>
-        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#fde68a" />
-          <stop offset="40%" stopColor="#fb923c" />
-          <stop offset="80%" stopColor="#dc2626" />
-          <stop offset="100%" stopColor="#7f1d1d" />
-        </linearGradient>
-        <linearGradient id={coreId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#fffbeb" />
-          <stop offset="50%" stopColor="#fcd34d" />
-          <stop offset="100%" stopColor="#ef4444" />
-        </linearGradient>
-      </defs>
-
-      {/* Outer glow — only on blazing */}
-      {level === 3 && (
-        <ellipse cx="16" cy="22" rx="14" ry="14" fill="#f97316" opacity="0.22" />
-      )}
-
-      {/* Side flame tongues — appear on advanced */}
-      {level === 3 && (
-        <>
-          <path d="M7 24 Q 4 28 6 33 Q 9 30 9 26 Z" fill="#fb923c" opacity="0.85" />
-          <path d="M25 24 Q 28 28 26 33 Q 23 30 23 26 Z" fill="#fb923c" opacity="0.85" />
-        </>
-      )}
-
-      {/* Main flame body — empty outline at level 0, filled from 1+ */}
-      <path
-        d="M16 4 Q 12 11 10 18 Q 8 25 12 30 Q 14 28 14 23 Q 14 18 16 13 Q 18 18 18 23 Q 18 28 20 30 Q 24 25 22 18 Q 20 11 16 4 Z"
-        fill={level >= 1 ? `url(#${gradId})` : 'none'}
-        stroke={level === 0 ? '#475569' : 'none'}
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-
-      {/* Hot inner core — appears at intermediate, brightens at advanced */}
-      {level >= 2 && (
-        <path
-          d="M16 12 Q 13 18 13 23 Q 14 26 16 26 Q 18 26 19 23 Q 19 18 16 12 Z"
-          fill={`url(#${coreId})`}
-          opacity={level === 2 ? 0.7 : 1}
-        />
-      )}
-    </svg>
+    <div className="flex items-end gap-[3px] flex-shrink-0">
+      {[0, 1, 2, 3].map((i) => {
+        const on = i < filled;
+        return (
+          <div
+            key={i}
+            className={cn(
+              'w-[5px] h-7 rounded-sm transition-colors',
+              on
+                ? 'bg-gradient-to-t from-red-500 to-orange-400 shadow-[0_0_6px_rgba(249,115,22,0.55)]'
+                : 'bg-white/[0.08] border border-white/[0.06]',
+            )}
+          />
+        );
+      })}
+    </div>
   );
 }
+
+const EXPERIENCE_BARS: Record<number, 0 | 1 | 2 | 3 | 4> = {
+  0: 0, // Never        — all empty
+  1: 2, // Beginner     — 2 filled
+  2: 3, // Intermediate — 3 filled
+  3: 4, // Advanced     — all filled
+};
 
 function ExperienceStep({
   name,
@@ -328,7 +303,7 @@ function ExperienceStep({
                   : 'bg-[#10101a] border-white/8 hover:border-white/20',
               )}
             >
-              <FlameLevel level={i as 0 | 1 | 2 | 3} />
+              <LevelBars filled={EXPERIENCE_BARS[i]} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>

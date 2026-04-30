@@ -221,6 +221,19 @@ body {
     mascot-wing-flutter-l 1.4s ease-in-out 2s infinite;
 }
 
+/* Orb showcase spin — used on the customization showcase carousel
+   page after the rainbow finale kicks in. Continuous CSS rotation on
+   the wrapper is fine because the SoulOrb's particle system runs in
+   canvas; we're rotating the rendered output, not redrawing it. */
+@keyframes orb-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-orb-spin {
+  animation: orb-spin 3s linear infinite;
+  will-change: transform;
+}
+
 @keyframes mascot-tuft-sway {
   0%, 100% { transform: rotate(-3deg) scaleY(1); }
   50%      { transform: rotate(3deg)  scaleY(1.08); }
