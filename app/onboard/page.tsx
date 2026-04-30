@@ -446,6 +446,33 @@ function RightPlaceStep() {
 
 // ─── Step 6: Summary + hold-to-corrupt ───────────────────────────────────────
 
+/**
+ * Eight jagged crack paths radiating from the mascot center (50%, 45%
+ * of viewport in a 100×100 viewBox) outward to beyond the edges. Each
+ * path has a few zig-zag segments so it reads as a fissure, not a
+ * straight line. Drawn with stroke-dashoffset tied to corruption
+ * progress so the cracks "split open" as the user holds.
+ */
+const CRACK_PATHS: string[] = [
+  // Right
+  'M50 45 L 58 47 L 67 42 L 78 48 L 90 44 L 105 47',
+  // Down-right
+  'M50 45 L 58 53 L 67 64 L 78 76 L 90 90 L 105 105',
+  // Down
+  'M50 45 L 52 56 L 48 70 L 53 84 L 49 100 L 52 115',
+  // Down-left
+  'M50 45 L 42 53 L 33 64 L 22 76 L 10 90 L -5 105',
+  // Left
+  'M50 45 L 42 47 L 33 42 L 22 48 L 10 44 L -5 47',
+  // Up-left
+  'M50 45 L 42 37 L 33 26 L 22 14 L 10 0 L -5 -15',
+  // Up
+  'M50 45 L 52 33 L 48 20 L 53 6 L 49 -10 L 52 -25',
+  // Up-right
+  'M50 45 L 58 37 L 67 26 L 78 14 L 90 0 L 105 -15',
+];
+
+
 function SummaryCorruptionStep({
   draft,
   onBack,
@@ -615,22 +642,71 @@ function SummaryCorruptionStep({
         </div>
       </div>
 
-      {/* ─── Corruption overlay ─── Dark mask grows from mascot center
-          + scan-lines + final white flash on completion. */}
+      {/* ─── Corruption overlay ─── Fire mask grows from mascot center
+          with cracks splitting outward. Multi-layered for drama:
+          burnt black core → smoldering deep red → bright orange/yellow
+          flame edge → warm halo → scan-lines + RGB glitch → white flash. */}
       {progress > 0 && (
         <div
           className="fixed inset-0 z-50 pointer-events-none"
           style={{ opacity: 1 }}
         >
-          {/* Dark radial mask growing outward — center is fully black at
-              full radius. Origin is 50% / 45% (mascot vertical position). */}
+          {/* Fire-themed radial mask: charred black center, smoldering
+              red ring, bright flame edge, warm halo bleeding into the
+              still-untouched screen beyond. */}
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(circle at 50% 45%, rgba(0,0,0,0.96) ${radiusVmax * 0.55}vmax, rgba(0,0,0,0.6) ${radiusVmax * 0.85}vmax, rgba(0,0,0,0) ${radiusVmax}vmax)`,
+              background: `radial-gradient(circle at 50% 45%,
+                #000 0%,
+                #050202 ${radiusVmax * 0.42}vmax,
+                rgba(127,29,29,0.95) ${radiusVmax * 0.55}vmax,
+                rgba(220,38,38,0.85) ${radiusVmax * 0.65}vmax,
+                rgba(249,115,22,0.75) ${radiusVmax * 0.74}vmax,
+                rgba(254,215,170,0.45) ${radiusVmax * 0.85}vmax,
+                rgba(254,243,199,0.18) ${radiusVmax * 0.94}vmax,
+                transparent ${radiusVmax}vmax)`,
             }}
           />
-          {/* Scanlines glitch */}
+
+          {/* Cracks — eight jagged fissures spreading from the mascot
+              center. Drawn via stroke-dashoffset tied to progress so
+              they "split open" as the user holds. preserveAspectRatio
+              none so the viewBox stretches to fill the viewport. */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            preserveAspectRatio="none"
+            viewBox="0 0 100 100"
+          >
+            <defs>
+              <filter id="crackGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="0.6" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            {CRACK_PATHS.map((d, i) => (
+              <path
+                key={i}
+                d={d}
+                stroke={i % 2 === 0 ? '#fb923c' : '#fde047'}
+                strokeWidth={0.45 + (i % 3) * 0.18}
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                pathLength="100"
+                strokeDasharray="100"
+                strokeDashoffset={100 * (1 - progress)}
+                filter="url(#crackGlow)"
+                style={{ vectorEffect: 'non-scaling-stroke' }}
+              />
+            ))}
+          </svg>
+
+          {/* Scanlines glitch — same as before, persists across the
+              corruption to sell the "broken transmission" feel. */}
           <div
             className="absolute inset-0 corruption-scanlines"
             style={{ opacity: glitchStrength }}
