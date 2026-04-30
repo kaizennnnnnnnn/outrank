@@ -215,6 +215,50 @@ body {
 }
 .mascot-tail { animation: mascot-tail-flicker 1.6s ease-in-out infinite; }
 
+/* ─── Onboarding hold-to-corrupt — dark glitch animations ───────────
+   Triggered on the Phase 2 summary step where the user holds the
+   mascot to "awaken" Outrank. The corruption spreads from the mascot
+   center outward in dark glitch waves and resolves into the welcome
+   screen. Effects compose: jitter shake, scan lines, RGB split.
+*/
+@keyframes corruption-jitter {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-1.5px, 1px); }
+  40%  { transform: translate(1px, -1.5px); }
+  60%  { transform: translate(-1px, 0.5px); }
+  80%  { transform: translate(1.5px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+.animate-corruption-jitter {
+  animation: corruption-jitter 0.12s steps(2) infinite;
+}
+
+@keyframes corruption-scanlines {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 12px; }
+}
+.corruption-scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(220, 38, 38, 0.18) 0px,
+    transparent 1px,
+    transparent 3px,
+    rgba(56, 189, 248, 0.18) 4px,
+    transparent 5px,
+    transparent 8px
+  );
+  animation: corruption-scanlines 0.6s linear infinite;
+}
+
+@keyframes corruption-flash-out {
+  0%   { background: #ffffff; opacity: 1; }
+  60%  { background: #ffffff; opacity: 0.9; }
+  100% { background: #08080f; opacity: 1; }
+}
+.animate-corruption-flash-out {
+  animation: corruption-flash-out 0.45s ease-out forwards;
+}
+
 
 @keyframes float-up {
   0% { opacity: 1; transform: translateY(0); }
