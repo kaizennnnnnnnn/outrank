@@ -178,6 +178,44 @@ body {
   animation: flame 0.8s ease-in-out infinite;
 }
 
+/* ─── Onboarding Phoenix mascot — idle animations ─────────────────────
+   The mascot has compound animations: a body bob on the wrapper, plus
+   wing flutter, tail flicker, and head-tuft sway on inner <g> elements.
+   All transform-only, GPU-composited; safe to leave running.
+*/
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.animate-mascot-bob {
+  animation: mascot-bob 2.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes mascot-wing-flutter-l {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(-6deg); }
+}
+@keyframes mascot-wing-flutter-r {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(6deg); }
+}
+.mascot-wing-l { animation: mascot-wing-flutter-l 1.4s ease-in-out infinite; }
+.mascot-wing-r { animation: mascot-wing-flutter-r 1.4s ease-in-out infinite; }
+
+@keyframes mascot-tuft-sway {
+  0%, 100% { transform: rotate(-3deg) scaleY(1); }
+  50%      { transform: rotate(3deg)  scaleY(1.08); }
+}
+.mascot-tuft { animation: mascot-tuft-sway 1.8s ease-in-out infinite; }
+
+@keyframes mascot-tail-flicker {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  50%      { transform: scaleY(1.04) scaleX(0.97); }
+}
+.mascot-tail { animation: mascot-tail-flicker 1.6s ease-in-out infinite; }
+
+
 @keyframes float-up {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-40px); }

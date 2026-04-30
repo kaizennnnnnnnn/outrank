@@ -51,7 +51,7 @@ export default function LandingPage() {
             <Link href="/auth/login">
               <Button variant="ghost" size="sm">Sign In</Button>
             </Link>
-            <Link href="/auth/register">
+            <Link href="/welcome">
               <Button size="sm">Get Started</Button>
             </Link>
           </div>
@@ -157,7 +157,7 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/auth/register" className="w-full sm:w-auto">
+              <Link href="/welcome" className="w-full sm:w-auto">
                 <Button size="lg" className="w-full sm:w-auto animate-landing-cta">
                   Start Competing
                   <span className="ml-1.5 transition-transform group-hover:translate-x-0.5">→</span>
@@ -309,7 +309,7 @@ export default function LandingPage() {
             <p className="text-slate-400 mb-8">
               Join the movement. Your friends are already improving &mdash; don&apos;t fall behind.
             </p>
-            <Link href="/auth/register">
+            <Link href="/welcome">
               <Button size="lg">
                 Create Free Account
                 <BoltFullIcon size={16} />
