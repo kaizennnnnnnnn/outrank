@@ -44,6 +44,11 @@ html, body {
   max-width: 100vw;
 }
 
+/* Hide the native scrollbar on opt-in elements (e.g. the onboarding
+   ScrollPicker which has its own visual indicator instead). */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 body {
   background: #08080f;
   color: #f8fafc;
