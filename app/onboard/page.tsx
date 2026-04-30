@@ -199,7 +199,7 @@ function IntroQuestionStep() {
   return (
     <div className="flex flex-col items-center justify-center flex-1">
       <PhoenixMascot size={170} greeting />
-      <SpeechBubble tail="bottom-center" className="mt-8 max-w-sm text-center">
+      <SpeechBubble tail="top-center" className="mt-8 max-w-sm text-center">
         I just have a few questions for you and we can get started!
       </SpeechBubble>
     </div>
@@ -642,45 +642,138 @@ function SummaryCorruptionStep({
         </div>
       </div>
 
-      {/* ─── Corruption overlay ─── Fire mask grows from mascot center
-          with cracks splitting outward. Multi-layered for drama:
-          burnt black core → smoldering deep red → bright orange/yellow
-          flame edge → warm halo → scan-lines + RGB glitch → white flash. */}
+      {/* ─── Awakening overlay ─── A phoenix-themed energy explosion:
+          rotating sunburst rays, expanding shockwave rings, hot fire
+          gradient sweeping outward, white-gold lightning cracks, and
+          floating embers rising from the mascot. Climaxes in a blinding
+          flash that hands off to the welcome screen. */}
       {progress > 0 && (
         <div
-          className="fixed inset-0 z-50 pointer-events-none"
+          className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
           style={{ opacity: 1 }}
         >
-          {/* Fire-themed radial mask: charred black center, smoldering
-              red ring, bright flame edge, warm halo bleeding into the
-              still-untouched screen beyond. */}
+          {/* 1. Outer dim layer — desaturates the un-awakened screen
+              beyond the shockwave so the eye locks onto the bright core. */}
+          <div
+            className="absolute inset-0 transition-opacity duration-100"
+            style={{ background: '#08080f', opacity: progress * 0.6 }}
+          />
+
+          {/* 2. Hot core gradient — bright white/gold center, fading
+              out through orange and red toward the edges as progress
+              grows. The whole screen eventually burns. */}
           <div
             className="absolute inset-0"
             style={{
               background: `radial-gradient(circle at 50% 45%,
-                #000 0%,
-                #050202 ${radiusVmax * 0.42}vmax,
-                rgba(127,29,29,0.95) ${radiusVmax * 0.55}vmax,
-                rgba(220,38,38,0.85) ${radiusVmax * 0.65}vmax,
-                rgba(249,115,22,0.75) ${radiusVmax * 0.74}vmax,
-                rgba(254,215,170,0.45) ${radiusVmax * 0.85}vmax,
-                rgba(254,243,199,0.18) ${radiusVmax * 0.94}vmax,
+                rgba(255,255,255,${0.9 * progress}) 0%,
+                rgba(254,243,199,${0.85 * progress}) ${radiusVmax * 0.18}vmax,
+                rgba(251,191,36,${0.8 * progress}) ${radiusVmax * 0.32}vmax,
+                rgba(249,115,22,${0.75 * progress}) ${radiusVmax * 0.5}vmax,
+                rgba(220,38,38,${0.65 * progress}) ${radiusVmax * 0.7}vmax,
+                rgba(127,29,29,${0.45 * progress}) ${radiusVmax * 0.85}vmax,
                 transparent ${radiusVmax}vmax)`,
             }}
           />
 
-          {/* Cracks — eight jagged fissures spreading from the mascot
-              center. Drawn via stroke-dashoffset tied to progress so
-              they "split open" as the user holds. preserveAspectRatio
-              none so the viewBox stretches to fill the viewport. */}
+          {/* 3. Sunburst rays — 16 light rays fanning out from the
+              mascot, slowly rotating. Length grows with progress. */}
+          <div
+            className="absolute left-1/2 top-[45%] animate-awaken-sunburst"
+            style={{
+              width: `${progress * 240}vmax`,
+              height: `${progress * 240}vmax`,
+            }}
+            aria-hidden
+          >
+            <div
+              className="w-full h-full rounded-full"
+              style={{
+                background: `conic-gradient(from 0deg,
+                  rgba(255,255,255,${0.0}) 0deg,
+                  rgba(255,255,255,${0.6 * progress}) 4deg,
+                  rgba(254,243,199,${0.0}) 8deg,
+                  rgba(255,255,255,${0.0}) 22.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 26.5deg,
+                  rgba(254,243,199,${0.0}) 30.5deg,
+                  rgba(255,255,255,${0.0}) 45deg,
+                  rgba(255,255,255,${0.6 * progress}) 49deg,
+                  rgba(254,243,199,${0.0}) 53deg,
+                  rgba(255,255,255,${0.0}) 67.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 71.5deg,
+                  rgba(254,243,199,${0.0}) 75.5deg,
+                  rgba(255,255,255,${0.0}) 90deg,
+                  rgba(255,255,255,${0.6 * progress}) 94deg,
+                  rgba(254,243,199,${0.0}) 98deg,
+                  rgba(255,255,255,${0.0}) 112.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 116.5deg,
+                  rgba(254,243,199,${0.0}) 120.5deg,
+                  rgba(255,255,255,${0.0}) 135deg,
+                  rgba(255,255,255,${0.6 * progress}) 139deg,
+                  rgba(254,243,199,${0.0}) 143deg,
+                  rgba(255,255,255,${0.0}) 157.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 161.5deg,
+                  rgba(254,243,199,${0.0}) 165.5deg,
+                  rgba(255,255,255,${0.0}) 180deg,
+                  rgba(255,255,255,${0.6 * progress}) 184deg,
+                  rgba(254,243,199,${0.0}) 188deg,
+                  rgba(255,255,255,${0.0}) 202.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 206.5deg,
+                  rgba(254,243,199,${0.0}) 210.5deg,
+                  rgba(255,255,255,${0.0}) 225deg,
+                  rgba(255,255,255,${0.6 * progress}) 229deg,
+                  rgba(254,243,199,${0.0}) 233deg,
+                  rgba(255,255,255,${0.0}) 247.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 251.5deg,
+                  rgba(254,243,199,${0.0}) 255.5deg,
+                  rgba(255,255,255,${0.0}) 270deg,
+                  rgba(255,255,255,${0.6 * progress}) 274deg,
+                  rgba(254,243,199,${0.0}) 278deg,
+                  rgba(255,255,255,${0.0}) 292.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 296.5deg,
+                  rgba(254,243,199,${0.0}) 300.5deg,
+                  rgba(255,255,255,${0.0}) 315deg,
+                  rgba(255,255,255,${0.6 * progress}) 319deg,
+                  rgba(254,243,199,${0.0}) 323deg,
+                  rgba(255,255,255,${0.0}) 337.5deg,
+                  rgba(255,255,255,${0.6 * progress}) 341.5deg,
+                  rgba(254,243,199,${0.0}) 345.5deg,
+                  rgba(255,255,255,${0.0}) 360deg)`,
+                maskImage: 'radial-gradient(circle, black 30%, transparent 70%)',
+                WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 70%)',
+                opacity: glitchStrength,
+              }}
+            />
+          </div>
+
+          {/* 4. Shockwave rings — three expanding concentric circles
+              that radiate from the mascot. Mounted only when held so
+              the keyframe loops while the user is committing. */}
+          {[0, 0.55, 1.1].map((delay, i) => (
+            <div
+              key={i}
+              className="absolute left-1/2 top-[45%] w-32 h-32 rounded-full animate-awaken-shockwave"
+              style={{
+                border: '3px solid rgba(254,243,199,0.95)',
+                boxShadow: '0 0 28px rgba(251,146,60,0.9), inset 0 0 12px rgba(254,243,199,0.7)',
+                animationDelay: `${delay}s`,
+                opacity: progress,
+              }}
+              aria-hidden
+            />
+          ))}
+
+          {/* 5. Lightning cracks — same SVG paths as before but in
+              white-gold so they read as electric energy rather than
+              fire fissures. Glowing filter for an ethereal feel. */}
           <svg
             className="absolute inset-0 w-full h-full"
             preserveAspectRatio="none"
             viewBox="0 0 100 100"
           >
             <defs>
-              <filter id="crackGlow" x="-30%" y="-30%" width="160%" height="160%">
-                <feGaussianBlur stdDeviation="0.6" result="blur" />
+              <filter id="awakenGlow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="0.8" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />
                   <feMergeNode in="SourceGraphic" />
@@ -691,36 +784,59 @@ function SummaryCorruptionStep({
               <path
                 key={i}
                 d={d}
-                stroke={i % 2 === 0 ? '#fb923c' : '#fde047'}
-                strokeWidth={0.45 + (i % 3) * 0.18}
+                stroke={i % 2 === 0 ? '#fef3c7' : '#fde047'}
+                strokeWidth={0.5 + (i % 3) * 0.2}
                 fill="none"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 pathLength="100"
                 strokeDasharray="100"
                 strokeDashoffset={100 * (1 - progress)}
-                filter="url(#crackGlow)"
+                filter="url(#awakenGlow)"
                 style={{ vectorEffect: 'non-scaling-stroke' }}
               />
             ))}
           </svg>
 
-          {/* Scanlines glitch — same as before, persists across the
-              corruption to sell the "broken transmission" feel. */}
+          {/* 6. Floating embers — 14 small dots rising from the mascot.
+              Each gets a random target offset via CSS custom property
+              so the ember spread looks organic. */}
+          {Array.from({ length: 14 }).map((_, i) => {
+            const xJitter = (i * 73 + 31) % 280 - 140;        // -140..140 vw
+            const yTarget = -(((i * 53 + 17) % 60) + 60);     // -60..-120 vh
+            const delay = (i % 7) * 0.18;
+            const startX = 48 + ((i * 13) % 8) - 4;           // 44..52 % (mascot wide)
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full animate-awaken-ember"
+                style={{
+                  left: `${startX}%`,
+                  top: '45%',
+                  width: 6 + (i % 3) * 2,
+                  height: 6 + (i % 3) * 2,
+                  background: i % 2 === 0
+                    ? 'radial-gradient(circle, #fef3c7, #fb923c 60%, transparent)'
+                    : 'radial-gradient(circle, #fde047, #ef4444 60%, transparent)',
+                  filter: 'blur(0.5px)',
+                  ['--ember-x' as string]: `${xJitter}vw`,
+                  ['--ember-y' as string]: `${yTarget}vh`,
+                  animationDelay: `${delay}s`,
+                  opacity: progress,
+                }}
+                aria-hidden
+              />
+            );
+          })}
+
+          {/* 7. Scanlines glitch — kept for the "system overload" feel. */}
           <div
             className="absolute inset-0 corruption-scanlines"
-            style={{ opacity: glitchStrength }}
+            style={{ opacity: glitchStrength * 0.55 }}
           />
-          {/* RGB-split flicker layer */}
-          <div
-            className="absolute inset-0 mix-blend-screen"
-            style={{
-              opacity: glitchStrength * 0.5,
-              background: `repeating-linear-gradient(90deg, rgba(220,38,38,0.0) 0%, rgba(220,38,38,0.4) 49%, rgba(56,189,248,0.4) 51%, rgba(56,189,248,0.0) 100%)`,
-              backgroundSize: '8px 100%',
-            }}
-          />
-          {/* White flash on completion */}
+
+          {/* 8. White flash on completion — covers everything for the
+              hand-off to the welcome screen. */}
           <div
             className="absolute inset-0 bg-white"
             style={{ opacity: flashOpacity }}

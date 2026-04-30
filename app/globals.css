@@ -263,6 +263,38 @@ body {
   will-change: opacity, transform;
 }
 
+/* ─── Hold-to-awaken effects ──────────────────────────────────────────
+   Sunburst rotation, shockwave rings, ember floats. All transform
+   /opacity-only so they composite cheaply alongside the existing
+   corruption gradient + cracks SVG. */
+@keyframes awaken-sunburst-rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+.animate-awaken-sunburst {
+  animation: awaken-sunburst-rotate 8s linear infinite;
+  will-change: transform;
+}
+
+@keyframes awaken-shockwave {
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: 0.95; }
+  100% { transform: translate(-50%, -50%) scale(8);  opacity: 0; }
+}
+.animate-awaken-shockwave {
+  animation: awaken-shockwave 1.6s ease-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes awaken-ember {
+  0%   { transform: translate(0, 0) scale(0.3); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate(var(--ember-x, 0), var(--ember-y, -100vh)) scale(1.4); opacity: 0; }
+}
+.animate-awaken-ember {
+  animation: awaken-ember 2.4s ease-out infinite;
+  will-change: transform, opacity;
+}
+
 
 @keyframes mascot-tuft-sway {
   0%, 100% { transform: rotate(-3deg) scaleY(1); }

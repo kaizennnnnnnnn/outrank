@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils';
 interface SpeechBubbleProps {
   children: ReactNode;
   className?: string;
-  /** Side of the bubble where the tail points. Defaults to 'bottom-left'
-   *  so the tail points down toward a mascot positioned to the lower-left. */
-  tail?: 'bottom-left' | 'left' | 'bottom-center';
+  /** Side of the bubble where the tail points. Defaults to 'left'
+   *  (mascot to the left of the bubble). 'top-center' is for layouts
+   *  where the mascot is above the bubble and the tail points up. */
+  tail?: 'bottom-left' | 'left' | 'bottom-center' | 'top-center';
 }
 
 /**
@@ -28,13 +29,16 @@ export function SpeechBubble({ children, className, tail = 'left' }: SpeechBubbl
       )}
     >
       {children}
-      {/* Tail — small rotated square pinned to the bubble edge */}
+      {/* Tail — small rotated square pinned to the bubble edge.
+          For top-center the rotation flips so the open corner points
+          up toward a mascot positioned above the bubble. */}
       <div
         className={cn(
           'absolute w-3 h-3 bg-[#10101a] border-white/10',
           tail === 'left' && 'left-[-6px] top-1/2 -translate-y-1/2 border-l border-b rotate-45',
           tail === 'bottom-left' && 'bottom-[-6px] left-8 border-r border-b rotate-45',
           tail === 'bottom-center' && 'bottom-[-6px] left-1/2 -translate-x-1/2 border-r border-b rotate-45',
+          tail === 'top-center' && 'top-[-6px] left-1/2 -translate-x-1/2 border-l border-t rotate-45',
         )}
       />
     </motion.div>

@@ -49,14 +49,36 @@ export function ScrollPicker({
   const ref = useRef<HTMLDivElement>(null);
   const totalTicks = Math.floor((max - min) / step) + 1;
 
-  // Initial scroll position. Re-runs only when min/step/value-as-init
-  // change so user-driven scrolls aren't fought.
+  // Set padding to exactly half the container width and seed the
+  // initial scroll position. Doing both in JS (rather than CSS calc)
+  // because CSS percentage padding resolves against the parent's
+  // width — when the rail sits inside a px-6 page wrapper, half-of-
+  // parent ≠ half-of-container, so the last few ticks become
+  // unreachable. Using the actual clientWidth fixes that.
   useEffect(() => {
-    if (!ref.current) return;
-    const targetScroll = ((value - min) / step) * TICK_WIDTH;
-    ref.current.scrollLeft = targetScroll;
+    const el = ref.current;
+    if (!el) return;
+    const setPadding = () => {
+      const halfWidth = el.clientWidth / 2;
+      el.style.paddingLeft = `${halfWidth}px`;
+      el.style.paddingRight = `${halfWidth}px`;
+    };
+    setPadding();
+    // Seed scroll to the current value AFTER padding is applied so the
+    // computed scroll position matches the new content layout.
+    el.scrollLeft = ((value - min) / step) * TICK_WIDTH;
+
+    // Resize observer keeps the padding correct on rotation / window
+    // resize. Layout shifts also re-snap to the current value so the
+    // selection survives the resize.
+    const ro = new ResizeObserver(() => {
+      setPadding();
+      el.scrollLeft = ((value - min) / step) * TICK_WIDTH;
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
     // We deliberately omit `value` from deps so external value changes
-    // don't snap the scroll mid-drag. Initial mount only.
+    // don't snap the scroll mid-drag. Initial mount + resize only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [min, step]);
 
@@ -113,8 +135,10 @@ export function ScrollPicker({
           className="overflow-x-scroll no-scrollbar w-full"
           style={{
             scrollSnapType: 'x mandatory',
-            paddingLeft: 'calc(50% - 1px)',
-            paddingRight: 'calc(50% - 1px)',
+            // paddingLeft/Right are set imperatively on mount + on
+            // resize so they match half the container's actual width
+            // (CSS calc(50%) resolves against the parent, which gives
+            // wrong values when the rail sits inside a padded page).
             WebkitOverflowScrolling: 'touch',
             touchAction: 'pan-x',
           }}
