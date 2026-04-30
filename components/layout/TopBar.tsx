@@ -71,6 +71,15 @@ export function TopBar() {
               <path d="M16 10a4 4 0 01-8 0" />
             </svg>
           </Link>
+          {/* Inventory — chest glyph reads as "stuff you own"; sits next
+              to Shop because that's the conceptual neighbor. */}
+          <Link href="/inventory" className="lg:hidden p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Inventory">
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400">
+              <path d="M3 8a2 2 0 012-2h14a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+              <path d="M3 12h18" />
+              <path d="M10 12v3h4v-3" />
+            </svg>
+          </Link>
           {/* Ranks moved here from the bottom nav to make room for the
               orb FAB. Symmetric podium glyph — reads instantly as a
               ranking screen, unlike the earlier off-balance chalice. */}

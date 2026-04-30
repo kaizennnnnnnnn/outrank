@@ -40,20 +40,15 @@ const REACTIONS: { emoji: ReactionEmoji; label: string }[] = [
 /**
  * Premium-aesthetic recap feed card.
  *
- * Design rationale (after the v1 screenshot read as cheap):
- *   - **Photo leads.** When a hero proof exists, it bleeds edge-to-edge
- *     and dominates the card. The card chrome dissolves around it.
- *   - **One accent color.** No more rainbow per-pillar chips. Stats and
- *     categories are slate typography with a single warm-orange accent
- *     reserved for active state and the actor's identity.
- *   - **Type does the structure.** No glowing borders, no gradient
- *     fills, no left-edge accents. Hairlines and weight contrast.
- *   - **Whole-card tap.** Card is wrapped in a Link to the detail
- *     view; the redundant "Open day →" CTA is gone. Reactions are
- *     event.stopPropagation'd so they don't navigate.
- *
- * Inspirations: Strava (photo as hero), Whoop (single accent), Linear
- * (monospace numbers, hairlines).
+ * Design rationale:
+ *   - **Photo leads.** When a hero proof exists, it bleeds edge-to-edge.
+ *   - **Single accent.** Slate typography + one warm-orange accent for
+ *     active states and the View Day CTA.
+ *   - **Stat-tile grid.** Up to 3 pillar tiles with a label/value
+ *     hierarchy — reads as a stat block, not scattered inline text.
+ *   - **Visible CTA.** A pill-style "View day" button on the bottom
+ *     right makes the affordance obvious; the whole card is also
+ *     tappable, but the button is the explicit visual cue.
  */
 export function RecapFeedCard({
   item,
@@ -131,41 +126,64 @@ export function RecapFeedCard({
             src={item.heroProofUrl}
             alt=""
             loading="lazy"
-            className="w-full max-h-80 object-cover"
+            className="w-full max-h-72 object-cover"
           />
         </div>
       )}
 
-      {/* Pillar strip — clean inline list, no per-chip color, monospace
-          numbers. The information density is the same; the visual
-          density drops dramatically. */}
-      {item.topCategories.length > 0 && (
-        <div className="px-4 pt-3 pb-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-[12px]">
-          {item.topCategories.map((c, i) => (
-            <span key={c.slug} className="inline-flex items-center gap-1.5">
-              {i > 0 && <span className="text-slate-700">·</span>}
-              <span className="text-slate-400">{c.name}</span>
-              <span className="font-mono tabular-nums text-slate-200">
-                {c.value}{c.unit}
-              </span>
-            </span>
-          ))}
-          {item.logCount > item.topCategories.length && (
-            <span className="text-slate-600 text-[11px]">
-              +{item.logCount - item.topCategories.length} more
-            </span>
-          )}
-        </div>
-      )}
+      {/* Pillar grid — up to 3 structured stat tiles with clear
+          label/value hierarchy. Reads as a stat block, not as scattered
+          inline text. */}
+      {item.topCategories.length > 0 && (() => {
+        const visible = item.topCategories.slice(0, 3);
+        const colCount = visible.length === 1 ? 'grid-cols-1' : visible.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+        return (
+          <div className={cn('px-4 pt-3 grid gap-1.5', colCount)}>
+            {visible.map((c) => (
+              <div
+                key={c.slug}
+                className="rounded-lg bg-white/[0.025] border border-white/[0.05] px-2.5 py-2 min-w-0"
+              >
+                <p className="text-[9px] uppercase tracking-widest text-slate-500 font-medium truncate">
+                  {c.name}
+                </p>
+                <p className="font-mono tabular-nums text-[15px] font-bold text-white mt-1 leading-none truncate">
+                  {c.value}
+                  {c.unit && (
+                    <span className="text-slate-500 text-[10px] font-normal ml-0.5">
+                      {c.unit}
+                    </span>
+                  )}
+                </p>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
-      {/* Meta — log count + photos. One quiet line. */}
-      <p className="px-4 pt-1 text-[11px] text-slate-600 font-mono tabular-nums">
-        {item.logCount} log{item.logCount === 1 ? '' : 's'}
-        {item.proofCount > 0 && ` · ${item.proofCount} photo${item.proofCount === 1 ? '' : 's'}`}
-      </p>
+      {/* Footer row — meta info on the left, prominent View Day pill on
+          the right. The pill is the visible affordance that the card
+          opens a detail view. */}
+      <div className="px-4 pt-3 pb-3 flex items-center justify-between gap-3">
+        <p className="text-[11px] text-slate-500 font-mono tabular-nums truncate">
+          {item.logCount} log{item.logCount === 1 ? '' : 's'}
+          {item.proofCount > 0 && ` · ${item.proofCount} photo${item.proofCount === 1 ? '' : 's'}`}
+          {item.topCategories.length > 3 && ` · +${item.topCategories.length - 3} more`}
+        </p>
+        <Link
+          href={detailHref}
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 hover:border-orange-500/50 text-[11px] font-semibold text-orange-400 transition-colors flex-shrink-0"
+        >
+          View day
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </Link>
+      </div>
 
       {/* Hairline + reactions */}
-      <div className="mt-3 border-t border-white/[0.04]">
+      <div className="border-t border-white/[0.04]">
         <div className="px-3 py-2 flex items-center gap-1">
           {REACTIONS.map(({ emoji, label }) => {
             const emojiUsers = (reactionsData as Record<string, string[]>)[emoji] || [];
