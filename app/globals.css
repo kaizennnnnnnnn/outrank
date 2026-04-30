@@ -271,9 +271,28 @@ body {
   from { transform: translate(-50%, -50%) rotate(0deg); }
   to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
+@keyframes awaken-sunburst-rotate-rev {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to   { transform: translate(-50%, -50%) rotate(0deg); }
+}
 .animate-awaken-sunburst {
   animation: awaken-sunburst-rotate 8s linear infinite;
   will-change: transform;
+}
+.animate-awaken-sunburst-rev {
+  animation: awaken-sunburst-rotate-rev 14s linear infinite;
+  will-change: transform;
+}
+
+/* Aura pulsing in/out — gentle scale + opacity throb. Composed over
+   the static aura blob we render. */
+@keyframes awaken-aura-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);    filter: blur(8px); }
+  50%      { transform: translate(-50%, -50%) scale(1.15); filter: blur(12px); }
+}
+.animate-awaken-aura {
+  animation: awaken-aura-pulse 1.4s ease-in-out infinite;
+  will-change: transform, filter;
 }
 
 @keyframes awaken-shockwave {

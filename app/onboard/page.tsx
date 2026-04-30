@@ -486,7 +486,9 @@ function SummaryCorruptionStep({
 }) {
   const [holding, setHolding] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [origin, setOrigin] = useState({ x: 50, y: 45 });
   const completedRef = useRef(false);
+  const mascotRef = useRef<HTMLDivElement>(null);
 
   // RAF-driven hold/release. While holding, progress fills toward 1
   // over ~2.4s. While released, it drains back over ~1s. Once it
@@ -516,6 +518,28 @@ function SummaryCorruptionStep({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [holding, onCorruptionComplete]);
+
+  // Compute the mascot's body center relative to the viewport so the
+  // awakening overlay's gradients, sunburst, and shockwaves all
+  // emanate from there. Body center sits at ~64% down the mascot's
+  // SVG (the SVG is 180 tall, body ellipse is centered at y=115).
+  // Re-runs on resize so rotation/keyboard pop-up doesn't desync.
+  useEffect(() => {
+    function updateOrigin() {
+      const el = mascotRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height * 0.55;
+      setOrigin({
+        x: (cx / window.innerWidth) * 100,
+        y: (cy / window.innerHeight) * 100,
+      });
+    }
+    updateOrigin();
+    window.addEventListener('resize', updateOrigin);
+    return () => window.removeEventListener('resize', updateOrigin);
+  }, []);
 
   // Build a compact summary string from the draft.
   const summary: string[] = [];
@@ -585,8 +609,11 @@ function SummaryCorruptionStep({
           </p>
         </motion.div>
 
-        {/* Phoenix mascot — pulse + glitch when held */}
+        {/* Phoenix mascot — pulse + glitch when held. The ref is read
+            after layout to determine where the awakening overlay's
+            gradients/sunbursts emanate from. */}
         <div
+          ref={mascotRef}
           className="relative"
           style={{
             filter: glitchStrength > 0
@@ -642,120 +669,167 @@ function SummaryCorruptionStep({
         </div>
       </div>
 
-      {/* ─── Awakening overlay ─── A phoenix-themed energy explosion:
-          rotating sunburst rays, expanding shockwave rings, hot fire
-          gradient sweeping outward, white-gold lightning cracks, and
-          floating embers rising from the mascot. Climaxes in a blinding
-          flash that hands off to the welcome screen. */}
+      {/* ─── Awakening overlay ─── Phoenix-themed energy explosion
+          centered on the mascot's body. Layers (back to front):
+          1. Outer dim, 2. Hot core gradient, 3. Slow inner sunburst,
+          4. Fast outer sunburst (counter-rotating), 5. Pulsing aura,
+          6. Bright core orb, 7. Lens flare cross, 8. Shockwave rings,
+          9. Lightning cracks, 10. Floating embers, 11. Scanlines,
+          12. Final flash. */}
       {progress > 0 && (
         <div
           className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
           style={{ opacity: 1 }}
         >
-          {/* 1. Outer dim layer — desaturates the un-awakened screen
-              beyond the shockwave so the eye locks onto the bright core. */}
+          {/* 1. Outer dim — fades the un-awakened screen beyond the
+              shockwave so the eye locks onto the bright core. */}
           <div
             className="absolute inset-0 transition-opacity duration-100"
             style={{ background: '#08080f', opacity: progress * 0.6 }}
           />
 
-          {/* 2. Hot core gradient — bright white/gold center, fading
-              out through orange and red toward the edges as progress
-              grows. The whole screen eventually burns. */}
+          {/* 2. Hot core gradient — bright white/gold center, sweeping
+              through orange and red toward the edges as progress grows. */}
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(circle at 50% 45%,
-                rgba(255,255,255,${0.9 * progress}) 0%,
-                rgba(254,243,199,${0.85 * progress}) ${radiusVmax * 0.18}vmax,
-                rgba(251,191,36,${0.8 * progress}) ${radiusVmax * 0.32}vmax,
-                rgba(249,115,22,${0.75 * progress}) ${radiusVmax * 0.5}vmax,
-                rgba(220,38,38,${0.65 * progress}) ${radiusVmax * 0.7}vmax,
+              background: `radial-gradient(circle at ${origin.x}% ${origin.y}%,
+                rgba(255,255,255,${0.95 * progress}) 0%,
+                rgba(254,243,199,${0.9 * progress}) ${radiusVmax * 0.16}vmax,
+                rgba(251,191,36,${0.85 * progress}) ${radiusVmax * 0.3}vmax,
+                rgba(249,115,22,${0.78 * progress}) ${radiusVmax * 0.48}vmax,
+                rgba(220,38,38,${0.65 * progress}) ${radiusVmax * 0.68}vmax,
                 rgba(127,29,29,${0.45 * progress}) ${radiusVmax * 0.85}vmax,
                 transparent ${radiusVmax}vmax)`,
             }}
           />
 
-          {/* 3. Sunburst rays — 16 light rays fanning out from the
-              mascot, slowly rotating. Length grows with progress. */}
+          {/* 3. Inner sunburst — slow rotation, 16 narrow rays. */}
           <div
-            className="absolute left-1/2 top-[45%] animate-awaken-sunburst"
+            className="absolute animate-awaken-sunburst"
             style={{
-              width: `${progress * 240}vmax`,
-              height: `${progress * 240}vmax`,
+              left: `${origin.x}%`,
+              top: `${origin.y}%`,
+              width: `${progress * 220}vmax`,
+              height: `${progress * 220}vmax`,
             }}
             aria-hidden
           >
             <div
               className="w-full h-full rounded-full"
               style={{
-                background: `conic-gradient(from 0deg,
-                  rgba(255,255,255,${0.0}) 0deg,
-                  rgba(255,255,255,${0.6 * progress}) 4deg,
-                  rgba(254,243,199,${0.0}) 8deg,
-                  rgba(255,255,255,${0.0}) 22.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 26.5deg,
-                  rgba(254,243,199,${0.0}) 30.5deg,
-                  rgba(255,255,255,${0.0}) 45deg,
-                  rgba(255,255,255,${0.6 * progress}) 49deg,
-                  rgba(254,243,199,${0.0}) 53deg,
-                  rgba(255,255,255,${0.0}) 67.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 71.5deg,
-                  rgba(254,243,199,${0.0}) 75.5deg,
-                  rgba(255,255,255,${0.0}) 90deg,
-                  rgba(255,255,255,${0.6 * progress}) 94deg,
-                  rgba(254,243,199,${0.0}) 98deg,
-                  rgba(255,255,255,${0.0}) 112.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 116.5deg,
-                  rgba(254,243,199,${0.0}) 120.5deg,
-                  rgba(255,255,255,${0.0}) 135deg,
-                  rgba(255,255,255,${0.6 * progress}) 139deg,
-                  rgba(254,243,199,${0.0}) 143deg,
-                  rgba(255,255,255,${0.0}) 157.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 161.5deg,
-                  rgba(254,243,199,${0.0}) 165.5deg,
-                  rgba(255,255,255,${0.0}) 180deg,
-                  rgba(255,255,255,${0.6 * progress}) 184deg,
-                  rgba(254,243,199,${0.0}) 188deg,
-                  rgba(255,255,255,${0.0}) 202.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 206.5deg,
-                  rgba(254,243,199,${0.0}) 210.5deg,
-                  rgba(255,255,255,${0.0}) 225deg,
-                  rgba(255,255,255,${0.6 * progress}) 229deg,
-                  rgba(254,243,199,${0.0}) 233deg,
-                  rgba(255,255,255,${0.0}) 247.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 251.5deg,
-                  rgba(254,243,199,${0.0}) 255.5deg,
-                  rgba(255,255,255,${0.0}) 270deg,
-                  rgba(255,255,255,${0.6 * progress}) 274deg,
-                  rgba(254,243,199,${0.0}) 278deg,
-                  rgba(255,255,255,${0.0}) 292.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 296.5deg,
-                  rgba(254,243,199,${0.0}) 300.5deg,
-                  rgba(255,255,255,${0.0}) 315deg,
-                  rgba(255,255,255,${0.6 * progress}) 319deg,
-                  rgba(254,243,199,${0.0}) 323deg,
-                  rgba(255,255,255,${0.0}) 337.5deg,
-                  rgba(255,255,255,${0.6 * progress}) 341.5deg,
-                  rgba(254,243,199,${0.0}) 345.5deg,
-                  rgba(255,255,255,${0.0}) 360deg)`,
-                maskImage: 'radial-gradient(circle, black 30%, transparent 70%)',
-                WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 70%)',
+                background: buildSunburstConic(16, 0.6 * progress),
+                maskImage: 'radial-gradient(circle, black 30%, transparent 72%)',
+                WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 72%)',
                 opacity: glitchStrength,
               }}
             />
           </div>
 
-          {/* 4. Shockwave rings — three expanding concentric circles
-              that radiate from the mascot. Mounted only when held so
-              the keyframe loops while the user is committing. */}
-          {[0, 0.55, 1.1].map((delay, i) => (
+          {/* 4. Outer sunburst — counter-rotating, fewer wider rays,
+              bigger overall. Adds depth + a secondary motion cue. */}
+          <div
+            className="absolute animate-awaken-sunburst-rev"
+            style={{
+              left: `${origin.x}%`,
+              top: `${origin.y}%`,
+              width: `${progress * 320}vmax`,
+              height: `${progress * 320}vmax`,
+            }}
+            aria-hidden
+          >
+            <div
+              className="w-full h-full rounded-full"
+              style={{
+                background: buildSunburstConic(8, 0.4 * progress, 14),
+                maskImage: 'radial-gradient(circle, transparent 35%, black 50%, transparent 80%)',
+                WebkitMaskImage: 'radial-gradient(circle, transparent 35%, black 50%, transparent 80%)',
+                opacity: glitchStrength * 0.9,
+              }}
+            />
+          </div>
+
+          {/* 5. Pulsing aura — soft warm halo right around the mascot
+              that throbs in/out. Sells the "energy gathering" feel. */}
+          <div
+            className="absolute rounded-full animate-awaken-aura"
+            style={{
+              left: `${origin.x}%`,
+              top: `${origin.y}%`,
+              width: `${20 + progress * 60}vmin`,
+              height: `${20 + progress * 60}vmin`,
+              transform: 'translate(-50%, -50%)',
+              background: 'radial-gradient(circle, rgba(254,243,199,0.6), rgba(251,146,60,0.4) 40%, transparent 70%)',
+              filter: 'blur(8px)',
+              opacity: progress,
+            }}
+            aria-hidden
+          />
+
+          {/* 6. Bright core orb — small intense white-gold orb at the
+              very center, scales with progress so the mascot is
+              haloed in pure light at full hold. */}
+          <div
+            className="absolute rounded-full"
+            style={{
+              left: `${origin.x}%`,
+              top: `${origin.y}%`,
+              width: `${10 + progress * 30}vmin`,
+              height: `${10 + progress * 30}vmin`,
+              transform: 'translate(-50%, -50%)',
+              background: 'radial-gradient(circle, rgba(255,255,255,0.95), rgba(254,243,199,0.7) 40%, rgba(251,191,36,0.4) 70%, transparent)',
+              filter: 'blur(2px)',
+              opacity: progress,
+            }}
+            aria-hidden
+          />
+
+          {/* 7. Lens flare cross — horizontal + vertical bright streaks
+              passing through the mascot center. Classic anime "powering
+              up" cue. Length scales with progress. */}
+          <div
+            className="absolute"
+            style={{
+              left: `${origin.x}%`,
+              top: `${origin.y}%`,
+              width: `${100 * progress}vw`,
+              height: '4px',
+              transform: 'translate(-50%, -50%)',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(254,243,199,0.85) 30%, rgba(255,255,255,1) 50%, rgba(254,243,199,0.85) 70%, transparent 100%)',
+              filter: 'blur(1px)',
+              opacity: glitchStrength,
+            }}
+            aria-hidden
+          />
+          <div
+            className="absolute"
+            style={{
+              left: `${origin.x}%`,
+              top: `${origin.y}%`,
+              width: '4px',
+              height: `${100 * progress}vh`,
+              transform: 'translate(-50%, -50%)',
+              background: 'linear-gradient(180deg, transparent 0%, rgba(254,243,199,0.85) 30%, rgba(255,255,255,1) 50%, rgba(254,243,199,0.85) 70%, transparent 100%)',
+              filter: 'blur(1px)',
+              opacity: glitchStrength,
+            }}
+            aria-hidden
+          />
+
+          {/* 8. Shockwave rings — four expanding concentric circles
+              radiating from the mascot. Stagger with delays so a new
+              wave starts as the prior one is mid-flight. */}
+          {[0, 0.4, 0.8, 1.2].map((delay, i) => (
             <div
               key={i}
-              className="absolute left-1/2 top-[45%] w-32 h-32 rounded-full animate-awaken-shockwave"
+              className="absolute rounded-full animate-awaken-shockwave"
               style={{
+                left: `${origin.x}%`,
+                top: `${origin.y}%`,
+                width: '12vmin',
+                height: '12vmin',
                 border: '3px solid rgba(254,243,199,0.95)',
-                boxShadow: '0 0 28px rgba(251,146,60,0.9), inset 0 0 12px rgba(254,243,199,0.7)',
+                boxShadow: '0 0 32px rgba(251,146,60,0.9), inset 0 0 14px rgba(254,243,199,0.75)',
                 animationDelay: `${delay}s`,
                 opacity: progress,
               }}
@@ -763,9 +837,10 @@ function SummaryCorruptionStep({
             />
           ))}
 
-          {/* 5. Lightning cracks — same SVG paths as before but in
-              white-gold so they read as electric energy rather than
-              fire fissures. Glowing filter for an ethereal feel. */}
+          {/* 9. Lightning cracks — bright white-gold electric arcs
+              spreading from the mascot. Originate from the dynamic
+              origin instead of a hardcoded 50/45 by remapping the
+              path coordinates' anchor point. */}
           <svg
             className="absolute inset-0 w-full h-full"
             preserveAspectRatio="none"
@@ -780,45 +855,50 @@ function SummaryCorruptionStep({
                 </feMerge>
               </filter>
             </defs>
-            {CRACK_PATHS.map((d, i) => (
-              <path
-                key={i}
-                d={d}
-                stroke={i % 2 === 0 ? '#fef3c7' : '#fde047'}
-                strokeWidth={0.5 + (i % 3) * 0.2}
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                pathLength="100"
-                strokeDasharray="100"
-                strokeDashoffset={100 * (1 - progress)}
-                filter="url(#awakenGlow)"
-                style={{ vectorEffect: 'non-scaling-stroke' }}
-              />
-            ))}
+            <g transform={`translate(${origin.x - 50} ${origin.y - 45})`}>
+              {CRACK_PATHS.map((d, i) => (
+                <path
+                  key={i}
+                  d={d}
+                  stroke={i % 2 === 0 ? '#fef3c7' : '#fde047'}
+                  strokeWidth={0.55 + (i % 3) * 0.22}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  pathLength="100"
+                  strokeDasharray="100"
+                  strokeDashoffset={100 * (1 - progress)}
+                  filter="url(#awakenGlow)"
+                  style={{ vectorEffect: 'non-scaling-stroke' }}
+                />
+              ))}
+            </g>
           </svg>
 
-          {/* 6. Floating embers — 14 small dots rising from the mascot.
-              Each gets a random target offset via CSS custom property
-              so the ember spread looks organic. */}
-          {Array.from({ length: 14 }).map((_, i) => {
+          {/* 10. Floating embers — 24 dots streaming up and outward
+              from the mascot. Each gets pseudo-random offset/delay so
+              the storm looks organic. */}
+          {Array.from({ length: 24 }).map((_, i) => {
             const xJitter = (i * 73 + 31) % 280 - 140;        // -140..140 vw
-            const yTarget = -(((i * 53 + 17) % 60) + 60);     // -60..-120 vh
-            const delay = (i % 7) * 0.18;
-            const startX = 48 + ((i * 13) % 8) - 4;           // 44..52 % (mascot wide)
+            const yTarget = -(((i * 53 + 17) % 80) + 60);     // -60..-140 vh
+            const delay = (i % 9) * 0.14;
+            const startXOffset = ((i * 13) % 16) - 8;         // -8..8 % around mascot
             return (
               <div
                 key={i}
                 className="absolute rounded-full animate-awaken-ember"
                 style={{
-                  left: `${startX}%`,
-                  top: '45%',
-                  width: 6 + (i % 3) * 2,
-                  height: 6 + (i % 3) * 2,
-                  background: i % 2 === 0
+                  left: `${origin.x + startXOffset}%`,
+                  top: `${origin.y}%`,
+                  width: 5 + (i % 4) * 2,
+                  height: 5 + (i % 4) * 2,
+                  background: i % 3 === 0
+                    ? 'radial-gradient(circle, #ffffff, #fde047 50%, transparent)'
+                    : i % 3 === 1
                     ? 'radial-gradient(circle, #fef3c7, #fb923c 60%, transparent)'
-                    : 'radial-gradient(circle, #fde047, #ef4444 60%, transparent)',
+                    : 'radial-gradient(circle, #fcd34d, #ef4444 60%, transparent)',
                   filter: 'blur(0.5px)',
+                  boxShadow: '0 0 10px rgba(251,146,60,0.9)',
                   ['--ember-x' as string]: `${xJitter}vw`,
                   ['--ember-y' as string]: `${yTarget}vh`,
                   animationDelay: `${delay}s`,
@@ -829,14 +909,13 @@ function SummaryCorruptionStep({
             );
           })}
 
-          {/* 7. Scanlines glitch — kept for the "system overload" feel. */}
+          {/* 11. Scanlines glitch — system-overload texture. */}
           <div
             className="absolute inset-0 corruption-scanlines"
             style={{ opacity: glitchStrength * 0.55 }}
           />
 
-          {/* 8. White flash on completion — covers everything for the
-              hand-off to the welcome screen. */}
+          {/* 12. White flash on completion — final hand-off blanket. */}
           <div
             className="absolute inset-0 bg-white"
             style={{ opacity: flashOpacity }}
@@ -932,6 +1011,26 @@ function WelcomeStep({ name, onContinue }: { name: string; onContinue: () => voi
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Build a conic-gradient string with `rayCount` evenly-spaced bright
+ * rays. Each ray is `rayWidthDeg` wide, centered on its slot, with
+ * transparent gaps in between. `alpha` controls peak ray brightness.
+ */
+function buildSunburstConic(rayCount: number, alpha: number, rayWidthDeg = 8): string {
+  const slot = 360 / rayCount;
+  const stops: string[] = ['rgba(255,255,255,0) 0deg'];
+  for (let i = 0; i < rayCount; i++) {
+    const center = i * slot;
+    const start = center - rayWidthDeg / 2;
+    const end = center + rayWidthDeg / 2;
+    if (i > 0) stops.push(`rgba(255,255,255,0) ${start}deg`);
+    stops.push(`rgba(255,255,255,${alpha}) ${center}deg`);
+    stops.push(`rgba(254,243,199,0) ${end}deg`);
+  }
+  stops.push('rgba(255,255,255,0) 360deg');
+  return `conic-gradient(from 0deg, ${stops.join(', ')})`;
+}
 
 function joinWithAnd(items: string[]): string {
   if (items.length === 0) return '';
