@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
 import { FireIcon, SwordsCrossIcon, TrophyIconFull, BoltFullIcon } from '@/components/ui/AppIcons';
+import { WaterIcon, SleepIcon, ScreenIcon } from '@/components/ui/CategoryIcons';
+import { SoulOrb } from '@/components/profile/SoulOrb';
+import { MAX_ORB_TIER } from '@/constants/orbTiers';
 
 /**
  * Four-page swipeable intro shown after "Get Started." Tells the
@@ -35,12 +38,12 @@ const PAGES: IntroPage[] = [
     visual: (
       <div className="grid grid-cols-3 gap-3 w-[260px]">
         {[
-          { label: 'Gym',   color: '#ef4444', icon: <FireIcon size={28} className="text-red-300" /> },
-          { label: 'Steps', color: '#22c55e', icon: <BoltFullIcon size={28} className="text-emerald-300" /> },
-          { label: 'Water', color: '#3b82f6', icon: <span className="text-2xl">💧</span> },
-          { label: 'Sleep', color: '#8b5cf6', icon: <span className="text-2xl">🌙</span> },
-          { label: 'Focus', color: '#f59e0b', icon: <span className="text-2xl">🎯</span> },
-          { label: 'Streak', color: '#fb923c', icon: <FireIcon size={28} className="text-orange-300" /> },
+          { label: 'Gym',    color: '#ef4444', icon: <FireIcon size={28} className="text-red-300" /> },
+          { label: 'Steps',  color: '#22c55e', icon: <BoltFullIcon size={28} className="text-emerald-300" /> },
+          { label: 'Water',  color: '#3b82f6', icon: <WaterIcon  size={28} className="text-blue-300" /> },
+          { label: 'Sleep',  color: '#8b5cf6', icon: <SleepIcon  size={28} className="text-violet-300" /> },
+          { label: 'Focus',  color: '#f59e0b', icon: <ScreenIcon size={28} className="text-amber-300" /> },
+          { label: 'Streak', color: '#fb923c', icon: <FireIcon   size={28}  className="text-orange-300" /> },
         ].map((p) => (
           <div
             key={p.label}
@@ -91,22 +94,20 @@ const PAGES: IntroPage[] = [
     title: <>Your <span className="text-orange-400">Soul Orb</span><br/>evolves with you.</>,
     body: 'Every habit logged feeds your orb. Watch it awaken, ascend, and become unmistakably yours.',
     visual: (
-      <div className="relative w-[200px] h-[200px] flex items-center justify-center">
-        {/* Outer ring */}
-        <div
-          className="absolute inset-0 rounded-full opacity-60 blur-2xl"
-          style={{ background: 'radial-gradient(circle, rgba(251,146,60,0.6), transparent 70%)' }}
+      <div className="relative flex items-center justify-center">
+        {/* Real fully-evolved canvas Soul Orb at max tier with a premium
+            gold/crimson palette. interactive={false} disables drag and the
+            evolve/ascend/awaken button cluster — this is a static preview. */}
+        <SoulOrb
+          tier={MAX_ORB_TIER}
+          intensity={1}
+          size={220}
+          interactive={false}
+          hideLabel
+          baseColorId="gold"
+          pulseColorId="crimson"
+          ringColorId="amber"
         />
-        {/* Orb */}
-        <div
-          className="relative w-32 h-32 rounded-full"
-          style={{
-            background: 'radial-gradient(circle at 35% 30%, #fef3c7, #f97316 40%, #b91c1c 90%)',
-            boxShadow: '0 0 60px rgba(249,115,22,0.6), inset -8px -10px 24px rgba(0,0,0,0.4), inset 8px 10px 24px rgba(255,255,255,0.2)',
-          }}
-        />
-        {/* Pulse rings */}
-        <div className="absolute inset-0 rounded-full border-2 border-orange-400/30 animate-ping" />
       </div>
     ),
   },
