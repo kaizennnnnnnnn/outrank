@@ -28,14 +28,9 @@ interface SoulOrbProps {
   /** When false, disables drag, evolve/ascend/awaken buttons, and related UI.
    *  Meant for static previews (shop modal, nav FAB). Defaults to true. */
   interactive?: boolean;
-  /** When true, multiplies pulse spawn rate and wave alpha so the pulse
-   *  is much more visible. Used in onboarding showcases where the orb
-   *  is the focal point and the user needs to clearly see the pulse
-   *  feature. No-op for normal gameplay rendering. */
-  pulseBoost?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true, pulseBoost = false }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -359,39 +354,45 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       // This is the pulse's dedicated visual (doesn't need body particles), so when
       // previewing a pulse color we render this at full strength + force pct to
       // 1 so the wave is clearly visible.
+      // Rhythmic pulse wave through the orb — uses pulse color, expands from center.
+      // This is the pulse's dedicated visual (doesn't need body particles), so when
+      // previewing a pulse color we render this at full strength + force pct to
+      // 1 so the wave is clearly visible.
       if (!isEvolving && !hidePulse) {
-        // Heartbeat wave — energy that pulses through the whole orb from
-        // center outward. pulseBoost makes the wave faster, brighter,
-        // larger-radius, and adds a third offset wave so there's almost
-        // always one mid-flight. This is the "energy through the orb"
-        // mechanic; the per-particle random pulses below are separate.
-        const beatSpeed = pulseBoost ? 1.25 : 0.8;
-        const beatReach = pulseBoost ? 1.5 : 1.3;
-        const pulseAlphaMult = hideBody ? 2.2 : (pulseBoost ? 2.6 : pct);
-        const baseAlpha = pulseBoost ? 0.6 : 0.45;
-
-        const drawBeat = (offset: number) => {
-          const beatT = ((t * beatSpeed) + offset) % 1;
-          const beatRadius = beatT * R * beatReach;
-          const beatAlpha = (1 - beatT) * baseAlpha * pulseAlphaMult;
-          if (beatAlpha < 0.01) return;
-          const pw = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius - R * 0.22), cx, cy, beatRadius + R * 0.12);
+        const beatT = (t * 0.8) % 1;
+        const beatRadius = beatT * R * 1.3;
+        // Boost alpha when body is hidden (pulse-only preview) so the wave is
+        // clearly visible against empty space instead of half-transparent.
+        const pulseAlphaMult = hideBody ? 2.2 : pct;
+        const beatAlpha = (1 - beatT) * 0.45 * pulseAlphaMult;
+        if (beatAlpha > 0.01) {
+          const pw = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius - R * 0.2), cx, cy, beatRadius + R * 0.1);
           pw.addColorStop(0, 'transparent');
-          pw.addColorStop(0.7, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${Math.min(beatAlpha * 0.7, 0.92)})`);
+          pw.addColorStop(0.7, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${Math.min(beatAlpha * 0.6, 0.7)})`);
           pw.addColorStop(1, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, 0)`);
           ctx.fillStyle = pw;
           ctx.beginPath();
-          ctx.arc(cx, cy, beatRadius + R * 0.12, 0, PI2);
+          ctx.arc(cx, cy, beatRadius + R * 0.1, 0, PI2);
           ctx.fill();
-        };
-
-        drawBeat(0);
-        // Second offset wave is always on for hideBody preview (so the
-        // pulse-only swatch reads richly) and for pulseBoost showcases.
-        if (hideBody || pulseBoost) drawBeat(0.5);
-        // Third wave only on pulseBoost — yields a near-continuous flow
-        // of energy waves rolling through the orb.
-        if (pulseBoost) drawBeat(0.25);
+        }
+        // Second offset wave — gives the preview a richer "multi-wave" look
+        // that was missing with just the single beat wave. Only when hideBody
+        // (so it doesn't muddy the full-orb render).
+        if (hideBody) {
+          const beatT2 = ((t * 0.8) + 0.5) % 1;
+          const beatRadius2 = beatT2 * R * 1.3;
+          const beatAlpha2 = (1 - beatT2) * 0.45 * pulseAlphaMult;
+          if (beatAlpha2 > 0.01) {
+            const pw2 = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius2 - R * 0.2), cx, cy, beatRadius2 + R * 0.1);
+            pw2.addColorStop(0, 'transparent');
+            pw2.addColorStop(0.7, `rgba(${pulseInnerRgb[0]}, ${pulseInnerRgb[1]}, ${pulseInnerRgb[2]}, ${Math.min(beatAlpha2 * 0.55, 0.6)})`);
+            pw2.addColorStop(1, `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, 0)`);
+            ctx.fillStyle = pw2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, beatRadius2 + R * 0.1, 0, PI2);
+            ctx.fill();
+          }
+        }
       }
 
       const ry = t * 0.5 * speedBoost * speedMultiplier + dragRef.current.rotY;
@@ -639,7 +640,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         canvas.removeEventListener('touchend', onEnd);
       }
     };
-  }, [intensity, tier, size, baseColorId, pulseColorId, ringColorId, hideBody, hideRings, hidePulse, interactive, pulseBoost]);
+  }, [intensity, tier, size, baseColorId, pulseColorId, ringColorId, hideBody, hideRings, hidePulse, interactive]);
 
   const config = getOrbTier(tier);
 
