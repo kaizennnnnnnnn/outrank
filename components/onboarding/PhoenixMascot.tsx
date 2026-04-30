@@ -307,21 +307,64 @@ export function PhoenixMascot({
         {/* ─── Head — slightly smaller for better proportions ─── */}
         <circle cx="80" cy="62" r="26" fill="url(#mascotHead)" />
 
-        {/* Crown underlayer — solid feather color filling the upper
-            half of the head silhouette. Even if the individual
-            feathers above don't perfectly tile, any tiny gaps reveal
-            this color instead of the bare amber head — kills the
-            "balding" effect once and for all. */}
+        {/* ─── Feathered scalp ─── A continuous dome covering the upper
+            half of the head from temple to temple, ending in a soft
+            scalloped hairline at the brow level. Replaces the discrete
+            upward-pointing tongues that read as random forehead feathers.
+            The big crest tongues rise *out of* this scalp, so the head
+            reads as one feathered mane instead of a hat-on-bald-head. */}
+        {/* Base layer — saturated red dome with wavy hairline */}
         <path
-          d="M54 62 Q 54 36 80 36 Q 106 36 106 62 Z"
+          d="M52 60
+             Q 50 36 80 34
+             Q 110 36 108 60
+             Q 105 62 102 60
+             Q 99 62 96 60
+             Q 93 62 90 60
+             Q 87 62 84 60
+             Q 81 62 78 60
+             Q 75 62 72 60
+             Q 69 62 66 60
+             Q 63 62 60 60
+             Q 57 62 54 60 Z"
           fill="#dc2626"
         />
-        {/* Crown gradient overlay — softens the underlayer's edge so
-            it doesn't read as a hard solid cap */}
+        {/* Gradient layer — warmer up top, blends to dark at the edges */}
         <path
-          d="M54 62 Q 54 36 80 36 Q 106 36 106 62 Z"
+          d="M52 60
+             Q 50 36 80 34
+             Q 110 36 108 60
+             Q 105 62 102 60
+             Q 99 62 96 60
+             Q 93 62 90 60
+             Q 87 62 84 60
+             Q 81 62 78 60
+             Q 75 62 72 60
+             Q 69 62 66 60
+             Q 63 62 60 60
+             Q 57 62 54 60 Z"
           fill="url(#mascotCrest)"
-          opacity="0.6"
+          opacity="0.7"
+        />
+        {/* Scalp feather texture — subtle short rachis lines suggesting
+            individual feathers laying flat on the scalp */}
+        <path d="M58 56 Q 60 50 62 44" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        <path d="M64 56 Q 66 48 68 40" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        <path d="M70 55 Q 72 46 74 38" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        <path d="M76 55 Q 78 46 80 36" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        <path d="M82 55 Q 82 46 80 36" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        <path d="M86 55 Q 88 46 88 38" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        <path d="M92 56 Q 94 48 92 40" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        <path d="M98 56 Q 100 50 98 44" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+        {/* Hairline shadow — subtle darker shade just above the brow
+            line so the scalp feels three-dimensional, not flat */}
+        <path
+          d="M54 60 Q 80 56 106 60"
+          stroke="#7f1d1d"
+          strokeWidth="0.6"
+          fill="none"
+          opacity="0.5"
+          strokeLinecap="round"
         />
 
         {/* Side temple feathers — small flame peaks running down the
@@ -425,29 +468,6 @@ export function PhoenixMascot({
             opacity="0.78"
           />
         </g>
-
-        {/* ─── Lower head feathers — a dense second row sitting just
-            above the eye line, extending the feathered crown down so
-            the head reads completely covered in plumage. Drawn after
-            the crest so they layer on top of the head, before the eyes
-            so the eyes still pop. ─── */}
-        <path d="M55 50 Q 53 44 55 38 Q 57 44 57 50 Z" fill="#991b1b" opacity="0.85" />
-        <path d="M58 52 Q 56 46 58 40 Q 60 46 60 52 Z" fill="#dc2626" opacity="0.9" />
-        <path d="M61 53 Q 59 47 61 41 Q 63 47 63 53 Z" fill="#ef4444" opacity="0.92" />
-        <path d="M64 54 Q 62 48 64 42 Q 66 48 66 54 Z" fill="#fb923c" />
-        <path d="M67 54 Q 65 48 67 42 Q 69 48 69 54 Z" fill="#fb923c" />
-        <path d="M70 54 Q 68 48 70 42 Q 72 48 72 54 Z" fill="url(#mascotCrest)" />
-        <path d="M73 54 Q 71 48 73 42 Q 75 48 75 54 Z" fill="url(#mascotCrest)" />
-        <path d="M76 54 Q 74 48 76 42 Q 78 48 78 54 Z" fill="url(#mascotCrest)" />
-        <path d="M80 54 Q 78 48 80 42 Q 82 48 82 54 Z" fill="url(#mascotCrest)" />
-        <path d="M84 54 Q 82 48 84 42 Q 86 48 86 54 Z" fill="url(#mascotCrest)" />
-        <path d="M87 54 Q 85 48 87 42 Q 89 48 89 54 Z" fill="url(#mascotCrest)" />
-        <path d="M90 54 Q 88 48 90 42 Q 92 48 92 54 Z" fill="url(#mascotCrest)" />
-        <path d="M93 54 Q 91 48 93 42 Q 95 48 95 54 Z" fill="#fb923c" />
-        <path d="M96 54 Q 94 48 96 42 Q 98 48 98 54 Z" fill="#fb923c" />
-        <path d="M99 53 Q 97 47 99 41 Q 101 47 101 53 Z" fill="#ef4444" opacity="0.92" />
-        <path d="M102 52 Q 100 46 102 40 Q 104 46 104 52 Z" fill="#dc2626" opacity="0.9" />
-        <path d="M105 50 Q 103 44 105 38 Q 107 44 107 50 Z" fill="#991b1b" opacity="0.85" />
 
         {/* ─── Eyes ─── */}
         <ellipse cx="70" cy="62" rx="5" ry="6" fill="#0c0c14" />
