@@ -346,26 +346,61 @@ export function PhoenixMascot({
           fill="url(#mascotCrest)"
           opacity="0.7"
         />
-        {/* Scalp feather texture — subtle short rachis lines suggesting
-            individual feathers laying flat on the scalp */}
-        <path d="M58 56 Q 60 50 62 44" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        <path d="M64 56 Q 66 48 68 40" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        <path d="M70 55 Q 72 46 74 38" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        <path d="M76 55 Q 78 46 80 36" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        <path d="M82 55 Q 82 46 80 36" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        <path d="M86 55 Q 88 46 88 38" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        <path d="M92 56 Q 94 48 92 40" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        <path d="M98 56 Q 100 50 98 44" stroke="#fb923c" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-        {/* Hairline shadow — subtle darker shade just above the brow
-            line so the scalp feels three-dimensional, not flat */}
+        {/* Top hem — darker line where the bandana fabric meets the
+            crest above. Sells the "this is a tied band, not just
+            scalp" read. */}
         <path
-          d="M54 60 Q 80 56 106 60"
+          d="M55 42 Q 80 36 105 42"
           stroke="#7f1d1d"
-          strokeWidth="0.6"
+          strokeWidth="1"
+          fill="none"
+          opacity="0.85"
+          strokeLinecap="round"
+        />
+        {/* Inner highlight on top hem — thin lighter stripe just below
+            the hem edge, suggesting fabric thickness */}
+        <path
+          d="M56 44 Q 80 38.5 104 44"
+          stroke="#fcd34d"
+          strokeWidth="0.5"
           fill="none"
           opacity="0.5"
           strokeLinecap="round"
         />
+        {/* Horizontal fabric folds — subtle creases following the dome
+            curvature, suggesting cloth instead of feathers */}
+        <path d="M56 50 Q 80 46.5 104 50" stroke="#7f1d1d" strokeWidth="0.4" fill="none" opacity="0.45" strokeLinecap="round" />
+        <path d="M55 55 Q 80 52 105 55" stroke="#7f1d1d" strokeWidth="0.4" fill="none" opacity="0.4" strokeLinecap="round" />
+        {/* Hairline shadow — darker shade just above the brow line so
+            the bandana feels three-dimensional, not flat */}
+        <path
+          d="M54 60 Q 80 56 106 60"
+          stroke="#7f1d1d"
+          strokeWidth="0.7"
+          fill="none"
+          opacity="0.55"
+          strokeLinecap="round"
+        />
+
+        {/* Bandana knot — small tied fabric ball on the left side with
+            two trailing tie ends. The knot sticks out beyond the head
+            silhouette so it reads as fabric tied around the head. */}
+        {/* Lower trailing tie end (drawn first so it sits behind) */}
+        <path
+          d="M46 48 Q 40 56 38 64 Q 42 60 47 53 Z"
+          fill="#b91c1c"
+        />
+        {/* Upper trailing tie end */}
+        <path
+          d="M46 44 Q 40 44 36 50 Q 42 48 48 49 Z"
+          fill="#dc2626"
+        />
+        {/* Knot ball */}
+        <ellipse cx="49" cy="46" rx="4" ry="3" fill="#dc2626" />
+        <ellipse cx="49" cy="46" rx="4" ry="3" fill="url(#mascotCrest)" opacity="0.55" />
+        {/* Knot center pinch — the cinched fabric */}
+        <path d="M46.5 45 Q 49 47.5 51.5 45" stroke="#7f1d1d" strokeWidth="0.5" fill="none" opacity="0.7" strokeLinecap="round" />
+        <path d="M46.5 47 Q 49 44.5 51.5 47" stroke="#7f1d1d" strokeWidth="0.5" fill="none" opacity="0.7" strokeLinecap="round" />
 
         {/* Side temple feathers — small flame peaks running down the
             sides of the head from the crest to mid-cheek. Replaces the
