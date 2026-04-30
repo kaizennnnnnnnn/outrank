@@ -280,33 +280,45 @@ export function PhoenixMascot({
         {/* ─── Head — slightly smaller for better proportions ─── */}
         <circle cx="80" cy="62" r="26" fill="url(#mascotHead)" />
 
-        {/* Back-of-head feather wisps — small layered tufts that
-            peek over the head silhouette near the crown */}
-        <path d="M58 50 Q 54 46 54 40 Q 58 44 60 48 Z" fill="#fb923c" opacity="0.7" />
-        <path d="M64 44 Q 62 38 64 32 Q 67 38 67 44 Z" fill="#fb923c" opacity="0.75" />
-        <path d="M96 44 Q 98 38 96 32 Q 93 38 93 44 Z" fill="#fb923c" opacity="0.75" />
-        <path d="M102 50 Q 106 46 106 40 Q 102 44 100 48 Z" fill="#fb923c" opacity="0.7" />
+        {/* Side temple feathers — small flame peaks running down the
+            sides of the head from the crest to mid-cheek. Replaces the
+            old ear-tufts; these read as "feathered head," not ears. */}
+        <path d="M55 50 Q 52 44 54 38 Q 57 44 58 50 Z" fill="#dc2626" opacity="0.85" />
+        <path d="M58 54 Q 55 48 57 42 Q 60 48 61 54 Z" fill="#ef4444" opacity="0.9" />
+        <path d="M61 58 Q 58 52 60 46 Q 63 52 64 58 Z" fill="#fb923c" opacity="0.85" />
+        <path d="M105 50 Q 108 44 106 38 Q 103 44 102 50 Z" fill="#dc2626" opacity="0.85" />
+        <path d="M102 54 Q 105 48 103 42 Q 100 48 99 54 Z" fill="#ef4444" opacity="0.9" />
+        <path d="M99 58 Q 102 52 100 46 Q 97 52 96 58 Z" fill="#fb923c" opacity="0.85" />
 
-        {/* Side ear-tufts — small feather pairs near the temples */}
-        <path
-          d="M52 60 Q 46 58 46 52 Q 50 56 54 56 Q 53 58 52 60 Z"
-          fill="#fb923c"
-        />
-        <path d="M50 56 Q 47 54 47 50 Q 50 53 52 54 Q 51 55 50 56 Z" fill="#dc2626" opacity="0.7" />
-        <path
-          d="M108 60 Q 114 58 114 52 Q 110 56 106 56 Q 107 58 108 60 Z"
-          fill="#fb923c"
-        />
-        <path d="M110 56 Q 113 54 113 50 Q 110 53 108 54 Q 109 55 110 56 Z" fill="#dc2626" opacity="0.7" />
+        {/* Back-of-head feather wisps — sticking up along the upper
+            head silhouette to add fullness behind the crest */}
+        <path d="M58 46 Q 54 40 56 34 Q 60 40 62 46 Z" fill="#fb923c" opacity="0.85" />
+        <path d="M62 40 Q 60 32 64 26 Q 66 34 66 40 Z" fill="#fb923c" />
+        <path d="M68 36 Q 66 28 70 22 Q 72 30 72 36 Z" fill="url(#mascotCrest)" opacity="0.9" />
+        <path d="M88 36 Q 90 28 92 22 Q 94 30 92 36 Z" fill="url(#mascotCrest)" opacity="0.9" />
+        <path d="M94 40 Q 96 32 98 26 Q 100 34 98 40 Z" fill="#fb923c" />
+        <path d="M98 46 Q 102 40 104 34 Q 102 40 102 46 Z" fill="#fb923c" opacity="0.85" />
 
-        {/* Head crest — dense base fringe + 7-tongue fan above */}
+        {/* Head crest — back-row layer + dense fringe + 7-tongue fan */}
         <g
           className={paused ? '' : 'mascot-tuft'}
           style={{ transformOrigin: '80px 36px' }}
         >
-          {/* ── Base fringe — small overlapping feather peaks all across
-              the head crown, killing any gap between the bigger tongues
-              behind them. Drawn first so the tongues rise out of them. */}
+          {/* ── Back-row layer — taller darker feathers behind the
+              fringe, giving real plumage depth instead of a single
+              fringe-on-bare-skull look. Drawn first; partially hidden
+              by the front fringe and tongues. */}
+          <path d="M58 40 Q 56 30 58 22 Q 62 30 62 40 Z" fill="#991b1b" opacity="0.85" />
+          <path d="M62 40 Q 60 28 64 18 Q 68 28 66 40 Z" fill="#b91c1c" opacity="0.9" />
+          <path d="M66 40 Q 64 26 68 14 Q 72 26 70 40 Z" fill="#dc2626" />
+          <path d="M70 40 Q 68 22 72 8 Q 76 22 74 40 Z" fill="#dc2626" />
+          <path d="M86 40 Q 88 22 84 8 Q 80 22 82 40 Z" fill="#dc2626" />
+          <path d="M90 40 Q 92 26 88 14 Q 84 26 86 40 Z" fill="#dc2626" />
+          <path d="M94 40 Q 96 28 92 18 Q 88 28 90 40 Z" fill="#b91c1c" opacity="0.9" />
+          <path d="M98 40 Q 100 30 98 22 Q 94 30 94 40 Z" fill="#991b1b" opacity="0.85" />
+
+          {/* ── Front fringe — small overlapping feather peaks across
+              the head crown, killing any gap between the bigger tongues. */}
           <path d="M56 42 Q 54 36 56 32 Q 60 36 60 42 Z" fill="#dc2626" opacity="0.8" />
           <path d="M60 42 Q 60 34 64 30 Q 66 36 64 42 Z" fill="#ef4444" />
           <path d="M64 42 Q 64 32 68 26 Q 70 34 68 42 Z" fill="#fb923c" />
@@ -370,9 +382,32 @@ export function PhoenixMascot({
           />
         </g>
 
+        {/* ─── Feather brows above each eye — small darker arches
+            that give the face a more bird-like presence ─── */}
+        <path
+          d="M64 56 Q 70 53 75 56"
+          stroke="#b91c1c"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M85 56 Q 90 53 96 56"
+          stroke="#b91c1c"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Subtle highlight on top edge of brows */}
+        <path d="M65 55.4 Q 70 53 74 55.4" stroke="#fb923c" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.7" />
+        <path d="M86 55.4 Q 90 53 95 55.4" stroke="#fb923c" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.7" />
+
         {/* ─── Eyes ─── */}
         <ellipse cx="70" cy="62" rx="5" ry="6" fill="#0c0c14" />
         <ellipse cx="90" cy="62" rx="5" ry="6" fill="#0c0c14" />
+        {/* Subtle bird-eyering — thin warm rim around each eye */}
+        <ellipse cx="70" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
+        <ellipse cx="90" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
         {/* Big shines */}
         <circle cx="71.6" cy="59.8" r="1.7" fill="#ffffff" />
         <circle cx="91.6" cy="59.8" r="1.7" fill="#ffffff" />
@@ -380,20 +415,34 @@ export function PhoenixMascot({
         <circle cx="68.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
         <circle cx="88.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
 
-        {/* Beak */}
+        {/* ─── Beak — proper bird shape with upper/lower mandibles ─── */}
+        {/* Upper mandible — slight downward curve, broader at base */}
         <path
-          d="M76.5 70 L 83.5 70 L 80 76 Z"
+          d="M75 70 Q 80 68.5 85 70 Q 84.5 74 80 77.5 Q 75.5 74 75 70 Z"
           fill="#f59e0b"
           stroke="#92400e"
-          strokeWidth="0.5"
+          strokeWidth="0.6"
           strokeLinejoin="round"
         />
-        {/* Beak shine */}
-        <path d="M77.8 70.5 L 81 70.5" stroke="#fef3c7" strokeWidth="0.6" strokeLinecap="round" opacity="0.7" />
+        {/* Lower mandible — narrow wedge tucked under the upper */}
+        <path
+          d="M77.5 75 Q 80 76 82.5 75 Q 81 77.4 80 78 Q 79 77.4 77.5 75 Z"
+          fill="#d97706"
+          stroke="#7c2d12"
+          strokeWidth="0.4"
+          strokeLinejoin="round"
+        />
+        {/* Mandible separation line */}
+        <path d="M76 74.4 Q 80 75.4 84 74.4" stroke="#7c2d12" strokeWidth="0.5" fill="none" strokeLinecap="round" opacity="0.85" />
+        {/* Tiny nostrils on upper mandible */}
+        <ellipse cx="78.4" cy="71.4" rx="0.5" ry="0.6" fill="#7c2d12" opacity="0.8" />
+        <ellipse cx="81.6" cy="71.4" rx="0.5" ry="0.6" fill="#7c2d12" opacity="0.8" />
+        {/* Beak top highlight */}
+        <path d="M77.5 70.5 Q 80 69.6 82.5 70.5" stroke="#fef3c7" strokeWidth="0.5" strokeLinecap="round" fill="none" opacity="0.75" />
 
         {/* Cheek blush */}
-        <ellipse cx="61" cy="68" rx="3.4" ry="2.2" fill="#ef4444" opacity="0.5" />
-        <ellipse cx="99" cy="68" rx="3.4" ry="2.2" fill="#ef4444" opacity="0.5" />
+        <ellipse cx="61" cy="68" rx="3.2" ry="2.1" fill="#ef4444" opacity="0.45" />
+        <ellipse cx="99" cy="68" rx="3.2" ry="2.1" fill="#ef4444" opacity="0.45" />
       </svg>
     </div>
   );
