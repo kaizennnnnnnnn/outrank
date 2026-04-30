@@ -168,36 +168,52 @@ export function PhoenixMascot({
           <circle cx="114" cy="160" r="0.9" fill="#fcd34d" opacity="0.75" />
         </g>
 
-        {/* ─── Wings — three layered feathers per side ─── */}
+        {/* ─── Wings — five layered flight feathers per side ─── */}
         {/* Left wing */}
         <g
           className={paused ? '' : 'mascot-wing-l'}
           style={{ transformOrigin: '52px 110px' }}
         >
-          {/* Back feather (longest, lightest) */}
+          {/* Wing covert base — small upper-arm chunk where feathers root.
+              Drawn first so feathers layer over it. */}
           <path
-            d="M52 96 Q 24 102 16 128 Q 22 132 32 128 Q 44 122 56 110 Q 58 102 52 96 Z"
+            d="M52 86 Q 38 88 32 96 Q 36 102 46 100 Q 54 96 56 90 Z"
+            fill="url(#mascotWingTop)"
+            opacity="0.9"
+          />
+          {/* Feather 1 — back, longest sweep upper-out, lightest */}
+          <path
+            d="M52 90 Q 28 92 12 110 Q 16 114 22 112 Q 36 104 54 94 Z"
             fill="url(#mascotWingTop)"
           />
-          {/* Mid feather */}
+          {/* Feather 2 — long, points outward */}
           <path
-            d="M52 100 Q 30 110 26 128 Q 32 130 40 126 Q 50 120 58 112 Q 58 104 52 100 Z"
+            d="M52 96 Q 22 102 8 124 Q 14 130 22 126 Q 36 116 54 100 Z"
+            fill="url(#mascotWingTop)"
+          />
+          {/* Feather 3 — longest middle, sweeps down-out */}
+          <path
+            d="M54 100 Q 24 114 12 136 Q 20 140 28 136 Q 42 124 56 106 Z"
             fill="url(#mascotWingMid)"
           />
-          {/* Front feather (shortest, darkest tip) */}
+          {/* Feather 4 — medium, hugs body */}
           <path
-            d="M52 106 Q 38 116 36 128 Q 42 128 48 124 Q 56 118 60 114 Q 58 108 52 106 Z"
+            d="M54 106 Q 30 120 22 138 Q 30 142 38 138 Q 48 130 58 112 Z"
+            fill="url(#mascotWingMid)"
+          />
+          {/* Feather 5 — shortest, frontmost, darkest tip */}
+          <path
+            d="M56 112 Q 38 122 32 138 Q 40 140 46 136 Q 54 130 60 118 Z"
             fill="url(#mascotWingTip)"
           />
-          {/* Highlight ridge along back feather */}
-          <path
-            d="M22 122 Q 36 117 50 108"
-            stroke="#fef3c7"
-            strokeWidth="0.6"
-            strokeLinecap="round"
-            fill="none"
-            opacity="0.55"
-          />
+          {/* Rachis spines — feather shafts along each feather */}
+          <path d="M52 92 Q 36 100 16 112" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.6" strokeLinecap="round" />
+          <path d="M52 98 Q 30 110 14 126" stroke="#fde68a" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+          <path d="M54 104 Q 34 118 18 136" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.5" strokeLinecap="round" />
+          <path d="M54 110 Q 38 124 28 138" stroke="#fcd34d" strokeWidth="0.45" fill="none" opacity="0.45" strokeLinecap="round" />
+          <path d="M56 116 Q 44 126 36 136" stroke="#fb923c" strokeWidth="0.45" fill="none" opacity="0.4" strokeLinecap="round" />
+          {/* Bright leading-edge highlight on top feather */}
+          <path d="M50 90 Q 38 96 22 108" stroke="#fff7ed" strokeWidth="0.7" fill="none" opacity="0.55" strokeLinecap="round" />
         </g>
         {/* Right wing — mirror */}
         <g
@@ -205,25 +221,36 @@ export function PhoenixMascot({
           style={{ transformOrigin: '108px 110px' }}
         >
           <path
-            d="M108 96 Q 136 102 144 128 Q 138 132 128 128 Q 116 122 104 110 Q 102 102 108 96 Z"
+            d="M108 86 Q 122 88 128 96 Q 124 102 114 100 Q 106 96 104 90 Z"
+            fill="url(#mascotWingTop)"
+            opacity="0.9"
+          />
+          <path
+            d="M108 90 Q 132 92 148 110 Q 144 114 138 112 Q 124 104 106 94 Z"
             fill="url(#mascotWingTop)"
           />
           <path
-            d="M108 100 Q 130 110 134 128 Q 128 130 120 126 Q 110 120 102 112 Q 102 104 108 100 Z"
+            d="M108 96 Q 138 102 152 124 Q 146 130 138 126 Q 124 116 106 100 Z"
+            fill="url(#mascotWingTop)"
+          />
+          <path
+            d="M106 100 Q 136 114 148 136 Q 140 140 132 136 Q 118 124 104 106 Z"
             fill="url(#mascotWingMid)"
           />
           <path
-            d="M108 106 Q 122 116 124 128 Q 118 128 112 124 Q 104 118 100 114 Q 102 108 108 106 Z"
-            fill="url(#mascotWingTip)"
+            d="M106 106 Q 130 120 138 138 Q 130 142 122 138 Q 112 130 102 112 Z"
+            fill="url(#mascotWingMid)"
           />
           <path
-            d="M138 122 Q 124 117 110 108"
-            stroke="#fef3c7"
-            strokeWidth="0.6"
-            strokeLinecap="round"
-            fill="none"
-            opacity="0.55"
+            d="M104 112 Q 122 122 128 138 Q 120 140 114 136 Q 106 130 100 118 Z"
+            fill="url(#mascotWingTip)"
           />
+          <path d="M108 92 Q 124 100 144 112" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.6" strokeLinecap="round" />
+          <path d="M108 98 Q 130 110 146 126" stroke="#fde68a" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+          <path d="M106 104 Q 126 118 142 136" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.5" strokeLinecap="round" />
+          <path d="M106 110 Q 122 124 132 138" stroke="#fcd34d" strokeWidth="0.45" fill="none" opacity="0.45" strokeLinecap="round" />
+          <path d="M104 116 Q 116 126 124 136" stroke="#fb923c" strokeWidth="0.45" fill="none" opacity="0.4" strokeLinecap="round" />
+          <path d="M110 90 Q 122 96 138 108" stroke="#fff7ed" strokeWidth="0.7" fill="none" opacity="0.55" strokeLinecap="round" />
         </g>
 
         {/* ─── Body — chubby pear ─── */}
@@ -279,6 +306,23 @@ export function PhoenixMascot({
 
         {/* ─── Head — slightly smaller for better proportions ─── */}
         <circle cx="80" cy="62" r="26" fill="url(#mascotHead)" />
+
+        {/* Crown underlayer — solid feather color filling the upper
+            half of the head silhouette. Even if the individual
+            feathers above don't perfectly tile, any tiny gaps reveal
+            this color instead of the bare amber head — kills the
+            "balding" effect once and for all. */}
+        <path
+          d="M54 62 Q 54 36 80 36 Q 106 36 106 62 Z"
+          fill="#dc2626"
+        />
+        {/* Crown gradient overlay — softens the underlayer's edge so
+            it doesn't read as a hard solid cap */}
+        <path
+          d="M54 62 Q 54 36 80 36 Q 106 36 106 62 Z"
+          fill="url(#mascotCrest)"
+          opacity="0.6"
+        />
 
         {/* Side temple feathers — small flame peaks running down the
             sides of the head from the crest to mid-cheek. Replaces the
