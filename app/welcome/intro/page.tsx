@@ -104,9 +104,9 @@ const PAGES: IntroPage[] = [
           size={220}
           interactive={false}
           hideLabel
-          baseColorId="gold"
-          pulseColorId="crimson"
-          ringColorId="amber"
+          baseColorId="celestial"
+          pulseColorId="pulse_eternal"
+          ringColorId="ring_supernova"
         />
       </div>
     ),

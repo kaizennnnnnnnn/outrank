@@ -198,7 +198,7 @@ function MascotRow({ message }: { message: React.ReactNode }) {
 function IntroQuestionStep() {
   return (
     <div className="flex flex-col items-center justify-center flex-1">
-      <PhoenixMascot size={170} />
+      <PhoenixMascot size={170} greeting />
       <SpeechBubble tail="bottom-center" className="mt-8 max-w-sm text-center">
         I just have a few questions for you and we can get started!
       </SpeechBubble>
@@ -238,6 +238,64 @@ function NameStep({ value, onChange }: { value: string; onChange: (v: string) =>
   );
 }
 
+/**
+ * Tiered fire icon for the experience step. Same flame silhouette
+ * across all four levels — only the fill, inner core, side tongues,
+ * and outer glow change with intensity. Reads as a "fire gauge."
+ */
+function FlameLevel({ level }: { level: 0 | 1 | 2 | 3 }) {
+  const gradId = `flame-grad-${level}`;
+  const coreId = `flame-core-${level}`;
+  return (
+    <svg width={36} height={40} viewBox="0 0 32 36" className="flex-shrink-0">
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#fde68a" />
+          <stop offset="40%" stopColor="#fb923c" />
+          <stop offset="80%" stopColor="#dc2626" />
+          <stop offset="100%" stopColor="#7f1d1d" />
+        </linearGradient>
+        <linearGradient id={coreId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#fffbeb" />
+          <stop offset="50%" stopColor="#fcd34d" />
+          <stop offset="100%" stopColor="#ef4444" />
+        </linearGradient>
+      </defs>
+
+      {/* Outer glow — only on blazing */}
+      {level === 3 && (
+        <ellipse cx="16" cy="22" rx="14" ry="14" fill="#f97316" opacity="0.22" />
+      )}
+
+      {/* Side flame tongues — appear on advanced */}
+      {level === 3 && (
+        <>
+          <path d="M7 24 Q 4 28 6 33 Q 9 30 9 26 Z" fill="#fb923c" opacity="0.85" />
+          <path d="M25 24 Q 28 28 26 33 Q 23 30 23 26 Z" fill="#fb923c" opacity="0.85" />
+        </>
+      )}
+
+      {/* Main flame body — empty outline at level 0, filled from 1+ */}
+      <path
+        d="M16 4 Q 12 11 10 18 Q 8 25 12 30 Q 14 28 14 23 Q 14 18 16 13 Q 18 18 18 23 Q 18 28 20 30 Q 24 25 22 18 Q 20 11 16 4 Z"
+        fill={level >= 1 ? `url(#${gradId})` : 'none'}
+        stroke={level === 0 ? '#475569' : 'none'}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+
+      {/* Hot inner core — appears at intermediate, brightens at advanced */}
+      {level >= 2 && (
+        <path
+          d="M16 12 Q 13 18 13 23 Q 14 26 16 26 Q 18 26 19 23 Q 19 18 16 12 Z"
+          fill={`url(#${coreId})`}
+          opacity={level === 2 ? 0.7 : 1}
+        />
+      )}
+    </svg>
+  );
+}
+
 function ExperienceStep({
   name,
   value,
@@ -257,28 +315,31 @@ function ExperienceStep({
         }
       />
       <div className="space-y-2.5 mt-2">
-        {EXPERIENCE_OPTIONS.map((opt) => {
+        {EXPERIENCE_OPTIONS.map((opt, i) => {
           const active = value === opt.key;
           return (
             <button
               key={opt.key}
               onClick={() => onChange(opt.key)}
               className={cn(
-                'w-full text-left rounded-2xl border-2 px-5 py-4 transition-all',
+                'w-full text-left rounded-2xl border-2 px-4 py-3.5 transition-all flex items-center gap-4',
                 active
                   ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_24px_-8px_rgba(249,115,22,0.5)]'
                   : 'bg-[#10101a] border-white/8 hover:border-white/20',
               )}
             >
-              <div className="flex items-center justify-between">
-                <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>
-                  {opt.label}
-                </span>
-                {active && <CheckCircleFullIcon size={20} className="text-orange-400" />}
+              <FlameLevel level={i as 0 | 1 | 2 | 3} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>
+                    {opt.label}
+                  </span>
+                  {active && <CheckCircleFullIcon size={18} className="text-orange-400 flex-shrink-0" />}
+                </div>
+                <p className={cn('text-[13px] mt-0.5', active ? 'text-orange-200/80' : 'text-slate-500')}>
+                  {opt.desc}
+                </p>
               </div>
-              <p className={cn('text-[13px] mt-1', active ? 'text-orange-200/80' : 'text-slate-500')}>
-                {opt.desc}
-              </p>
             </button>
           );
         })}
@@ -360,9 +421,9 @@ function RightPlaceStep() {
   return (
     <div className="flex flex-col flex-1 justify-center">
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-6">
-          <CheckCircleFullIcon size={14} className="text-emerald-400" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-300">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 mb-6">
+          <CheckCircleFullIcon size={14} className="text-orange-400" />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-orange-300">
             You&apos;re in the right place
           </span>
         </div>
@@ -378,12 +439,17 @@ function RightPlaceStep() {
       <div className="mt-10 mx-auto max-w-md">
         <div className="rounded-2xl bg-[#10101a] border border-white/10 p-5">
           <div className="flex items-center gap-3 mb-3">
-            <div
-              className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white text-sm"
-              style={{ background: 'linear-gradient(135deg, #fb923c, #ef4444)' }}
-            >
-              MR
-            </div>
+            {/* Real-looking testimonial portrait — randomuser.me serves
+                free photo-realistic stock avatars commonly used in
+                pre-launch product testimonials. eslint-disable next/img
+                is fine here since this is an external CDN URL outside
+                next/image's optimization scope. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://randomuser.me/api/portraits/men/32.jpg"
+              alt="Marcus R."
+              className="w-11 h-11 rounded-full object-cover ring-2 ring-orange-400/40"
+            />
             <div>
               <p className="font-bold text-white text-sm">Marcus R.</p>
               <p className="text-[11px] text-slate-500">Member since Jan 2026</p>

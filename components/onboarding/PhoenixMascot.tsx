@@ -26,6 +26,10 @@ interface PhoenixMascotProps {
   className?: string;
   /** Disable the idle bob — useful in static contexts. */
   paused?: boolean;
+  /** Play a one-shot left-wing wave on mount, then settle into the
+   *  normal idle flutter. Used when the mascot first appears alone
+   *  on screen and is "greeting" the user. */
+  greeting?: boolean;
 }
 
 export function PhoenixMascot({
@@ -34,6 +38,7 @@ export function PhoenixMascot({
   mood = 'idle',
   className,
   paused = false,
+  greeting = false,
 }: PhoenixMascotProps) {
   // Aspect ratio matches the viewBox below.
   const aspectRatio = 180 / 160;
@@ -171,7 +176,7 @@ export function PhoenixMascot({
         {/* ─── Wings — five layered flight feathers per side ─── */}
         {/* Left wing */}
         <g
-          className={paused ? '' : 'mascot-wing-l'}
+          className={paused ? '' : (greeting ? 'mascot-wing-greet-l' : 'mascot-wing-l')}
           style={{ transformOrigin: '52px 110px' }}
         >
           {/* Wing covert base — small upper-arm chunk where feathers root.

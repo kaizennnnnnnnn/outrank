@@ -203,6 +203,24 @@ body {
 .mascot-wing-l { animation: mascot-wing-flutter-l 1.4s ease-in-out infinite; }
 .mascot-wing-r { animation: mascot-wing-flutter-r 1.4s ease-in-out infinite; }
 
+/* One-shot left-wing greeting wave — used when the mascot first
+   appears alone on screen and "waves hello" before settling into
+   the looped flutter. Composes two animations: the wave runs once
+   with a small delay, then the normal flutter starts and loops. */
+@keyframes mascot-wing-greet-l {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(-32deg); }
+  35%  { transform: rotate(38deg); }
+  55%  { transform: rotate(-18deg); }
+  75%  { transform: rotate(22deg); }
+  100% { transform: rotate(0deg); }
+}
+.mascot-wing-greet-l {
+  animation:
+    mascot-wing-greet-l 1.6s ease-in-out 0.4s 1,
+    mascot-wing-flutter-l 1.4s ease-in-out 2s infinite;
+}
+
 @keyframes mascot-tuft-sway {
   0%, 100% { transform: rotate(-3deg) scaleY(1); }
   50%      { transform: rotate(3deg)  scaleY(1.08); }
