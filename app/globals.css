@@ -258,32 +258,6 @@ body {
   will-change: opacity, transform;
 }
 
-/* Vertical energy sweep — a band of light passes from top to bottom of
-   the orb every ~3s. Used as an overlay on top of the SoulOrb canvas in
-   onboarding showcases. Uses transform/opacity only so it composites
-   cheaply alongside the canvas. */
-@keyframes orb-sweep-down {
-  0%   { transform: translateY(-115%); opacity: 0; }
-  6%   { opacity: 1; }
-  35%  { transform: translateY(115%); opacity: 1; }
-  40%  { opacity: 0; }
-  100% { transform: translateY(115%); opacity: 0; }
-}
-.animate-orb-sweep-down {
-  animation: orb-sweep-down 3s ease-in-out infinite;
-  will-change: transform, opacity;
-}
-
-/* Concentric halo ring — pulsing outward ring decoration around the
-   showcase orb. Different delays stagger the pulses for a richer look. */
-@keyframes orb-halo-pulse {
-  0%   { transform: scale(0.7); opacity: 0.85; }
-  100% { transform: scale(1.35); opacity: 0; }
-}
-.animate-orb-halo {
-  animation: orb-halo-pulse 2.4s ease-out infinite;
-  will-change: transform, opacity;
-}
 
 @keyframes mascot-tuft-sway {
   0%, 100% { transform: rotate(-3deg) scaleY(1); }

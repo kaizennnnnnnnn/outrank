@@ -90,7 +90,18 @@ const PAGES: IntroPage[] = [
   {
     title: <>Your <span className="text-orange-400">Soul Orb</span><br/>evolves with you.</>,
     body: 'Every habit logged feeds your orb. Watch it awaken, ascend, and become unmistakably yours.',
-    visual: <EvolvedOrbDisplay />,
+    visual: (
+      <SoulOrb
+        tier={MAX_ORB_TIER}
+        intensity={100}
+        size={220}
+        interactive={false}
+        hideLabel
+        baseColorId="prismatic"
+        pulseColorId="pulse_quasar"
+        ringColorId="ring_cosmic"
+      />
+    ),
   },
   {
     title: <>Endless<br/><span className="text-orange-400">customization</span>.</>,
@@ -98,123 +109,6 @@ const PAGES: IntroPage[] = [
     visual: <OrbCustomizationShowcase />,
   },
 ];
-
-// ─── Shared display decorations ──────────────────────────────────────────────
-//
-// The vertical energy sweep is a band of light that travels from top to
-// bottom of the orb every ~3s. Lives as a CSS-animated overlay on top of
-// the canvas — clipped to a circle so the band only shows inside the orb
-// silhouette. This is the "energy that goes through the orb" visual, not
-// to be confused with the orb's internal radial heartbeat or random
-// surface ripples.
-
-interface OrbEnergySweepProps {
-  size: number;
-}
-
-function OrbEnergySweep({ size }: OrbEnergySweepProps) {
-  return (
-    <div
-      className="absolute inset-0 m-auto pointer-events-none overflow-hidden"
-      style={{ width: size, height: size, borderRadius: '50%' }}
-      aria-hidden
-    >
-      <div
-        className="absolute left-0 right-0 h-16 animate-orb-sweep-down"
-        style={{
-          background:
-            'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.55) 30%, rgba(168,85,247,0.85) 50%, rgba(255,255,255,0.55) 70%, transparent 100%)',
-          mixBlendMode: 'screen',
-          filter: 'blur(2px)',
-        }}
-      />
-    </div>
-  );
-}
-
-// Concentric halo rings + outer aurora glow. Renders behind the orb to
-// give the showcase a "crazy evolved" presentation without changing the
-// SoulOrb component itself.
-interface OrbHaloDecorationsProps {
-  /** Diameter of the inner orb the rings expand around. */
-  size: number;
-  /** Tone the halo more cosmic (purple/cyan) or fiery (orange/red). */
-  tone?: 'cosmic' | 'fire';
-}
-
-function OrbHaloDecorations({ size, tone = 'cosmic' }: OrbHaloDecorationsProps) {
-  const auroraGradient =
-    tone === 'cosmic'
-      ? 'radial-gradient(circle, rgba(168,85,247,0.55), rgba(34,211,238,0.35) 40%, transparent 70%)'
-      : 'radial-gradient(circle, rgba(251,146,60,0.55), rgba(239,68,68,0.35) 40%, transparent 70%)';
-  const ringColor1 = tone === 'cosmic' ? 'rgba(168,85,247,0.55)' : 'rgba(251,146,60,0.55)';
-  const ringColor2 = tone === 'cosmic' ? 'rgba(34,211,238,0.45)' : 'rgba(239,68,68,0.45)';
-
-  return (
-    <>
-      {/* Outer aurora glow */}
-      <div
-        className="absolute inset-0 m-auto rounded-full blur-3xl pointer-events-none"
-        style={{
-          width: size * 1.5,
-          height: size * 1.5,
-          background: auroraGradient,
-        }}
-        aria-hidden
-      />
-      {/* Two concentric pulsing halo rings, staggered. */}
-      <div
-        className="absolute inset-0 m-auto rounded-full pointer-events-none animate-orb-halo"
-        style={{
-          width: size * 1.15,
-          height: size * 1.15,
-          border: `1.5px solid ${ringColor1}`,
-        }}
-        aria-hidden
-      />
-      <div
-        className="absolute inset-0 m-auto rounded-full pointer-events-none animate-orb-halo"
-        style={{
-          width: size * 1.15,
-          height: size * 1.15,
-          border: `1.5px solid ${ringColor2}`,
-          animationDelay: '1.2s',
-        }}
-        aria-hidden
-      />
-    </>
-  );
-}
-
-// Page 4 — fully-evolved orb display with halos + sweep decorations. A
-// dedicated component so the visual logic isn't duplicated across pages
-// (the customization showcase below uses the same primitives).
-
-const EVOLVED_DISPLAY_SIZE = 260;
-
-function EvolvedOrbDisplay() {
-  return (
-    <div
-      className="relative flex items-center justify-center"
-      style={{ width: EVOLVED_DISPLAY_SIZE * 1.6, height: EVOLVED_DISPLAY_SIZE * 1.6 }}
-    >
-      <OrbHaloDecorations size={EVOLVED_DISPLAY_SIZE} tone="cosmic" />
-      <div className="relative">
-        <SoulOrb
-          tier={MAX_ORB_TIER}
-          intensity={1}
-          size={EVOLVED_DISPLAY_SIZE}
-          interactive={false}
-          hideLabel
-          baseColorId="prismatic"
-          pulseColorId="pulse_quasar"
-          ringColorId="ring_cosmic"
-        />
-        <OrbEnergySweep size={EVOLVED_DISPLAY_SIZE} />
-      </div>
-    </div>
-  );
-}
 
 // ─── Orb customization auto-showcase ─────────────────────────────────────────
 //
@@ -287,48 +181,36 @@ function OrbCustomizationShowcase() {
     return () => timeouts.forEach(clearTimeout);
   }, []);
 
-  const SHOWCASE_SIZE = 260;
-
   return (
-    <div
-      className="relative flex items-center justify-center"
-      style={{ width: SHOWCASE_SIZE * 1.6, height: SHOWCASE_SIZE * 1.6 }}
-    >
-      <OrbHaloDecorations size={SHOWCASE_SIZE} tone={phase === 'rainbow' ? 'cosmic' : 'fire'} />
-
+    <div className="relative flex items-center justify-center">
       {/* Bloom flash overlay — only mounted during the transition phase
           so the keyframe runs once and unmounts itself. */}
       {phase === 'transitioning' && (
         <div
-          className="absolute inset-0 m-auto rounded-full pointer-events-none animate-orb-flash"
+          className="absolute inset-0 m-auto w-[200px] h-[200px] rounded-full pointer-events-none animate-orb-flash"
           style={{
-            width: SHOWCASE_SIZE,
-            height: SHOWCASE_SIZE,
             background: 'radial-gradient(circle, rgba(255,255,255,0.95), rgba(168,85,247,0.55) 40%, transparent 75%)',
           }}
         />
       )}
-
       <div
         className={cn(
-          'relative',
           phase === 'transitioning' && 'animate-orb-spin-transition',
-          // 'rainbow' phase is stationary — spin only happens during the
-          // one-shot transition; once the orb has settled into rainbow it
-          // stays still (canvas particle motion still runs internally).
+          // 'rainbow' phase is stationary — the spin only happens during
+          // the one-shot transition; once the orb settles into rainbow
+          // it stays still.
         )}
       >
         <SoulOrb
           tier={MAX_ORB_TIER}
-          intensity={1}
-          size={SHOWCASE_SIZE}
+          intensity={100}
+          size={200}
           interactive={false}
           hideLabel
           baseColorId={config.base}
           pulseColorId={config.pulse}
           ringColorId={config.ring}
         />
-        <OrbEnergySweep size={SHOWCASE_SIZE} />
       </div>
     </div>
   );
