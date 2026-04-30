@@ -299,45 +299,74 @@ export function PhoenixMascot({
         />
         <path d="M110 56 Q 113 54 113 50 Q 110 53 108 54 Q 109 55 110 56 Z" fill="#dc2626" opacity="0.7" />
 
-        {/* Head crest — five flame tongues, denser fan */}
+        {/* Head crest — dense base fringe + 7-tongue fan above */}
         <g
           className={paused ? '' : 'mascot-tuft'}
           style={{ transformOrigin: '80px 36px' }}
         >
+          {/* ── Base fringe — small overlapping feather peaks all across
+              the head crown, killing any gap between the bigger tongues
+              behind them. Drawn first so the tongues rise out of them. */}
+          <path d="M56 42 Q 54 36 56 32 Q 60 36 60 42 Z" fill="#dc2626" opacity="0.8" />
+          <path d="M60 42 Q 60 34 64 30 Q 66 36 64 42 Z" fill="#ef4444" />
+          <path d="M64 42 Q 64 32 68 26 Q 70 34 68 42 Z" fill="#fb923c" />
+          <path d="M68 42 Q 68 30 72 24 Q 74 32 72 42 Z" fill="url(#mascotCrest)" />
+          <path d="M72 42 Q 72 28 76 22 Q 78 30 76 42 Z" fill="url(#mascotCrest)" />
+          <path d="M76 42 Q 76 26 80 20 Q 82 28 80 42 Z" fill="url(#mascotCrest)" />
+          <path d="M80 42 Q 80 26 84 20 Q 84 28 84 42 Z" fill="url(#mascotCrest)" />
+          <path d="M84 42 Q 84 28 88 22 Q 88 32 88 42 Z" fill="url(#mascotCrest)" />
+          <path d="M88 42 Q 88 30 92 24 Q 92 34 92 42 Z" fill="#fb923c" />
+          <path d="M92 42 Q 92 32 96 26 Q 96 36 96 42 Z" fill="#ef4444" />
+          <path d="M96 42 Q 96 34 100 30 Q 100 36 100 42 Z" fill="#dc2626" opacity="0.85" />
+          <path d="M100 42 Q 100 36 104 32 Q 104 36 104 42 Z" fill="#dc2626" opacity="0.8" />
+
+          {/* ── Big crest tongues, drawn over the fringe ── */}
           {/* Outer left tongue */}
           <path
-            d="M64 38 Q 56 28 58 18 Q 62 24 66 30 Q 67 34 66 38 Z"
+            d="M64 40 Q 56 28 58 18 Q 62 24 66 30 Q 67 34 66 40 Z"
             fill="url(#mascotCrest)"
-            opacity="0.7"
+            opacity="0.78"
           />
           {/* Outer right tongue */}
           <path
-            d="M96 38 Q 104 28 102 18 Q 98 24 94 30 Q 93 34 94 38 Z"
+            d="M96 40 Q 104 28 102 18 Q 98 24 94 30 Q 93 34 94 40 Z"
             fill="url(#mascotCrest)"
-            opacity="0.7"
+            opacity="0.78"
+          />
+          {/* Inner left tongue (new — fills the gap between mid and center) */}
+          <path
+            d="M75 42 Q 70 28 71 16 Q 74 22 76 30 Q 78 36 77 42 Z"
+            fill="url(#mascotCrest)"
+            opacity="0.92"
+          />
+          {/* Inner right tongue (new — mirror) */}
+          <path
+            d="M85 42 Q 90 28 89 16 Q 86 22 84 30 Q 82 36 83 42 Z"
+            fill="url(#mascotCrest)"
+            opacity="0.92"
           />
           {/* Mid left tongue */}
           <path
-            d="M70 38 Q 64 24 66 12 Q 70 18 72 26 Q 74 32 72 38 Z"
+            d="M70 40 Q 64 24 66 12 Q 70 18 72 26 Q 74 32 72 40 Z"
             fill="url(#mascotCrest)"
-            opacity="0.88"
+            opacity="0.9"
           />
           {/* Mid right tongue */}
           <path
-            d="M90 38 Q 96 24 94 12 Q 90 18 88 26 Q 86 32 88 38 Z"
+            d="M90 40 Q 96 24 94 12 Q 90 18 88 26 Q 86 32 88 40 Z"
             fill="url(#mascotCrest)"
-            opacity="0.88"
+            opacity="0.9"
           />
           {/* Center tongue — tallest */}
           <path
-            d="M80 40 Q 72 22 76 2 Q 80 12 80 16 Q 80 12 84 2 Q 88 22 80 40 Z"
+            d="M80 42 Q 72 22 76 2 Q 80 12 80 16 Q 80 12 84 2 Q 88 22 80 42 Z"
             fill="url(#mascotCrest)"
           />
           {/* Center hot core */}
           <path
-            d="M80 32 Q 76 18 78 8 Q 80 14 80 16 Q 80 14 82 8 Q 84 18 80 32 Z"
+            d="M80 34 Q 76 18 78 8 Q 80 14 80 16 Q 80 14 82 8 Q 84 18 80 34 Z"
             fill="#fef3c7"
-            opacity="0.75"
+            opacity="0.78"
           />
         </g>
 
