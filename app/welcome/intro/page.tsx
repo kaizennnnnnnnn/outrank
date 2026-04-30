@@ -27,7 +27,7 @@ const PAGES: IntroPage[] = [
   {
     title: <>Build the version of you<br/>that <span className="text-orange-400">doesn&apos;t quit</span>.</>,
     body: 'Outrank turns daily habits into a game. Every log earns XP, every streak proves your edge.',
-    visual: <PhoenixMascot size={170} />,
+    visual: <PhoenixMascot size={150} />,
   },
   {
     title: <>Five pillars.<br/><span className="text-orange-400">One streak.</span></>,

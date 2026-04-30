@@ -45,7 +45,7 @@ export default function WelcomePage() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
         >
-          <PhoenixMascot size={180} />
+          <PhoenixMascot size={150} />
         </motion.div>
 
         <motion.h1
