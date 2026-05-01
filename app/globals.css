@@ -252,13 +252,16 @@ body {
   will-change: transform;
 }
 
-/* Phase 6 active-lifters globe — slow continuous rotation. */
-@keyframes globe-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+/* Phase 6 active-lifters globe — continents drift left to simulate
+   Earth rotating eastward. Two map copies side-by-side mean a -220
+   translate brings the second copy into the same position as the
+   first, giving a seamless loop. */
+@keyframes globe-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-220px); }
 }
-.animate-globe-spin {
-  animation: globe-spin 32s linear infinite;
+.animate-globe-drift {
+  animation: globe-drift 36s linear infinite;
   will-change: transform;
 }
 
