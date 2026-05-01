@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const TICK_WIDTH = 10;
@@ -18,22 +18,19 @@ export interface ScrollPickerProps {
   unit?: string;
   /** Every Nth tick gets the longer "major" treatment. Default 5. */
   majorEvery?: number;
-  /** Width of the value display in font size units. */
   className?: string;
 }
 
 /**
  * Horizontal ruler-style number picker. The user scrolls the ticks
  * left/right to change the value; the center indicator marks the
- * current selection. Used by the onboarding height/weight/age steps.
+ * current selection.
  *
- * Implementation notes:
- *   - The viewport's left/right padding equals half the visible width
- *     so the first/last ticks can sit at the center indicator without
- *     awkward overscroll.
- *   - scroll-snap-type: x mandatory snaps each tick to the center.
- *   - Initial scroll is set imperatively on mount; we don't track it
- *     in state since it'd cause a re-render loop with onScroll.
+ * Spacer widths live in React state (not imperative DOM .style.width)
+ * because React re-applies the JSX `style` prop on every re-render —
+ * any imperative DOM mutation gets wiped, leaving spacers at 0px and
+ * truncating the scrollable range to ~the middle of the rail. Using
+ * state means the width survives every re-render.
  */
 export function ScrollPicker({
   value,
@@ -47,45 +44,49 @@ export function ScrollPicker({
   className,
 }: ScrollPickerProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const leftSpacerRef = useRef<HTMLDivElement>(null);
-  const rightSpacerRef = useRef<HTMLDivElement>(null);
+  const [halfWidth, setHalfWidth] = useState(0);
   const totalTicks = Math.floor((max - min) / step) + 1;
 
-  // Use spacer divs (real children) instead of padding for the
-  // half-container offsets. Children contribute to descendant
-  // scrollable overflow whereas padding-right doesn't — meaning a
-  // padding-based picker can't actually scroll its last ticks all
-  // the way to center on a constrained-width container. Spacers fix
-  // that and the math becomes trivial.
+  // Always read the latest value via ref so the resize observer's
+  // closure doesn't snap scroll back to a stale value when the user
+  // has already moved on.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  // Measure the container and keep half-width in state. The
+  // ResizeObserver fires on the container itself, not on user scroll,
+  // so this only updates on real layout changes (mount, rotation).
   useEffect(() => {
     const el = ref.current;
-    const left = leftSpacerRef.current;
-    const right = rightSpacerRef.current;
-    if (!el || !left || !right) return;
-    const setSpacers = () => {
-      const halfWidth = el.clientWidth / 2;
-      left.style.width = `${halfWidth}px`;
-      right.style.width = `${halfWidth}px`;
-    };
-    setSpacers();
-    el.scrollLeft = ((value - min) / step) * TICK_WIDTH;
-
-    const ro = new ResizeObserver(() => {
-      setSpacers();
-      el.scrollLeft = ((value - min) / step) * TICK_WIDTH;
-    });
+    if (!el) return;
+    const measure = () => setHalfWidth(el.clientWidth / 2);
+    measure();
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [min, step]);
+  }, []);
+
+  // Once spacers are sized (halfWidth > 0), seed the scroll position
+  // to match the current value. Re-runs only when half-width itself
+  // changes (mount + resize), so the user's drag isn't fought.
+  useEffect(() => {
+    if (!ref.current || halfWidth === 0) return;
+    // requestAnimationFrame defers to after the paint that applies
+    // the new spacer widths — otherwise scrollLeft is set against
+    // the old layout.
+    const raf = requestAnimationFrame(() => {
+      if (ref.current) {
+        ref.current.scrollLeft = ((valueRef.current - min) / step) * TICK_WIDTH;
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [halfWidth, min, step]);
 
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
     const ticks = Math.round(container.scrollLeft / TICK_WIDTH);
     const newValue = Math.max(min, Math.min(max, min + ticks * step));
-    if (newValue !== value) {
-      onChange(newValue);
-    }
+    if (newValue !== value) onChange(newValue);
   };
 
   return (
@@ -102,7 +103,7 @@ export function ScrollPicker({
 
       {/* Picker rail */}
       <div className="relative w-full mt-12">
-        {/* Center indicator — bright orange tick at the picker midpoint */}
+        {/* Center indicator */}
         <div
           className="absolute left-1/2 top-0 -translate-x-1/2 w-[3px] h-14 rounded-full z-10 pointer-events-none"
           style={{
@@ -110,20 +111,14 @@ export function ScrollPicker({
             boxShadow: '0 0 14px rgba(249,115,22,0.85)',
           }}
         />
-
-        {/* Soft fades at left/right edges so ticks gently dim toward
-            the screen sides instead of being visually cut off. */}
+        {/* Edge fades */}
         <div
           className="absolute inset-y-0 left-0 w-16 pointer-events-none z-10"
-          style={{
-            background: 'linear-gradient(to right, #08080f, transparent)',
-          }}
+          style={{ background: 'linear-gradient(to right, #08080f, transparent)' }}
         />
         <div
           className="absolute inset-y-0 right-0 w-16 pointer-events-none z-10"
-          style={{
-            background: 'linear-gradient(to left, #08080f, transparent)',
-          }}
+          style={{ background: 'linear-gradient(to left, #08080f, transparent)' }}
         />
 
         <div
@@ -132,16 +127,12 @@ export function ScrollPicker({
           className="overflow-x-scroll no-scrollbar w-full"
           style={{
             scrollSnapType: 'x mandatory',
-            // paddingLeft/Right are set imperatively on mount + on
-            // resize so they match half the container's actual width
-            // (CSS calc(50%) resolves against the parent, which gives
-            // wrong values when the rail sits inside a padded page).
             WebkitOverflowScrolling: 'touch',
             touchAction: 'pan-x',
           }}
         >
           <div className="flex items-end h-14">
-            <div ref={leftSpacerRef} style={{ flexShrink: 0 }} aria-hidden />
+            <div style={{ width: halfWidth, flexShrink: 0 }} aria-hidden />
             {Array.from({ length: totalTicks }).map((_, i) => {
               const isMajor = i % majorEvery === 0;
               return (
@@ -159,7 +150,7 @@ export function ScrollPicker({
                 </div>
               );
             })}
-            <div ref={rightSpacerRef} style={{ flexShrink: 0 }} aria-hidden />
+            <div style={{ width: halfWidth, flexShrink: 0 }} aria-hidden />
           </div>
         </div>
       </div>

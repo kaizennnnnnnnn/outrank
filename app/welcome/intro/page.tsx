@@ -125,10 +125,11 @@ const PAGES: IntroPage[] = [
 
 const SHOWCASE_BASES = ['phoenix', 'nebula', 'celestial', 'aurora', 'bloodmoon', 'galactic'];
 const SHOWCASE_PULSES = ['pulse_eternal', 'pulse_cosmic', 'pulse_nova', 'pulse_quasar', 'pulse_stargaze', 'pulse_eternal'];
-// Ring cycle leans into colorful pop — neon green, phoenix red/yellow,
-// candy pink/blue, aurora green/violet, sunset orange/pink. Each contrasts
-// against the prior so the user clearly sees the ring switch.
-const SHOWCASE_RINGS = ['ring_neon', 'ring_phoenix', 'ring_candy', 'ring_aurora', 'ring_sunset'];
+// Ring cycle starts with a warm/neutral ring (supernova orange-yellow)
+// so it blends with whatever base color is showing during the earlier
+// base-cycle phase. Then jumps to phoenix, candy, aurora (which has
+// green but only briefly during ring cycle), and sunset.
+const SHOWCASE_RINGS = ['ring_supernova', 'ring_phoenix', 'ring_candy', 'ring_aurora', 'ring_sunset'];
 
 type ShowcasePhase = 'cycling' | 'transitioning' | 'rainbow';
 

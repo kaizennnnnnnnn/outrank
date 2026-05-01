@@ -486,9 +486,9 @@ function SummaryCorruptionStep({
 }) {
   const [holding, setHolding] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [origin, setOrigin] = useState({ x: 50, y: 45 });
+  const [origin, setOrigin] = useState({ x: 50, y: 75 });
   const completedRef = useRef(false);
-  const mascotRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // RAF-driven hold/release. While holding, progress fills toward 1
   // over ~2.4s. While released, it drains back over ~1s. Once it
@@ -519,17 +519,16 @@ function SummaryCorruptionStep({
     return () => cancelAnimationFrame(raf);
   }, [holding, onCorruptionComplete]);
 
-  // Compute the mascot's body center relative to the viewport so
-  // every effect emanates from there. Measured after the next paint
-  // (rAF) so layout has settled and the bob keyframe is at its
-  // 0% position. Body center sits at ~64% down the mascot wrapper.
+  // Compute the hold button's center relative to the viewport so the
+  // awakening spreads outward FROM the button (not from the mascot).
+  // Measured on next paint + on resize.
   useEffect(() => {
     function updateOrigin() {
-      const el = mascotRef.current;
+      const el = buttonRef.current;
       if (!el) return;
       const rect = el.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
-      const cy = rect.top + rect.height * 0.5;
+      const cy = rect.top + rect.height / 2;
       setOrigin({
         x: (cx / window.innerWidth) * 100,
         y: (cy / window.innerHeight) * 100,
@@ -611,12 +610,10 @@ function SummaryCorruptionStep({
           </p>
         </motion.div>
 
-        {/* Phoenix mascot — pulse + glitch when held. z-index 60 keeps
-            the mascot above the awakening overlay (z-50) so the user
-            sees the phoenix glowing inside the energy, not buried
-            under it. */}
+        {/* Phoenix mascot — z-60 keeps it above the awakening overlay
+            (z-50) so the phoenix glows inside the spreading energy
+            instead of being buried by the dark mask. */}
         <div
-          ref={mascotRef}
           className="relative z-[60]"
           style={{
             filter: glitchStrength > 0
@@ -635,9 +632,13 @@ function SummaryCorruptionStep({
           <PhoenixMascot size={180} />
         </div>
 
-        {/* Hold button + progress ring */}
-        <div className="mt-8 flex flex-col items-center">
+        {/* Hold button + progress ring. The ref drives the awakening
+            overlay's origin so the energy actually spreads OUT from
+            this button, not from somewhere on the mascot. z-60 keeps
+            it tappable above the overlay. */}
+        <div className="mt-8 flex flex-col items-center relative z-[60]">
           <button
+            ref={buttonRef}
             onPointerDown={() => setHolding(true)}
             onPointerUp={() => setHolding(false)}
             onPointerLeave={() => setHolding(false)}
@@ -672,138 +673,48 @@ function SummaryCorruptionStep({
         </div>
       </div>
 
-      {/* ─── Awakening overlay ─── Simplified for mobile perf:
-          fire gradient growing from mascot, one slow sunburst, three
-          shockwave rings, lightning cracks (no SVG filter — uses
-          CSS drop-shadow so it composites cheaply), eight embers,
-          and a white flash. The mascot lives at z-60 above this
-          overlay so the user sees the phoenix glowing through the
-          energy, not buried under it. */}
+      {/* ─── Awakening overlay ─── Simple radial spread from the
+          hold button. One fire gradient + one shockwave + final
+          flash. No cracks, no sunburst, no embers — they were
+          tanking mobile perf and reading as cheap. */}
       {progress > 0 && (
         <div
           className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
           style={{ opacity: 1 }}
         >
-          {/* Fire gradient — bright white/gold center, sweeping through
-              orange and red as the radius expands. This is the only
-              expensive paint in the overlay; everything else is a
-              transform/opacity animation. */}
+          {/* Fire gradient growing outward from the button. The whole
+              overlay is just this one paint — radial-gradient is GPU-
+              composited so it stays smooth even as the radius scales. */}
           <div
             className="absolute inset-0"
             style={{
               background: `radial-gradient(circle at ${origin.x}% ${origin.y}%,
                 rgba(255,255,255,${0.95 * progress}) 0%,
-                rgba(254,243,199,${0.9 * progress}) ${radiusVmax * 0.14}vmax,
-                rgba(251,191,36,${0.85 * progress}) ${radiusVmax * 0.28}vmax,
-                rgba(249,115,22,${0.78 * progress}) ${radiusVmax * 0.46}vmax,
-                rgba(220,38,38,${0.6 * progress}) ${radiusVmax * 0.66}vmax,
-                rgba(127,29,29,${0.4 * progress}) ${radiusVmax * 0.85}vmax,
+                rgba(254,243,199,${0.92 * progress}) ${radiusVmax * 0.16}vmax,
+                rgba(251,191,36,${0.85 * progress}) ${radiusVmax * 0.32}vmax,
+                rgba(249,115,22,${0.78 * progress}) ${radiusVmax * 0.5}vmax,
+                rgba(220,38,38,${0.62 * progress}) ${radiusVmax * 0.7}vmax,
+                rgba(127,29,29,${0.4 * progress}) ${radiusVmax * 0.86}vmax,
                 transparent ${radiusVmax}vmax)`,
             }}
           />
 
-          {/* Single slow sunburst — 12 wider rays, masked with a
-              radial fade so the rays don't extend all the way to
-              center (where the mascot is). */}
+          {/* Single shockwave ring expanding from the button. Loops
+              while held — when the user releases and progress drains,
+              opacity scales down with progress so it fades out. */}
           <div
-            className="absolute animate-awaken-sunburst"
+            className="absolute rounded-full animate-awaken-shockwave"
             style={{
               left: `${origin.x}%`,
               top: `${origin.y}%`,
-              width: `${progress * 240}vmax`,
-              height: `${progress * 240}vmax`,
+              width: '14vmin',
+              height: '14vmin',
+              border: '2px solid rgba(254,243,199,0.95)',
+              boxShadow: '0 0 22px rgba(251,146,60,0.85)',
+              opacity: progress,
             }}
             aria-hidden
-          >
-            <div
-              className="w-full h-full rounded-full"
-              style={{
-                background: buildSunburstConic(12, 0.55 * progress, 10),
-                maskImage: 'radial-gradient(circle, transparent 18%, black 30%, transparent 72%)',
-                WebkitMaskImage: 'radial-gradient(circle, transparent 18%, black 30%, transparent 72%)',
-                opacity: glitchStrength,
-              }}
-            />
-          </div>
-
-          {/* Three shockwave rings staggered by 0.5s — simpler border
-              + glow (no double box-shadow which was hammering paint). */}
-          {[0, 0.55, 1.1].map((delay, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full animate-awaken-shockwave"
-              style={{
-                left: `${origin.x}%`,
-                top: `${origin.y}%`,
-                width: '14vmin',
-                height: '14vmin',
-                border: '2px solid rgba(254,243,199,0.95)',
-                boxShadow: '0 0 18px rgba(251,146,60,0.85)',
-                animationDelay: `${delay}s`,
-                opacity: progress,
-              }}
-              aria-hidden
-            />
-          ))}
-
-          {/* Lightning cracks — same 8 paths, but no SVG filter. CSS
-              drop-shadow on the outer SVG gives the glow at a fraction
-              of the cost of feGaussianBlur on every path. */}
-          <svg
-            className="absolute inset-0 w-full h-full"
-            preserveAspectRatio="none"
-            viewBox="0 0 100 100"
-            style={{
-              filter: 'drop-shadow(0 0 1.5px rgba(254,243,199,0.9))',
-            }}
-          >
-            <g transform={`translate(${origin.x - 50} ${origin.y - 45})`}>
-              {CRACK_PATHS.map((d, i) => (
-                <path
-                  key={i}
-                  d={d}
-                  stroke={i % 2 === 0 ? '#fef3c7' : '#fde047'}
-                  strokeWidth={0.55 + (i % 3) * 0.22}
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  pathLength="100"
-                  strokeDasharray="100"
-                  strokeDashoffset={100 * (1 - progress)}
-                  style={{ vectorEffect: 'non-scaling-stroke' }}
-                />
-              ))}
-            </g>
-          </svg>
-
-          {/* Eight embers — was 24, dropped to 8 for perf. */}
-          {Array.from({ length: 8 }).map((_, i) => {
-            const xJitter = (i * 73 + 31) % 240 - 120;
-            const yTarget = -(((i * 53 + 17) % 70) + 70);
-            const delay = (i % 5) * 0.2;
-            const startXOffset = ((i * 13) % 14) - 7;
-            return (
-              <div
-                key={i}
-                className="absolute rounded-full animate-awaken-ember"
-                style={{
-                  left: `${origin.x + startXOffset}%`,
-                  top: `${origin.y}%`,
-                  width: 6 + (i % 3) * 2,
-                  height: 6 + (i % 3) * 2,
-                  background:
-                    i % 2 === 0
-                      ? 'radial-gradient(circle, #fef3c7, #fb923c 60%, transparent)'
-                      : 'radial-gradient(circle, #fde047, #ef4444 60%, transparent)',
-                  ['--ember-x' as string]: `${xJitter}vw`,
-                  ['--ember-y' as string]: `${yTarget}vh`,
-                  animationDelay: `${delay}s`,
-                  opacity: progress,
-                }}
-                aria-hidden
-              />
-            );
-          })}
+          />
 
           {/* Final white flash on completion. */}
           <div

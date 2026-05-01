@@ -39,110 +39,135 @@ const LOCATION_OPTIONS: { key: ExerciseLocation; label: string; sub: string }[] 
   { key: 'bodyweight', label: 'Bodyweight only',      sub: 'No equipment — just me.' },
 ];
 
-const Icon = (children: React.ReactNode) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    {children}
-  </svg>
+// Each equipment icon is a colored-fill SVG with depth shading. Renders
+// in active orange tone when selected, otherwise muted slate.
+function EquipIcon({
+  active,
+  color,
+  children,
+}: {
+  active: boolean;
+  color: string;
+  children: React.ReactNode;
+}) {
+  const fill = active ? '#fb923c' : color;
+  return (
+    <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
+      <g style={{ color: fill }}>{children}</g>
+    </svg>
+  );
+}
+
+const equipDumbbell = (active: boolean) => (
+  <EquipIcon active={active} color="#94a3b8">
+    <rect x="2"  y="11" width="4"  height="10" rx="1" fill="currentColor" />
+    <rect x="26" y="11" width="4"  height="10" rx="1" fill="currentColor" />
+    <rect x="6"  y="13" width="2.5" height="6" fill="currentColor" opacity="0.7" />
+    <rect x="23.5" y="13" width="2.5" height="6" fill="currentColor" opacity="0.7" />
+    <rect x="8.5" y="14.5" width="15" height="3" rx="0.5" fill="currentColor" />
+    <rect x="2"  y="11" width="4" height="2" fill="#ffffff" opacity="0.18" />
+    <rect x="26" y="11" width="4" height="2" fill="#ffffff" opacity="0.18" />
+  </EquipIcon>
+);
+const equipBarbell = (active: boolean) => (
+  <EquipIcon active={active} color="#cbd5e1">
+    <rect x="0.5" y="9.5" width="3.5" height="13" rx="0.7" fill="currentColor" />
+    <rect x="28" y="9.5" width="3.5" height="13" rx="0.7" fill="currentColor" />
+    <rect x="4.5" y="11.5" width="2.5" height="9" fill="currentColor" opacity="0.7" />
+    <rect x="25" y="11.5" width="2.5" height="9" fill="currentColor" opacity="0.7" />
+    <rect x="7" y="14.5" width="18" height="3" rx="0.5" fill="currentColor" />
+    <rect x="0.5" y="9.5" width="3.5" height="2.5" fill="#ffffff" opacity="0.2" />
+  </EquipIcon>
+);
+const equipKettlebell = (active: boolean) => (
+  <EquipIcon active={active} color="#94a3b8">
+    <path d="M11 5h10c1.1 0 2 .9 2 2v1a3 3 0 01-1.5 2.6 8 8 0 11-11 0A3 3 0 019 8V7c0-1.1.9-2 2-2z" fill="currentColor" />
+    <ellipse cx="16" cy="13" rx="3.5" ry="1.5" fill="#ffffff" opacity="0.25" />
+    <ellipse cx="13" cy="20" rx="2" ry="1" fill="#ffffff" opacity="0.18" />
+  </EquipIcon>
+);
+const equipBench = (active: boolean) => (
+  <EquipIcon active={active} color="#cbd5e1">
+    <rect x="2" y="11" width="28" height="5" rx="1.5" fill="currentColor" />
+    <rect x="2" y="11" width="28" height="2" fill="#ffffff" opacity="0.2" />
+    <rect x="5" y="16" width="2.5" height="11" rx="0.5" fill="currentColor" opacity="0.85" />
+    <rect x="24.5" y="16" width="2.5" height="11" rx="0.5" fill="currentColor" opacity="0.85" />
+    <rect x="3" y="26" width="6" height="2" rx="0.5" fill="currentColor" opacity="0.7" />
+    <rect x="23" y="26" width="6" height="2" rx="0.5" fill="currentColor" opacity="0.7" />
+  </EquipIcon>
+);
+const equipSquatRack = (active: boolean) => (
+  <EquipIcon active={active} color="#94a3b8">
+    <rect x="4" y="3" width="2.5" height="26" rx="0.5" fill="currentColor" />
+    <rect x="25.5" y="3" width="2.5" height="26" rx="0.5" fill="currentColor" />
+    <rect x="2" y="6" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
+    <rect x="23" y="6" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
+    <rect x="2" y="13" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
+    <rect x="23" y="13" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
+    <rect x="6.5" y="11" width="19" height="2" rx="0.5" fill="currentColor" />
+  </EquipIcon>
+);
+const equipPullup = (active: boolean) => (
+  <EquipIcon active={active} color="#cbd5e1">
+    <rect x="3" y="3" width="26" height="2.5" rx="0.5" fill="currentColor" />
+    <rect x="3" y="3" width="26" height="1" fill="#ffffff" opacity="0.2" />
+    <rect x="6" y="2" width="2" height="6" rx="0.3" fill="currentColor" opacity="0.85" />
+    <rect x="24" y="2" width="2" height="6" rx="0.3" fill="currentColor" opacity="0.85" />
+    <rect x="11.5" y="5.5" width="1.5" height="9" rx="0.4" fill="currentColor" />
+    <rect x="19" y="5.5" width="1.5" height="9" rx="0.4" fill="currentColor" />
+    <circle cx="12.25" cy="14.5" r="0.6" fill="currentColor" opacity="0.5" />
+    <circle cx="19.75" cy="14.5" r="0.6" fill="currentColor" opacity="0.5" />
+    <circle cx="16" cy="20" r="3.5" fill="currentColor" opacity="0.85" />
+    <rect x="15.25" y="22" width="1.5" height="8" rx="0.4" fill="currentColor" opacity="0.7" />
+  </EquipIcon>
+);
+const equipCable = (active: boolean) => (
+  <EquipIcon active={active} color="#94a3b8">
+    <rect x="3" y="3" width="26" height="8" rx="1.5" fill="currentColor" />
+    <rect x="3" y="3" width="26" height="2" fill="#ffffff" opacity="0.2" />
+    <line x1="16" y1="11" x2="16" y2="20" stroke="currentColor" strokeWidth="1" strokeDasharray="2 1.5" opacity="0.7" />
+    <rect x="11" y="20" width="10" height="3.5" rx="0.7" fill="currentColor" opacity="0.85" />
+    <rect x="2" y="28" width="28" height="2" rx="0.5" fill="currentColor" opacity="0.7" />
+  </EquipIcon>
+);
+const equipCardio = (active: boolean) => (
+  <EquipIcon active={active} color="#22c55e">
+    <rect x="2" y="24" width="28" height="3.5" rx="1" fill="currentColor" opacity="0.85" />
+    <rect x="2" y="24" width="28" height="1.5" fill="#ffffff" opacity="0.2" />
+    <path d="M5 23l4-9 5-3 5 7 4 5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="14" cy="11" r="2" fill="currentColor" />
+  </EquipIcon>
+);
+const equipBands = (active: boolean) => (
+  <EquipIcon active={active} color="#a855f7">
+    <circle cx="7" cy="16" r="4" fill="currentColor" />
+    <circle cx="7" cy="16" r="2" fill="#0c0c14" />
+    <circle cx="25" cy="16" r="4" fill="currentColor" />
+    <circle cx="25" cy="16" r="2" fill="#0c0c14" />
+    <path d="M11 14c0-3 10-3 10 2 0 5-10 5-10 0z" fill="currentColor" opacity="0.6" />
+  </EquipIcon>
+);
+const equipBodyweight = (active: boolean) => (
+  <EquipIcon active={active} color="#fbbf24">
+    <circle cx="16" cy="6" r="3" fill="currentColor" />
+    <rect x="14.5" y="9.5" width="3" height="10" rx="1" fill="currentColor" />
+    <rect x="6" y="13" width="20" height="2.5" rx="1" fill="currentColor" opacity="0.85" />
+    <path d="M14 19l-4 9h2l3-7" fill="currentColor" />
+    <path d="M18 19l4 9h-2l-3-7" fill="currentColor" />
+  </EquipIcon>
 );
 
-const EQUIP_DUMBBELL = Icon(
-  <>
-    <rect x="2"  y="9"  width="3"  height="6" rx="0.5" />
-    <rect x="19" y="9"  width="3"  height="6" rx="0.5" />
-    <rect x="5"  y="10" width="2"  height="4" />
-    <rect x="17" y="10" width="2"  height="4" />
-    <line x1="7" y1="12" x2="17" y2="12" strokeWidth="2.5" />
-  </>
-);
-const EQUIP_BARBELL = Icon(
-  <>
-    <rect x="1"  y="9"  width="2.5" height="6" rx="0.5" />
-    <rect x="20.5" y="9" width="2.5" height="6" rx="0.5" />
-    <rect x="3.5" y="10.5" width="1.5" height="3" />
-    <rect x="19" y="10.5" width="1.5" height="3" />
-    <line x1="5" y1="12" x2="19" y2="12" strokeWidth="2" />
-  </>
-);
-const EQUIP_KETTLEBELL = Icon(
-  <>
-    <path d="M9 4h6a2 2 0 012 2v1a3 3 0 01-1 2.2A6 6 0 1118 15a3 3 0 011 2.3V18a2 2 0 01-2 2H7a2 2 0 01-2-2v-.7A3 3 0 016 15 6 6 0 118 9.2 3 3 0 017 7V6a2 2 0 012-2z" />
-  </>
-);
-const EQUIP_BENCH = Icon(
-  <>
-    <rect x="2" y="9" width="20" height="3" rx="1" />
-    <line x1="5" y1="12" x2="5" y2="20" />
-    <line x1="19" y1="12" x2="19" y2="20" />
-    <line x1="3" y1="20" x2="7" y2="20" />
-    <line x1="17" y1="20" x2="21" y2="20" />
-  </>
-);
-const EQUIP_SQUAT_RACK = Icon(
-  <>
-    <line x1="5"  y1="3" x2="5"  y2="21" />
-    <line x1="19" y1="3" x2="19" y2="21" />
-    <line x1="2"  y1="9" x2="22" y2="9" />
-    <rect x="3"  y="6" width="3" height="2" />
-    <rect x="18" y="6" width="3" height="2" />
-    <rect x="3"  y="14" width="3" height="2" />
-    <rect x="18" y="14" width="3" height="2" />
-  </>
-);
-const EQUIP_PULLUP = Icon(
-  <>
-    <line x1="3" y1="4" x2="21" y2="4" strokeWidth="2.5" />
-    <line x1="5" y1="2" x2="5" y2="6" />
-    <line x1="19" y1="2" x2="19" y2="6" />
-    <line x1="9" y1="4" x2="9" y2="11" />
-    <line x1="15" y1="4" x2="15" y2="11" />
-    <circle cx="12" cy="14" r="2.5" />
-    <line x1="12" y1="16.5" x2="12" y2="22" />
-  </>
-);
-const EQUIP_CABLE = Icon(
-  <>
-    <rect x="3" y="3" width="18" height="6" rx="1" />
-    <line x1="12" y1="9" x2="12" y2="16" strokeDasharray="2 1.5" />
-    <rect x="9" y="16" width="6" height="3" rx="0.5" />
-    <line x1="3" y1="21" x2="21" y2="21" />
-  </>
-);
-const EQUIP_CARDIO = Icon(
-  <>
-    <line x1="3" y1="20" x2="21" y2="20" strokeWidth="2" />
-    <path d="M5 17l3-7 4-2 4 5 3 4" />
-    <circle cx="11" cy="9" r="1.5" />
-  </>
-);
-const EQUIP_BANDS = Icon(
-  <>
-    <circle cx="6" cy="12" r="3" />
-    <circle cx="18" cy="12" r="3" />
-    <path d="M9 12c0-2 6-2 6 0s-6 2-6 0z" />
-  </>
-);
-const EQUIP_BODYWEIGHT = Icon(
-  <>
-    <circle cx="12" cy="5" r="2" />
-    <line x1="12" y1="7" x2="12" y2="14" />
-    <line x1="12" y1="14" x2="9" y2="20" />
-    <line x1="12" y1="14" x2="15" y2="20" />
-    <line x1="6" y1="11" x2="12" y2="11" />
-    <line x1="12" y1="11" x2="18" y2="11" />
-  </>
-);
-
-const EQUIPMENT_OPTIONS: { key: string; label: string; icon: React.ReactNode }[] = [
-  { key: 'dumbbells',   label: 'Dumbbells',    icon: EQUIP_DUMBBELL },
-  { key: 'barbell',     label: 'Barbell',      icon: EQUIP_BARBELL },
-  { key: 'kettlebells', label: 'Kettlebells',  icon: EQUIP_KETTLEBELL },
-  { key: 'bench',       label: 'Bench',        icon: EQUIP_BENCH },
-  { key: 'squat_rack',  label: 'Squat rack',   icon: EQUIP_SQUAT_RACK },
-  { key: 'pullup_bar',  label: 'Pull-up bar',  icon: EQUIP_PULLUP },
-  { key: 'cable',       label: 'Cable machine',icon: EQUIP_CABLE },
-  { key: 'cardio',      label: 'Cardio',       icon: EQUIP_CARDIO },
-  { key: 'bands',       label: 'Bands',        icon: EQUIP_BANDS },
-  { key: 'bodyweight',  label: 'Bodyweight',   icon: EQUIP_BODYWEIGHT },
+const EQUIPMENT_OPTIONS: { key: string; label: string; renderIcon: (active: boolean) => React.ReactNode }[] = [
+  { key: 'dumbbells',   label: 'Dumbbells',     renderIcon: equipDumbbell },
+  { key: 'barbell',     label: 'Barbell',       renderIcon: equipBarbell },
+  { key: 'kettlebells', label: 'Kettlebells',   renderIcon: equipKettlebell },
+  { key: 'bench',       label: 'Bench',         renderIcon: equipBench },
+  { key: 'squat_rack',  label: 'Squat rack',    renderIcon: equipSquatRack },
+  { key: 'pullup_bar',  label: 'Pull-up bar',   renderIcon: equipPullup },
+  { key: 'cable',       label: 'Cable machine', renderIcon: equipCable },
+  { key: 'cardio',      label: 'Cardio',        renderIcon: equipCardio },
+  { key: 'bands',       label: 'Bands',         renderIcon: equipBands },
+  { key: 'bodyweight',  label: 'Bodyweight',    renderIcon: equipBodyweight },
 ];
 
 const MUSCLE_OPTIONS: { key: MuscleKey; label: string }[] = [
@@ -440,7 +465,7 @@ function EquipmentStep({
                   : 'bg-[#10101a] border-white/8 hover:border-white/20 text-slate-300',
               )}
             >
-              <span className={cn(active ? 'text-orange-300' : 'text-slate-400')}>{opt.icon}</span>
+              {opt.renderIcon(active)}
               <span className={cn(
                 'text-[11px] font-bold uppercase tracking-wide text-center',
                 active ? 'text-white' : 'text-slate-200',

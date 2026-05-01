@@ -43,99 +43,119 @@ const CADENCE_OPTIONS: { key: ImprovementCadence; label: string; sub: string }[]
   { key: 'rarely',    label: "I'm just starting",  sub: 'This is mostly new.' },
 ];
 
-// Tiny inline SVGs for each struggle — kept simple (24x24 viewBox,
-// stroke-based) so they read well at the chip's icon-square size.
+// Each struggle/statement icon has a colored fill backdrop + a stroke
+// silhouette so the chip pops with color instead of reading as a flat
+// outline. The backdrop circle takes the icon's accent color; the
+// silhouette renders in white-ish on top.
 
-const Icon = (children: React.ReactNode) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    {children}
+interface IconShape {
+  color: string;
+  body: React.ReactNode;
+}
+
+const Icon = (color: string, body: React.ReactNode): IconShape => ({ color, body });
+
+const renderIcon = (shape: IconShape, active: boolean) => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="11" fill={shape.color} fillOpacity={active ? 0.9 : 0.18} />
+    <g
+      stroke={active ? '#0c0c14' : shape.color}
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    >
+      {shape.body}
+    </g>
   </svg>
 );
 
-const STRUGGLE_BACK = Icon(
+const STRUGGLE_BACK = Icon('#f97316', (
   <>
-    <path d="M9 3a3 3 0 016 0v3" />
-    <path d="M7 7c-2 0-2 4 0 7s3 4 5 4 3-1 5-4 2-7 0-7" />
-    <path d="M12 21v-4" />
+    <path d="M8 5a4 4 0 018 0v3" />
+    <path d="M7 9c-1.5 0-2 3 0 7c1.5 3 3 4 5 4s3.5-1 5-4c2-4 1.5-7 0-7" />
+    <line x1="12" y1="11" x2="12" y2="18" />
   </>
-);
-const STRUGGLE_KNEE = Icon(
+));
+const STRUGGLE_KNEE = Icon('#fb923c', (
   <>
-    <path d="M10 3v6l-3 6 3 5" />
-    <path d="M14 3v6l3 6-3 5" />
-    <circle cx="12" cy="11" r="3" />
+    <path d="M9 4v5l-2 4 2 5" />
+    <path d="M15 4v5l2 4-2 5" />
+    <circle cx="12" cy="12" r="3" fill="currentColor" fillOpacity="0.15" />
   </>
-);
-const STRUGGLE_SHOULDER = Icon(
+));
+const STRUGGLE_SHOULDER = Icon('#ef4444', (
   <>
-    <path d="M5 12c0-3 3-5 7-5s7 2 7 5" />
-    <path d="M5 12v6h3v-3" />
-    <path d="M19 12v6h-3v-3" />
-    <circle cx="6" cy="10" r="1.5" />
-    <circle cx="18" cy="10" r="1.5" />
+    <path d="M4 12c0-4 4-6 8-6s8 2 8 6" />
+    <circle cx="6" cy="9" r="2" fill="currentColor" fillOpacity="0.2" />
+    <circle cx="18" cy="9" r="2" fill="currentColor" fillOpacity="0.2" />
+    <line x1="6" y1="13" x2="6" y2="20" />
+    <line x1="18" y1="13" x2="18" y2="20" />
   </>
-);
-const STRUGGLE_WRIST = Icon(
+));
+const STRUGGLE_WRIST = Icon('#f59e0b', (
   <>
-    <path d="M6 4v6a4 4 0 008 0V4" />
-    <path d="M14 14v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4" />
-    <path d="M9 14h6" />
+    <path d="M7 4v6a5 5 0 0010 0V4" />
+    <rect x="8" y="14" width="8" height="6" rx="1.5" fill="currentColor" fillOpacity="0.2" />
   </>
-);
-const ICON_SLEEP = Icon(
+));
+const ICON_SLEEP = Icon('#8b5cf6', (
   <>
-    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+    <path d="M21 12.5A9 9 0 1111.5 3 7 7 0 0021 12.5z" fill="currentColor" fillOpacity="0.2" />
+    <circle cx="14" cy="9" r="0.6" fill="currentColor" />
+    <circle cx="17" cy="11" r="0.4" fill="currentColor" />
   </>
-);
-const ICON_PHONE = Icon(
+));
+const ICON_PHONE = Icon('#3b82f6', (
   <>
-    <rect x="6" y="2" width="12" height="20" rx="2" />
+    <rect x="6" y="3" width="12" height="18" rx="2" fill="currentColor" fillOpacity="0.18" />
     <line x1="11" y1="18" x2="13" y2="18" />
-    <path d="M9 6l1.5 1.5L13 5" />
+    <path d="M9 7l1.5 1.5L13 6" />
   </>
-);
-const ICON_WATER = Icon(
+));
+const ICON_WATER = Icon('#0ea5e9', (
   <>
-    <path d="M12 3s-6 6-6 11a6 6 0 0012 0c0-5-6-11-6-11z" />
+    <path d="M12 3s-6 7-6 12a6 6 0 0012 0c0-5-6-12-6-12z" fill="currentColor" fillOpacity="0.25" />
   </>
-);
-const ICON_ENERGY = Icon(
+));
+const ICON_ENERGY = Icon('#facc15', (
   <>
-    <rect x="3" y="8" width="16" height="8" rx="1.5" />
-    <line x1="20" y1="11" x2="22" y2="11" />
-    <line x1="20" y1="13" x2="22" y2="13" />
-    <line x1="6" y1="11" x2="9" y2="11" />
+    <rect x="3" y="8" width="14" height="8" rx="1.5" fill="currentColor" fillOpacity="0.15" />
+    <rect x="17" y="10" width="2.5" height="4" rx="0.5" fill="currentColor" />
+    <rect x="5" y="10" width="3.5" height="4" rx="0.5" fill="currentColor" fillOpacity="0.5" />
   </>
-);
-const ICON_STRESS = Icon(
+));
+const ICON_STRESS = Icon('#ec4899', (
   <>
     <path d="M3 12h3l2-5 4 10 2-5h7" />
   </>
-);
-const ICON_MORNING = Icon(
+));
+const ICON_MORNING = Icon('#fbbf24', (
   <>
-    <path d="M12 4v3" />
-    <path d="M5.6 7.6l2.1 2.1" />
-    <path d="M16.3 9.7l2.1-2.1" />
-    <path d="M2 17h20" />
-    <path d="M5 13a7 7 0 0114 0" />
+    <circle cx="12" cy="13" r="5" fill="currentColor" fillOpacity="0.25" />
+    <line x1="12" y1="3" x2="12" y2="6" />
+    <line x1="5"  y1="6" x2="7"  y2="8" />
+    <line x1="19" y1="6" x2="17" y2="8" />
+    <line x1="3" y1="13" x2="5" y2="13" />
+    <line x1="19" y1="13" x2="21" y2="13" />
+    <line x1="2" y1="20" x2="22" y2="20" />
   </>
-);
+));
 
-const STRUGGLES_BODY: { key: StruggleKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'sensitive_back',      label: 'Sensitive back',      icon: STRUGGLE_BACK },
-  { key: 'sensitive_knees',     label: 'Sensitive knees',     icon: STRUGGLE_KNEE },
-  { key: 'sensitive_shoulders', label: 'Sensitive shoulders', icon: STRUGGLE_SHOULDER },
-  { key: 'sensitive_wrists',    label: 'Sensitive wrists',    icon: STRUGGLE_WRIST },
+const STRUGGLES_BODY: { key: StruggleKey; label: string; shape: IconShape }[] = [
+  { key: 'sensitive_back',      label: 'Sensitive back',      shape: STRUGGLE_BACK },
+  { key: 'sensitive_knees',     label: 'Sensitive knees',     shape: STRUGGLE_KNEE },
+  { key: 'sensitive_shoulders', label: 'Sensitive shoulders', shape: STRUGGLE_SHOULDER },
+  { key: 'sensitive_wrists',    label: 'Sensitive wrists',    shape: STRUGGLE_WRIST },
 ];
 
-const STRUGGLES_LIFE: { key: StruggleKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'trouble_sleeping',       label: 'Trouble sleeping',       icon: ICON_SLEEP },
-  { key: 'phone_addiction',        label: 'Phone addiction',        icon: ICON_PHONE },
-  { key: 'forget_water',           label: 'Forget to drink water',  icon: ICON_WATER },
-  { key: 'energy_crashes',         label: 'Energy crashes',         icon: ICON_ENERGY },
-  { key: 'stress_anxiety',         label: 'Stress / anxiety',       icon: ICON_STRESS },
-  { key: 'low_morning_motivation', label: 'Low morning motivation', icon: ICON_MORNING },
+const STRUGGLES_LIFE: { key: StruggleKey; label: string; shape: IconShape }[] = [
+  { key: 'trouble_sleeping',       label: 'Trouble sleeping',       shape: ICON_SLEEP },
+  { key: 'phone_addiction',        label: 'Phone addiction',        shape: ICON_PHONE },
+  { key: 'forget_water',           label: 'Forget to drink water',  shape: ICON_WATER },
+  { key: 'energy_crashes',         label: 'Energy crashes',         shape: ICON_ENERGY },
+  { key: 'stress_anxiety',         label: 'Stress / anxiety',       shape: ICON_STRESS },
+  { key: 'low_morning_motivation', label: 'Low morning motivation', shape: ICON_MORNING },
 ];
 
 const ENERGY_OPTIONS: { key: EnergyLevel; label: string; sub: string }[] = [
@@ -144,59 +164,56 @@ const ENERGY_OPTIONS: { key: EnergyLevel; label: string; sub: string }[] = [
   { key: 'high',   label: 'High',   sub: 'I have plenty of energy.' },
 ];
 
-const ICON_LOOP = Icon(
+const ICON_LOOP = Icon('#06b6d4', (
   <>
     <path d="M21 12a9 9 0 11-3-6.7" />
     <polyline points="21 4 21 11 14 11" />
   </>
-);
-const ICON_LIMIT = Icon(
+));
+const ICON_LIMIT = Icon('#ef4444', (
   <>
-    <rect x="2" y="9" width="20" height="6" rx="1" />
-    <rect x="6" y="6" width="2" height="12" rx="0.5" />
-    <rect x="16" y="6" width="2" height="12" rx="0.5" />
+    <rect x="2" y="9" width="20" height="6" rx="1" fill="currentColor" fillOpacity="0.18" />
+    <rect x="6" y="5" width="2.5" height="14" rx="0.5" fill="currentColor" />
+    <rect x="15.5" y="5" width="2.5" height="14" rx="0.5" fill="currentColor" />
   </>
-);
-const ICON_INVISIBLE = Icon(
+));
+const ICON_INVISIBLE = Icon('#94a3b8', (
   <>
-    <path d="M3 12s4-7 9-7 9 7 9 7" opacity="0.4" />
-    <path d="M2 2l20 20" />
-    <circle cx="12" cy="12" r="3" />
+    <path d="M3 12s4-7 9-7 9 7 9 7" opacity="0.5" />
+    <line x1="3" y1="3" x2="21" y2="21" />
+    <circle cx="12" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
   </>
-);
-const ICON_INCONSISTENT = Icon(
+));
+const ICON_INCONSISTENT = Icon('#a855f7', (
   <>
-    <path d="M3 12s4-7 9-7 9 7 9 7-4 7-9 7-9-7-9-7z" opacity="0" />
-    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-    <path d="M2 18l3-2 2 3 3-3 2 2" />
+    <path d="M21 12.5A9 9 0 1111.5 3 7 7 0 0021 12.5z" fill="currentColor" fillOpacity="0.2" />
+    <path d="M3 18l2-2 2 3 3-3 2 2 3-2 2 2" />
   </>
-);
-const ICON_DISTRACTED = Icon(
+));
+const ICON_DISTRACTED = Icon('#22d3ee', (
   <>
-    <path d="M5 5l3 3" />
-    <path d="M19 5l-3 3" />
-    <path d="M5 19l3-3" />
-    <path d="M19 19l-3-3" />
-    <circle cx="12" cy="12" r="3" />
+    <line x1="5" y1="5" x2="9" y2="9" />
+    <line x1="19" y1="5" x2="15" y2="9" />
+    <line x1="5" y1="19" x2="9" y2="15" />
+    <line x1="19" y1="19" x2="15" y2="15" />
+    <circle cx="12" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
   </>
-);
-const ICON_BROKEN_CHAIN = Icon(
+));
+const ICON_BROKEN_CHAIN = Icon('#f59e0b', (
   <>
-    <path d="M9 11l-2 2a3 3 0 010-4l1-1" />
-    <path d="M15 13l2-2a3 3 0 000-4l-1-1" />
-    <line x1="11" y1="9" x2="9" y2="11" />
-    <line x1="13" y1="13" x2="15" y2="11" />
-    <line x1="3" y1="3" x2="21" y2="21" opacity="0.5" />
+    <path d="M10 11l-2 2a2.5 2.5 0 010-3.5l1.5-1.5a2.5 2.5 0 013.5 0L14 9" />
+    <path d="M14 13l2-2a2.5 2.5 0 010 3.5l-1.5 1.5a2.5 2.5 0 01-3.5 0L10 15" />
+    <line x1="3" y1="3" x2="21" y2="21" />
   </>
-);
+));
 
-const STATEMENT_OPTIONS: { key: StatementKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'follow_same_routine',      label: "I follow the same routine every time and don't know what to change.", icon: ICON_LOOP },
-  { key: 'dont_push_limits',         label: "I don't push myself as hard as I want to.",                            icon: ICON_LIMIT },
-  { key: 'progress_invisible',       label: 'Progress feels invisible — effort never feels like results.',          icon: ICON_INVISIBLE },
-  { key: 'inconsistent_sleep',       label: "My sleep is all over the place.",                                      icon: ICON_INCONSISTENT },
-  { key: 'distracted_easily',        label: "I get distracted easily and lose focus.",                              icon: ICON_DISTRACTED },
-  { key: 'cant_stick_with_anything', label: "I start strong but can't stick with anything long-term.",              icon: ICON_BROKEN_CHAIN },
+const STATEMENT_OPTIONS: { key: StatementKey; label: string; shape: IconShape }[] = [
+  { key: 'follow_same_routine',      label: "I follow the same routine every time and don't know what to change.", shape: ICON_LOOP },
+  { key: 'dont_push_limits',         label: "I don't push myself as hard as I want to.",                            shape: ICON_LIMIT },
+  { key: 'progress_invisible',       label: 'Progress feels invisible — effort never feels like results.',          shape: ICON_INVISIBLE },
+  { key: 'inconsistent_sleep',       label: "My sleep is all over the place.",                                      shape: ICON_INCONSISTENT },
+  { key: 'distracted_easily',        label: "I get distracted easily and lose focus.",                              shape: ICON_DISTRACTED },
+  { key: 'cant_stick_with_anything', label: "I start strong but can't stick with anything long-term.",              shape: ICON_BROKEN_CHAIN },
 ];
 
 export default function OnboardPhase4Page() {
@@ -330,7 +347,7 @@ function MultiSelectGrid<T extends string>({
   onChange,
   cols = 2,
 }: {
-  options: { key: T; label: string; icon?: React.ReactNode }[];
+  options: { key: T; label: string; shape?: IconShape }[];
   value: T[];
   onChange: (v: T[]) => void;
   cols?: 1 | 2;
@@ -354,16 +371,9 @@ function MultiSelectGrid<T extends string>({
                 : 'bg-[#10101a] border-white/8 hover:border-white/20',
             )}
           >
-            {opt.icon && (
-              <div
-                className={cn(
-                  'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                  active
-                    ? 'bg-orange-500/20 text-orange-200'
-                    : 'bg-white/[0.04] text-slate-300',
-                )}
-              >
-                {opt.icon}
+            {opt.shape && (
+              <div className="flex-shrink-0">
+                {renderIcon(opt.shape, active)}
               </div>
             )}
             <span className={cn('flex-1 font-semibold text-[13px] leading-snug', active ? 'text-white' : 'text-slate-200')}>
@@ -652,214 +662,217 @@ function SeeRealProgressStep() {
 // ─── Visuals ─────────────────────────────────────────────────────────────────
 
 /**
- * Two anatomically-suggested body silhouettes side-by-side. Both are
- * identical (the whole point — "progress feels invisible"). Built from
- * proper torso + pec + lat + leg shapes with a subtle radial highlight
- * so they read as 3D bodies, not stick figures. An "=" between them
- * with a tiny "?" call-out drives the message home.
+ * Detailed anatomical body figure used as the visual base for the
+ * mirror + blind-spot illustrations. `highlight` is a list of muscle
+ * group ids that get painted with the active orange-red gradient; the
+ * rest stay in the dim slate base color. `tone` switches the base —
+ * 'dim' for the mirror (both figures dim, no progress visible) and
+ * 'mixed' for the blind-spot (some bright, some dim).
  */
-function MirrorVisual() {
+type AnatomyMuscle = 'shoulders' | 'chest' | 'biceps' | 'forearms' | 'abs' | 'obliques' | 'lats' | 'quads' | 'calves';
+
+interface BodyFigureProps {
+  highlight?: AnatomyMuscle[];
+  weak?: AnatomyMuscle[];
+  scale?: number;
+  /** Append a unique gradient suffix when rendering more than one
+   *  figure on the same page so SVG <defs> ids don't collide. */
+  idSuffix?: string;
+}
+
+function BodyFigure({ highlight = [], weak = [], scale = 1, idSuffix = '' }: BodyFigureProps) {
+  const baseId = `bf-base${idSuffix}`;
+  const hotId = `bf-hot${idSuffix}`;
+  const dimRedId = `bf-dim${idSuffix}`;
+  const shineId = `bf-shine${idSuffix}`;
+  const isHot = (m: AnatomyMuscle) => highlight.includes(m);
+  const isWeak = (m: AnatomyMuscle) => weak.includes(m);
+  const fillFor = (m: AnatomyMuscle) =>
+    isHot(m) ? `url(#${hotId})` : isWeak(m) ? `url(#${dimRedId})` : `url(#${baseId})`;
+
+  const w = 110 * scale;
+  const h = 220 * scale;
+
   return (
-    <svg width="260" height="200" viewBox="0 0 260 200" fill="none">
+    <svg width={w} height={h} viewBox="0 0 110 220" fill="none">
       <defs>
-        <linearGradient id="mvBody" x1="0" y1="0" x2="0" y2="1">
+        {/* Base muscle (cool, dim) — light slate to dark navy */}
+        <linearGradient id={baseId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"  stopColor="#475569" />
-          <stop offset="60%" stopColor="#1e293b" />
-          <stop offset="100%" stopColor="#0f172a" />
+          <stop offset="55%" stopColor="#1e293b" />
+          <stop offset="100%" stopColor="#0c1322" />
         </linearGradient>
-        <radialGradient id="mvShine" cx="35%" cy="20%" r="55%">
-          <stop offset="0%"  stopColor="#94a3b8" stopOpacity="0.8" />
-          <stop offset="60%" stopColor="#94a3b8" stopOpacity="0" />
+        {/* Hot muscle — bright amber to deep red */}
+        <linearGradient id={hotId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#fde68a" />
+          <stop offset="35%" stopColor="#fb923c" />
+          <stop offset="80%" stopColor="#dc2626" />
+          <stop offset="100%" stopColor="#7f1d1d" />
+        </linearGradient>
+        {/* Weak muscle — desaturated dark red */}
+        <linearGradient id={dimRedId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#7f1d1d" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#3a0a0a" stopOpacity="0.85" />
+        </linearGradient>
+        {/* Specular sheen — top-left quarter */}
+        <radialGradient id={shineId} cx="32%" cy="22%" r="60%">
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {[55, 205].map((cx, idx) => (
-        <g key={idx}>
-          {/* Head — slightly oval, with a neck */}
-          <ellipse cx={cx} cy={32} rx={14} ry={16} fill="url(#mvBody)" />
-          <ellipse cx={cx} cy={32} rx={14} ry={16} fill="url(#mvShine)" />
-          <rect x={cx-5} y={46} width={10} height={6} fill="url(#mvBody)" />
-          {/* Shoulders + traps — wider trapezoid */}
-          <path
-            d={`M ${cx-30} 60 Q ${cx-32} 56 ${cx-26} 54 Q ${cx-12} 50 ${cx} 50 Q ${cx+12} 50 ${cx+26} 54 Q ${cx+32} 56 ${cx+30} 60 Z`}
-            fill="url(#mvBody)"
-          />
-          {/* Arms — taper from shoulder to wrist */}
-          <path
-            d={`M ${cx-30} 60 Q ${cx-36} 88 ${cx-32} 116 L ${cx-25} 116 Q ${cx-22} 90 ${cx-22} 64 Z`}
-            fill="url(#mvBody)"
-          />
-          <path
-            d={`M ${cx+30} 60 Q ${cx+36} 88 ${cx+32} 116 L ${cx+25} 116 Q ${cx+22} 90 ${cx+22} 64 Z`}
-            fill="url(#mvBody)"
-          />
-          {/* Torso — pecs + lat sweep + waist taper */}
-          <path
-            d={`M ${cx-26} 60
-                Q ${cx-30} 80 ${cx-24} 100
-                Q ${cx-22} 116 ${cx-18} 130
-                L ${cx+18} 130
-                Q ${cx+22} 116 ${cx+24} 100
-                Q ${cx+30} 80 ${cx+26} 60 Z`}
-            fill="url(#mvBody)"
-          />
-          {/* Pec line down center */}
-          <line x1={cx} y1={64} x2={cx} y2={108} stroke="#0f172a" strokeWidth="1" opacity="0.5" />
-          {/* Pec curves */}
-          <path d={`M ${cx-20} 70 Q ${cx-10} 86 ${cx} 86`} stroke="#0f172a" strokeWidth="1" fill="none" opacity="0.45" />
-          <path d={`M ${cx+20} 70 Q ${cx+10} 86 ${cx} 86`} stroke="#0f172a" strokeWidth="1" fill="none" opacity="0.45" />
-          {/* Abs hint */}
-          <line x1={cx-6} y1={100} x2={cx+6} y2={100} stroke="#0f172a" strokeWidth="0.8" opacity="0.5" />
-          <line x1={cx-6} y1={114} x2={cx+6} y2={114} stroke="#0f172a" strokeWidth="0.8" opacity="0.5" />
-          {/* Body shine highlight */}
-          <path
-            d={`M ${cx-26} 60
-                Q ${cx-30} 80 ${cx-24} 100
-                Q ${cx-22} 116 ${cx-18} 130
-                L ${cx+18} 130
-                Q ${cx+22} 116 ${cx+24} 100
-                Q ${cx+30} 80 ${cx+26} 60 Z`}
-            fill="url(#mvShine)"
-          />
-          {/* Legs — quad shapes */}
-          <path
-            d={`M ${cx-18} 130
-                Q ${cx-20} 148 ${cx-18} 168
-                Q ${cx-16} 178 ${cx-13} 178
-                L ${cx-3} 178
-                Q ${cx-2} 160 ${cx-2} 130 Z`}
-            fill="url(#mvBody)"
-          />
-          <path
-            d={`M ${cx+18} 130
-                Q ${cx+20} 148 ${cx+18} 168
-                Q ${cx+16} 178 ${cx+13} 178
-                L ${cx+3} 178
-                Q ${cx+2} 160 ${cx+2} 130 Z`}
-            fill="url(#mvBody)"
-          />
-          {/* Caption */}
-          <text x={cx} y={194} textAnchor="middle" fontSize="9" fill="#64748b" fontFamily="ui-monospace,monospace" letterSpacing="2">
-            {idx === 0 ? 'WEEK 1' : 'WEEK 6'}
-          </text>
-        </g>
-      ))}
-      {/* Equals + question */}
-      <g transform="translate(130 100)">
-        <line x1="-12" y1="-4" x2="12" y2="-4" stroke="#fb923c" strokeWidth="3" strokeLinecap="round" />
-        <line x1="-12" y1="6"  x2="12" y2="6"  stroke="#fb923c" strokeWidth="3" strokeLinecap="round" />
-        <text x="0" y="-22" textAnchor="middle" fontSize="20" fill="#ef4444" fontWeight="bold">?</text>
+
+      {/* Head + neck */}
+      <ellipse cx="55" cy="18" rx="11" ry="13" fill={`url(#${baseId})`} />
+      <ellipse cx="55" cy="18" rx="11" ry="13" fill={`url(#${shineId})`} />
+      <rect x="50" y="29" width="10" height="7" fill={`url(#${baseId})`} />
+
+      {/* Trapezius — slope from neck to shoulders */}
+      <path d="M 50 36 Q 38 38 30 44 Q 28 46 30 48 L 80 48 Q 82 46 80 44 Q 72 38 60 36 Z" fill={`url(#${baseId})`} />
+
+      {/* Shoulders / deltoids */}
+      <ellipse cx="22" cy="50" rx="10" ry="12" fill={fillFor('shoulders')} />
+      <ellipse cx="88" cy="50" rx="10" ry="12" fill={fillFor('shoulders')} />
+
+      {/* Pecs — two distinct chest plates */}
+      <path d="M 32 48 Q 50 50 54 52 L 54 76 Q 46 78 38 76 Q 30 72 30 60 Z" fill={fillFor('chest')} />
+      <path d="M 78 48 Q 60 50 56 52 L 56 76 Q 64 78 72 76 Q 80 72 80 60 Z" fill={fillFor('chest')} />
+      {/* Pec separation line */}
+      <line x1="55" y1="50" x2="55" y2="76" stroke="#0c1322" strokeWidth="0.8" opacity="0.6" />
+
+      {/* Biceps */}
+      <path d="M 14 56 Q 10 70 14 86 L 22 86 Q 24 70 22 56 Z" fill={fillFor('biceps')} />
+      <path d="M 96 56 Q 100 70 96 86 L 88 86 Q 86 70 88 56 Z" fill={fillFor('biceps')} />
+      {/* Bicep peak hint */}
+      <ellipse cx="18" cy="68" rx="3" ry="6" fill={fillFor('biceps')} opacity="0.55" />
+      <ellipse cx="92" cy="68" rx="3" ry="6" fill={fillFor('biceps')} opacity="0.55" />
+
+      {/* Forearms */}
+      <path d="M 14 88 Q 12 102 16 114 L 22 114 Q 24 102 22 88 Z" fill={fillFor('forearms')} />
+      <path d="M 96 88 Q 98 102 94 114 L 88 114 Q 86 102 88 88 Z" fill={fillFor('forearms')} />
+
+      {/* Lats — visible side panels under armpit */}
+      <path d="M 30 60 Q 26 80 30 100 L 36 100 Q 36 78 36 60 Z" fill={fillFor('lats')} opacity="0.85" />
+      <path d="M 80 60 Q 84 80 80 100 L 74 100 Q 74 78 74 60 Z" fill={fillFor('lats')} opacity="0.85" />
+
+      {/* Torso fill (under pecs) */}
+      <path d="M 32 76 L 78 76 L 76 100 Q 70 110 55 110 Q 40 110 34 100 Z" fill={`url(#${baseId})`} />
+
+      {/* Obliques — diagonal cuts at sides of waist */}
+      <path d="M 34 100 Q 30 110 32 120 L 40 120 Q 40 108 40 100 Z" fill={fillFor('obliques')} />
+      <path d="M 76 100 Q 80 110 78 120 L 70 120 Q 70 108 70 100 Z" fill={fillFor('obliques')} />
+
+      {/* Abs — 6-pack grid */}
+      <g>
+        <rect x="46" y="78" width="18" height="34" rx="1" fill={fillFor('abs')} />
+        <line x1="55" y1="78" x2="55" y2="112" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
+        <line x1="46" y1="86" x2="64" y2="86" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
+        <line x1="46" y1="96" x2="64" y2="96" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
+        <line x1="46" y1="106" x2="64" y2="106" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
       </g>
+
+      {/* Hip waistband */}
+      <path d="M 32 118 Q 36 122 55 122 Q 74 122 78 118 L 80 132 Q 70 134 55 134 Q 40 134 30 132 Z" fill={`url(#${baseId})`} />
+
+      {/* Quads */}
+      <path d="M 36 134 Q 32 156 32 184 L 44 184 Q 50 156 50 134 Z" fill={fillFor('quads')} />
+      <path d="M 74 134 Q 78 156 78 184 L 66 184 Q 60 156 60 134 Z" fill={fillFor('quads')} />
+      {/* Quad inner separation */}
+      <line x1="46" y1="138" x2="46" y2="180" stroke="#0c1322" strokeWidth="0.6" opacity="0.5" />
+      <line x1="64" y1="138" x2="64" y2="180" stroke="#0c1322" strokeWidth="0.6" opacity="0.5" />
+
+      {/* Knees */}
+      <ellipse cx="40" cy="186" rx="5" ry="3" fill={`url(#${baseId})`} />
+      <ellipse cx="70" cy="186" rx="5" ry="3" fill={`url(#${baseId})`} />
+
+      {/* Calves */}
+      <path d="M 36 190 Q 32 206 38 218 L 44 218 Q 46 204 44 190 Z" fill={fillFor('calves')} />
+      <path d="M 74 190 Q 78 206 72 218 L 66 218 Q 64 204 66 190 Z" fill={fillFor('calves')} />
+
+      {/* Specular sheen across whole body */}
+      <ellipse cx="55" cy="100" rx="55" ry="120" fill={`url(#${shineId})`} opacity="0.4" />
     </svg>
   );
 }
 
 /**
- * Anatomically-detailed body diagram: front-facing torso with discrete
- * muscle groups (chest, arms, abs, legs). Some are bright (strong),
- * some are dim red (weak). Floating rank badges call out the "A+" /
- * "F" / "B" tier of each muscle group with a leader line. A dotted
- * x-ray scan-band runs across the body so it reads as a diagnostic
- * scan, not a coloring book.
+ * Two anatomically-detailed body figures side-by-side, both dim — the
+ * point being there's no visible difference between Week 1 and Week 6.
+ * "?" + "=" between them drives the message home.
+ */
+function MirrorVisual() {
+  return (
+    <div className="flex items-end justify-center gap-6">
+      <div className="flex flex-col items-center gap-2">
+        <BodyFigure scale={0.85} idSuffix="-l" />
+        <span className="text-[9px] uppercase tracking-[2px] text-slate-500 font-mono">Week 1</span>
+      </div>
+      <div className="flex flex-col items-center gap-1 mb-6">
+        <span className="text-2xl text-red-400 font-bold leading-none">?</span>
+        <div className="flex flex-col gap-0.5">
+          <span className="block w-7 h-0.5 rounded-full bg-orange-400" />
+          <span className="block w-7 h-0.5 rounded-full bg-orange-400" />
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <BodyFigure scale={0.85} idSuffix="-r" />
+        <span className="text-[9px] uppercase tracking-[2px] text-slate-500 font-mono">Week 6</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Reuses BodyFigure for anatomical accuracy. Strong groups
+ * (shoulders, chest, biceps) are highlighted; weak groups (abs,
+ * right-side quads) painted in dim red. Rank badges float around the
+ * figure with leader lines pointing at their muscle group.
  */
 function BlindSpotVisual() {
   return (
-    <svg width="240" height="240" viewBox="0 0 240 240" fill="none">
-      <defs>
-        <linearGradient id="bsBright" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fb923c" />
-          <stop offset="60%" stopColor="#dc2626" />
-          <stop offset="100%" stopColor="#7f1d1d" />
-        </linearGradient>
-        <linearGradient id="bsBrightShine" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.55" />
-          <stop offset="100%" stopColor="#fef3c7" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="bsDim" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1e293b" />
-          <stop offset="100%" stopColor="#0f172a" />
-        </linearGradient>
-        <radialGradient id="bsScanGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
-        </radialGradient>
-      </defs>
+    <div className="relative">
+      <BodyFigure
+        highlight={['shoulders', 'chest', 'biceps']}
+        weak={['abs', 'quads']}
+        scale={0.95}
+        idSuffix="-bs"
+      />
+      {/* Floating rank badges — absolutely positioned around the
+          figure with leader lines pointing at their groups. */}
+      <RankBadge label="A+" tone="strong" pos={{ left: -8, top: 38 }} />
+      <RankBadge label="A"  tone="strong" pos={{ right: -8, top: 60 }} />
+      <RankBadge label="F"  tone="weak"   pos={{ left: -8, top: 96 }} />
+      <RankBadge label="D"  tone="weak"   pos={{ right: -8, top: 152 }} />
+    </div>
+  );
+}
 
-      {/* Body silhouette outline — base layer */}
-      <g stroke="#475569" strokeWidth="0.5" fill="url(#bsDim)">
-        {/* Head */}
-        <circle cx={120} cy={28} r={14} />
-        {/* Neck */}
-        <rect x={115} y={40} width={10} height={6} />
-        {/* Torso silhouette */}
-        <path d="M 92 56 Q 88 52 96 50 Q 110 46 120 46 Q 130 46 144 50 Q 152 52 148 56 L 152 90 Q 148 110 146 130 L 94 130 Q 92 110 88 90 Z" />
-        {/* Arms */}
-        <path d="M 92 56 Q 80 80 76 110 L 86 110 Q 88 88 96 64 Z" />
-        <path d="M 148 56 Q 160 80 164 110 L 154 110 Q 152 88 144 64 Z" />
-        {/* Legs */}
-        <path d="M 94 130 Q 90 160 92 200 L 110 200 Q 114 168 116 130 Z" />
-        <path d="M 146 130 Q 150 160 148 200 L 130 200 Q 126 168 124 130 Z" />
-      </g>
-
-      {/* === STRONG groups (orange) === */}
-      {/* Chest */}
-      <g>
-        <path d="M 96 60 Q 110 64 118 64 L 118 84 Q 102 82 96 76 Z" fill="url(#bsBright)" />
-        <path d="M 96 60 Q 110 64 118 64 L 118 84 Q 102 82 96 76 Z" fill="url(#bsBrightShine)" />
-        <path d="M 144 60 Q 130 64 122 64 L 122 84 Q 138 82 144 76 Z" fill="url(#bsBright)" />
-        <path d="M 144 60 Q 130 64 122 64 L 122 84 Q 138 82 144 76 Z" fill="url(#bsBrightShine)" />
-      </g>
-      {/* Arms — bicep + forearm */}
-      <g>
-        <path d="M 84 64 Q 80 80 82 96 L 92 96 Q 92 78 92 64 Z" fill="url(#bsBright)" />
-        <path d="M 156 64 Q 160 80 158 96 L 148 96 Q 148 78 148 64 Z" fill="url(#bsBright)" />
-      </g>
-
-      {/* === WEAK groups (dim red, this is the blind spot) === */}
-      {/* Abs */}
-      <g>
-        <rect x={108} y={88} width={24} height={36} rx={2} fill="#3a0a0a" />
-        <line x1={108} y1={100} x2={132} y2={100} stroke="#1e293b" strokeWidth="0.6" />
-        <line x1={108} y1={112} x2={132} y2={112} stroke="#1e293b" strokeWidth="0.6" />
-        <line x1={120} y1={88} x2={120} y2={124} stroke="#1e293b" strokeWidth="0.6" />
-      </g>
-      {/* Right thigh — weak */}
-      <g>
-        <path d="M 124 132 Q 124 158 128 184 L 142 184 Q 144 160 142 132 Z" fill="#3a0a0a" />
-      </g>
-
-      {/* Scan band — animated horizontal slice */}
-      <rect x="74" y="100" width="92" height="22" fill="url(#bsScanGlow)" opacity="0.75">
-        <animate
-          attributeName="y"
-          values="20; 200; 20"
-          dur="3.5s"
-          repeatCount="indefinite"
-        />
-      </rect>
-
-      {/* Strong rank badges */}
-      <g transform="translate(30 64)">
-        <rect width="34" height="20" rx="4" fill="#10101a" stroke="#fb923c" strokeWidth="1.2" />
-        <text x="17" y="14" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#fb923c" fontFamily="ui-monospace,monospace">A+</text>
-        <line x1="34" y1="10" x2="48" y2="10" stroke="#fb923c" strokeWidth="0.8" />
-      </g>
-      <g transform="translate(174 76)">
-        <rect width="34" height="20" rx="4" fill="#10101a" stroke="#fb923c" strokeWidth="1.2" />
-        <text x="17" y="14" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#fb923c" fontFamily="ui-monospace,monospace">A</text>
-        <line x1="0" y1="10" x2="-12" y2="10" stroke="#fb923c" strokeWidth="0.8" />
-      </g>
-      {/* Weak rank badges */}
-      <g transform="translate(30 102)">
-        <rect width="34" height="20" rx="4" fill="#10101a" stroke="#ef4444" strokeWidth="1.2" />
-        <text x="17" y="14" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#ef4444" fontFamily="ui-monospace,monospace">F</text>
-        <line x1="34" y1="10" x2="106" y2="106" stroke="#ef4444" strokeWidth="0.8" strokeDasharray="2 2" />
-      </g>
-      <g transform="translate(174 162)">
-        <rect width="34" height="20" rx="4" fill="#10101a" stroke="#ef4444" strokeWidth="1.2" />
-        <text x="17" y="14" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#ef4444" fontFamily="ui-monospace,monospace">D</text>
-        <line x1="0" y1="10" x2="-40" y2="-2" stroke="#ef4444" strokeWidth="0.8" strokeDasharray="2 2" />
-      </g>
-    </svg>
+function RankBadge({
+  label,
+  tone,
+  pos,
+}: {
+  label: string;
+  tone: 'strong' | 'weak';
+  pos: { left?: number; right?: number; top: number };
+}) {
+  const color = tone === 'strong' ? '#fb923c' : '#ef4444';
+  return (
+    <div
+      className="absolute flex items-center gap-1"
+      style={{ ...pos, fontFamily: 'ui-monospace,monospace' }}
+    >
+      <div
+        className="px-2 py-0.5 rounded-md font-bold text-[11px] tracking-wider"
+        style={{
+          color,
+          background: '#10101a',
+          border: `1.2px solid ${color}`,
+          boxShadow: `0 0 10px -2px ${color}`,
+        }}
+      >
+        {label}
+      </div>
+    </div>
   );
 }
 
