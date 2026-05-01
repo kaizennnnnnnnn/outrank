@@ -22,15 +22,17 @@ export interface ScrollPickerProps {
 }
 
 /**
- * Horizontal ruler-style number picker. The user scrolls the ticks
- * left/right to change the value; the center indicator marks the
- * current selection.
+ * Horizontal ruler-style number picker.
  *
- * Spacer widths live in React state (not imperative DOM .style.width)
- * because React re-applies the JSX `style` prop on every re-render —
- * any imperative DOM mutation gets wiped, leaving spacers at 0px and
- * truncating the scrollable range to ~the middle of the rail. Using
- * state means the width survives every re-render.
+ * Implementation uses ABSOLUTE-positioned ticks inside a
+ * fixed-width content div, NOT flex children with spacer divs. The
+ * flex approach kept biting us — mobile Safari doesn't always
+ * honor `width: <px>` on flex children with `flex-shrink: 0`,
+ * leaving spacers at content-size (0px) and cutting reachable
+ * scroll to roughly the middle of the range. Absolute positioning
+ * with an explicit container width has no such ambiguity: every
+ * tick lands at a known x, and the container's outer width
+ * dictates the scroll bounds exactly.
  */
 export function ScrollPicker({
   value,
@@ -47,15 +49,10 @@ export function ScrollPicker({
   const [halfWidth, setHalfWidth] = useState(0);
   const totalTicks = Math.floor((max - min) / step) + 1;
 
-  // Always read the latest value via ref so the resize observer's
-  // closure doesn't snap scroll back to a stale value when the user
-  // has already moved on.
   const valueRef = useRef(value);
   valueRef.current = value;
 
-  // Measure the container and keep half-width in state. The
-  // ResizeObserver fires on the container itself, not on user scroll,
-  // so this only updates on real layout changes (mount, rotation).
+  // Measure the container width once on mount + on every resize.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -66,14 +63,10 @@ export function ScrollPicker({
     return () => ro.disconnect();
   }, []);
 
-  // Once spacers are sized (halfWidth > 0), seed the scroll position
-  // to match the current value. Re-runs only when half-width itself
-  // changes (mount + resize), so the user's drag isn't fought.
+  // Seed scroll position once the half-width is known. rAF defers
+  // the write until after the new content layout is painted.
   useEffect(() => {
     if (!ref.current || halfWidth === 0) return;
-    // requestAnimationFrame defers to after the paint that applies
-    // the new spacer widths — otherwise scrollLeft is set against
-    // the old layout.
     const raf = requestAnimationFrame(() => {
       if (ref.current) {
         ref.current.scrollLeft = ((valueRef.current - min) / step) * TICK_WIDTH;
@@ -83,15 +76,18 @@ export function ScrollPicker({
   }, [halfWidth, min, step]);
 
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const container = e.currentTarget;
-    const ticks = Math.round(container.scrollLeft / TICK_WIDTH);
+    const ticks = Math.round(e.currentTarget.scrollLeft / TICK_WIDTH);
     const newValue = Math.max(min, Math.min(max, min + ticks * step));
     if (newValue !== value) onChange(newValue);
   };
 
+  // Total content width. Tick 0 sits at left = halfWidth, tick N-1 at
+  // left = halfWidth + (N-1)*TICK_WIDTH. Trailing halfWidth gives the
+  // last tick room to scroll all the way to the center indicator.
+  const contentWidth = halfWidth * 2 + Math.max(0, totalTicks - 1) * TICK_WIDTH;
+
   return (
     <div className={cn('flex flex-col items-center w-full select-none', className)}>
-      {/* Big value + unit */}
       <div className="font-heading text-7xl font-bold text-white tabular-nums leading-none">
         {formatValue ? formatValue(value) : value}
         {unit && (
@@ -101,7 +97,6 @@ export function ScrollPicker({
         )}
       </div>
 
-      {/* Picker rail */}
       <div className="relative w-full mt-12">
         {/* Center indicator */}
         <div
@@ -131,15 +126,22 @@ export function ScrollPicker({
             touchAction: 'pan-x',
           }}
         >
-          <div className="flex items-end h-14">
-            <div style={{ width: halfWidth, flexShrink: 0 }} aria-hidden />
+          <div
+            className="relative"
+            style={{ width: contentWidth, height: 56 }}
+          >
             {Array.from({ length: totalTicks }).map((_, i) => {
               const isMajor = i % majorEvery === 0;
               return (
                 <div
                   key={i}
-                  className="flex-shrink-0 flex items-end justify-center"
-                  style={{ width: TICK_WIDTH, scrollSnapAlign: 'center' }}
+                  className="absolute bottom-0 flex items-end justify-center"
+                  style={{
+                    left: halfWidth + i * TICK_WIDTH - TICK_WIDTH / 2,
+                    width: TICK_WIDTH,
+                    height: 56,
+                    scrollSnapAlign: 'center',
+                  }}
                 >
                   <div
                     className={cn(
@@ -150,7 +152,6 @@ export function ScrollPicker({
                 </div>
               );
             })}
-            <div style={{ width: halfWidth, flexShrink: 0 }} aria-hidden />
           </div>
         </div>
       </div>

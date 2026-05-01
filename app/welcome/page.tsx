@@ -40,41 +40,17 @@ export default function WelcomePage() {
 
       {/* Hero */}
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
-        {/* Entry: a soft warm halo blooms first, then the phoenix
-            fades in with a gentle scale + tiny up-then-settle bounce.
-            No rotation wobble — it was reading as the mascot
-            "disappearing then reappearing" rather than arriving.
-            After mount the mascot plays its one-shot greeting wing-
-            wave on top of the idle bob. */}
-        <div className="relative">
-          <motion.div
-            className="absolute inset-0 m-auto rounded-full pointer-events-none"
-            initial={{ opacity: 0, scale: 0.4 }}
-            animate={{ opacity: [0, 0.85, 0], scale: [0.4, 1.6, 2.2] }}
-            transition={{ duration: 1.4, ease: 'easeOut' }}
-            style={{
-              width: 200,
-              height: 200,
-              background: 'radial-gradient(circle, rgba(251,146,60,0.55), rgba(239,68,68,0.25) 50%, transparent 75%)',
-              filter: 'blur(18px)',
-            }}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 18 }}
-            animate={{
-              opacity: 1,
-              scale: [0.92, 1.06, 1],
-              y: [18, -4, 0],
-            }}
-            transition={{
-              duration: 0.9,
-              times: [0, 0.65, 1],
-              ease: [0.16, 1, 0.3, 1],
-            }}
-          >
-            <PhoenixMascot size={150} greeting />
-          </motion.div>
-        </div>
+        {/* Entry: just a clean fade + small scale. The previous
+            keyframe array was producing a bounce that read as the
+            mascot blinking in and out. The greeting wing-wave on
+            mount handles the "do something cute" part. */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.88 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <PhoenixMascot size={150} greeting />
+        </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 16 }}

@@ -685,137 +685,243 @@ function BodyFigure({ highlight = [], weak = [], scale = 1, idSuffix = '' }: Bod
   const hotId = `bf-hot${idSuffix}`;
   const dimRedId = `bf-dim${idSuffix}`;
   const shineId = `bf-shine${idSuffix}`;
+  const shadowId = `bf-shadow${idSuffix}`;
   const isHot = (m: AnatomyMuscle) => highlight.includes(m);
   const isWeak = (m: AnatomyMuscle) => weak.includes(m);
   const fillFor = (m: AnatomyMuscle) =>
     isHot(m) ? `url(#${hotId})` : isWeak(m) ? `url(#${dimRedId})` : `url(#${baseId})`;
 
-  const w = 110 * scale;
-  const h = 220 * scale;
+  const w = 140 * scale;
+  const h = 280 * scale;
 
   return (
-    <svg width={w} height={h} viewBox="0 0 110 220" fill="none">
+    <svg width={w} height={h} viewBox="0 0 140 280" fill="none">
       <defs>
-        {/* Base muscle (cool, dim) — light slate to dark navy */}
+        {/* Base muscle — slate to navy. Lighter top, darker bottom for
+            depth. */}
         <linearGradient id={baseId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#475569" />
-          <stop offset="55%" stopColor="#1e293b" />
+          <stop offset="0%"  stopColor="#64748b" />
+          <stop offset="40%" stopColor="#334155" />
+          <stop offset="80%" stopColor="#1e293b" />
           <stop offset="100%" stopColor="#0c1322" />
         </linearGradient>
-        {/* Hot muscle — bright amber to deep red */}
+        {/* Hot muscle — saturated amber to deep red */}
         <linearGradient id={hotId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#fde68a" />
-          <stop offset="35%" stopColor="#fb923c" />
-          <stop offset="80%" stopColor="#dc2626" />
+          <stop offset="0%"  stopColor="#fef3c7" />
+          <stop offset="20%" stopColor="#fde68a" />
+          <stop offset="50%" stopColor="#fb923c" />
+          <stop offset="85%" stopColor="#dc2626" />
           <stop offset="100%" stopColor="#7f1d1d" />
         </linearGradient>
         {/* Weak muscle — desaturated dark red */}
         <linearGradient id={dimRedId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#7f1d1d" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#3a0a0a" stopOpacity="0.85" />
+          <stop offset="0%"  stopColor="#9a1717" />
+          <stop offset="50%" stopColor="#5c0c0c" />
+          <stop offset="100%" stopColor="#2a0606" />
         </linearGradient>
-        {/* Specular sheen — top-left quarter */}
-        <radialGradient id={shineId} cx="32%" cy="22%" r="60%">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.25" />
+        {/* Specular sheen */}
+        <linearGradient id={shineId} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="40%" stopColor="#ffffff" stopOpacity="0.18" />
+          <stop offset="60%" stopColor="#ffffff" stopOpacity="0.18" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+        {/* Drop shadow under figure */}
+        <radialGradient id={shadowId} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#000000" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
         </radialGradient>
       </defs>
 
-      {/* Head + neck */}
-      <ellipse cx="55" cy="18" rx="11" ry="13" fill={`url(#${baseId})`} />
-      <ellipse cx="55" cy="18" rx="11" ry="13" fill={`url(#${shineId})`} />
-      <rect x="50" y="29" width="10" height="7" fill={`url(#${baseId})`} />
+      {/* Floor shadow */}
+      <ellipse cx="70" cy="274" rx="36" ry="5" fill={`url(#${shadowId})`} />
 
-      {/* Trapezius — slope from neck to shoulders */}
-      <path d="M 50 36 Q 38 38 30 44 Q 28 46 30 48 L 80 48 Q 82 46 80 44 Q 72 38 60 36 Z" fill={`url(#${baseId})`} />
+      {/* Head — oval with a soft jawline */}
+      <path
+        d="M 70 6 Q 56 6 54 18 Q 53 28 56 35 Q 60 42 70 42 Q 80 42 84 35 Q 87 28 86 18 Q 84 6 70 6 Z"
+        fill={`url(#${baseId})`}
+      />
+      {/* Cheek shadow */}
+      <path d="M 56 24 Q 60 32 70 36 Q 80 32 84 24" stroke="#0c1322" strokeWidth="0.4" fill="none" opacity="0.5" />
 
-      {/* Shoulders / deltoids */}
-      <ellipse cx="22" cy="50" rx="10" ry="12" fill={fillFor('shoulders')} />
-      <ellipse cx="88" cy="50" rx="10" ry="12" fill={fillFor('shoulders')} />
+      {/* Neck */}
+      <path d="M 63 38 Q 63 44 60 50 Q 70 52 80 50 Q 77 44 77 38 Z" fill={`url(#${baseId})`} />
 
-      {/* Pecs — two distinct chest plates */}
-      <path d="M 32 48 Q 50 50 54 52 L 54 76 Q 46 78 38 76 Q 30 72 30 60 Z" fill={fillFor('chest')} />
-      <path d="M 78 48 Q 60 50 56 52 L 56 76 Q 64 78 72 76 Q 80 72 80 60 Z" fill={fillFor('chest')} />
-      {/* Pec separation line */}
-      <line x1="55" y1="50" x2="55" y2="76" stroke="#0c1322" strokeWidth="0.8" opacity="0.6" />
+      {/* Trapezius (back of neck to shoulders) */}
+      <path
+        d="M 56 50 Q 42 52 28 58 Q 22 60 22 64 L 118 64 Q 118 60 112 58 Q 98 52 84 50 Q 78 53 70 54 Q 62 53 56 50 Z"
+        fill={`url(#${baseId})`}
+      />
 
-      {/* Biceps */}
-      <path d="M 14 56 Q 10 70 14 86 L 22 86 Q 24 70 22 56 Z" fill={fillFor('biceps')} />
-      <path d="M 96 56 Q 100 70 96 86 L 88 86 Q 86 70 88 56 Z" fill={fillFor('biceps')} />
-      {/* Bicep peak hint */}
-      <ellipse cx="18" cy="68" rx="3" ry="6" fill={fillFor('biceps')} opacity="0.55" />
-      <ellipse cx="92" cy="68" rx="3" ry="6" fill={fillFor('biceps')} opacity="0.55" />
+      {/* Deltoids — wider and more rounded */}
+      <ellipse cx="24" cy="68" rx="14" ry="14" fill={fillFor('shoulders')} />
+      <ellipse cx="116" cy="68" rx="14" ry="14" fill={fillFor('shoulders')} />
+      {/* Delt fiber striations */}
+      <path d="M 14 64 Q 22 60 30 65" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
+      <path d="M 110 64 Q 118 60 126 65" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
+      <path d="M 14 72 Q 22 76 30 73" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
+      <path d="M 110 72 Q 118 76 126 73" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
 
-      {/* Forearms */}
-      <path d="M 14 88 Q 12 102 16 114 L 22 114 Q 24 102 22 88 Z" fill={fillFor('forearms')} />
-      <path d="M 96 88 Q 98 102 94 114 L 88 114 Q 86 102 88 88 Z" fill={fillFor('forearms')} />
+      {/* Upper chest — pec plates with anatomical shape */}
+      <path
+        d="M 38 64 Q 60 62 68 66 L 68 100 Q 56 102 44 96 Q 34 90 34 80 Z"
+        fill={fillFor('chest')}
+      />
+      <path
+        d="M 102 64 Q 80 62 72 66 L 72 100 Q 84 102 96 96 Q 106 90 106 80 Z"
+        fill={fillFor('chest')}
+      />
+      {/* Pec separation crease */}
+      <line x1="70" y1="66" x2="70" y2="100" stroke="#0c1322" strokeWidth="1.2" opacity="0.65" />
+      {/* Pec underline */}
+      <path d="M 36 90 Q 50 98 68 98" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.45" />
+      <path d="M 104 90 Q 90 98 72 98" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.45" />
 
-      {/* Lats — visible side panels under armpit */}
-      <path d="M 30 60 Q 26 80 30 100 L 36 100 Q 36 78 36 60 Z" fill={fillFor('lats')} opacity="0.85" />
-      <path d="M 80 60 Q 84 80 80 100 L 74 100 Q 74 78 74 60 Z" fill={fillFor('lats')} opacity="0.85" />
+      {/* Biceps — pronounced peaks */}
+      <path
+        d="M 12 76 Q 8 96 14 116 L 28 116 Q 32 96 28 74 Q 20 70 12 76 Z"
+        fill={fillFor('biceps')}
+      />
+      <path
+        d="M 128 76 Q 132 96 126 116 L 112 116 Q 108 96 112 74 Q 120 70 128 76 Z"
+        fill={fillFor('biceps')}
+      />
+      {/* Bicep peak highlight */}
+      <ellipse cx="20" cy="90" rx="4" ry="9" fill={fillFor('biceps')} opacity="0.5" />
+      <ellipse cx="120" cy="90" rx="4" ry="9" fill={fillFor('biceps')} opacity="0.5" />
+      {/* Bicep/tricep separation */}
+      <path d="M 14 80 Q 18 94 16 110" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.5" />
+      <path d="M 126 80 Q 122 94 124 110" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.5" />
 
-      {/* Torso fill (under pecs) */}
-      <path d="M 32 76 L 78 76 L 76 100 Q 70 110 55 110 Q 40 110 34 100 Z" fill={`url(#${baseId})`} />
+      {/* Forearms — tapered */}
+      <path
+        d="M 14 116 Q 11 134 14 150 L 26 150 Q 30 134 28 116 Z"
+        fill={fillFor('forearms')}
+      />
+      <path
+        d="M 126 116 Q 129 134 126 150 L 114 150 Q 110 134 112 116 Z"
+        fill={fillFor('forearms')}
+      />
+      {/* Forearm muscle definition */}
+      <path d="M 18 122 Q 20 134 18 146" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
+      <path d="M 122 122 Q 120 134 122 146" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
 
-      {/* Obliques — diagonal cuts at sides of waist */}
-      <path d="M 34 100 Q 30 110 32 120 L 40 120 Q 40 108 40 100 Z" fill={fillFor('obliques')} />
-      <path d="M 76 100 Q 80 110 78 120 L 70 120 Q 70 108 70 100 Z" fill={fillFor('obliques')} />
+      {/* Lats — visible from front along the sides */}
+      <path
+        d="M 34 80 Q 28 110 32 130 L 40 130 Q 40 110 40 80 Z"
+        fill={fillFor('lats')}
+      />
+      <path
+        d="M 106 80 Q 112 110 108 130 L 100 130 Q 100 110 100 80 Z"
+        fill={fillFor('lats')}
+      />
 
-      {/* Abs — 6-pack grid */}
+      {/* Mid torso — serratus + transition */}
+      <path d="M 40 100 L 100 100 L 96 130 Q 86 138 70 138 Q 54 138 44 130 Z" fill={`url(#${baseId})`} />
+
+      {/* Obliques — V-cut at the waist */}
+      <path d="M 44 130 Q 38 142 40 154 L 52 154 Q 52 138 52 130 Z" fill={fillFor('obliques')} />
+      <path d="M 96 130 Q 102 142 100 154 L 88 154 Q 88 138 88 130 Z" fill={fillFor('obliques')} />
+
+      {/* Abs — 6-pack grid with deeper separations */}
       <g>
-        <rect x="46" y="78" width="18" height="34" rx="1" fill={fillFor('abs')} />
-        <line x1="55" y1="78" x2="55" y2="112" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
-        <line x1="46" y1="86" x2="64" y2="86" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
-        <line x1="46" y1="96" x2="64" y2="96" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
-        <line x1="46" y1="106" x2="64" y2="106" stroke="#0c1322" strokeWidth="0.5" opacity={isHot('abs') || isWeak('abs') ? '0.7' : '0.4'} />
+        <rect x="55" y="100" width="30" height="44" rx="2" fill={fillFor('abs')} />
+        <line x1="70" y1="100" x2="70" y2="144" stroke="#0c1322" strokeWidth="1" opacity={isHot('abs') ? 0.7 : 0.55} />
+        <line x1="55" y1="112" x2="85" y2="112" stroke="#0c1322" strokeWidth="0.8" opacity={isHot('abs') ? 0.7 : 0.5} />
+        <line x1="55" y1="124" x2="85" y2="124" stroke="#0c1322" strokeWidth="0.8" opacity={isHot('abs') ? 0.7 : 0.5} />
+        <line x1="55" y1="136" x2="85" y2="136" stroke="#0c1322" strokeWidth="0.8" opacity={isHot('abs') ? 0.7 : 0.5} />
+        {/* Ab brightness highlights when hot */}
+        {isHot('abs') && (
+          <>
+            <rect x="56" y="101" width="13" height="10" rx="1" fill="#ffffff" opacity="0.18" />
+            <rect x="71" y="101" width="13" height="10" rx="1" fill="#ffffff" opacity="0.18" />
+          </>
+        )}
       </g>
 
-      {/* Hip waistband */}
-      <path d="M 32 118 Q 36 122 55 122 Q 74 122 78 118 L 80 132 Q 70 134 55 134 Q 40 134 30 132 Z" fill={`url(#${baseId})`} />
+      {/* Hip waistband / pelvis */}
+      <path d="M 40 152 Q 46 158 70 158 Q 94 158 100 152 L 102 168 Q 88 172 70 172 Q 52 172 38 168 Z" fill={`url(#${baseId})`} />
 
-      {/* Quads */}
-      <path d="M 36 134 Q 32 156 32 184 L 44 184 Q 50 156 50 134 Z" fill={fillFor('quads')} />
-      <path d="M 74 134 Q 78 156 78 184 L 66 184 Q 60 156 60 134 Z" fill={fillFor('quads')} />
-      {/* Quad inner separation */}
-      <line x1="46" y1="138" x2="46" y2="180" stroke="#0c1322" strokeWidth="0.6" opacity="0.5" />
-      <line x1="64" y1="138" x2="64" y2="180" stroke="#0c1322" strokeWidth="0.6" opacity="0.5" />
+      {/* Quads — distinct outer + inner separation */}
+      <path d="M 44 170 Q 38 200 38 234 L 56 234 Q 64 200 64 170 Z" fill={fillFor('quads')} />
+      <path d="M 96 170 Q 102 200 102 234 L 84 234 Q 76 200 76 170 Z" fill={fillFor('quads')} />
+      {/* Vastus lateralis (outer thigh ridge) */}
+      <path d="M 42 178 Q 40 200 42 226" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.45" />
+      <path d="M 98 178 Q 100 200 98 226" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.45" />
+      {/* Inner-thigh separation */}
+      <path d="M 58 178 Q 58 200 58 230" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.55" />
+      <path d="M 82 178 Q 82 200 82 230" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.55" />
 
-      {/* Knees */}
-      <ellipse cx="40" cy="186" rx="5" ry="3" fill={`url(#${baseId})`} />
-      <ellipse cx="70" cy="186" rx="5" ry="3" fill={`url(#${baseId})`} />
+      {/* Knee caps */}
+      <ellipse cx="50" cy="237" rx="6" ry="3.5" fill={`url(#${baseId})`} />
+      <ellipse cx="90" cy="237" rx="6" ry="3.5" fill={`url(#${baseId})`} />
 
-      {/* Calves */}
-      <path d="M 36 190 Q 32 206 38 218 L 44 218 Q 46 204 44 190 Z" fill={fillFor('calves')} />
-      <path d="M 74 190 Q 78 206 72 218 L 66 218 Q 64 204 66 190 Z" fill={fillFor('calves')} />
+      {/* Calves — diamond shape */}
+      <path d="M 44 242 Q 38 256 44 272 L 56 272 Q 60 256 56 242 Z" fill={fillFor('calves')} />
+      <path d="M 96 242 Q 102 256 96 272 L 84 272 Q 80 256 84 242 Z" fill={fillFor('calves')} />
+      {/* Calf muscle bulge highlight */}
+      <ellipse cx="50" cy="252" rx="3" ry="6" fill={fillFor('calves')} opacity="0.55" />
+      <ellipse cx="90" cy="252" rx="3" ry="6" fill={fillFor('calves')} opacity="0.55" />
 
-      {/* Specular sheen across whole body */}
-      <ellipse cx="55" cy="100" rx="55" ry="120" fill={`url(#${shineId})`} opacity="0.4" />
+      {/* Whole-body shine — narrow vertical strip down the middle */}
+      <ellipse cx="70" cy="140" rx="50" ry="130" fill={`url(#${shineId})`} opacity="0.7" />
     </svg>
   );
 }
 
 /**
- * Two anatomically-detailed body figures side-by-side, both dim — the
- * point being there's no visible difference between Week 1 and Week 6.
- * "?" + "=" between them drives the message home.
+ * Two stacked sparklines that tell the message without humans:
+ * EFFORT trends up sharply (steep, glowing orange line, 47 logged
+ * sessions) while RESULTS stays nearly flat (dim, barely lifting,
+ * "no visible change" tag). The divergence between the two lines
+ * IS the visual idea — effort meter pegged, mirror still says zero.
  */
 function MirrorVisual() {
+  // 8-point sparklines from x=0..280, y in 0..70 (lower y = higher on chart)
+  const effortPoints: [number, number][] = [
+    [0, 64], [40, 58], [80, 50], [120, 40], [160, 30], [200, 22], [240, 14], [280, 8],
+  ];
+  const resultPoints: [number, number][] = [
+    [0, 60], [40, 58], [80, 60], [120, 56], [160, 58], [200, 55], [240, 56], [280, 54],
+  ];
+  const toPath = (pts: [number, number][]) =>
+    pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p[0]} ${p[1]}`).join(' ');
+  const toAreaPath = (pts: [number, number][]) =>
+    `${toPath(pts)} L ${pts[pts.length - 1][0]} 70 L ${pts[0][0]} 70 Z`;
+
   return (
-    <div className="flex items-end justify-center gap-6">
-      <div className="flex flex-col items-center gap-2">
-        <BodyFigure scale={0.85} idSuffix="-l" />
-        <span className="text-[9px] uppercase tracking-[2px] text-slate-500 font-mono">Week 1</span>
-      </div>
-      <div className="flex flex-col items-center gap-1 mb-6">
-        <span className="text-2xl text-red-400 font-bold leading-none">?</span>
-        <div className="flex flex-col gap-0.5">
-          <span className="block w-7 h-0.5 rounded-full bg-orange-400" />
-          <span className="block w-7 h-0.5 rounded-full bg-orange-400" />
+    <div className="w-full max-w-sm mx-auto">
+      <div className="space-y-3">
+        {/* EFFORT card */}
+        <div className="rounded-2xl bg-orange-500/10 border border-orange-500/30 p-4">
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-300">Effort</span>
+            <span className="font-heading text-xl font-bold text-white tabular-nums">47<span className="text-[10px] text-slate-400 ml-1">SESSIONS</span></span>
+          </div>
+          <svg viewBox="0 0 280 76" className="w-full h-16" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="effortFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fb923c" stopOpacity="0.45" />
+                <stop offset="100%" stopColor="#fb923c" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={toAreaPath(effortPoints)} fill="url(#effortFill)" />
+            <path d={toPath(effortPoints)} stroke="#fb923c" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.6))' }} />
+            <circle cx={effortPoints[effortPoints.length - 1][0]} cy={effortPoints[effortPoints.length - 1][1]} r="3.5" fill="#fef3c7" />
+          </svg>
         </div>
-      </div>
-      <div className="flex flex-col items-center gap-2">
-        <BodyFigure scale={0.85} idSuffix="-r" />
-        <span className="text-[9px] uppercase tracking-[2px] text-slate-500 font-mono">Week 6</span>
+
+        {/* RESULTS card — dim, barely moving */}
+        <div className="rounded-2xl bg-white/[0.02] border border-white/[0.08] p-4">
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Visible results</span>
+            <span className="font-heading text-xl font-bold text-slate-400 tabular-nums">~0%</span>
+          </div>
+          <svg viewBox="0 0 280 76" className="w-full h-16" preserveAspectRatio="none">
+            <path d={toPath(resultPoints)} stroke="#475569" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx={resultPoints[resultPoints.length - 1][0]} cy={resultPoints[resultPoints.length - 1][1]} r="3" fill="#64748b" />
+          </svg>
+        </div>
       </div>
     </div>
   );
@@ -918,52 +1024,153 @@ function MotivationVisual() {
   );
 }
 
-/** Mountain with a path zigzagging up to a glowing rank crystal at the peak. */
+/**
+ * Dramatic mountain scene: starry sky, three layered mountains with
+ * atmospheric perspective (back ones bluer/dimmer), snow-cap shading,
+ * a winding ascending path with footprint markers, and a glowing
+ * faceted rank crystal at the peak with rays + scattered sparks.
+ */
 function PathVisual() {
   return (
-    <svg width="220" height="180" viewBox="0 0 220 180" fill="none">
+    <svg width="280" height="220" viewBox="0 0 280 220" fill="none">
       <defs>
-        <linearGradient id="mountainBg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1e293b" />
+        {/* Sky — deep navy fading to lighter at horizon */}
+        <linearGradient id="pvSky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#0c1322" />
+          <stop offset="60%" stopColor="#1e293b" />
+          <stop offset="100%" stopColor="#334155" />
+        </linearGradient>
+        {/* Back mountain — desaturated blue (atmospheric perspective) */}
+        <linearGradient id="pvBack" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#475569" />
+          <stop offset="100%" stopColor="#1e293b" />
+        </linearGradient>
+        {/* Mid mountain */}
+        <linearGradient id="pvMid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#334155" />
           <stop offset="100%" stopColor="#0f172a" />
         </linearGradient>
-        <linearGradient id="crystalGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fde047" />
-          <stop offset="50%" stopColor="#f97316" />
+        {/* Front mountain — darkest */}
+        <linearGradient id="pvFront" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#1e293b" />
+          <stop offset="100%" stopColor="#020617" />
+        </linearGradient>
+        {/* Snow */}
+        <linearGradient id="pvSnow" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#ffffff" />
+          <stop offset="100%" stopColor="#cbd5e1" />
+        </linearGradient>
+        {/* Crystal — heroic gold/orange/red */}
+        <linearGradient id="pvCrystal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"  stopColor="#fef3c7" />
+          <stop offset="35%" stopColor="#fde047" />
+          <stop offset="65%" stopColor="#f97316" />
           <stop offset="100%" stopColor="#dc2626" />
         </linearGradient>
-        <radialGradient id="crystalGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.7" />
+        {/* Big halo behind crystal */}
+        <radialGradient id="pvHalo" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#fde047" stopOpacity="0.85" />
+          <stop offset="40%" stopColor="#fb923c" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#fb923c" stopOpacity="0" />
+        </radialGradient>
+        {/* Crystal sparkle rays */}
+        <radialGradient id="pvRays" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"  stopColor="#fef3c7" stopOpacity="0.55" />
           <stop offset="100%" stopColor="#fef3c7" stopOpacity="0" />
         </radialGradient>
       </defs>
-      {/* Back mountain */}
-      <path d="M 20 160 L 70 70 L 110 110 L 150 60 L 200 160 Z" fill="url(#mountainBg)" />
-      {/* Front mountain */}
-      <path d="M 30 160 L 90 80 L 130 130 L 170 90 L 210 160 Z" fill="#0c0c14" stroke="#1e293b" strokeWidth="1" />
-      {/* Snow caps on peaks */}
-      <path d="M 85 86 L 92 78 L 100 90 Z" fill="#475569" opacity="0.6" />
-      <path d="M 165 96 L 170 88 L 178 100 Z" fill="#475569" opacity="0.6" />
-      {/* Path winding up — dashed */}
+
+      {/* Sky background */}
+      <rect x="0" y="0" width="280" height="220" fill="url(#pvSky)" rx="14" />
+
+      {/* Stars — small white dots scattered in the sky */}
+      {[
+        [20, 26, 1.2], [55, 18, 0.8], [88, 32, 1.4], [128, 14, 1],
+        [175, 28, 1.2], [218, 16, 0.8], [248, 38, 1], [42, 50, 0.7],
+        [200, 50, 0.9], [262, 60, 1], [12, 78, 0.8], [104, 50, 1],
+      ].map(([x, y, r], i) => (
+        <circle key={i} cx={x} cy={y} r={r} fill="#fef3c7" opacity={0.55 + (i % 3) * 0.15} />
+      ))}
+
+      {/* Back mountain range — multiple distant peaks */}
+      <path d="M -10 200 L 30 110 L 60 130 L 95 80 L 130 120 L 165 75 L 200 110 L 240 90 L 280 130 L 290 200 Z" fill="url(#pvBack)" opacity="0.7" />
+
+      {/* Mid mountain range */}
+      <path d="M -10 210 L 25 145 L 60 165 L 100 110 L 140 150 L 180 100 L 220 140 L 260 120 L 290 200 Z" fill="url(#pvMid)" />
+
+      {/* Front mountain — main feature peak slightly off-center */}
+      <path d="M 0 220 L 60 175 L 110 130 L 150 60 L 195 130 L 240 175 L 280 220 Z" fill="url(#pvFront)" />
+
+      {/* Snow cap on the main peak */}
+      <path d="M 132 90 L 140 78 L 150 60 L 162 84 L 170 102 Q 158 96 150 100 Q 140 98 132 90 Z" fill="url(#pvSnow)" />
+      {/* Snow shading */}
+      <path d="M 142 90 L 150 60 L 158 90" stroke="#94a3b8" strokeWidth="0.6" fill="none" opacity="0.6" />
+
+      {/* Snow on side peak */}
+      <path d="M 105 138 L 110 130 L 117 142 Q 110 142 105 138 Z" fill="url(#pvSnow)" opacity="0.85" />
+
+      {/* Path zigzagging up the mountain — gradient stroke for fade */}
+      <defs>
+        <linearGradient id="pvPath" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%"  stopColor="#fb923c" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#fde047" stopOpacity="1" />
+        </linearGradient>
+      </defs>
       <path
-        d="M 110 160 Q 100 145 115 130 Q 130 115 120 100 Q 105 88 115 80"
-        stroke="#fb923c"
-        strokeWidth="2"
-        strokeDasharray="4 4"
+        d="M 80 215 Q 100 195 120 180 Q 130 168 110 160 Q 90 150 110 134 Q 130 122 145 110 Q 158 100 150 84 Q 144 70 150 60"
+        stroke="url(#pvPath)"
+        strokeWidth="2.5"
+        strokeDasharray="5 4"
         strokeLinecap="round"
         fill="none"
       />
-      {/* Crystal glow */}
-      <circle cx={115} cy={68} r={28} fill="url(#crystalGlow)" />
-      {/* Crystal — hex shape */}
-      <path
-        d="M 115 50 L 128 60 L 128 76 L 115 86 L 102 76 L 102 60 Z"
-        fill="url(#crystalGrad)"
-        stroke="#fef3c7"
-        strokeWidth="0.8"
-      />
-      {/* Crystal facets */}
-      <path d="M 115 50 L 115 86 M 102 60 L 128 76 M 102 76 L 128 60" stroke="#fef3c7" strokeWidth="0.4" opacity="0.6" />
+
+      {/* Footprint markers along the path */}
+      {[
+        [80, 215], [105, 195], [122, 180], [110, 160], [108, 140], [128, 124], [148, 100], [148, 78],
+      ].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={1.5} fill="#fde047" opacity={0.4 + (i / 8) * 0.6} />
+      ))}
+
+      {/* Big halo behind crystal */}
+      <circle cx="150" cy="48" r="48" fill="url(#pvHalo)" />
+
+      {/* Sparkle rays bursting outward */}
+      <g stroke="#fef3c7" strokeWidth="1.5" strokeLinecap="round" opacity="0.7">
+        <line x1="150" y1="14" x2="150" y2="20" />
+        <line x1="150" y1="76" x2="150" y2="82" />
+        <line x1="116" y1="48" x2="122" y2="48" />
+        <line x1="178" y1="48" x2="184" y2="48" />
+        <line x1="124" y1="22" x2="128" y2="26" />
+        <line x1="176" y1="22" x2="172" y2="26" />
+        <line x1="124" y1="74" x2="128" y2="70" />
+        <line x1="176" y1="74" x2="172" y2="70" />
+      </g>
+
+      {/* Crystal — hex with internal facet shading */}
+      <g style={{ filter: 'drop-shadow(0 0 12px rgba(251,146,60,0.85))' }}>
+        <path
+          d="M 150 28 L 168 40 L 168 60 L 150 72 L 132 60 L 132 40 Z"
+          fill="url(#pvCrystal)"
+          stroke="#fef3c7"
+          strokeWidth="1"
+          strokeLinejoin="round"
+        />
+        {/* Inner facet lines */}
+        <path d="M 150 28 L 150 72 M 132 40 L 168 60 M 132 60 L 168 40" stroke="#fef3c7" strokeWidth="0.5" opacity="0.5" />
+        {/* Bright highlight on top-left facet */}
+        <path d="M 150 28 L 168 40 L 150 50 Z" fill="#ffffff" opacity="0.4" />
+      </g>
+
+      {/* Wing flourishes flanking the crystal (echoes the rank icon idea) */}
+      <g fill="#fbbf24" opacity="0.7">
+        <path d="M 110 50 Q 122 48 132 52 Q 122 56 110 56 Z" />
+        <path d="M 168 52 Q 178 48 190 50 Q 178 56 168 56 Z" />
+      </g>
+
+      {/* Two small "Spark" markers near top of path - feels like progression markers */}
+      <circle cx="150" cy="60" r="2.5" fill="#fef3c7" />
+      <circle cx="150" cy="80" r="1.6" fill="#fde047" opacity="0.85" />
     </svg>
   );
 }
