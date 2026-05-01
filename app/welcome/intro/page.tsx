@@ -91,16 +91,18 @@ const PAGES: IntroPage[] = [
     title: <>Your <span className="text-orange-400">Soul Orb</span><br/>evolves with you.</>,
     body: 'Every habit logged feeds your orb. Watch it awaken, ascend, and become unmistakably yours.',
     visual: (
-      <SoulOrb
-        tier={MAX_ORB_TIER}
-        intensity={100}
-        size={220}
-        interactive={false}
-        hideLabel
-        baseColorId="prismatic"
-        pulseColorId="pulse_quasar"
-        ringColorId="ring_cosmic"
-      />
+      <div className="animate-soul-orb-breathe">
+        <SoulOrb
+          tier={MAX_ORB_TIER}
+          intensity={100}
+          size={280}
+          interactive={false}
+          hideLabel
+          baseColorId="prismatic"
+          pulseColorId="pulse_quasar"
+          ringColorId="ring_cosmic"
+        />
+      </div>
     ),
   },
   {
@@ -199,15 +201,15 @@ function OrbCustomizationShowcase() {
       <div
         className={cn(
           phase === 'transitioning' && 'animate-orb-spin-transition',
-          // 'rainbow' phase is stationary — the spin only happens during
-          // the one-shot transition; once the orb settles into rainbow
-          // it stays still.
+          phase !== 'transitioning' && 'animate-soul-orb-breathe',
+          // 'rainbow' phase has the gentle breathe scale; the one-shot
+          // spin transition replaces it temporarily, then breathes again.
         )}
       >
         <SoulOrb
           tier={MAX_ORB_TIER}
           intensity={100}
-          size={200}
+          size={260}
           interactive={false}
           hideLabel
           baseColorId={config.base}

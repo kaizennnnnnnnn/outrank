@@ -47,38 +47,35 @@ export function ScrollPicker({
   className,
 }: ScrollPickerProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const leftSpacerRef = useRef<HTMLDivElement>(null);
+  const rightSpacerRef = useRef<HTMLDivElement>(null);
   const totalTicks = Math.floor((max - min) / step) + 1;
 
-  // Set padding to exactly half the container width and seed the
-  // initial scroll position. Doing both in JS (rather than CSS calc)
-  // because CSS percentage padding resolves against the parent's
-  // width — when the rail sits inside a px-6 page wrapper, half-of-
-  // parent ≠ half-of-container, so the last few ticks become
-  // unreachable. Using the actual clientWidth fixes that.
+  // Use spacer divs (real children) instead of padding for the
+  // half-container offsets. Children contribute to descendant
+  // scrollable overflow whereas padding-right doesn't — meaning a
+  // padding-based picker can't actually scroll its last ticks all
+  // the way to center on a constrained-width container. Spacers fix
+  // that and the math becomes trivial.
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    const setPadding = () => {
+    const left = leftSpacerRef.current;
+    const right = rightSpacerRef.current;
+    if (!el || !left || !right) return;
+    const setSpacers = () => {
       const halfWidth = el.clientWidth / 2;
-      el.style.paddingLeft = `${halfWidth}px`;
-      el.style.paddingRight = `${halfWidth}px`;
+      left.style.width = `${halfWidth}px`;
+      right.style.width = `${halfWidth}px`;
     };
-    setPadding();
-    // Seed scroll to the current value AFTER padding is applied so the
-    // computed scroll position matches the new content layout.
+    setSpacers();
     el.scrollLeft = ((value - min) / step) * TICK_WIDTH;
 
-    // Resize observer keeps the padding correct on rotation / window
-    // resize. Layout shifts also re-snap to the current value so the
-    // selection survives the resize.
     const ro = new ResizeObserver(() => {
-      setPadding();
+      setSpacers();
       el.scrollLeft = ((value - min) / step) * TICK_WIDTH;
     });
     ro.observe(el);
     return () => ro.disconnect();
-    // We deliberately omit `value` from deps so external value changes
-    // don't snap the scroll mid-drag. Initial mount + resize only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [min, step]);
 
@@ -144,6 +141,7 @@ export function ScrollPicker({
           }}
         >
           <div className="flex items-end h-14">
+            <div ref={leftSpacerRef} style={{ flexShrink: 0 }} aria-hidden />
             {Array.from({ length: totalTicks }).map((_, i) => {
               const isMajor = i % majorEvery === 0;
               return (
@@ -161,6 +159,7 @@ export function ScrollPicker({
                 </div>
               );
             })}
+            <div ref={rightSpacerRef} style={{ flexShrink: 0 }} aria-hidden />
           </div>
         </div>
       </div>

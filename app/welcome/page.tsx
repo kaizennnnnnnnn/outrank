@@ -40,12 +40,24 @@ export default function WelcomePage() {
 
       {/* Hero */}
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
+        {/* Cute entry: phoenix swoops down from above with a small
+            rotation wobble, settles with a tiny overshoot, then plays
+            its one-shot greeting wing-wave on top of the idle bob. */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, scale: 0.3, y: -80, rotate: -22 }}
+          animate={{
+            opacity: 1,
+            scale: [0.3, 1.18, 0.94, 1.04, 1],
+            y: [-80, -10, 4, -2, 0],
+            rotate: [-22, 8, -4, 2, 0],
+          }}
+          transition={{
+            duration: 1.1,
+            times: [0, 0.4, 0.65, 0.85, 1],
+            ease: 'easeOut',
+          }}
         >
-          <PhoenixMascot size={150} />
+          <PhoenixMascot size={150} greeting />
         </motion.div>
 
         <motion.h1

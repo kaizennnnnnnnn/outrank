@@ -241,6 +241,17 @@ body {
   will-change: transform;
 }
 
+/* Subtle "breathing" scale pulse — used on the showcase orb pages so
+   the orb feels alive even when stationary. Cheap (transform-only). */
+@keyframes soul-orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+.animate-soul-orb-breathe {
+  animation: soul-orb-breathe 3.5s ease-in-out infinite;
+  will-change: transform;
+}
+
 @keyframes orb-spin-transition {
   0%   { transform: rotate(0deg)   scale(1);    filter: blur(0); }
   35%  { transform: rotate(360deg) scale(1.08); filter: blur(2px) brightness(1.2); }
