@@ -310,237 +310,188 @@ function ExerciseChip({ name, active, dim }: { name: string; active?: boolean; d
 }
 
 /**
- * Filled-body exercise illustrations — proper anatomical proportions
- * (head, neck, shoulders, torso, limbs all painted with thickness),
- * orange-red gradient bodies, dark equipment with weight-plate detail,
- * floor shadows. Side view, looking right.
+ * Simple stick-figure exercise illustrations. The previous filled-body
+ * versions were over-engineered and read worse than honest stick
+ * figures. These use thick orange strokes + small joint circles for
+ * articulation, plus minimal equipment (bench, bar, plates) drawn in
+ * dim slate so the figure pops.
  */
 function ExerciseIllustration({ id }: { id: ExerciseId }) {
-  const Body = ({ children }: { children: React.ReactNode }) => (
-    <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-      <defs>
-        <linearGradient id={`exBody-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#fde68a" />
-          <stop offset="35%" stopColor="#fb923c" />
-          <stop offset="80%" stopColor="#dc2626" />
-          <stop offset="100%" stopColor="#7f1d1d" />
-        </linearGradient>
-        <linearGradient id={`exShine-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id={`exBar-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#94a3b8" />
-          <stop offset="50%" stopColor="#475569" />
-          <stop offset="100%" stopColor="#1e293b" />
-        </linearGradient>
-        <linearGradient id={`exPlate-${id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#1e293b" />
-          <stop offset="100%" stopColor="#020617" />
-        </linearGradient>
-      </defs>
-      {children}
-    </svg>
+  const lim = '#fb923c';     // limb color
+  const acc = '#dc2626';     // joint accent
+  const dim = '#475569';     // equipment / floor
+  const plate = '#1e293b';
+  const SW = 6;              // limb stroke
+  const HEAD_R = 9;
+
+  const Joint = ({ cx, cy }: { cx: number; cy: number }) => (
+    <circle cx={cx} cy={cy} r={3.5} fill={acc} />
+  );
+  const Floor = (y = 124) => (
+    <line x1="20" y1={y} x2="200" y2={y} stroke={dim} strokeWidth="2" strokeLinecap="round" />
   );
 
-  const body = `url(#exBody-${id})`;
-  const shine = `url(#exShine-${id})`;
-  const bar = `url(#exBar-${id})`;
-  const plate = `url(#exPlate-${id})`;
-
   if (id === 'pushups') {
+    // Side view, head right, body horizontal in plank, one arm bent.
     return (
-      <Body>
-        {/* Floor + shadow */}
-        <ellipse cx="110" cy="120" rx="80" ry="3" fill="#000" opacity="0.4" />
-        <line x1="20" y1="115" x2="200" y2="115" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
-
-        {/* Back leg */}
-        <path d="M 36 76 Q 30 88 40 100 L 50 100 Q 46 86 50 76 Z" fill={body} />
-        {/* Front leg */}
-        <path d="M 50 78 L 58 92 L 62 110 L 70 110 L 70 90 L 60 76 Z" fill={body} />
-        {/* Torso (horizontal plank) */}
-        <path d="M 56 72 Q 90 66 130 70 Q 144 76 144 84 Q 130 86 90 84 Q 60 80 50 80 Z" fill={body} />
-        <path d="M 56 72 Q 90 66 130 70 Q 144 76 144 84 Q 130 86 90 84 Q 60 80 50 80 Z" fill={shine} />
-        {/* Glute bump */}
-        <ellipse cx="58" cy="76" rx="8" ry="6" fill={body} />
+      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
+        {Floor(124)}
+        {/* Body line — head to feet */}
+        <line x1="38" y1="78" x2="138" y2="76" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head + neck */}
-        <circle cx="156" cy="68" r="11" fill={body} />
-        <circle cx="156" cy="68" r="11" fill={shine} />
-        <rect x="148" y="76" width="14" height="6" fill={body} />
+        <circle cx="148" cy="72" r={HEAD_R} fill={lim} />
         {/* Front arm — bent down to floor */}
-        <path d="M 138 80 L 134 96 Q 132 108 138 114 L 150 114 Q 152 102 152 92 L 144 80 Z" fill={body} />
-        {/* Back arm — bent down */}
-        <path d="M 70 78 L 70 96 Q 70 108 76 114 L 88 114 Q 88 102 88 92 L 78 78 Z" fill={body} />
-      </Body>
+        <line x1="138" y1="78" x2="148" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="148" y1="98" x2="148" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <Joint cx={148} cy={98} />
+        {/* Back arm — bent down to floor */}
+        <line x1="62" y1="80" x2="62" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="62" y1="100" x2="74" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <Joint cx={62} cy={100} />
+        {/* Legs straight back */}
+        <line x1="38" y1="78" x2="22" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="44" y1="78" x2="34" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      </svg>
     );
   }
 
   if (id === 'pullups') {
+    // Bar at top, body hanging.
     return (
-      <Body>
-        {/* Mounting bracket + bar */}
-        <rect x="20" y="14" width="180" height="6" rx="1" fill={bar} />
-        <rect x="22" y="14" width="180" height="2" fill="#ffffff" opacity="0.2" />
-        <rect x="28" y="6" width="6" height="14" fill="#475569" />
-        <rect x="186" y="6" width="6" height="14" fill="#475569" />
+      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
+        {/* Bar + brackets */}
+        <line x1="40" y1="22" x2="180" y2="22" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+        <line x1="48" y1="14" x2="48" y2="22" stroke={dim} strokeWidth="3" strokeLinecap="round" />
+        <line x1="172" y1="14" x2="172" y2="22" stroke={dim} strokeWidth="3" strokeLinecap="round" />
         {/* Hands gripping bar */}
-        <rect x="92" y="18" width="8" height="8" rx="2" fill={body} />
-        <rect x="120" y="18" width="8" height="8" rx="2" fill={body} />
-        {/* Arms — bent at elbows, hands on bar */}
-        <path d="M 92 24 L 80 50 L 84 70 L 92 70 L 100 50 Z" fill={body} />
-        <path d="M 128 24 L 140 50 L 136 70 L 128 70 L 120 50 Z" fill={body} />
+        <Joint cx={94} cy={22} />
+        <Joint cx={126} cy={22} />
+        {/* Arms — straight up to bar */}
+        <line x1="100" y1="50" x2="94" y2="22" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="120" y1="50" x2="126" y2="22" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="110" cy="44" r="11" fill={body} />
-        <circle cx="110" cy="44" r="11" fill={shine} />
-        {/* Neck + traps */}
-        <rect x="103" y="52" width="14" height="6" fill={body} />
-        {/* Torso (V-taper) */}
-        <path d="M 88 58 Q 110 56 132 58 L 128 92 Q 110 96 92 92 Z" fill={body} />
-        <path d="M 88 58 Q 110 56 132 58 L 128 92 Q 110 96 92 92 Z" fill={shine} />
-        {/* Pec separation */}
-        <line x1="110" y1="58" x2="110" y2="84" stroke="#7f1d1d" strokeWidth="0.6" opacity="0.55" />
-        {/* Hips */}
-        <rect x="94" y="92" width="32" height="8" rx="2" fill={body} />
+        <circle cx="110" cy="50" r={HEAD_R} fill={lim} />
+        {/* Torso */}
+        <line x1="110" y1="58" x2="110" y2="92" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Hips joint */}
+        <Joint cx={110} cy={92} />
         {/* Legs — straight down */}
-        <path d="M 94 100 Q 92 116 96 134 L 106 134 Q 108 116 108 100 Z" fill={body} />
-        <path d="M 112 100 Q 112 116 114 134 L 124 134 Q 128 116 126 100 Z" fill={body} />
-      </Body>
+        <line x1="110" y1="92" x2="98" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="110" y1="92" x2="122" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      </svg>
     );
   }
 
   if (id === 'situps') {
+    // Curling up at ~45° from floor, knees bent.
     return (
-      <Body>
-        {/* Floor + shadow */}
-        <ellipse cx="110" cy="124" rx="78" ry="3" fill="#000" opacity="0.4" />
-        <line x1="22" y1="118" x2="198" y2="118" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
-        {/* Mat under person */}
-        <rect x="28" y="112" width="120" height="6" rx="2" fill="#1e293b" />
-
-        {/* Bent legs (knees up) */}
-        <path d="M 32 90 L 56 76 L 70 88 L 60 110 L 38 112 Z" fill={body} />
-        <path d="M 60 110 L 84 110 L 88 88 L 80 76 L 70 80 L 64 96 Z" fill={body} />
-        <ellipse cx="74" cy="80" rx="12" ry="6" fill={body} />
-        {/* Torso (curling up at angle) */}
-        <path d="M 80 86 L 134 56 L 140 70 L 90 100 Z" fill={body} />
-        <path d="M 80 86 L 134 56 L 140 70 L 90 100 Z" fill={shine} />
-        {/* Abs hint lines */}
-        <path d="M 100 92 L 124 74" stroke="#7f1d1d" strokeWidth="0.6" opacity="0.5" />
-        <path d="M 96 86 L 122 68" stroke="#7f1d1d" strokeWidth="0.6" opacity="0.5" />
-        {/* Head */}
-        <circle cx="146" cy="50" r="10" fill={body} />
-        <circle cx="146" cy="50" r="10" fill={shine} />
-        {/* Arms — crossed across chest */}
-        <rect x="106" y="76" width="26" height="6" rx="2" fill={body} transform="rotate(-30 119 79)" />
-        <rect x="118" y="64" width="26" height="6" rx="2" fill={body} transform="rotate(-30 131 67)" />
-      </Body>
+      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
+        {Floor(124)}
+        {/* Bent legs — knees up, feet planted */}
+        <line x1="58" y1="120" x2="78" y2="86" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="78" y1="86" x2="98" y2="116" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <Joint cx={78} cy={86} />
+        {/* Torso — at angle */}
+        <line x1="98" y1="116" x2="138" y2="64" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Hips joint */}
+        <Joint cx={98} cy={116} />
+        {/* Head — at top of torso */}
+        <circle cx="142" cy="56" r={HEAD_R} fill={lim} />
+        {/* Arm — crossed, behind head */}
+        <line x1="138" y1="64" x2="128" y2="44" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="128" y1="44" x2="148" y2="48" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <Joint cx={128} cy={44} />
+      </svg>
     );
   }
 
   if (id === 'bench') {
+    // Lying on bench, pushing barbell up.
     return (
-      <Body>
-        {/* Floor */}
-        <line x1="14" y1="124" x2="206" y2="124" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
+      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
+        {Floor(132)}
         {/* Bench */}
-        <rect x="40" y="78" width="140" height="10" rx="2" fill={bar} />
-        <rect x="40" y="78" width="140" height="3" fill="#ffffff" opacity="0.2" />
-        <rect x="50" y="88" width="4" height="36" fill="#475569" />
-        <rect x="166" y="88" width="4" height="36" fill="#475569" />
-        <rect x="42" y="120" width="20" height="4" rx="1" fill="#475569" />
-        <rect x="158" y="120" width="20" height="4" rx="1" fill="#475569" />
-
-        {/* Body lying on bench */}
-        {/* Legs hanging off bench */}
-        <path d="M 36 78 L 26 96 L 30 112 L 42 112 L 46 96 L 50 78 Z" fill={body} />
-        {/* Torso */}
-        <ellipse cx="98" cy="74" rx="44" ry="10" fill={body} />
-        <ellipse cx="98" cy="74" rx="44" ry="10" fill={shine} />
+        <line x1="40" y1="84" x2="180" y2="84" stroke={dim} strokeWidth="6" strokeLinecap="round" />
+        <line x1="50" y1="84" x2="50" y2="124" stroke={dim} strokeWidth="3" />
+        <line x1="170" y1="84" x2="170" y2="124" stroke={dim} strokeWidth="3" />
+        <line x1="42" y1="124" x2="62" y2="124" stroke={dim} strokeWidth="3" strokeLinecap="round" />
+        <line x1="158" y1="124" x2="178" y2="124" stroke={dim} strokeWidth="3" strokeLinecap="round" />
+        {/* Body — flat on bench (head right) */}
+        <line x1="60" y1="80" x2="140" y2="80" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="156" cy="68" r="11" fill={body} />
-        <circle cx="156" cy="68" r="11" fill={shine} />
+        <circle cx="150" cy="76" r={HEAD_R} fill={lim} />
+        {/* Legs hanging off the foot end */}
+        <line x1="60" y1="80" x2="40" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="64" y1="84" x2="44" y2="106" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Arms pushing barbell up */}
-        <rect x="92" y="44" width="10" height="32" rx="3" fill={body} />
-        <rect x="118" y="44" width="10" height="32" rx="3" fill={body} />
+        <line x1="100" y1="80" x2="100" y2="48" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="120" y1="80" x2="120" y2="48" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <Joint cx={100} cy={48} />
+        <Joint cx={120} cy={48} />
         {/* Barbell */}
-        <line x1="50" y1="38" x2="170" y2="38" stroke={bar} strokeWidth="6" strokeLinecap="round" />
-        <line x1="50" y1="36" x2="170" y2="36" stroke="#ffffff" strokeWidth="1" opacity="0.3" strokeLinecap="round" />
-        {/* Plates each side */}
-        <ellipse cx="40" cy="38" rx="6" ry="22" fill={plate} stroke="#475569" strokeWidth="0.6" />
-        <ellipse cx="180" cy="38" rx="6" ry="22" fill={plate} stroke="#475569" strokeWidth="0.6" />
-        <ellipse cx="32" cy="38" rx="4" ry="18" fill={plate} stroke="#475569" strokeWidth="0.5" />
-        <ellipse cx="188" cy="38" rx="4" ry="18" fill={plate} stroke="#475569" strokeWidth="0.5" />
-      </Body>
+        <line x1="50" y1="44" x2="170" y2="44" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+        {/* Plates */}
+        <ellipse cx="40" cy="44" rx="6" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
+        <ellipse cx="180" cy="44" rx="6" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
+      </svg>
     );
   }
 
   if (id === 'squat') {
+    // Front-facing squat with bar across shoulders.
     return (
-      <Body>
-        <line x1="14" y1="130" x2="206" y2="130" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
-
-        {/* Barbell across shoulders + plates */}
-        <line x1="40" y1="42" x2="180" y2="42" stroke={bar} strokeWidth="6" strokeLinecap="round" />
-        <line x1="40" y1="40" x2="180" y2="40" stroke="#ffffff" strokeWidth="1" opacity="0.3" />
-        <ellipse cx="32" cy="42" rx="5" ry="22" fill={plate} stroke="#475569" strokeWidth="0.6" />
-        <ellipse cx="188" cy="42" rx="5" ry="22" fill={plate} stroke="#475569" strokeWidth="0.6" />
-        <ellipse cx="22" cy="42" rx="4" ry="16" fill={plate} stroke="#475569" strokeWidth="0.5" />
-        <ellipse cx="198" cy="42" rx="4" ry="16" fill={plate} stroke="#475569" strokeWidth="0.5" />
-
-        {/* Head */}
-        <circle cx="110" cy="32" r="11" fill={body} />
-        <circle cx="110" cy="32" r="11" fill={shine} />
-        {/* Neck/traps under bar */}
-        <rect x="100" y="40" width="20" height="8" fill={body} />
-        {/* Shoulders/torso (front-facing, in squat) */}
-        <path d="M 80 48 Q 110 46 140 48 L 138 86 Q 130 92 110 92 Q 90 92 82 86 Z" fill={body} />
-        <path d="M 80 48 Q 110 46 140 48 L 138 86 Q 130 92 110 92 Q 90 92 82 86 Z" fill={shine} />
-        {/* Pec line */}
-        <line x1="110" y1="48" x2="110" y2="86" stroke="#7f1d1d" strokeWidth="0.6" opacity="0.55" />
+      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
+        {Floor(132)}
+        {/* Barbell + plates */}
+        <line x1="40" y1="42" x2="180" y2="42" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="30" cy="42" rx="5" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
+        <ellipse cx="190" cy="42" rx="5" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
+        {/* Head — under bar */}
+        <circle cx="110" cy="34" r={HEAD_R} fill={lim} />
+        {/* Torso — vertical */}
+        <line x1="110" y1="42" x2="110" y2="80" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Arms gripping bar */}
-        <path d="M 70 50 L 60 68 L 64 80 L 74 80 L 80 64 Z" fill={body} />
-        <path d="M 150 50 L 160 68 L 156 80 L 146 80 L 140 64 Z" fill={body} />
-        {/* Quads — bent in squat */}
-        <path d="M 86 90 L 70 116 L 84 130 L 100 130 L 100 92 Z" fill={body} />
-        <path d="M 134 90 L 150 116 L 136 130 L 120 130 L 120 92 Z" fill={body} />
-      </Body>
+        <line x1="110" y1="48" x2="86" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="110" y1="48" x2="134" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Hips joint */}
+        <Joint cx={110} cy={80} />
+        {/* Legs — bent into squat */}
+        <line x1="110" y1="80" x2="86" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="86" y1="98" x2="86" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <Joint cx={86} cy={98} />
+        <line x1="110" y1="80" x2="134" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="134" y1="98" x2="134" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <Joint cx={134} cy={98} />
+      </svg>
     );
   }
 
-  // deadlift
+  // deadlift — hinged forward, hands on bar at floor
   return (
-    <Body>
-      <line x1="14" y1="130" x2="206" y2="130" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" />
-
-      {/* Head — slightly forward (typical deadlift posture) */}
-      <circle cx="110" cy="36" r="11" fill={body} />
-      <circle cx="110" cy="36" r="11" fill={shine} />
-      <rect x="103" y="44" width="14" height="6" fill={body} />
-      {/* Torso — slightly hinged forward */}
-      <path d="M 84 50 L 136 50 L 138 86 Q 124 92 110 92 Q 96 92 82 86 Z" fill={body} />
-      <path d="M 84 50 L 136 50 L 138 86 Q 124 92 110 92 Q 96 92 82 86 Z" fill={shine} />
-      <line x1="110" y1="50" x2="110" y2="88" stroke="#7f1d1d" strokeWidth="0.6" opacity="0.55" />
-      {/* Arms — straight down, holding the bar */}
-      <path d="M 78 56 L 70 100 L 84 102 L 92 56 Z" fill={body} />
-      <path d="M 142 56 L 150 100 L 136 102 L 128 56 Z" fill={body} />
-      {/* Hands gripping bar */}
-      <rect x="68" y="100" width="14" height="8" rx="2" fill={body} />
-      <rect x="138" y="100" width="14" height="8" rx="2" fill={body} />
+    <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
+      {Floor(124)}
+      {/* Head */}
+      <circle cx="110" cy="40" r={HEAD_R} fill={lim} />
+      {/* Torso — slightly hinged */}
+      <line x1="110" y1="48" x2="110" y2="86" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <Joint cx={110} cy={86} />
+      {/* Arms straight down to bar */}
+      <line x1="110" y1="56" x2="86" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="110" y1="56" x2="134" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      {/* Hands grip bar */}
+      <Joint cx={86} cy={98} />
+      <Joint cx={134} cy={98} />
       {/* Legs — slight bend */}
-      <path d="M 88 90 Q 84 110 88 130 L 100 130 Q 102 110 100 90 Z" fill={body} />
-      <path d="M 120 90 Q 118 110 120 130 L 132 130 Q 136 110 132 90 Z" fill={body} />
-      {/* Barbell */}
-      <line x1="34" y1="106" x2="186" y2="106" stroke={bar} strokeWidth="6" strokeLinecap="round" />
-      <line x1="34" y1="104" x2="186" y2="104" stroke="#ffffff" strokeWidth="1" opacity="0.3" />
-      {/* Big plates */}
-      <circle cx="28" cy="106" r="22" fill={plate} stroke="#475569" strokeWidth="0.7" />
-      <circle cx="192" cy="106" r="22" fill={plate} stroke="#475569" strokeWidth="0.7" />
-      <circle cx="28" cy="106" r="14" fill="none" stroke="#475569" strokeWidth="0.6" />
-      <circle cx="192" cy="106" r="14" fill="none" stroke="#475569" strokeWidth="0.6" />
-      <circle cx="28" cy="106" r="3" fill="#475569" />
-      <circle cx="192" cy="106" r="3" fill="#475569" />
-    </Body>
+      <line x1="110" y1="86" x2="98" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="110" y1="86" x2="122" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      {/* Barbell on floor */}
+      <line x1="40" y1="98" x2="180" y2="98" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+      {/* Big bumper plates */}
+      <circle cx="32" cy="98" r="20" fill={plate} stroke={dim} strokeWidth="1.2" />
+      <circle cx="188" cy="98" r="20" fill={plate} stroke={dim} strokeWidth="1.2" />
+      <circle cx="32" cy="98" r="3.5" fill={dim} />
+      <circle cx="188" cy="98" r="3.5" fill={dim} />
+    </svg>
   );
 }
 
@@ -1043,131 +994,154 @@ function ActiveLiftersGlobeStep({
  * globe circle so they only show on the visible hemisphere.
  */
 
-// Simplified continent silhouettes mapped to a 220x220 world strip.
-// Not cartographically accurate — they read as continents, that's it.
+// Continent silhouettes for a 220-wide horizontal world map. Drawn
+// dim (slate) so the bright user-activity dots pop on top — matches
+// the user's reference of a night-mode Earth from space where the
+// CITIES are the bright feature, not the landmass.
 const CONTINENTS = [
-  // North America
-  'M 6 28 Q 18 22 32 25 L 48 32 L 52 48 L 50 62 L 40 72 L 30 78 L 20 80 L 10 70 L 6 55 Z',
+  // North America (with Mexico tail)
+  'M 6 32 Q 14 24 26 24 L 38 26 Q 48 22 56 28 L 64 24 L 72 36 Q 76 50 70 60 L 60 66 L 50 70 L 44 80 L 38 90 L 32 84 L 24 78 L 16 70 L 8 56 Z',
   // Greenland
-  'M 65 18 L 80 18 L 82 32 L 75 38 L 65 35 Z',
-  // Central America
-  'M 38 78 L 52 80 L 48 95 L 42 92 Z',
+  'M 80 18 L 92 20 L 90 36 L 82 38 Z',
+  // Central America bridge
+  'M 38 90 L 50 88 L 52 100 L 46 100 Z',
   // South America
-  'M 48 92 L 60 88 L 66 100 L 70 130 L 65 158 L 55 170 L 50 168 L 42 145 L 44 115 Z',
-  // Europe
-  'M 100 45 L 130 42 L 140 55 L 135 70 L 110 70 L 100 60 Z',
+  'M 50 100 L 62 96 L 70 102 L 74 122 L 70 150 L 64 168 L 56 170 L 50 162 L 46 144 L 46 118 Z',
+  // UK + Western Europe
+  'M 100 50 L 116 48 L 132 52 L 138 60 L 130 68 L 110 68 L 100 60 Z',
+  // Scandinavia
+  'M 122 36 L 138 32 L 140 50 L 128 50 Z',
   // Africa
-  'M 102 75 L 138 76 L 142 95 L 140 130 L 130 152 L 120 162 L 110 152 L 100 120 L 98 95 Z',
+  'M 100 78 L 132 78 L 140 92 L 142 118 L 132 142 L 122 156 L 112 152 L 102 130 L 96 102 Z',
   // Madagascar
-  'M 145 132 L 152 130 L 154 148 L 148 150 Z',
-  // Mid-east / Asia mainland
-  'M 138 22 L 200 18 L 215 38 L 218 65 L 210 85 L 192 92 L 175 95 L 158 88 L 145 75 L 138 58 Z',
+  'M 144 134 L 150 132 L 152 150 L 146 152 Z',
+  // Middle East
+  'M 138 78 L 152 76 L 156 92 L 144 92 L 138 86 Z',
+  // Asia mainland
+  'M 138 28 L 168 24 L 200 28 L 218 40 L 218 60 L 208 78 L 190 86 L 168 86 L 152 78 L 142 64 L 138 48 Z',
   // India
-  'M 162 95 L 178 95 L 180 118 L 170 132 L 162 122 L 158 105 Z',
-  // SE Asia / Indonesia / Australia
-  'M 180 102 L 200 98 L 218 142 L 215 162 L 198 168 L 180 162 L 178 142 L 178 120 Z',
+  'M 162 90 L 174 90 L 178 112 L 170 122 L 162 116 L 158 100 Z',
+  // China extension / Japan
+  'M 198 60 L 218 70 L 214 80 L 200 76 Z',
+  // Indonesia / Malaysia
+  'M 178 116 L 198 112 L 202 124 L 188 128 L 180 122 Z',
+  // Australia
+  'M 188 132 L 215 128 L 218 148 L 210 162 L 196 164 L 188 152 Z',
 ];
 
-// Active-user dots. Position is in 0..220 (one map width); delay
-// staggers their twinkle. They get rendered both at translate(0)
-// and translate(220) so they're visible on either side of the loop.
+// Active-user dot positions on the world map (0..220 x). Each dot
+// represents a region of activity; double-render across both world
+// copies so they're visible on either side of the seamless loop.
 const GLOBE_DOTS: [number, number, number][] = [
-  [22, 60, 0],     // West coast US
-  [38, 50, 0.5],   // East coast US
-  [40, 65, 1],     // Mexico
-  [58, 110, 0.3],  // Brazil
-  [62, 140, 0.8],  // Argentina
-  [108, 60, 1.5],  // UK / N Europe
-  [120, 65, 0.2],  // Central Europe
-  [128, 90, 1.2],  // Egypt
-  [115, 110, 1.7], // Central Africa
-  [125, 145, 0.6], // S Africa
-  [148, 95, 0.4],  // Middle East
-  [170, 110, 1.4], // India
-  [185, 60, 0.9],  // China
-  [202, 70, 1.6],  // Japan
-  [195, 145, 0.1], // Australia
-  [185, 125, 1.3], // Indonesia
+  [22, 56, 0],     // SF
+  [40, 50, 0.4],   // NYC
+  [42, 76, 0.8],   // Mexico
+  [60, 116, 1.2],  // Sao Paulo
+  [62, 152, 0.3],  // Buenos Aires
+  [108, 56, 0.7],  // London
+  [122, 60, 1.4],  // Paris/Berlin
+  [126, 88, 1.0],  // Cairo
+  [116, 116, 1.6], // Lagos
+  [128, 144, 0.5], // Cape Town
+  [148, 88, 0.9],  // Dubai
+  [168, 108, 1.3], // Mumbai
+  [184, 60, 0.2],  // Beijing
+  [202, 68, 1.7],  // Tokyo
+  [198, 148, 0.6], // Sydney
+  [188, 122, 1.1], // Jakarta
 ];
 
 function Globe() {
   return (
-    <div className="relative w-[280px] h-[280px] mx-auto">
-      {/* Star field */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 280" fill="none">
+    <div className="relative w-[300px] h-[300px] mx-auto">
+      {/* Star field — bigger, more stars for space feel */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 300" fill="none">
         {[
-          [20, 30, 1.2], [50, 18, 0.8], [240, 26, 1], [260, 50, 0.7],
-          [22, 230, 0.9], [250, 240, 1.1], [16, 110, 0.6], [266, 140, 0.8],
-          [120, 14, 0.7], [180, 8, 0.9], [60, 264, 0.7], [220, 270, 0.8],
+          [16, 28, 1.2], [42, 14, 0.8], [84, 22, 1], [128, 8, 1.1],
+          [182, 16, 0.9], [232, 24, 1.2], [266, 36, 0.8], [284, 60, 1.0],
+          [12, 90, 0.7], [294, 100, 0.9], [8, 160, 1.0], [288, 180, 0.8],
+          [22, 230, 0.9], [38, 268, 1.1], [80, 286, 0.8], [128, 292, 0.7],
+          [184, 290, 1.0], [240, 280, 0.9], [276, 256, 0.8], [288, 220, 0.7],
+          [156, 12, 0.6], [206, 14, 0.7], [60, 18, 0.65], [104, 16, 0.55],
         ].map(([x, y, r], i) => (
-          <circle key={i} cx={x} cy={y} r={r} fill="#fef3c7" opacity={0.55 + (i % 3) * 0.15} />
+          <circle key={i} cx={x} cy={y} r={r} fill="#ffffff" opacity={0.55 + (i % 3) * 0.15} />
         ))}
       </svg>
 
-      {/* Atmospheric halo behind globe */}
+      {/* Atmospheric outer halo — cyan glow extending past the rim */}
       <div
         className="absolute inset-0 m-auto rounded-full pointer-events-none"
         style={{
-          width: 250,
-          height: 250,
-          background: 'radial-gradient(circle, rgba(34,211,238,0.4), rgba(56,189,248,0.18) 40%, transparent 75%)',
-          filter: 'blur(20px)',
+          width: 280,
+          height: 280,
+          background: 'radial-gradient(circle, rgba(34,211,238,0.55) 0%, rgba(56,189,248,0.25) 35%, transparent 70%)',
+          filter: 'blur(22px)',
         }}
       />
 
       <svg
-        viewBox="0 0 220 220"
+        viewBox="0 0 240 240"
         fill="none"
-        className="absolute inset-0 m-auto w-[220px] h-[220px]"
+        className="absolute inset-0 m-auto w-[260px] h-[260px]"
         style={{ overflow: 'hidden' }}
       >
         <defs>
           <clipPath id="globeClip">
-            <circle cx="110" cy="110" r="98" />
+            <circle cx="120" cy="120" r="108" />
           </clipPath>
-          {/* Ocean — deep blue with cyan highlight upper-left */}
-          <radialGradient id="globeOcean" cx="35%" cy="30%" r="70%">
-            <stop offset="0%"  stopColor="#1e40af" />
-            <stop offset="40%" stopColor="#0c4a6e" />
-            <stop offset="80%" stopColor="#082f49" />
-            <stop offset="100%" stopColor="#020617" />
+          {/* Ocean — deep navy with subtle upper-left glow */}
+          <radialGradient id="globeOcean" cx="35%" cy="30%" r="75%">
+            <stop offset="0%"  stopColor="#1e3a8a" />
+            <stop offset="35%" stopColor="#0c1f4a" />
+            <stop offset="75%" stopColor="#020617" />
+            <stop offset="100%" stopColor="#000000" />
           </radialGradient>
-          {/* Continent gradient — earthy green-amber */}
+          {/* Continent fill — dim slate, just enough contrast to read */}
           <linearGradient id="globeLand" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stopColor="#65a30d" />
-            <stop offset="60%" stopColor="#3f6212" />
-            <stop offset="100%" stopColor="#1a2e05" />
+            <stop offset="0%"  stopColor="#334155" />
+            <stop offset="100%" stopColor="#1e293b" />
           </linearGradient>
-          {/* Day/night terminator — bright at upper-left, fades to dark
-              at lower-right. Sells the spherical lighting. */}
-          <radialGradient id="globeDayNight" cx="32%" cy="28%" r="75%">
-            <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.18" />
-            <stop offset="35%" stopColor="#ffffff" stopOpacity="0" />
-            <stop offset="80%" stopColor="#000000" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#000000" stopOpacity="0.7" />
+          {/* Sphere lighting — bright upper-left, dim lower-right */}
+          <radialGradient id="globeLight" cx="32%" cy="28%" r="75%">
+            <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.22" />
+            <stop offset="40%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0.45" />
           </radialGradient>
+          {/* Glow filter for active dots */}
+          <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="1.5" />
+          </filter>
         </defs>
 
         {/* Ocean base */}
-        <circle cx="110" cy="110" r="98" fill="url(#globeOcean)" />
+        <circle cx="120" cy="120" r="108" fill="url(#globeOcean)" />
 
-        {/* Drifting continents + dots, clipped to the globe circle.
-            Two copies of the world side-by-side give us a seamless
-            loop when the parent translates -220 over the period. */}
+        {/* Continents + dots, clipped to globe, drifting horizontally
+            for the rotation illusion. Two copies side-by-side for
+            seamless loop. The continents start at y=8 within a 220-tall
+            world strip; we offset by 12 vertically so the world band
+            sits nicely inside the larger 240 globe. */}
         <g clipPath="url(#globeClip)">
-          <g className="animate-globe-drift">
+          <g className="animate-globe-drift" transform="translate(10, 12)">
             {[0, 220].map((offset) => (
               <g key={offset} transform={`translate(${offset}, 0)`}>
                 {CONTINENTS.map((d, i) => (
-                  <path key={i} d={d} fill="url(#globeLand)" stroke="#3f6212" strokeWidth="0.4" opacity="0.95" />
+                  <path
+                    key={i}
+                    d={d}
+                    fill="url(#globeLand)"
+                    stroke="#334155"
+                    strokeWidth="0.4"
+                  />
                 ))}
+                {/* Active-user dots: bright cyan core + soft cyan halo */}
                 {GLOBE_DOTS.map(([x, y, delay], i) => (
                   <g key={i}>
-                    <circle cx={x} cy={y} r="4" fill="#fb923c" opacity="0.35">
-                      <animate attributeName="opacity" values="0.05; 0.55; 0.05" dur="2.2s" begin={`${delay}s`} repeatCount="indefinite" />
+                    <circle cx={x} cy={y} r="6" fill="#22d3ee" opacity="0.35" filter="url(#dotGlow)">
+                      <animate attributeName="opacity" values="0.15; 0.6; 0.15" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
                     </circle>
-                    <circle cx={x} cy={y} r="1.6" fill="#fef3c7">
-                      <animate attributeName="opacity" values="0.4; 1; 0.4" dur="2.2s" begin={`${delay}s`} repeatCount="indefinite" />
+                    <circle cx={x} cy={y} r="2" fill="#a5f3fc">
+                      <animate attributeName="opacity" values="0.6; 1; 0.6" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
                     </circle>
                   </g>
                 ))}
@@ -1175,48 +1149,14 @@ function Globe() {
             ))}
           </g>
 
-          {/* Day/night terminator overlay */}
-          <circle cx="110" cy="110" r="98" fill="url(#globeDayNight)" />
-
-          {/* Lat/long grid — anchored to the viewer, doesn't rotate */}
-          {[40, 70, 110, 150, 180].map((y) => {
-            const r = Math.sqrt(Math.max(0, 98 * 98 - (y - 110) * (y - 110)));
-            return r > 0 ? (
-              <ellipse
-                key={y}
-                cx="110"
-                cy={y}
-                rx={r}
-                ry={r * 0.18}
-                stroke="#22d3ee"
-                strokeWidth="0.5"
-                fill="none"
-                opacity="0.25"
-              />
-            ) : null;
-          })}
-          {[0, 30, 60, 90, 120, 150].map((deg) => {
-            const rad = (deg * Math.PI) / 180;
-            const rx = Math.abs(Math.sin(rad) * 98);
-            return (
-              <ellipse
-                key={deg}
-                cx="110"
-                cy="110"
-                rx={rx}
-                ry={98}
-                stroke="#22d3ee"
-                strokeWidth="0.5"
-                fill="none"
-                opacity="0.22"
-              />
-            );
-          })}
+          {/* Sphere lighting overlay (terminator) */}
+          <circle cx="120" cy="120" r="108" fill="url(#globeLight)" />
         </g>
 
-        {/* Globe rim */}
-        <circle cx="110" cy="110" r="98" fill="none" stroke="#22d3ee" strokeWidth="1.2" opacity="0.7" />
-        <circle cx="110" cy="110" r="98" fill="none" stroke="#0ea5e9" strokeWidth="0.5" opacity="0.5" style={{ transform: 'translate(0.5px, 0.5px)' }} />
+        {/* Rim — bright cyan ring + soft outer fade */}
+        <circle cx="120" cy="120" r="108" fill="none" stroke="#22d3ee" strokeWidth="1.6" opacity="0.85" />
+        <circle cx="120" cy="120" r="111" fill="none" stroke="#0ea5e9" strokeWidth="2" opacity="0.35" />
+        <circle cx="120" cy="120" r="115" fill="none" stroke="#0ea5e9" strokeWidth="1" opacity="0.18" />
       </svg>
     </div>
   );
