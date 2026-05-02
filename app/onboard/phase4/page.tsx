@@ -103,14 +103,20 @@ const STRUGGLE_BACK = Icon('#f97316', (
 ));
 const STRUGGLE_KNEE = Icon('#fb923c', (
   <>
-    {/* Bent leg, side view: thigh down to bent knee, calf out */}
-    <rect x="9" y="3" width="3" height="9" rx="1" fill="currentColor" />
-    {/* Knee joint kneecap */}
-    <circle cx="11" cy="12.5" r="2.2" fill="currentColor" />
-    <rect x="11" y="12" width="3" height="9" rx="1" fill="currentColor" />
-    {/* Pain marker */}
-    <circle cx="11" cy="12.5" r="3.5" fill="#ef4444" fillOpacity="0.5" />
-    <circle cx="11" cy="12.5" r="1.4" fill="#ef4444" />
+    {/* Side-view bent leg with clear thigh-knee-calf shape */}
+    {/* Thigh */}
+    <rect x="6" y="3" width="4" height="9" rx="1.5" fill="currentColor" />
+    {/* Knee bend (kneecap as a clear filled circle) */}
+    <circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="#0c0c14" strokeWidth="0.6" />
+    {/* Calf going down-right */}
+    <rect x="13" y="12" width="4" height="9" rx="1.5" fill="currentColor" transform="rotate(8 15 17)" />
+    {/* PAIN — pulsing red on the kneecap */}
+    <circle cx="12" cy="12" r="5" fill="#ef4444" fillOpacity="0.5" />
+    <circle cx="12" cy="12" r="2.2" fill="#ef4444" />
+    {/* Pain rays */}
+    <line x1="12" y1="6" x2="12" y2="4" stroke="#ef4444" strokeWidth="1.4" strokeLinecap="round" />
+    <line x1="6" y1="12" x2="4" y2="12" stroke="#ef4444" strokeWidth="1.4" strokeLinecap="round" />
+    <line x1="20" y1="12" x2="22" y2="12" stroke="#ef4444" strokeWidth="1.4" strokeLinecap="round" />
   </>
 ));
 const STRUGGLE_SHOULDER = Icon('#ef4444', (
@@ -133,17 +139,28 @@ const STRUGGLE_SHOULDER = Icon('#ef4444', (
 ));
 const STRUGGLE_WRIST = Icon('#f59e0b', (
   <>
-    {/* Forearm + hand */}
-    <rect x="4" y="9" width="9" height="3.5" rx="1" fill="currentColor" />
-    {/* Wrist joint */}
-    <circle cx="13" cy="10.5" r="2" fill="currentColor" />
-    {/* Hand (palm + fingers stub) */}
-    <path d="M 14 9 L 19 8 L 20 12 L 14 12 Z" fill="currentColor" />
-    {/* Fingers hint */}
-    <line x1="19" y1="8" x2="20" y2="6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    {/* Pain on wrist */}
-    <circle cx="13" cy="10.5" r="3" fill="#ef4444" fillOpacity="0.55" />
-    <circle cx="13" cy="10.5" r="1.3" fill="#ef4444" />
+    {/* Clear hand + wrist + forearm. Forearm goes down, wrist joint
+        in middle, hand with 4 visible fingers + thumb at top. */}
+    {/* Forearm (bottom) */}
+    <rect x="9" y="14" width="6" height="8" rx="1.5" fill="currentColor" />
+    {/* Wrist joint — clear band */}
+    <rect x="8" y="12" width="8" height="2.5" rx="1" fill="currentColor" stroke="#0c0c14" strokeWidth="0.5" />
+    {/* Palm */}
+    <rect x="9" y="6" width="6" height="6" rx="1.2" fill="currentColor" />
+    {/* Four fingers */}
+    <rect x="9.5" y="2" width="1.2" height="5" rx="0.4" fill="currentColor" />
+    <rect x="11" y="1.5" width="1.2" height="5.5" rx="0.4" fill="currentColor" />
+    <rect x="12.5" y="2" width="1.2" height="5" rx="0.4" fill="currentColor" />
+    <rect x="14" y="2.5" width="1.2" height="4.5" rx="0.4" fill="currentColor" />
+    {/* Thumb sticking out left */}
+    <rect x="6.5" y="7" width="3" height="1.4" rx="0.5" fill="currentColor" />
+    {/* PAIN — bright red on the wrist joint */}
+    <circle cx="12" cy="13" r="4.5" fill="#ef4444" fillOpacity="0.5" />
+    <circle cx="12" cy="13" r="2" fill="#ef4444" />
+    {/* Pain rays */}
+    <line x1="12" y1="9" x2="12" y2="7" stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round" />
+    <line x1="6" y1="13" x2="4" y2="13" stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round" />
+    <line x1="18" y1="13" x2="20" y2="13" stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round" />
   </>
 ));
 const ICON_SLEEP = Icon('#8b5cf6', (

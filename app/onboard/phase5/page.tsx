@@ -922,14 +922,18 @@ interface SilhouetteProps {
 }
 
 /**
- * Plain standing human, all body parts CLEARLY SEPARATE (head, neck,
- * torso, arms hanging at the sides, legs slightly apart). Muscle
- * highlight paints the targeted group in red — the rest stays dim.
+ * Plain standing human silhouette. The muscle the card REPRESENTS is
+ * always painted red — the user shouldn't have to tap to see what
+ * the card means. The `active` state controls overall card brightness
+ * (handled outside via the orange border + glow), not the muscle color.
  */
 function MuscleSilhouette({ muscle, active }: SilhouetteProps) {
   const dim = '#475569';
-  const HOT = active ? '#dc2626' : '#475569';
-  const fill = (m: MuscleKey) => (muscle === m && active ? HOT : dim);
+  // Pre-colored: dimmer red on inactive cards, brighter red on active.
+  const HOT = active ? '#ef4444' : '#dc2626';
+
+  // Per-muscle: returns HOT if THIS card represents this muscle.
+  const isThis = (m: MuscleKey) => muscle === m;
 
   return (
     <svg width="48" height="80" viewBox="0 0 56 80" fill="none" className="flex-shrink-0">
@@ -938,40 +942,40 @@ function MuscleSilhouette({ muscle, active }: SilhouetteProps) {
       {/* Neck */}
       <rect x="26" y="14" width="4" height="3" fill={dim} />
 
-      {/* Shoulders / deltoids — clearly visible bumps */}
-      <ellipse cx="17" cy="20" rx="4" ry="3.5" fill={fill('shoulders')} />
-      <ellipse cx="39" cy="20" rx="4" ry="3.5" fill={fill('shoulders')} />
+      {/* Shoulders / deltoids — always shown */}
+      <ellipse cx="17" cy="20" rx="4" ry="3.5" fill={isThis('shoulders') ? HOT : dim} />
+      <ellipse cx="39" cy="20" rx="4" ry="3.5" fill={isThis('shoulders') ? HOT : dim} />
 
-      {/* Torso (V-taper) — separate from arms */}
+      {/* Torso — base in slate, replaced by red if muscle === 'back' */}
       <path
         d="M 18 19 L 38 19 L 36 48 L 20 48 Z"
-        fill={dim}
+        fill={isThis('back') ? HOT : dim}
       />
-      {/* Chest highlight (sits on top of torso) */}
-      {muscle === 'chest' && active && (
+      {/* Chest highlight on top of torso (always when card is chest) */}
+      {isThis('chest') && (
         <>
           <ellipse cx="23" cy="26" rx="5" ry="4" fill={HOT} />
           <ellipse cx="33" cy="26" rx="5" ry="4" fill={HOT} />
         </>
       )}
       {/* Abs highlight */}
-      {muscle === 'abs' && active && (
+      {isThis('abs') && (
         <rect x="24" y="30" width="8" height="16" rx="1" fill={HOT} />
       )}
-      {/* Back: paint torso fully red (since it's a back-body proxy) */}
-      {muscle === 'back' && active && (
-        <path d="M 18 19 L 38 19 L 36 48 L 20 48 Z" fill={HOT} />
+      {/* Spine line for back-card emphasis */}
+      {isThis('back') && (
+        <line x1="28" y1="19" x2="28" y2="48" stroke="#0c0c14" strokeWidth="0.7" opacity="0.6" />
       )}
 
-      {/* Arms — clearly separate from torso, hanging at sides */}
-      <rect x="13" y="20" width="3.5" height="28" rx="1.5" fill={fill('arms')} />
-      <rect x="39.5" y="20" width="3.5" height="28" rx="1.5" fill={fill('arms')} />
+      {/* Arms — clearly separate, painted red if card is 'arms' */}
+      <rect x="13" y="20" width="3.5" height="28" rx="1.5" fill={isThis('arms') ? HOT : dim} />
+      <rect x="39.5" y="20" width="3.5" height="28" rx="1.5" fill={isThis('arms') ? HOT : dim} />
 
-      {/* Legs — clearly two separate columns */}
-      <rect x="20" y="48" width="6" height="28" rx="1.5" fill={fill('legs')} />
-      <rect x="30" y="48" width="6" height="28" rx="1.5" fill={fill('legs')} />
+      {/* Legs */}
+      <rect x="20" y="48" width="6" height="28" rx="1.5" fill={isThis('legs') ? HOT : dim} />
+      <rect x="30" y="48" width="6" height="28" rx="1.5" fill={isThis('legs') ? HOT : dim} />
 
-      {/* Feet hint */}
+      {/* Feet */}
       <ellipse cx="23" cy="77" rx="3.5" ry="1.5" fill={dim} />
       <ellipse cx="33" cy="77" rx="3.5" ry="1.5" fill={dim} />
     </svg>

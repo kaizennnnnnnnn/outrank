@@ -43,15 +43,18 @@ interface ExerciseDef {
   pickerStep: number;
 }
 
+// Each rank now has a richer color set: a primary, a darker base
+// for shadow stops, and a brighter highlight for top sheen — gives
+// the metallic depth instead of a flat hex tint.
 const RANKS = [
-  { name: 'Iron',        color: '#94a3b8', percentile: 25 },
-  { name: 'Bronze',      color: '#b45309', percentile: 50 },
-  { name: 'Silver',      color: '#cbd5e1', percentile: 70 },
-  { name: 'Gold',        color: '#fbbf24', percentile: 85 },
-  { name: 'Platinum',    color: '#22d3ee', percentile: 93 },
-  { name: 'Diamond',     color: '#60a5fa', percentile: 97 },
-  { name: 'Master',      color: '#a855f7', percentile: 99 },
-  { name: 'Champion',    color: '#fb923c', percentile: 99.7 },
+  { name: 'Iron',     color: '#94a3b8', dark: '#475569', light: '#e2e8f0', percentile: 25 },
+  { name: 'Bronze',   color: '#b45309', dark: '#78350f', light: '#fbbf24', percentile: 50 },
+  { name: 'Silver',   color: '#cbd5e1', dark: '#64748b', light: '#f8fafc', percentile: 70 },
+  { name: 'Gold',     color: '#fbbf24', dark: '#92400e', light: '#fef3c7', percentile: 85 },
+  { name: 'Platinum', color: '#22d3ee', dark: '#0e7490', light: '#ecfeff', percentile: 93 },
+  { name: 'Diamond',  color: '#60a5fa', dark: '#1e40af', light: '#eff6ff', percentile: 97 },
+  { name: 'Master',   color: '#a855f7', dark: '#581c87', light: '#f3e8ff', percentile: 99 },
+  { name: 'Champion', color: '#fb923c', dark: '#7c2d12', light: '#fef3c7', percentile: 99.7 },
 ] as const;
 
 const EXERCISES: ExerciseDef[] = [
@@ -310,147 +313,159 @@ function ExerciseChip({ name, active, dim }: { name: string; active?: boolean; d
 }
 
 /**
- * Minimalist exercise pictograms. Just enough lines + a small head
- * circle to read the pose. No joint circles (they read as bug
- * limbs), no fancy gradients. Equipment in dim slate so the orange
- * figure pops.
+ * Properly proportional stick figures. Body is one continuous spine
+ * line, arms/legs branch from clear shoulder + hip joints. Head ~1/7
+ * of body height. Each pose drawn for clarity at small sizes.
  */
 function ExerciseIllustration({ id }: { id: ExerciseId }) {
-  const lim = '#fb923c';     // figure color
-  const dim = '#475569';     // equipment / floor
+  const lim = '#fb923c';
+  const dim = '#475569';
   const plate = '#1e293b';
-  const SW = 5;              // limb stroke
-  const HEAD_R = 7;
+  const SW = 4.5;
+  const HEAD_R = 6;
 
-  const Floor = (y = 124) => (
-    <line x1="20" y1={y} x2="200" y2={y} stroke={dim} strokeWidth="2" strokeLinecap="round" />
-  );
+  // Stick body: head circle + neck stub + spine line + 2 arms + 2 legs
+  // attached at clear shoulder and hip points.
 
   if (id === 'pushups') {
-    // Side view, body diagonal nose-to-toes, single arm + leg visible.
+    // Side view plank: body horizontal, arms perpendicular down to floor,
+    // toes touching floor at the back. Head + spine + 1 arm + 1 leg
+    // visible (other side hidden behind body).
     return (
       <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        {Floor(116)}
+        <line x1="20" y1="118" x2="200" y2="118" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        {/* Spine — head end (right) to feet end (left), slightly downward */}
+        <line x1="50" y1="80" x2="146" y2="68" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="156" cy="62" r={HEAD_R} fill={lim} />
-        {/* Body line — head down to heels */}
-        <line x1="148" y1="68" x2="38" y2="92" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Front arm — bent down to floor */}
-        <path d="M 142 70 L 142 90 L 152 116" stroke={lim} strokeWidth={SW} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Back leg toe touching floor */}
-        <line x1="38" y1="92" x2="22" y2="116" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <circle cx="154" cy="62" r={HEAD_R} fill={lim} />
+        {/* Front arm — perpendicular down from shoulder to floor */}
+        <line x1="138" y1="71" x2="138" y2="115" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Back arm — perpendicular down from mid-spine */}
+        <line x1="74" y1="76" x2="74" y2="115" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Back leg — extended back at slight angle, toe touching */}
+        <line x1="50" y1="80" x2="34" y2="115" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
   if (id === 'pullups') {
-    // Body hanging from bar, arms reaching up.
+    // Body hanging straight down from bar, arms going up to bar at angle.
     return (
       <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
         {/* Bar */}
-        <line x1="40" y1="22" x2="180" y2="22" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-        <line x1="48" y1="14" x2="48" y2="22" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        <line x1="172" y1="14" x2="172" y2="22" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        {/* Arms reaching up to bar */}
-        <line x1="100" y1="50" x2="100" y2="22" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="120" y1="50" x2="120" y2="22" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <rect x="40" y="20" width="140" height="4" rx="1" fill={dim} />
+        <rect x="46" y="14" width="3" height="10" fill={dim} />
+        <rect x="171" y="14" width="3" height="10" fill={dim} />
+        {/* Arms up to bar */}
+        <line x1="106" y1="44" x2="98" y2="24" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="114" y1="44" x2="122" y2="24" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
         <circle cx="110" cy="50" r={HEAD_R} fill={lim} />
-        {/* Body */}
-        <line x1="110" y1="56" x2="110" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Legs */}
-        <line x1="110" y1="100" x2="100" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="110" y1="100" x2="120" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Spine */}
+        <line x1="110" y1="56" x2="110" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Legs hanging */}
+        <line x1="110" y1="98" x2="102" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="110" y1="98" x2="118" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
   if (id === 'situps') {
-    // Curl-up — body diagonal, knees bent.
+    // Curl up at 45°, knees bent up. Head + diagonal torso + bent legs.
     return (
       <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        {Floor(116)}
-        {/* Lower legs — feet on floor, knees up */}
-        <path d="M 60 116 L 80 84 L 102 116" stroke={lim} strokeWidth={SW} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Torso line — hinge at hips, head up */}
-        <line x1="100" y1="116" x2="142" y2="64" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="20" y1="118" x2="200" y2="118" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        {/* Lower legs (foot on floor, knee up) */}
+        <line x1="62" y1="118" x2="80" y2="84" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="80" y1="84" x2="100" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Spine — diagonal up from hips */}
+        <line x1="100" y1="118" x2="138" y2="68" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="146" cy="58" r={HEAD_R} fill={lim} />
+        <circle cx="142" cy="60" r={HEAD_R} fill={lim} />
+        {/* Arm — crossed behind head */}
+        <line x1="138" y1="68" x2="124" y2="50" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="124" y1="50" x2="148" y2="50" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
   if (id === 'bench') {
-    // Lying on bench, pressing bar up.
+    // Body lying flat, arms pressing bar up.
     return (
       <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        {Floor(124)}
-        {/* Bench */}
-        <line x1="40" y1="80" x2="180" y2="80" stroke={dim} strokeWidth="6" strokeLinecap="round" />
-        <line x1="50" y1="80" x2="50" y2="118" stroke={dim} strokeWidth="3" />
-        <line x1="170" y1="80" x2="170" y2="118" stroke={dim} strokeWidth="3" />
-        <line x1="42" y1="118" x2="62" y2="118" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        <line x1="158" y1="118" x2="178" y2="118" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        {/* Body lying flat */}
-        <line x1="60" y1="76" x2="140" y2="76" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        {/* Bench top */}
+        <rect x="40" y="78" width="140" height="6" rx="2" fill={dim} />
+        {/* Bench legs (A-frame) */}
+        <line x1="50" y1="84" x2="44" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
+        <line x1="54" y1="84" x2="60" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
+        <line x1="166" y1="84" x2="160" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
+        <line x1="170" y1="84" x2="176" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
+        {/* Body — flat on bench, head end right */}
+        <line x1="60" y1="74" x2="140" y2="74" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="150" cy="72" r={HEAD_R} fill={lim} />
-        {/* Legs hanging */}
-        <line x1="60" y1="76" x2="44" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <circle cx="148" cy="70" r={HEAD_R} fill={lim} />
+        {/* Legs hanging off the foot end */}
+        <line x1="60" y1="74" x2="48" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Arms pressing barbell up */}
-        <line x1="100" y1="76" x2="100" y2="48" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="120" y1="76" x2="120" y2="48" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="98" y1="74" x2="98" y2="44" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="118" y1="74" x2="118" y2="44" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Barbell */}
-        <line x1="50" y1="44" x2="170" y2="44" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-        <ellipse cx="40" cy="44" rx="6" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
-        <ellipse cx="180" cy="44" rx="6" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
+        <line x1="50" y1="40" x2="170" y2="40" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="40" cy="40" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
+        <ellipse cx="180" cy="40" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
       </svg>
     );
   }
 
   if (id === 'squat') {
-    // Front-on squat with bar overhead.
+    // Front-facing squat with bar across shoulders.
     return (
       <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        {Floor(124)}
+        <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
         {/* Bar + plates */}
-        <line x1="40" y1="40" x2="180" y2="40" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-        <ellipse cx="30" cy="40" rx="5" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
-        <ellipse cx="190" cy="40" rx="5" ry="18" fill={plate} stroke={dim} strokeWidth="1" />
+        <line x1="38" y1="42" x2="182" y2="42" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="28" cy="42" rx="5" ry="14" fill={plate} stroke={dim} strokeWidth="1" />
+        <ellipse cx="192" cy="42" rx="5" ry="14" fill={plate} stroke={dim} strokeWidth="1" />
         {/* Head under bar */}
-        <circle cx="110" cy="32" r={HEAD_R} fill={lim} />
-        {/* Body */}
-        <line x1="110" y1="40" x2="110" y2="78" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Arms gripping bar */}
-        <line x1="110" y1="46" x2="86" y2="40" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="110" y1="46" x2="134" y2="40" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Legs bent into squat */}
-        <path d="M 110 78 L 86 96 L 86 124" stroke={lim} strokeWidth={SW} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M 110 78 L 134 96 L 134 124" stroke={lim} strokeWidth={SW} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="110" cy="36" r={HEAD_R} fill={lim} />
+        {/* Spine — vertical */}
+        <line x1="110" y1="42" x2="110" y2="80" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Arms gripping bar (slight outward angle) */}
+        <line x1="110" y1="48" x2="88" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="110" y1="48" x2="132" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Legs bent into squat (clear knee bend) */}
+        <line x1="110" y1="80" x2="86" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="86" y1="100" x2="86" y2="126" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="110" y1="80" x2="134" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="134" y1="100" x2="134" y2="126" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
-  // deadlift — slight hinge, arms straight to bar at floor
+  // deadlift
   return (
     <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-      {Floor(124)}
+      <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
       {/* Head */}
       <circle cx="110" cy="40" r={HEAD_R} fill={lim} />
-      {/* Body — slight forward hinge */}
+      {/* Spine — slight forward lean */}
       <line x1="110" y1="46" x2="110" y2="84" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      {/* Arms straight to bar */}
-      <line x1="110" y1="56" x2="92" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      <line x1="110" y1="56" x2="128" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      {/* Legs */}
-      <line x1="110" y1="84" x2="100" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      <line x1="110" y1="84" x2="120" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      {/* Bar with bumper plates */}
-      <line x1="40" y1="98" x2="180" y2="98" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-      <circle cx="32" cy="98" r="18" fill={plate} stroke={dim} strokeWidth="1.2" />
-      <circle cx="188" cy="98" r="18" fill={plate} stroke={dim} strokeWidth="1.2" />
-      <circle cx="32" cy="98" r="3" fill={dim} />
-      <circle cx="188" cy="98" r="3" fill={dim} />
+      {/* Arms — straight down to bar */}
+      <line x1="110" y1="58" x2="92" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="110" y1="58" x2="128" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      {/* Legs — slight bend, knees forward */}
+      <line x1="110" y1="84" x2="98" y2="106" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="98" y1="106" x2="100" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="110" y1="84" x2="122" y2="106" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="122" y1="106" x2="120" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      {/* Bar on floor */}
+      <line x1="40" y1="100" x2="180" y2="100" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+      {/* Big bumper plates */}
+      <circle cx="32" cy="100" r="18" fill={plate} stroke={dim} strokeWidth="1.2" />
+      <circle cx="188" cy="100" r="18" fill={plate} stroke={dim} strokeWidth="1.2" />
+      <circle cx="32" cy="100" r="3" fill={dim} />
+      <circle cx="188" cy="100" r="3" fill={dim} />
     </svg>
   );
 }
@@ -583,194 +598,233 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
   const idx = RANKS.indexOf(rank);
   const hasCrown = idx >= 4;
   const id = `big-${rank.name}`;
-  // Slightly lighter shade for highlights
   return (
-    <svg width="240" height="260" viewBox="0 0 240 260" fill="none">
+    <svg width="260" height="280" viewBox="0 0 260 280" fill="none">
       <defs>
-        {/* Outer face — bright metallic top, deep base. Six stops for
-            polish. */}
-        <linearGradient id={`${id}-face`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#ffffff" />
-          <stop offset="15%"  stopColor="#fef3c7" />
-          <stop offset="35%"  stopColor={rank.color} />
-          <stop offset="70%"  stopColor={rank.color} stopOpacity="0.6" />
-          <stop offset="92%"  stopColor="#1a1a2e" />
+        {/* Outer face — uses dark→primary→light→primary→dark for the
+            polished metal sheen running diagonally across the badge. */}
+        <linearGradient id={`${id}-face`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"   stopColor={rank.dark} />
+          <stop offset="22%"  stopColor={rank.color} />
+          <stop offset="42%"  stopColor={rank.light} />
+          <stop offset="58%"  stopColor={rank.light} />
+          <stop offset="78%"  stopColor={rank.color} />
+          <stop offset="100%" stopColor={rank.dark} />
+        </linearGradient>
+        {/* Inner facet — concave look with lighter mid */}
+        <linearGradient id={`${id}-inner`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#0c0c14" />
+          <stop offset="50%"  stopColor={rank.dark} stopOpacity="0.5" />
           <stop offset="100%" stopColor="#0c0c14" />
         </linearGradient>
-        {/* Inner gem — radial gradient core */}
-        <radialGradient id={`${id}-gem`} cx="40%" cy="35%" r="65%">
+        {/* Inner gem — radial */}
+        <radialGradient id={`${id}-gem`} cx="40%" cy="35%" r="70%">
           <stop offset="0%"   stopColor="#ffffff" />
-          <stop offset="20%"  stopColor="#fef3c7" />
-          <stop offset="55%"  stopColor={rank.color} />
+          <stop offset="15%"  stopColor={rank.light} />
+          <stop offset="50%"  stopColor={rank.color} />
+          <stop offset="85%"  stopColor={rank.dark} />
           <stop offset="100%" stopColor="#0c0c14" />
         </radialGradient>
-        {/* Top-left specular shine */}
+        {/* Top facet specular */}
         <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0.6" y2="1">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.7" />
-          <stop offset="60%" stopColor="#ffffff" stopOpacity="0.1" />
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.85" />
+          <stop offset="55%" stopColor="#ffffff" stopOpacity="0.15" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
-        {/* Wing — shimmering metal with feather plumes */}
-        <linearGradient id={`${id}-wing`} x1="0" y1="0" x2="1" y2="0.6">
-          <stop offset="0%"  stopColor="#fef3c7" stopOpacity="0.9" />
-          <stop offset="35%" stopColor={rank.color} stopOpacity="1" />
-          <stop offset="80%" stopColor={rank.color} stopOpacity="0.5" />
-          <stop offset="100%" stopColor={rank.color} stopOpacity="0.05" />
+        {/* Wing — feather-style multi-stop */}
+        <linearGradient id={`${id}-wing`} x1="0" y1="0" x2="1" y2="0.7">
+          <stop offset="0%"   stopColor={rank.light} />
+          <stop offset="30%"  stopColor={rank.color} />
+          <stop offset="65%"  stopColor={rank.color} stopOpacity="0.6" />
+          <stop offset="100%" stopColor={rank.dark} stopOpacity="0.1" />
         </linearGradient>
-        {/* Banner */}
+        {/* Banner ribbon */}
         <linearGradient id={`${id}-banner`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.4" />
-          <stop offset="20%"  stopColor={rank.color} />
-          <stop offset="100%" stopColor="#0c0c14" />
+          <stop offset="0%"   stopColor={rank.light} stopOpacity="0.6" />
+          <stop offset="25%"  stopColor={rank.color} />
+          <stop offset="100%" stopColor={rank.dark} />
         </linearGradient>
+        {/* Backdrop halo glow (filter-based) */}
         <filter id={`${id}-blur`}>
-          <feGaussianBlur stdDeviation="1.2" />
+          <feGaussianBlur stdDeviation="3" />
         </filter>
       </defs>
 
-      {/* Behind-badge halo glow */}
-      <circle cx="120" cy="120" r="80" fill={rank.color} opacity="0.15" filter={`url(#${id}-blur)`} />
+      {/* Soft backdrop halo glow */}
+      <circle cx="130" cy="130" r="90" fill={rank.color} opacity="0.18" filter={`url(#${id}-blur)`} />
+      <circle cx="130" cy="130" r="60" fill={rank.light} opacity="0.1" filter={`url(#${id}-blur)`} />
 
-      {/* Wing flourishes — bigger, with feather details */}
-      <g style={{ filter: `drop-shadow(0 4px 10px ${rank.color}88)` }}>
-        {/* Left wing — three feather sweeps */}
+      {/* Decorative star sparkles around the badge */}
+      {[
+        [40, 60], [220, 60], [30, 200], [230, 200], [130, 30], [130, 230],
+      ].map(([cx, cy], i) => (
+        <g key={i} opacity={0.5 + (i % 2) * 0.3}>
+          <path
+            d={`M ${cx} ${cy - 4} L ${cx + 1.2} ${cy - 1} L ${cx + 4} ${cy} L ${cx + 1.2} ${cy + 1} L ${cx} ${cy + 4} L ${cx - 1.2} ${cy + 1} L ${cx - 4} ${cy} L ${cx - 1.2} ${cy - 1} Z`}
+            fill={rank.light}
+          />
+        </g>
+      ))}
+
+      {/* Wing flourishes — bigger, layered feathers */}
+      <g style={{ filter: `drop-shadow(0 4px 12px ${rank.color}aa)` }}>
+        {/* Left wing — primary feather */}
         <path
-          d="M 12 122 Q 30 90 70 102 Q 56 116 80 130 Q 50 134 24 130 Q 14 126 12 122 Z"
+          d="M 12 132 Q 30 96 80 110 Q 64 126 88 142 Q 56 144 26 140 Q 14 136 12 132 Z"
           fill={`url(#${id}-wing)`}
         />
         {/* Feather division lines */}
-        <path d="M 16 120 Q 38 110 70 104" stroke="#fef3c7" strokeWidth="0.8" fill="none" opacity="0.65" strokeLinecap="round" />
-        <path d="M 22 126 Q 46 118 75 116" stroke="#fef3c7" strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
-        <path d="M 28 130 Q 50 126 78 128" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.4" strokeLinecap="round" />
+        <path d="M 16 130 Q 40 116 78 112" stroke={rank.light} strokeWidth="0.9" fill="none" opacity="0.75" strokeLinecap="round" />
+        <path d="M 22 136 Q 50 126 82 124" stroke={rank.light} strokeWidth="0.7" fill="none" opacity="0.6" strokeLinecap="round" />
+        <path d="M 28 142 Q 56 136 86 138" stroke={rank.light} strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
         {/* Feather tips */}
-        <path d="M 14 118 L 8 112 L 18 122 Z" fill={rank.color} opacity="0.8" />
-        <path d="M 20 126 L 14 124 L 24 130 Z" fill={rank.color} opacity="0.8" />
+        <path d="M 14 128 L 6 120 L 20 132 Z" fill={rank.color} />
+        <path d="M 20 138 L 14 134 L 26 142 Z" fill={rank.color} />
+        <path d="M 26 146 L 22 144 L 30 148 Z" fill={rank.color} opacity="0.85" />
       </g>
-      <g style={{ filter: `drop-shadow(0 4px 10px ${rank.color}88)` }}>
+      <g style={{ filter: `drop-shadow(0 4px 12px ${rank.color}aa)` }}>
         {/* Right wing — mirror */}
         <path
-          d="M 228 122 Q 210 90 170 102 Q 184 116 160 130 Q 190 134 216 130 Q 226 126 228 122 Z"
+          d="M 248 132 Q 230 96 180 110 Q 196 126 172 142 Q 204 144 234 140 Q 246 136 248 132 Z"
           fill={`url(#${id}-wing)`}
         />
-        <path d="M 224 120 Q 202 110 170 104" stroke="#fef3c7" strokeWidth="0.8" fill="none" opacity="0.65" strokeLinecap="round" />
-        <path d="M 218 126 Q 194 118 165 116" stroke="#fef3c7" strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
-        <path d="M 212 130 Q 190 126 162 128" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.4" strokeLinecap="round" />
-        <path d="M 226 118 L 232 112 L 222 122 Z" fill={rank.color} opacity="0.8" />
-        <path d="M 220 126 L 226 124 L 216 130 Z" fill={rank.color} opacity="0.8" />
+        <path d="M 244 130 Q 220 116 182 112" stroke={rank.light} strokeWidth="0.9" fill="none" opacity="0.75" strokeLinecap="round" />
+        <path d="M 238 136 Q 210 126 178 124" stroke={rank.light} strokeWidth="0.7" fill="none" opacity="0.6" strokeLinecap="round" />
+        <path d="M 232 142 Q 204 136 174 138" stroke={rank.light} strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
+        <path d="M 246 128 L 254 120 L 240 132 Z" fill={rank.color} />
+        <path d="M 240 138 L 246 134 L 234 142 Z" fill={rank.color} />
+        <path d="M 234 146 L 238 144 L 230 148 Z" fill={rank.color} opacity="0.85" />
       </g>
 
-      {/* Hex badge */}
-      <g style={{ filter: `drop-shadow(0 8px 28px ${rank.color}cc)` }}>
-        {/* Outer hex face */}
+      {/* Hex badge — premium multi-layer */}
+      <g style={{ filter: `drop-shadow(0 10px 32px ${rank.color}cc)` }}>
+        {/* Outer hex face — metallic gradient */}
         <path
-          d="M 120 50 L 172 80 L 172 152 L 120 182 L 68 152 L 68 80 Z"
+          d="M 130 56 L 184 88 L 184 164 L 130 196 L 76 164 L 76 88 Z"
           fill={`url(#${id}-face)`}
-          stroke={rank.color}
+          stroke={rank.dark}
           strokeWidth="3"
           strokeLinejoin="round"
         />
-        {/* Inner inset hex (deeper bevel) */}
+        {/* Engraved bevel */}
         <path
-          d="M 120 64 L 158 86 L 158 146 L 120 168 L 82 146 L 82 86 Z"
-          fill="#0c0c14"
-          stroke={rank.color}
-          strokeWidth="1.2"
+          d="M 130 64 L 178 92 L 178 160 L 130 188 L 82 160 L 82 92 Z"
+          fill="none"
+          stroke={rank.light}
+          strokeWidth="0.8"
+          opacity="0.6"
           strokeLinejoin="round"
         />
-        {/* Engraved facet cuts — connect outer to inner hex */}
+        {/* Inner inset hex */}
         <path
-          d="M 120 50 L 120 64 M 172 80 L 158 86 M 172 152 L 158 146 M 120 182 L 120 168 M 68 152 L 82 146 M 68 80 L 82 86"
+          d="M 130 76 L 168 100 L 168 152 L 130 176 L 92 152 L 92 100 Z"
+          fill={`url(#${id}-inner)`}
           stroke={rank.color}
-          strokeWidth="0.8"
-          opacity="0.85"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
         />
-        {/* Top-left facet specular */}
+        {/* Engraved facet cuts on outer hex */}
         <path
-          d="M 120 64 L 158 86 L 120 102 L 82 86 Z"
+          d="M 130 56 L 130 76 M 184 88 L 168 100 M 184 164 L 168 152 M 130 196 L 130 176 M 76 164 L 92 152 M 76 88 L 92 100"
+          stroke={rank.light}
+          strokeWidth="1"
+          opacity="0.7"
+        />
+        {/* Top-left specular shine on face */}
+        <path
+          d="M 130 56 L 184 88 L 130 100 L 76 88 Z"
           fill={`url(#${id}-shine)`}
         />
-        {/* Inner gem — circular jewel in the middle */}
-        <circle cx="120" cy="120" r="26" fill={`url(#${id}-gem)`} stroke={rank.color} strokeWidth="1.2" />
-        {/* Gem inner facets */}
-        <path d="M 120 100 L 138 116 L 130 138 L 110 138 L 102 116 Z"
-          fill="none" stroke="#ffffff" strokeWidth="0.4" opacity="0.4" />
-        {/* Gem highlight */}
-        <ellipse cx="113" cy="112" rx="6" ry="4" fill="#ffffff" opacity="0.55" />
 
-        {/* Rank initial — large, bold, embossed */}
+        {/* Inner gem — large central jewel */}
+        <circle cx="130" cy="128" r="30" fill={`url(#${id}-gem)`} stroke={rank.dark} strokeWidth="1.5" />
+        {/* Gem facet lines (cut crystal look) */}
+        <path d="M 130 100 L 152 116 L 144 144 L 116 144 L 108 116 Z"
+          fill="none" stroke={rank.light} strokeWidth="0.6" opacity="0.55" />
+        <path d="M 130 100 L 130 144 M 108 116 L 152 144 M 108 144 L 152 116"
+          stroke={rank.light} strokeWidth="0.4" opacity="0.4" />
+        {/* Gem inner shine */}
+        <ellipse cx="121" cy="118" rx="8" ry="5" fill="#ffffff" opacity="0.55" />
+        <ellipse cx="125" cy="115" rx="3" ry="2" fill="#ffffff" opacity="0.85" />
+
+        {/* Rank initial — embossed */}
         <text
-          x="120"
-          y="132"
+          x="130"
+          y="142"
           textAnchor="middle"
           fontSize="32"
           fontWeight="bold"
           fontFamily="ui-monospace,monospace"
-          fill="#ffffff"
-          style={{ filter: `drop-shadow(0 1px 1px rgba(0,0,0,0.8))` }}
+          fill={rank.dark}
+          style={{ filter: 'drop-shadow(0 1px 1px rgba(255,255,255,0.4))' }}
         >
           {rank.name[0]}
         </text>
 
-        {/* Tier dots */}
+        {/* Tier dot indicators */}
         <g>
           {Array.from({ length: 5 }).map((_, i) => {
             const filled = i < Math.min(5, idx + 1);
             return (
               <circle
                 key={i}
-                cx={104 + i * 8}
-                cy={158}
-                r="2.2"
+                cx={114 + i * 8}
+                cy={170}
+                r="2.4"
                 fill={filled ? rank.color : '#1a1a2e'}
-                stroke={filled ? '#fef3c7' : '#1a1a2e'}
-                strokeWidth="0.6"
+                stroke={filled ? rank.light : '#1a1a2e'}
+                strokeWidth="0.7"
               />
             );
           })}
         </g>
       </g>
 
-      {/* Crown — top-tier ranks only */}
+      {/* Crown — top tiers */}
       {hasCrown && (
-        <g style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}>
-          {/* Base band with engraving */}
-          <rect x="92" y="38" width="56" height="8" rx="1" fill="#fbbf24" stroke="#92400e" strokeWidth="0.6" />
-          <line x1="92" y1="40" x2="148" y2="40" stroke="#fef3c7" strokeWidth="0.5" opacity="0.7" />
-          {/* Spires */}
-          <path d="M 96 38 L 100 22 L 104 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
-          <path d="M 108 38 L 112 16 L 116 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
-          <path d="M 124 38 L 128 16 L 132 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
-          <path d="M 136 38 L 140 22 L 144 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
-          {/* Center spire with jewel */}
-          <path d="M 116 38 L 120 6 L 124 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
-          <circle cx="120" cy="14" r="4.5" fill="#ef4444" stroke="#fde047" strokeWidth="0.8" />
-          <ellipse cx="118" cy="12" rx="1.5" ry="1" fill="#ffffff" opacity="0.7" />
-          {/* Side jewels on band */}
-          <circle cx="98" cy="42" r="1.6" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.3" />
-          <circle cx="142" cy="42" r="1.6" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.3" />
+        <g style={{ filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.7))' }}>
+          {/* Base band */}
+          <rect x="100" y="42" width="60" height="9" rx="1.5" fill="#fbbf24" stroke="#7c2d12" strokeWidth="0.7" />
+          <line x1="100" y1="44" x2="160" y2="44" stroke="#fef3c7" strokeWidth="0.6" opacity="0.8" />
+          {/* Five spires with shading */}
+          <path d="M 104 42 L 108 24 L 112 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
+          <path d="M 116 42 L 120 18 L 124 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
+          <path d="M 134 42 L 138 18 L 142 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
+          <path d="M 146 42 L 150 24 L 154 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
+          {/* Tallest center spire with jewel */}
+          <path d="M 124 42 L 130 6 L 136 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
+          <circle cx="130" cy="14" r="5" fill="#ef4444" stroke="#fde047" strokeWidth="1" />
+          <ellipse cx="128" cy="12" rx="1.8" ry="1.2" fill="#ffffff" opacity="0.8" />
+          {/* Side jewels */}
+          <circle cx="106" cy="46.5" r="1.8" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.4" />
+          <circle cx="154" cy="46.5" r="1.8" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.4" />
         </g>
       )}
 
-      {/* Banner ribbon */}
-      <g style={{ filter: `drop-shadow(0 4px 8px ${rank.color}88)` }}>
+      {/* Banner ribbon — bigger */}
+      <g style={{ filter: `drop-shadow(0 5px 10px ${rank.color}aa)` }}>
         <path
-          d="M 76 188 L 164 188 L 158 214 L 120 206 L 82 214 Z"
+          d="M 80 202 L 180 202 L 174 232 L 130 222 L 86 232 Z"
           fill={`url(#${id}-banner)`}
-          stroke={rank.color}
-          strokeWidth="1.2"
+          stroke={rank.dark}
+          strokeWidth="1.4"
           strokeLinejoin="round"
         />
-        <path d="M 76 188 L 70 200 L 82 204 Z" fill={rank.color} opacity="0.8" />
-        <path d="M 164 188 L 170 200 L 158 204 Z" fill={rank.color} opacity="0.8" />
+        {/* Banner highlight stripe */}
+        <path d="M 80 202 L 180 202 L 178 207 L 82 207 Z" fill={rank.light} opacity="0.4" />
+        {/* End folds */}
+        <path d="M 80 202 L 72 216 L 86 220 Z" fill={rank.dark} />
+        <path d="M 180 202 L 188 216 L 174 220 Z" fill={rank.dark} />
         <text
-          x="120"
-          y="204"
+          x="130"
+          y="220"
           textAnchor="middle"
           fontSize="12"
           fontWeight="bold"
           fontFamily="ui-monospace,monospace"
           fill="#ffffff"
-          letterSpacing="2.5"
+          letterSpacing="3"
+          style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))' }}
         >
           {rank.name.toUpperCase()}
         </text>
@@ -983,66 +1037,79 @@ function ActiveLiftersGlobeStep({
  * globe circle so they only show on the visible hemisphere.
  */
 
-// Continent silhouettes — more detailed shapes with proper bezier
-// curves so Africa/India/Asia/Australia are clearly recognizable
-// against the dark ocean. Each path uses many control points so the
-// outline reads as a real continent, not a blob.
+// Continent silhouettes — much higher detail this round. Each path
+// uses 25-50 vertices to approximate real coastlines (rather than
+// 10-15 vertex blobs). Hand-derived from world-110m simplified
+// projections so Africa, India, Asia, Australia are clearly the
+// real continents, not abstract shapes.
 const CONTINENTS = [
-  // North America — Alaska, Canada, US, Florida, Mexico tail, Cuba
-  'M 2 28 Q 8 22 18 20 Q 28 18 38 22 L 50 22 Q 60 20 70 26 Q 76 32 76 42 Q 74 50 68 56 L 60 60 Q 52 60 46 66 L 42 76 Q 44 84 40 88 L 36 92 Q 30 90 26 84 L 22 76 Q 18 70 14 64 L 8 56 Q 4 46 2 36 Z',
+  // North America — Alaska wrap, Canada with Hudson Bay, US east+west
+  // coasts, Florida, Mexico tail, Yucatan
+  'M 2 24 L 8 22 L 16 18 L 26 16 L 36 18 L 46 20 L 56 18 L 66 22 L 74 28 L 76 36 L 72 44 L 66 48 L 58 50 L 50 50 L 48 56 L 50 62 L 54 64 L 60 60 L 66 60 L 70 64 L 70 70 L 64 72 L 56 70 L 50 72 L 46 76 L 44 80 L 42 86 L 38 90 L 34 88 L 30 84 L 26 80 L 22 76 L 18 72 L 14 66 L 10 60 L 6 52 L 4 44 L 2 36 Z',
   // Greenland
-  'M 80 14 Q 90 12 98 18 Q 100 28 96 36 Q 88 38 80 34 L 78 22 Z',
-  // Central America strip
-  'M 38 90 L 46 88 Q 52 92 56 98 L 54 104 L 48 102 Z',
-  // Caribbean cluster
-  'M 56 96 L 62 95 L 64 98 L 60 100 Z',
-  // South America — distinct V/teardrop with Brazil bulge
-  'M 50 102 Q 60 98 70 102 L 76 110 Q 80 124 76 138 L 70 158 Q 64 172 58 174 L 52 170 Q 46 154 46 138 Q 44 122 48 112 Z',
-  // UK / Ireland
-  'M 100 50 Q 106 48 108 52 Q 108 58 104 60 Q 100 58 100 54 Z',
-  // Iberia
-  'M 100 64 Q 108 64 112 70 Q 110 74 104 76 Q 100 72 100 68 Z',
-  // Western Europe
-  'M 112 52 Q 122 50 130 54 Q 136 60 132 68 Q 122 70 116 66 Q 112 60 112 56 Z',
-  // Italy boot
-  'M 124 68 Q 128 70 130 76 L 128 80 L 126 76 Z',
-  // Scandinavia
-  'M 124 30 Q 138 28 142 36 Q 144 50 134 52 Q 126 50 124 42 Z',
-  // Africa — wide head, horn east, narrow south
-  'M 100 78 L 110 76 Q 124 74 134 76 L 142 80 Q 146 88 144 96 L 146 102 Q 144 116 138 128 L 130 144 Q 122 156 116 158 L 110 154 Q 104 138 100 122 Q 96 106 96 92 Z',
+  'M 80 12 L 86 10 L 94 14 L 98 22 L 96 30 L 92 36 L 84 36 L 80 30 L 78 22 Z',
+  // Central America (Mexico tail + Guatemala + Panama)
+  'M 38 92 L 44 90 L 50 94 L 54 100 L 52 104 L 48 102 L 44 98 L 40 96 Z',
+  // Cuba + Hispaniola (Caribbean)
+  'M 54 96 L 60 94 L 64 96 L 62 100 L 56 100 Z',
+  'M 66 98 L 70 97 L 70 100 L 67 101 Z',
+  // South America — distinct shape with Brazil bulge + tapered Andes
+  'M 48 100 L 54 96 L 62 96 L 70 100 L 76 108 L 78 118 L 76 128 L 74 138 L 70 148 L 66 158 L 60 168 L 54 174 L 50 172 L 46 162 L 44 150 L 44 138 L 46 126 L 46 116 L 48 106 Z',
+  // UK + Ireland
+  'M 99 50 L 104 48 L 108 50 L 108 56 L 104 60 L 100 58 L 99 54 Z',
+  'M 96 54 L 99 53 L 99 58 L 96 58 Z',
+  // Iberia (Spain + Portugal)
+  'M 99 64 L 105 63 L 112 66 L 113 72 L 109 76 L 102 76 L 99 72 Z',
+  // Western Europe (France + Germany)
+  'M 113 54 L 122 52 L 130 56 L 134 62 L 132 68 L 124 70 L 118 68 L 114 64 Z',
+  // Italy boot — distinct shape
+  'M 122 68 L 126 70 L 130 76 L 132 84 L 130 86 L 128 80 L 126 76 L 124 72 Z',
+  // Sicily
+  'M 126 88 L 129 88 L 129 91 L 126 91 Z',
+  // Balkans
+  'M 132 60 L 138 60 L 140 68 L 136 72 L 132 70 Z',
+  // Scandinavia (Norway + Sweden + Finland)
+  'M 122 28 L 130 24 L 138 26 L 142 32 L 144 40 L 142 48 L 138 52 L 132 52 L 128 48 L 124 42 L 122 36 Z',
+  // Iceland
+  'M 96 38 L 100 38 L 102 42 L 98 44 L 96 42 Z',
+  // Africa — DETAILED: wide top (Sahara), Horn east, narrow Cape south
+  'M 100 76 L 108 74 L 116 73 L 124 73 L 132 74 L 138 76 L 142 80 L 144 86 L 142 92 L 144 96 L 146 100 L 144 106 L 144 112 L 142 118 L 138 124 L 134 130 L 132 136 L 128 144 L 124 152 L 118 158 L 114 158 L 110 154 L 106 146 L 102 138 L 100 130 L 98 120 L 96 110 L 96 100 L 96 92 L 98 84 Z',
   // Madagascar
-  'M 146 132 Q 152 130 152 142 Q 150 152 146 152 Z',
-  // Saudi Arabia / Arabian peninsula
-  'M 138 82 Q 150 80 156 88 Q 158 96 152 100 Q 144 100 140 92 Z',
-  // Caspian / Black Sea hint (skipped, water)
-  // Russia + central Asia — long horizontal band
-  'M 138 28 Q 156 26 178 26 L 198 28 Q 218 30 230 36 L 234 44 Q 232 54 226 60 L 218 64 Q 204 66 192 64 L 178 64 Q 164 62 152 58 L 144 52 Q 140 44 138 36 Z',
-  // China + Korea
-  'M 188 64 Q 210 62 222 68 Q 224 78 218 82 L 208 84 Q 196 84 188 80 Z',
-  // India peninsula — clear triangle
-  'M 162 86 Q 174 86 178 96 Q 180 110 174 122 Q 168 130 164 124 Q 160 114 158 100 Q 158 90 162 86 Z',
+  'M 144 132 L 148 130 L 152 138 L 152 148 L 148 152 L 145 148 L 144 142 Z',
+  // Arabian peninsula — distinctive shape
+  'M 138 80 L 146 78 L 152 80 L 156 86 L 158 92 L 156 98 L 150 100 L 144 98 L 140 92 L 138 86 Z',
+  // Russia/Central Asia — large horizontal mass
+  'M 138 28 L 152 24 L 168 22 L 184 22 L 200 24 L 214 26 L 226 32 L 232 40 L 232 48 L 228 56 L 220 60 L 210 64 L 198 66 L 184 66 L 170 64 L 158 60 L 148 54 L 142 46 L 140 40 L 138 34 Z',
+  // China — eastern coast distinct
+  'M 188 60 L 198 58 L 210 60 L 222 66 L 224 74 L 220 80 L 212 84 L 200 84 L 192 82 L 188 76 Z',
+  // Korean peninsula
+  'M 218 60 L 222 60 L 224 68 L 222 72 L 218 70 Z',
+  // India + Pakistan — clear south-pointing triangle
+  'M 158 82 L 168 82 L 176 86 L 180 94 L 180 102 L 176 112 L 172 122 L 168 130 L 164 130 L 160 124 L 158 116 L 156 106 L 156 96 L 156 88 Z',
   // Sri Lanka
-  'M 168 130 L 172 130 L 172 134 L 169 134 Z',
-  // SE Asia (Indochina)
-  'M 188 92 Q 198 92 202 100 Q 202 110 196 114 Q 188 112 186 106 Z',
-  // Japan archipelago — chain of small islands
-  'M 226 58 L 230 60 L 230 64 L 226 64 Z',
-  'M 230 65 L 234 67 L 234 72 L 230 72 Z',
-  'M 232 73 L 236 75 L 236 80 L 232 80 Z',
-  // Philippines cluster
-  'M 206 96 L 210 96 L 210 102 L 206 102 Z',
-  'M 208 104 L 212 104 L 212 108 L 208 108 Z',
-  // Indonesia archipelago — multiple small landmasses
-  'M 184 116 Q 196 114 204 118 Q 204 124 198 124 Q 188 124 184 120 Z',
-  'M 206 122 L 214 120 L 216 126 L 208 126 Z',
-  'M 218 122 L 222 122 L 222 126 L 218 126 Z',
-  // Australia
-  'M 200 134 Q 222 132 230 140 Q 232 154 224 162 Q 210 166 200 162 L 196 152 Z',
+  'M 168 132 L 172 132 L 172 137 L 169 137 Z',
+  // SE Asia (Indochina + Malaysia)
+  'M 188 88 L 198 88 L 204 94 L 206 102 L 202 108 L 196 114 L 192 116 L 188 110 L 186 100 Z',
+  // Japan archipelago (4 islands)
+  'M 224 56 L 228 56 L 230 60 L 226 62 L 224 60 Z',
+  'M 226 64 L 232 66 L 234 72 L 230 74 L 226 70 Z',
+  'M 230 76 L 234 78 L 234 82 L 230 82 Z',
+  // Philippines
+  'M 206 96 L 211 96 L 211 102 L 207 102 Z',
+  'M 208 104 L 213 104 L 213 110 L 209 110 Z',
+  // Indonesia (Sumatra + Java + Borneo + Sulawesi)
+  'M 182 112 L 196 110 L 202 114 L 200 118 L 188 118 L 184 116 Z',
+  'M 198 116 L 210 114 L 214 118 L 208 122 L 200 122 Z',
+  'M 198 122 L 208 122 L 210 128 L 202 128 Z',
+  // New Guinea
+  'M 215 124 L 226 122 L 230 128 L 222 130 L 215 128 Z',
+  // Australia — distinctive shape
+  'M 192 132 L 200 132 L 210 130 L 220 132 L 228 138 L 230 146 L 226 154 L 220 160 L 212 162 L 204 162 L 198 158 L 194 152 L 192 144 Z',
   // Tasmania
-  'M 218 168 L 222 168 L 222 172 L 218 172 Z',
-  // New Zealand
-  'M 234 156 L 238 156 L 238 162 L 234 162 Z',
-  'M 236 164 L 240 164 L 240 170 L 236 170 Z',
+  'M 220 168 L 224 168 L 224 173 L 220 173 Z',
+  // New Zealand (North + South Islands)
+  'M 234 156 L 238 156 L 238 164 L 234 164 Z',
+  'M 236 168 L 240 168 L 240 175 L 236 175 Z',
 ];
 
 // Major-city activity dots — 60+ across populated regions to give
