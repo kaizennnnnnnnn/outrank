@@ -128,10 +128,10 @@ function renderFooter(
 // ─── Step 0: Plan picker ─────────────────────────────────────────────────────
 
 const PRO_FEATURES = [
-  'Compete on global leaderboards',
-  'Compare ranks with everyone',
-  'Unlock all rank tiers + Mythic orbs',
-  'Detailed body + habit progress graphs',
+  'Ranks across all 5 pillars',
+  'Global leaderboards per pillar',
+  'Sleep, water + focus deep insights',
+  'All rank tiers + Mythic orbs',
   'Friends Leagues + group competitions',
   'Priority support',
 ];
@@ -151,21 +151,21 @@ function PlanPickerStep({
 }) {
   return (
     <div className="flex flex-col flex-1">
-      <div className="text-center mt-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">Choose your path</p>
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-2 leading-tight">
+      <div className="text-center">
+        <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-orange-400">Choose your path</p>
+        <h2 className="font-heading text-xl sm:text-2xl font-bold text-white mt-1 leading-tight">
           How do you want to <span className="text-orange-400">start</span>?
         </h2>
       </div>
 
-      <div className="space-y-3 mt-6">
-        {/* PRO card — premium gradient + glow + decorative orb + price block */}
+      <div className="space-y-2.5 mt-3">
+        {/* PRO card — compact premium */}
         <button
           onClick={() => onChange('pro')}
           className={cn(
-            'relative w-full text-left rounded-2xl border-2 p-5 transition-all overflow-hidden',
+            'relative w-full text-left rounded-2xl border-2 p-3.5 transition-all overflow-hidden',
             value === 'pro'
-              ? 'border-orange-400 shadow-[0_0_36px_-6px_rgba(249,115,22,0.7)]'
+              ? 'border-orange-400 shadow-[0_0_28px_-6px_rgba(249,115,22,0.7)]'
               : 'border-orange-500/40 hover:border-orange-400/70',
           )}
           style={{
@@ -175,114 +175,77 @@ function PlanPickerStep({
                 : 'linear-gradient(135deg, rgba(220,38,38,0.10), rgba(249,115,22,0.04) 50%, #0c0c14)',
           }}
         >
-          {/* Decorative ambient glow blob */}
+          {/* Decorative ambient glow */}
           <div
-            className="absolute -top-16 -right-16 w-40 h-40 rounded-full pointer-events-none"
+            className="absolute -top-12 -right-12 w-32 h-32 rounded-full pointer-events-none"
             style={{
-              background: 'radial-gradient(circle, rgba(249,115,22,0.45), transparent 70%)',
-              filter: 'blur(28px)',
+              background: 'radial-gradient(circle, rgba(249,115,22,0.4), transparent 70%)',
+              filter: 'blur(24px)',
             }}
           />
-          {/* Sparkle accents (top-right corner) */}
-          <div className="absolute top-3 right-3 pointer-events-none">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M16 4l1.5 5L22 10.5l-4.5 1.5L16 17l-1.5-5L10 10.5 14.5 9z" fill="#fde047" opacity="0.85" />
-              <circle cx="24" cy="6" r="1.2" fill="#fef3c7" />
-              <circle cx="8" cy="14" r="0.9" fill="#fef3c7" opacity="0.7" />
-            </svg>
-          </div>
-
-          {/* Recommended ribbon */}
+          {/* Recommended ribbon — corner triangle style */}
           <span
-            className="absolute -top-px left-5 px-3 py-1 rounded-b-md text-[9px] font-bold uppercase tracking-widest text-white shadow-md"
+            className="absolute -top-px left-3 px-2.5 py-0.5 rounded-b-md text-[8px] font-bold uppercase tracking-widest text-white"
             style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
           >
             Best value · 7 days free
           </span>
 
-          {/* Header — icon + title + price */}
-          <div className="flex items-start gap-3 mt-4 mb-4">
+          <div className="flex items-center gap-2.5 mt-3 mb-2.5">
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{
                 background: 'linear-gradient(135deg, #fde68a, #fb923c 40%, #dc2626)',
-                boxShadow: '0 4px 14px -4px rgba(249,115,22,0.7)',
+                boxShadow: '0 3px 10px -3px rgba(249,115,22,0.7)',
               }}
             >
-              <TrophyIconFull size={24} className="text-white" />
+              <TrophyIconFull size={18} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-heading text-2xl font-bold text-white leading-tight">Outrank Pro</p>
-              <p className="text-[11px] text-orange-300 font-semibold uppercase tracking-widest mt-0.5">
-                Full experience
-              </p>
+              <p className="font-heading text-lg font-bold text-white leading-tight">Outrank Pro</p>
+              <div className="flex items-baseline gap-1 mt-0.5">
+                <span className="font-heading text-[15px] font-bold text-white tabular-nums">$9.99</span>
+                <span className="text-[10px] text-slate-400">/ month after trial</span>
+              </div>
             </div>
-            {value === 'pro' && <CheckCircleFullIcon size={26} className="text-orange-400 flex-shrink-0" />}
+            {value === 'pro' && <CheckCircleFullIcon size={22} className="text-orange-400 flex-shrink-0" />}
           </div>
 
-          {/* Big price block */}
-          <div className="rounded-xl bg-black/30 border border-white/8 p-3 mb-4 flex items-baseline gap-2">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mr-auto">After trial</span>
-            <span className="font-heading text-2xl font-bold text-white tabular-nums">$9.99</span>
-            <span className="text-[12px] text-slate-400 font-medium">/ month</span>
-          </div>
-
-          {/* Feature list with custom orange icons */}
-          <ul className="space-y-2">
-            {PRO_FEATURES.map((f, i) => (
-              <li key={f} className="flex items-start gap-2.5 text-[13px] text-slate-200 font-medium">
-                <span
-                  className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(251,146,60,0.25), rgba(220,38,38,0.15))',
-                    border: '1px solid rgba(251,146,60,0.4)',
-                  }}
-                >
-                  <CheckCircleFullIcon size={11} className="text-orange-300" />
-                </span>
-                <span className="leading-snug">{f}</span>
-                {i === 0 && (
-                  <span className="ml-auto text-[9px] uppercase tracking-widest font-bold text-orange-400">
-                    Pro only
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </button>
-
-        {/* FREE card — quieter */}
-        <button
-          onClick={() => onChange('free')}
-          className={cn(
-            'w-full text-left rounded-2xl border-2 p-4 transition-all',
-            value === 'free'
-              ? 'border-orange-400 bg-orange-500/10 shadow-[0_0_20px_-6px_rgba(249,115,22,0.5)]'
-              : 'border-white/10 bg-[#10101a] hover:border-white/20',
-          )}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/[0.04]">
-              <BoltFullIcon size={20} className="text-slate-300" />
-            </div>
-            <div className="flex-1">
-              <p className="font-heading text-lg font-bold text-white">Free</p>
-              <p className="text-[12px] text-slate-500">Forever · no card needed</p>
-            </div>
-            {value === 'free' && <CheckCircleFullIcon size={20} className="text-orange-400" />}
-          </div>
-          <ul className="space-y-1 mt-2">
-            {FREE_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-2 text-[12px] text-slate-400">
-                <CheckCircleFullIcon size={12} className="text-slate-500 mt-0.5 flex-shrink-0" />
+          {/* Compact 2-col feature list */}
+          <ul className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
+            {PRO_FEATURES.map((f) => (
+              <li key={f} className="flex items-start gap-1.5 text-[11px] text-slate-200 leading-snug">
+                <CheckCircleFullIcon size={11} className="text-orange-300 mt-0.5 flex-shrink-0" />
                 <span>{f}</span>
               </li>
             ))}
           </ul>
         </button>
+
+        {/* FREE card — minimal */}
+        <button
+          onClick={() => onChange('free')}
+          className={cn(
+            'w-full text-left rounded-2xl border-2 p-3 transition-all',
+            value === 'free'
+              ? 'border-orange-400 bg-orange-500/10 shadow-[0_0_20px_-6px_rgba(249,115,22,0.5)]'
+              : 'border-white/10 bg-[#10101a] hover:border-white/20',
+          )}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.04] flex-shrink-0">
+              <BoltFullIcon size={16} className="text-slate-300" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-heading text-base font-bold text-white leading-tight">Free</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Forever · no card · core features</p>
+            </div>
+            {value === 'free' && <CheckCircleFullIcon size={18} className="text-orange-400" />}
+          </div>
+        </button>
       </div>
 
-      <p className="text-[11px] text-slate-500 text-center mt-4">
+      <p className="text-[10px] text-slate-500 text-center mt-3">
         Cancel anytime. No charge during your free trial.
       </p>
     </div>

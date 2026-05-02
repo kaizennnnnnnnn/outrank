@@ -15,6 +15,7 @@ import {
   StruggleKey,
 } from '@/types/onboarding';
 import { CheckCircleFullIcon, SparklesIcon } from '@/components/ui/AppIcons';
+import { GymIcon, WaterIcon, SleepIcon, ScreenIcon, StepsIcon } from '@/components/ui/CategoryIcons';
 
 /**
  * Phase 4 — Personalization probes + insight cards.
@@ -713,8 +714,8 @@ function InsightInvisibleStep() {
     <InsightCard
       eyebrow="The honest truth"
       title={<>Progress feels<br/><span className="text-orange-400">invisible</span>.</>}
-      body="You show up. You log. You sweat. But the mirror doesn't change fast enough — and effort that doesn't feel like results gets harder to keep doing."
-      fix="Outrank tracks the wins your eyes can't see, every day."
+      body="You train. You sleep. You drink water. You try to focus. But none of it adds up to anything you can see — and effort that doesn't feel like results gets harder to keep doing."
+      fix="Outrank tracks the wins your eyes can't see — across every pillar, every day."
       visual={<MirrorVisual />}
     />
   );
@@ -725,8 +726,8 @@ function InsightBlindSpotStep() {
     <InsightCard
       eyebrow="Working blind"
       title={<>You can&apos;t fix<br/>what you <span className="text-orange-400">can&apos;t see</span>.</>}
-      body="When you don't know which muscle is lagging — or which habit is breaking your sleep — you train and live in circles. Weak points stay weak."
-      fix="Outrank ranks every part so you know exactly what to work on next."
+      body="If you don't know whether sleep, water, focus, steps or strength is the one holding you back, you train and live in circles. Your weakest pillar stays weakest."
+      fix="Outrank ranks all 5 pillars side-by-side, so the next move is obvious."
       visual={<BlindSpotVisual />}
     />
   );
@@ -757,7 +758,7 @@ function PathToBuildingStep() {
         The path to<br/>building <span className="text-orange-400">yourself</span>.
       </h2>
       <p className="text-slate-300/85 mt-4 max-w-sm mx-auto text-[15px] leading-relaxed">
-        Ranks turn effort into clear progress and show you what to improve next — across gym, sleep, water, focus, and steps. No more guessing.
+        <span className="text-white font-semibold">5 pillars. 5 ranks.</span> Strength, sleep, hydration, focus and steps each get measured separately, so you always know what to work on next. No more guessing.
       </p>
     </div>
   );
@@ -776,7 +777,7 @@ function SeeRealProgressStep() {
         See <span className="text-orange-400">real</span> progress.
       </h2>
       <p className="text-slate-300/85 mt-4 max-w-sm mx-auto text-[15px] leading-relaxed">
-        Outrank charts every metric — strength, sleep, hydration, focus, steps — so you can watch the version of you that&apos;s actually being built.
+        Outrank charts <span className="text-white font-semibold">every pillar</span> — strength, sleep, hydration, focus, steps — so you can watch the version of you that&apos;s actually being built.
       </p>
     </div>
   );
@@ -1021,56 +1022,146 @@ function MirrorVisual() {
 }
 
 /**
- * Reuses BodyFigure for anatomical accuracy. Strong groups
- * (shoulders, chest, biceps) are highlighted; weak groups (abs,
- * right-side quads) painted in dim red. Rank badges float around the
- * figure with leader lines pointing at their muscle group.
+ * 5-pillar diagnostic radar. Visualizes all 5 pillars (Strength, Sleep,
+ * Hydration, Focus, Steps) at equal weight on a pentagon — the user's
+ * actual readout has two strong axes and two weak ones, demonstrating
+ * the "blind spot" message: you can't fix what you can't see across
+ * pillars, not just muscles.
  */
 function BlindSpotVisual() {
-  return (
-    <div className="relative">
-      <BodyFigure
-        highlight={['shoulders', 'chest', 'biceps']}
-        weak={['abs', 'quads']}
-        scale={0.95}
-        idSuffix="-bs"
-      />
-      {/* Floating rank badges — absolutely positioned around the
-          figure with leader lines pointing at their groups. */}
-      <RankBadge label="A+" tone="strong" pos={{ left: -8, top: 38 }} />
-      <RankBadge label="A"  tone="strong" pos={{ right: -8, top: 60 }} />
-      <RankBadge label="F"  tone="weak"   pos={{ left: -8, top: 96 }} />
-      <RankBadge label="D"  tone="weak"   pos={{ right: -8, top: 152 }} />
-    </div>
-  );
-}
+  // 5 pillars on a pentagon, normalized values 0..1.
+  // Two weak axes (Sleep, Focus) anchor the "blind spot" narrative.
+  type IconCmp = React.ComponentType<{ size?: number; className?: string }>;
+  const PILLARS: { name: string; rank: string; value: number; tone: string; weak?: boolean; Icon: IconCmp }[] = [
+    { name: 'Strength',  rank: 'A',  value: 0.86, tone: '#ef4444', Icon: GymIcon as IconCmp },
+    { name: 'Steps',     rank: 'A+', value: 0.95, tone: '#22c55e', Icon: StepsIcon as IconCmp },
+    { name: 'Focus',     rank: 'F',  value: 0.18, tone: '#f59e0b', weak: true, Icon: ScreenIcon as IconCmp },
+    { name: 'Sleep',     rank: 'D',  value: 0.30, tone: '#a78bfa', weak: true, Icon: SleepIcon as IconCmp },
+    { name: 'Hydration', rank: 'B',  value: 0.65, tone: '#3b82f6', Icon: WaterIcon as IconCmp },
+  ];
 
-function RankBadge({
-  label,
-  tone,
-  pos,
-}: {
-  label: string;
-  tone: 'strong' | 'weak';
-  pos: { left?: number; right?: number; top: number };
-}) {
-  const color = tone === 'strong' ? '#fb923c' : '#ef4444';
+  const cx = 130;
+  const cy = 130;
+  const maxR = 96;
+  // Pentagon vertices: start at top (-90°), step 72°.
+  const angle = (i: number) => (-Math.PI / 2) + (i * (2 * Math.PI / PILLARS.length));
+  const point = (i: number, r: number) => ({
+    x: cx + Math.cos(angle(i)) * r,
+    y: cy + Math.sin(angle(i)) * r,
+  });
+
+  const polyAt = (scale: number) =>
+    PILLARS.map((_, i) => {
+      const p = point(i, maxR * scale);
+      return `${p.x},${p.y}`;
+    }).join(' ');
+
+  const valuePoly = PILLARS.map((p, i) => {
+    const pt = point(i, maxR * p.value);
+    return `${pt.x},${pt.y}`;
+  }).join(' ');
+
   return (
-    <div
-      className="absolute flex items-center gap-1"
-      style={{ ...pos, fontFamily: 'ui-monospace,monospace' }}
-    >
-      <div
-        className="px-2 py-0.5 rounded-md font-bold text-[11px] tracking-wider"
-        style={{
-          color,
-          background: '#10101a',
-          border: `1.2px solid ${color}`,
-          boxShadow: `0 0 10px -2px ${color}`,
-        }}
-      >
-        {label}
-      </div>
+    <div className="relative w-[260px] h-[260px] mx-auto">
+      <svg width="260" height="260" viewBox="0 0 260 260" className="overflow-visible">
+        <defs>
+          <radialGradient id="bs-fill" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fb923c" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="#dc2626" stopOpacity="0.18" />
+          </radialGradient>
+        </defs>
+
+        {/* Concentric pentagon grid */}
+        {[0.25, 0.5, 0.75, 1].map((s) => (
+          <polygon
+            key={s}
+            points={polyAt(s)}
+            fill="none"
+            stroke="#1e293b"
+            strokeWidth={s === 1 ? 1.2 : 0.7}
+            strokeDasharray={s === 1 ? undefined : '2 3'}
+            opacity={s === 1 ? 0.7 : 0.5}
+          />
+        ))}
+
+        {/* Spokes */}
+        {PILLARS.map((_, i) => {
+          const p = point(i, maxR);
+          return (
+            <line
+              key={i}
+              x1={cx}
+              y1={cy}
+              x2={p.x}
+              y2={p.y}
+              stroke="#1e293b"
+              strokeWidth="0.7"
+              opacity="0.55"
+            />
+          );
+        })}
+
+        {/* Value polygon — fill + stroke */}
+        <polygon
+          points={valuePoly}
+          fill="url(#bs-fill)"
+          stroke="#fb923c"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+          style={{ filter: 'drop-shadow(0 0 12px rgba(251,146,60,0.55))' }}
+        />
+
+        {/* Vertex dots */}
+        {PILLARS.map((p, i) => {
+          const pt = point(i, maxR * p.value);
+          return (
+            <circle
+              key={p.name}
+              cx={pt.x}
+              cy={pt.y}
+              r={p.weak ? 4 : 3.5}
+              fill={p.tone}
+              stroke="#0c0c14"
+              strokeWidth="1.5"
+              style={{ filter: `drop-shadow(0 0 6px ${p.tone}cc)` }}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Pillar labels — absolutely positioned around the pentagon */}
+      {PILLARS.map((p, i) => {
+        const pt = point(i, maxR + 30);
+        const Icon = p.Icon;
+        return (
+          <div
+            key={p.name}
+            className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5"
+            style={{ left: pt.x, top: pt.y }}
+          >
+            <div
+              className="w-7 h-7 rounded-md flex items-center justify-center"
+              style={{
+                background: `${p.tone}1a`,
+                border: `1px solid ${p.tone}55`,
+              }}
+            >
+              <Icon size={16} />
+            </div>
+            <div
+              className="px-1.5 py-[1px] rounded font-mono text-[10px] font-bold tracking-wider"
+              style={{
+                color: p.tone,
+                background: '#10101a',
+                border: `1px solid ${p.tone}66`,
+                boxShadow: p.weak ? `0 0 8px -2px ${p.tone}` : undefined,
+              }}
+            >
+              {p.rank}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -587,10 +587,10 @@ function TailorInterludeStep() {
     <div className="flex flex-col items-center text-center flex-1 justify-center">
       <PhoenixMascot size={150} greeting />
       <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-8 leading-tight">
-        We&apos;ll <span className="text-orange-400">tailor</span><br/>your workouts.
+        We&apos;ll <span className="text-orange-400">tailor</span><br/>everything.
       </h2>
       <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
-        Every set, every rep, every cue is built around your equipment, energy, and weak points.
+        Workouts, sleep targets, water goals, focus blocks and step counts — all built around your equipment, energy, and weakest pillar.
       </p>
     </div>
   );
@@ -789,7 +789,7 @@ function HelpFindTimeStep() {
         We&apos;ll help you<br/><span className="text-orange-400">find time</span>.
       </h2>
       <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
-        Your health is important. Making time for it should feel simple, achievable, and worth showing up for.
+        Workouts, water nudges, screen-off windows, bedtime — slotted into your day so showing up feels simple instead of crammed.
       </p>
     </div>
   );
@@ -816,7 +816,7 @@ function ReminderStep({
 
   return (
     <div className="flex flex-col flex-1">
-      <MascotRow message="Want a reminder before your workout? Pick a time that works." />
+      <MascotRow message="Want a reminder before your workout? We'll set up sleep, water and focus nudges later." />
 
       {/* Notification preview — looks like a real iOS-style notification */}
       <div className="mt-2 mx-auto max-w-sm rounded-2xl bg-[#10101a] border border-white/10 p-4 flex items-start gap-3">

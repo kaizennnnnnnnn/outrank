@@ -208,7 +208,7 @@ function PlanRecapStep({ name }: { name: string }) {
         Great choice,<br/><span className="text-orange-400">{name}</span>.
       </h2>
       <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
-        Personal plan locked in — calibrated to your goals at a pace that fits your life. Now let&apos;s see where you stand.
+        Plan locked in across all 5 pillars — strength, sleep, hydration, focus, steps. Let&apos;s start by ranking your strength.
       </p>
     </div>
   );
@@ -588,6 +588,9 @@ function RankRevealStep({
             <span className="font-bold text-white">{(100 - rank.percentile).toFixed(rank.percentile >= 99 ? 1 : 0)}%</span>{' '}
             of {exercise.name.toLowerCase()} lifters worldwide.
           </p>
+          <p className="text-[11px] text-slate-500 mt-3 max-w-xs mx-auto">
+            That&apos;s your <span className="text-orange-400 font-semibold">Strength rank</span>. Sleep, hydration, focus and steps each get their own.
+          </p>
         </motion.div>
       </div>
     </WizardShell>
@@ -921,7 +924,7 @@ function ProjectedRankStep({
         </div>
 
         <p className="text-slate-300/85 mt-10 max-w-sm mx-auto text-[15px] leading-relaxed">
-          You have <span className="text-orange-400 font-semibold">amazing potential</span>. Ranks measure your real progress — keep showing up and they keep climbing.
+          You have <span className="text-orange-400 font-semibold">amazing potential</span>. Every pillar — strength, sleep, water, focus, steps — climbs the same way. Show up, rank up.
         </p>
       </div>
     </WizardShell>
@@ -1011,10 +1014,10 @@ function ActiveLiftersGlobeStep({
           >
             {count.toLocaleString()}
           </span>{' '}
-          lifters working out right now.
+          people climbing their ranks right now.
         </h2>
         <p className="text-slate-300/85 mt-3 max-w-sm text-[15px] leading-relaxed">
-          You&apos;ll join thousands leveling up today.
+          Lifting, sleeping better, drinking water, taking steps — all over the world.
         </p>
 
         <div className="mt-8 mx-auto w-full max-w-xs">

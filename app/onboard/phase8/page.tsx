@@ -17,7 +17,8 @@ import { sanitizeUsername } from '@/lib/security';
 import { derivePillarGoals, clearDraft } from '@/lib/onboardingDraft';
 import { Button } from '@/components/ui/Button';
 import { useUIStore } from '@/store/uiStore';
-import { CheckCircleFullIcon, SparklesIcon, TrophyIconFull } from '@/components/ui/AppIcons';
+import { CheckCircleFullIcon, SparklesIcon, TrophyIconFull, FireIcon, BoltFullIcon } from '@/components/ui/AppIcons';
+import { GymIcon, WaterIcon, SleepIcon, ScreenIcon, StepsIcon } from '@/components/ui/CategoryIcons';
 
 /**
  * Phase 8 — Final phase. Setup loader, ranking explainer, signup,
@@ -92,48 +93,114 @@ export default function OnboardPhase8Page() {
 
 // ─── Step 0: Setup loader ────────────────────────────────────────────────────
 
+/**
+ * Chunky build loader. Each of 3 macro-tasks has 5-7 micro-steps; each
+ * micro-step pauses 380-820ms (varied) to feel like real work happening.
+ * The bar advances only when a micro-step completes — no smooth easing.
+ * Sub-task labels span all 5 pillars (strength / sleep / water / focus / steps).
+ */
 function SetupLoaderStep({ onDone }: { onDone: () => void }) {
-  const tasks = [
-    { label: 'Compiling your profile', sub: 'Body, goals, equipment' },
-    { label: 'Calculating your ranks', sub: 'Across every category' },
-    { label: 'Personalizing your plan', sub: 'Tailored to your goals' },
+  const TASKS: { label: string; steps: string[] }[] = [
+    {
+      label: 'Compiling your profile',
+      steps: [
+        'Reading body stats',
+        'Mapping your goals',
+        'Cataloging equipment',
+        'Logging struggles',
+        'Saving baseline',
+      ],
+    },
+    {
+      label: 'Calculating your ranks',
+      steps: [
+        'Strength rank',
+        'Sleep rank',
+        'Hydration rank',
+        'Focus rank',
+        'Steps rank',
+        'Cross-pillar weighting',
+      ],
+    },
+    {
+      label: 'Personalizing your plan',
+      steps: [
+        'Building weekly schedule',
+        'Setting habit targets',
+        'Calibrating reminders',
+        'Linking pillars together',
+        'Finalizing plan',
+      ],
+    },
   ];
-  const [progress, setProgress] = useState(0); // 0..3 — index of currently filling task
-  const [bars, setBars] = useState([0, 0, 0]); // 0-1 fill % per bar
 
-  useEffect(() => {
-    let raf: number;
-    const start = performance.now();
-    const STEP_DUR = 1400; // ms per bar
-    function tick(now: number) {
-      const elapsed = now - start;
-      const newBars = [0, 0, 0];
-      let advancingTo = 0;
-      for (let i = 0; i < 3; i++) {
-        const taskStart = i * STEP_DUR;
-        const taskEnd = taskStart + STEP_DUR;
-        if (elapsed >= taskEnd) {
-          newBars[i] = 1;
-        } else if (elapsed >= taskStart) {
-          newBars[i] = (elapsed - taskStart) / STEP_DUR;
-          advancingTo = i;
-        } else {
-          newBars[i] = 0;
-        }
-      }
-      setBars(newBars);
-      setProgress(advancingTo);
-      if (elapsed < STEP_DUR * 3) {
-        raf = requestAnimationFrame(tick);
-      } else {
-        // Hold the "all done" state briefly
-        setProgress(3);
-        setTimeout(onDone, 600);
+  // Pre-compute a fixed schedule of (taskIndex, subIndex, durationMs).
+  // Varied durations make the bar feel chunky and real.
+  const schedule = (() => {
+    const out: { t: number; s: number; ms: number }[] = [];
+    // Pseudo-random but deterministic so the experience is consistent.
+    let seed = 7;
+    const rand = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+    for (let t = 0; t < TASKS.length; t++) {
+      for (let s = 0; s < TASKS[t].steps.length; s++) {
+        // 360–820ms varied; the last sub of each task gets a little extra.
+        const isLast = s === TASKS[t].steps.length - 1;
+        const ms = Math.round(360 + rand() * 460) + (isLast ? 220 : 0);
+        out.push({ t, s, ms });
       }
     }
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [onDone]);
+    return out;
+  })();
+
+  const totalSubs = schedule.length;
+  const subsByTask = TASKS.map((t) => t.steps.length);
+
+  const [completedSubs, setCompletedSubs] = useState(0); // index of next sub to start
+  const [activeTask, setActiveTask] = useState(0);
+  const [activeSubLabel, setActiveSubLabel] = useState<string>(TASKS[0].steps[0]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let i = 0;
+
+    const runNext = () => {
+      if (cancelled) return;
+      if (i >= schedule.length) {
+        // hold "all done" briefly
+        setTimeout(() => !cancelled && onDone(), 700);
+        return;
+      }
+      const cur = schedule[i];
+      setActiveTask(cur.t);
+      setActiveSubLabel(TASKS[cur.t].steps[cur.s]);
+      // Step duration: visible work, then mark complete.
+      setTimeout(() => {
+        if (cancelled) return;
+        i += 1;
+        setCompletedSubs(i);
+        // tiny pause between sub-steps (chunky feel)
+        setTimeout(runNext, 90);
+      }, cur.ms);
+    };
+
+    runNext();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Compute per-bar fill: how many subs of THIS task are done / total subs of task.
+  const barFill = (taskIdx: number) => {
+    let subsBefore = 0;
+    for (let k = 0; k < taskIdx; k++) subsBefore += subsByTask[k];
+    const doneInThis = Math.max(0, Math.min(subsByTask[taskIdx], completedSubs - subsBefore));
+    return doneInThis / subsByTask[taskIdx];
+  };
+  const overallPct = Math.round((completedSubs / totalSubs) * 100);
 
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
@@ -142,13 +209,15 @@ function SetupLoaderStep({ onDone }: { onDone: () => void }) {
         Setting everything<br/><span className="text-orange-400">up for you</span>.
       </h2>
       <p className="text-slate-300/85 mt-3 max-w-sm text-[14px] leading-relaxed">
-        Building your profile based on every answer you gave us.
+        Building your profile across <span className="text-orange-400 font-semibold">all 5 pillars</span> — strength, sleep, water, focus, steps.
       </p>
 
-      <div className="mt-10 w-full max-w-sm space-y-4">
-        {tasks.map((t, i) => {
-          const isDone = bars[i] >= 1;
-          const isActive = i === progress;
+      <div className="mt-9 w-full max-w-sm space-y-4">
+        {TASKS.map((t, i) => {
+          const fill = barFill(i);
+          const isDone = fill >= 1;
+          const isActive = i === activeTask && !isDone;
+          const pending = !isDone && !isActive;
           return (
             <div key={t.label}>
               <div className="flex items-center justify-between mb-1.5">
@@ -169,22 +238,59 @@ function SetupLoaderStep({ onDone }: { onDone: () => void }) {
                   </span>
                 </div>
                 <span className="text-[11px] font-mono tabular-nums text-slate-500">
-                  {Math.floor(bars[i] * 100)}%
+                  {Math.round(fill * 100)}%
                 </span>
               </div>
-              <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-[width] duration-100 ease-linear"
-                  style={{
-                    width: `${bars[i] * 100}%`,
-                    background: 'linear-gradient(90deg, #dc2626, #f97316)',
-                  }}
-                />
+
+              {/* Chunky segmented bar — one segment per sub-step, no easing */}
+              <div className="flex gap-[3px] h-[7px]">
+                {t.steps.map((_, s) => {
+                  let subsBefore = 0;
+                  for (let k = 0; k < i; k++) subsBefore += subsByTask[k];
+                  const globalIdx = subsBefore + s;
+                  const filled = globalIdx < completedSubs;
+                  const filling = i === activeTask && s === (completedSubs - subsBefore) && !isDone;
+                  return (
+                    <div
+                      key={s}
+                      className={cn(
+                        'flex-1 rounded-[2px]',
+                        filled
+                          ? ''
+                          : filling
+                          ? 'bg-orange-400/30 animate-pulse'
+                          : 'bg-white/[0.06]',
+                      )}
+                      style={
+                        filled
+                          ? { background: 'linear-gradient(90deg, #dc2626, #f97316)' }
+                          : undefined
+                      }
+                    />
+                  );
+                })}
               </div>
-              <p className="text-[11px] text-slate-600 mt-1">{t.sub}</p>
+
+              {/* Active sub-label — only renders for the currently working task */}
+              <div className="h-[14px] mt-1.5">
+                {isActive && (
+                  <p className="text-[10.5px] text-orange-300/80 text-left flex items-center gap-1">
+                    <span className="inline-block w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
+                    {activeSubLabel}
+                  </p>
+                )}
+                {isDone && (
+                  <p className="text-[10.5px] text-slate-600 text-left">{t.steps.length} sub-steps complete</p>
+                )}
+              </div>
             </div>
           );
         })}
+
+        <div className="pt-2 flex items-center justify-between border-t border-white/[0.05]">
+          <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">Overall</span>
+          <span className="text-[11px] font-mono tabular-nums text-slate-300">{overallPct}%</span>
+        </div>
       </div>
     </div>
   );
@@ -193,67 +299,124 @@ function SetupLoaderStep({ onDone }: { onDone: () => void }) {
 // ─── Step 1: Ranking explainer ───────────────────────────────────────────────
 
 function RankingExplainerStep({ onContinue }: { onContinue: () => void }) {
+  type IconCmp = React.ComponentType<{ size?: number; className?: string }>;
+  const PILLARS: {
+    name: string;
+    sub: string;
+    rank: string;
+    tone: string;
+    Icon: IconCmp;
+    weak?: boolean;
+  }[] = [
+    { name: 'Strength',  sub: 'Lifts, push-ups, gym time',     rank: 'B+', tone: '#ef4444', Icon: GymIcon as IconCmp },
+    { name: 'Sleep',     sub: 'Hours, consistency, recovery',  rank: 'C',  tone: '#a78bfa', Icon: SleepIcon as IconCmp, weak: true },
+    { name: 'Hydration', sub: 'Water vs body weight goal',     rank: 'A',  tone: '#3b82f6', Icon: WaterIcon as IconCmp },
+    { name: 'Focus',     sub: 'Deep work, less screen time',   rank: 'F',  tone: '#f59e0b', Icon: ScreenIcon as IconCmp, weak: true },
+    { name: 'Steps',     sub: 'Daily movement, NEAT activity', rank: 'A+', tone: '#22c55e', Icon: StepsIcon as IconCmp },
+  ];
+
+  // Light entrance stagger so the list feels alive.
+  const [revealed, setRevealed] = useState(0);
+  useEffect(() => {
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setRevealed(i);
+      if (i >= PILLARS.length) clearInterval(id);
+    }, 110);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 justify-center text-center">
+    <div className="flex flex-col flex-1 text-center">
       <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">How Outrank works</p>
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-3 leading-tight">
-        Every part has<br/>its own <span className="text-orange-400">rank</span>.
+      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-2.5 leading-tight">
+        Every pillar has<br/>its own <span className="text-orange-400">rank</span>.
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm mx-auto text-[14px] leading-relaxed">
-        Your body and habits each get measured separately. Train the weak ones to climb.
+      <p className="text-slate-300/85 mt-3 max-w-sm mx-auto text-[13px] leading-relaxed">
+        Strength is just one of <span className="text-white font-semibold">5 pillars</span>. Sleep, water, focus and steps each get measured separately — your weakest one is what holds you back most.
       </p>
 
-      {/* Ranked muscle stack visual */}
-      <div className="mt-8 mx-auto max-w-sm w-full space-y-2">
-        {[
-          { name: 'Chest', rank: 'A', tone: '#fb923c', dim: false },
-          { name: 'Arms', rank: 'A+', tone: '#fde047', dim: false },
-          { name: 'Back', rank: 'B', tone: '#cbd5e1', dim: false },
-          { name: 'Abs', rank: 'C', tone: '#94a3b8', dim: true },
-          { name: 'Legs', rank: 'F', tone: '#ef4444', dim: true, weak: true },
-        ].map((m) => (
-          <div
-            key={m.name}
-            className={cn(
-              'rounded-xl border px-4 py-3 flex items-center justify-between transition-all',
-              m.weak
-                ? 'bg-red-500/10 border-red-500/40 shadow-[0_0_20px_-10px_rgba(239,68,68,0.6)]'
-                : m.dim
-                ? 'bg-white/[0.02] border-white/[0.06]'
-                : 'bg-orange-500/5 border-orange-500/20',
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-7 rounded-full" style={{ background: m.tone }} />
-              <span className={cn('font-bold text-[14px]', m.dim ? 'text-slate-400' : 'text-white')}>
-                {m.name}
-              </span>
-              {m.weak && (
-                <span className="text-[9px] font-bold uppercase tracking-widest text-red-400 bg-red-500/15 border border-red-500/30 px-1.5 py-0.5 rounded">
-                  Train me
-                </span>
-              )}
-            </div>
+      {/* Ranked pillar stack — all 5 with icons */}
+      <div className="mt-6 mx-auto max-w-sm w-full space-y-2">
+        {PILLARS.map((p, i) => {
+          const visible = i < revealed;
+          const Icon = p.Icon;
+          return (
             <div
-              className="px-3 py-1 rounded-md font-mono text-[14px] font-bold"
-              style={{
-                color: m.tone,
-                background: m.weak ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
-                border: `1.2px solid ${m.tone}40`,
-              }}
+              key={p.name}
+              className={cn(
+                'rounded-xl border p-3 flex items-center gap-3 transition-all duration-500',
+                visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4',
+                p.weak
+                  ? 'bg-red-500/[0.07] border-red-500/30 shadow-[0_0_24px_-12px_rgba(239,68,68,0.55)]'
+                  : 'bg-white/[0.025] border-white/[0.07]',
+              )}
             >
-              {m.rank}
+              {/* Tone-colored icon tile */}
+              <div
+                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden"
+                style={{
+                  background: `linear-gradient(135deg, ${p.tone}33, ${p.tone}11)`,
+                  border: `1px solid ${p.tone}40`,
+                }}
+              >
+                <div
+                  className="absolute inset-0 opacity-40"
+                  style={{ background: `radial-gradient(circle at 30% 25%, ${p.tone}66, transparent 65%)` }}
+                />
+                <Icon size={24} className="relative" />
+              </div>
+
+              <div className="flex-1 min-w-0 text-left">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-heading font-bold text-[15px] text-white">{p.name}</span>
+                  {p.weak && (
+                    <span className="text-[8.5px] font-bold uppercase tracking-widest text-red-300 bg-red-500/15 border border-red-500/30 px-1.5 py-[1px] rounded">
+                      Weak
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5 truncate">{p.sub}</p>
+              </div>
+
+              {/* Rank badge */}
+              <div
+                className="w-12 h-11 rounded-lg flex items-center justify-center shrink-0 font-heading font-black tabular-nums"
+                style={{
+                  color: p.tone,
+                  background: `linear-gradient(180deg, ${p.tone}1f, ${p.tone}08)`,
+                  border: `1.4px solid ${p.tone}55`,
+                  textShadow: `0 0 14px ${p.tone}66`,
+                  fontSize: p.rank.length > 1 ? '17px' : '20px',
+                }}
+              >
+                {p.rank}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <p className="text-slate-400 mt-6 max-w-sm mx-auto text-[12px] leading-relaxed">
-        Every habit gets the same treatment — sleep, water, focus, steps. <span className="text-orange-400 font-semibold">Find the weakest. Climb it.</span>
+      {/* Average rank synthesis */}
+      <div className="mt-4 mx-auto max-w-sm w-full rounded-xl bg-gradient-to-r from-orange-500/[0.08] to-red-500/[0.08] border border-orange-500/25 px-4 py-3 flex items-center gap-3">
+        <FireIcon size={20} className="text-orange-400 shrink-0" />
+        <div className="flex-1 text-left">
+          <p className="text-[11px] uppercase tracking-widest font-bold text-orange-300">Overall rank</p>
+          <p className="text-[12px] text-slate-300 leading-snug">Average across all 5. Climb the weakest to lift it.</p>
+        </div>
+        <div className="font-heading font-black text-2xl text-orange-400 tabular-nums" style={{ textShadow: '0 0 16px rgba(251,146,60,0.55)' }}>
+          B
+        </div>
+      </div>
+
+      <p className="text-slate-400 mt-4 max-w-sm mx-auto text-[11.5px] leading-relaxed">
+        <BoltFullIcon size={11} className="inline-block text-orange-400 mr-1 -mt-[1px]" />
+        Every check-in updates the right pillar. <span className="text-orange-400 font-semibold">Find the weakest. Climb it.</span>
       </p>
 
-      {/* Footer is rendered by WizardShell — but we need our own CTA here */}
-      <div className="mt-auto pt-6">
+      <div className="mt-auto pt-5">
         <button
           onClick={onContinue}
           className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all hover:brightness-110"
