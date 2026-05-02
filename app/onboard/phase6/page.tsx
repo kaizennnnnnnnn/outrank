@@ -583,170 +583,194 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
   const idx = RANKS.indexOf(rank);
   const hasCrown = idx >= 4;
   const id = `big-${rank.name}`;
+  // Slightly lighter shade for highlights
   return (
-    <svg width="220" height="240" viewBox="0 0 220 240" fill="none">
+    <svg width="240" height="260" viewBox="0 0 240 260" fill="none">
       <defs>
-        {/* Outer hex face — multi-stop metallic gradient */}
+        {/* Outer face — bright metallic top, deep base. Six stops for
+            polish. */}
         <linearGradient id={`${id}-face`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#fef3c7" />
-          <stop offset="18%" stopColor={rank.color} />
-          <stop offset="55%" stopColor={rank.color} />
+          <stop offset="0%"   stopColor="#ffffff" />
+          <stop offset="15%"  stopColor="#fef3c7" />
+          <stop offset="35%"  stopColor={rank.color} />
+          <stop offset="70%"  stopColor={rank.color} stopOpacity="0.6" />
+          <stop offset="92%"  stopColor="#1a1a2e" />
           <stop offset="100%" stopColor="#0c0c14" />
         </linearGradient>
-        {/* Inner hex bevel — darker, deeper */}
-        <linearGradient id={`${id}-inner`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor={rank.color} stopOpacity="0.5" />
-          <stop offset="60%" stopColor="#0c0c14" />
-          <stop offset="100%" stopColor="#020617" />
-        </linearGradient>
-        {/* Top facet specular shine */}
-        <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.55" />
-          <stop offset="60%" stopColor="#ffffff" stopOpacity="0.05" />
+        {/* Inner gem — radial gradient core */}
+        <radialGradient id={`${id}-gem`} cx="40%" cy="35%" r="65%">
+          <stop offset="0%"   stopColor="#ffffff" />
+          <stop offset="20%"  stopColor="#fef3c7" />
+          <stop offset="55%"  stopColor={rank.color} />
+          <stop offset="100%" stopColor="#0c0c14" />
+        </radialGradient>
+        {/* Top-left specular shine */}
+        <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0.6" y2="1">
+          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.7" />
+          <stop offset="60%" stopColor="#ffffff" stopOpacity="0.1" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
-        {/* Wing primary — shimmering metal */}
-        <linearGradient id={`${id}-wing`} x1="0" y1="0" x2="1" y2="0.5">
-          <stop offset="0%"  stopColor={rank.color} stopOpacity="0.95" />
-          <stop offset="55%" stopColor={rank.color} stopOpacity="0.6" />
-          <stop offset="100%" stopColor={rank.color} stopOpacity="0.15" />
+        {/* Wing — shimmering metal with feather plumes */}
+        <linearGradient id={`${id}-wing`} x1="0" y1="0" x2="1" y2="0.6">
+          <stop offset="0%"  stopColor="#fef3c7" stopOpacity="0.9" />
+          <stop offset="35%" stopColor={rank.color} stopOpacity="1" />
+          <stop offset="80%" stopColor={rank.color} stopOpacity="0.5" />
+          <stop offset="100%" stopColor={rank.color} stopOpacity="0.05" />
         </linearGradient>
-        {/* Banner gradient */}
+        {/* Banner */}
         <linearGradient id={`${id}-banner`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor={rank.color} />
+          <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.4" />
+          <stop offset="20%"  stopColor={rank.color} />
           <stop offset="100%" stopColor="#0c0c14" />
         </linearGradient>
+        <filter id={`${id}-blur`}>
+          <feGaussianBlur stdDeviation="1.2" />
+        </filter>
       </defs>
 
-      {/* Wing flourishes — left and right, with detailed feathers */}
-      {/* Left wing */}
-      <g style={{ filter: `drop-shadow(0 2px 6px ${rank.color}66)` }}>
+      {/* Behind-badge halo glow */}
+      <circle cx="120" cy="120" r="80" fill={rank.color} opacity="0.15" filter={`url(#${id}-blur)`} />
+
+      {/* Wing flourishes — bigger, with feather details */}
+      <g style={{ filter: `drop-shadow(0 4px 10px ${rank.color}88)` }}>
+        {/* Left wing — three feather sweeps */}
         <path
-          d="M 18 110 Q 30 88 64 96 Q 56 112 70 122 Q 50 124 30 122 Q 22 118 18 110 Z"
+          d="M 12 122 Q 30 90 70 102 Q 56 116 80 130 Q 50 134 24 130 Q 14 126 12 122 Z"
           fill={`url(#${id}-wing)`}
         />
-        {/* Feather rachis lines */}
-        <path d="M 22 110 L 64 100" stroke="#fef3c7" strokeWidth="0.7" fill="none" opacity="0.6" strokeLinecap="round" />
-        <path d="M 26 116 L 66 106" stroke="#fef3c7" strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
-        <path d="M 30 120 L 65 116" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.4" strokeLinecap="round" />
-        {/* Tip points */}
-        <path d="M 22 108 L 18 104 L 24 110 Z" fill={rank.color} opacity="0.7" />
-        <path d="M 26 116 L 22 114 L 28 118 Z" fill={rank.color} opacity="0.7" />
+        {/* Feather division lines */}
+        <path d="M 16 120 Q 38 110 70 104" stroke="#fef3c7" strokeWidth="0.8" fill="none" opacity="0.65" strokeLinecap="round" />
+        <path d="M 22 126 Q 46 118 75 116" stroke="#fef3c7" strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
+        <path d="M 28 130 Q 50 126 78 128" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.4" strokeLinecap="round" />
+        {/* Feather tips */}
+        <path d="M 14 118 L 8 112 L 18 122 Z" fill={rank.color} opacity="0.8" />
+        <path d="M 20 126 L 14 124 L 24 130 Z" fill={rank.color} opacity="0.8" />
       </g>
-      {/* Right wing — mirror */}
-      <g style={{ filter: `drop-shadow(0 2px 6px ${rank.color}66)` }}>
+      <g style={{ filter: `drop-shadow(0 4px 10px ${rank.color}88)` }}>
+        {/* Right wing — mirror */}
         <path
-          d="M 202 110 Q 190 88 156 96 Q 164 112 150 122 Q 170 124 190 122 Q 198 118 202 110 Z"
+          d="M 228 122 Q 210 90 170 102 Q 184 116 160 130 Q 190 134 216 130 Q 226 126 228 122 Z"
           fill={`url(#${id}-wing)`}
         />
-        <path d="M 198 110 L 156 100" stroke="#fef3c7" strokeWidth="0.7" fill="none" opacity="0.6" strokeLinecap="round" />
-        <path d="M 194 116 L 154 106" stroke="#fef3c7" strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
-        <path d="M 190 120 L 155 116" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.4" strokeLinecap="round" />
-        <path d="M 198 108 L 202 104 L 196 110 Z" fill={rank.color} opacity="0.7" />
-        <path d="M 194 116 L 198 114 L 192 118 Z" fill={rank.color} opacity="0.7" />
+        <path d="M 224 120 Q 202 110 170 104" stroke="#fef3c7" strokeWidth="0.8" fill="none" opacity="0.65" strokeLinecap="round" />
+        <path d="M 218 126 Q 194 118 165 116" stroke="#fef3c7" strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
+        <path d="M 212 130 Q 190 126 162 128" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.4" strokeLinecap="round" />
+        <path d="M 226 118 L 232 112 L 222 122 Z" fill={rank.color} opacity="0.8" />
+        <path d="M 220 126 L 226 124 L 216 130 Z" fill={rank.color} opacity="0.8" />
       </g>
 
-      {/* Hex badge — with deep drop shadow for floating feel */}
-      <g style={{ filter: `drop-shadow(0 6px 24px ${rank.color}aa)` }}>
-        {/* Outer hex (face) */}
+      {/* Hex badge */}
+      <g style={{ filter: `drop-shadow(0 8px 28px ${rank.color}cc)` }}>
+        {/* Outer hex face */}
         <path
-          d="M 110 42 L 156 72 L 156 138 L 110 168 L 64 138 L 64 72 Z"
+          d="M 120 50 L 172 80 L 172 152 L 120 182 L 68 152 L 68 80 Z"
           fill={`url(#${id}-face)`}
           stroke={rank.color}
-          strokeWidth="2.5"
+          strokeWidth="3"
           strokeLinejoin="round"
         />
-        {/* Inner hex (bevel/depth, slightly inset) */}
+        {/* Inner inset hex (deeper bevel) */}
         <path
-          d="M 110 56 L 144 78 L 144 132 L 110 154 L 76 132 L 76 78 Z"
-          fill={`url(#${id}-inner)`}
+          d="M 120 64 L 158 86 L 158 146 L 120 168 L 82 146 L 82 86 Z"
+          fill="#0c0c14"
           stroke={rank.color}
-          strokeWidth="1"
+          strokeWidth="1.2"
           strokeLinejoin="round"
+        />
+        {/* Engraved facet cuts — connect outer to inner hex */}
+        <path
+          d="M 120 50 L 120 64 M 172 80 L 158 86 M 172 152 L 158 146 M 120 182 L 120 168 M 68 152 L 82 146 M 68 80 L 82 86"
+          stroke={rank.color}
+          strokeWidth="0.8"
           opacity="0.85"
         />
-        {/* Engraved facet lines (edge cuts on the outer hex) */}
-        <path d="M 110 42 L 110 56 M 156 72 L 144 78 M 156 138 L 144 132 M 110 168 L 110 154 M 64 138 L 76 132 M 64 72 L 76 78"
-          stroke={rank.color} strokeWidth="0.6" opacity="0.7" />
-        {/* Top-left facet specular highlight */}
+        {/* Top-left facet specular */}
         <path
-          d="M 110 56 L 144 78 L 110 92 L 76 78 Z"
+          d="M 120 64 L 158 86 L 120 102 L 82 86 Z"
           fill={`url(#${id}-shine)`}
         />
-        {/* Inner glow circle behind the letter */}
-        <circle cx="110" cy="105" r="22" fill={rank.color} opacity="0.18" />
-        {/* Rank initial — large, bold */}
+        {/* Inner gem — circular jewel in the middle */}
+        <circle cx="120" cy="120" r="26" fill={`url(#${id}-gem)`} stroke={rank.color} strokeWidth="1.2" />
+        {/* Gem inner facets */}
+        <path d="M 120 100 L 138 116 L 130 138 L 110 138 L 102 116 Z"
+          fill="none" stroke="#ffffff" strokeWidth="0.4" opacity="0.4" />
+        {/* Gem highlight */}
+        <ellipse cx="113" cy="112" rx="6" ry="4" fill="#ffffff" opacity="0.55" />
+
+        {/* Rank initial — large, bold, embossed */}
         <text
-          x="110"
-          y="118"
+          x="120"
+          y="132"
           textAnchor="middle"
-          fontSize="44"
+          fontSize="32"
           fontWeight="bold"
           fontFamily="ui-monospace,monospace"
           fill="#ffffff"
-          style={{ filter: `drop-shadow(0 0 6px ${rank.color}cc)` }}
+          style={{ filter: `drop-shadow(0 1px 1px rgba(0,0,0,0.8))` }}
         >
           {rank.name[0]}
         </text>
-        {/* Tier dot indicators below the letter */}
+
+        {/* Tier dots */}
         <g>
           {Array.from({ length: 5 }).map((_, i) => {
             const filled = i < Math.min(5, idx + 1);
             return (
               <circle
                 key={i}
-                cx={94 + i * 8}
-                cy={140}
-                r="2"
-                fill={filled ? rank.color : '#1e293b'}
-                stroke={filled ? '#fef3c7' : 'transparent'}
-                strokeWidth="0.5"
+                cx={104 + i * 8}
+                cy={158}
+                r="2.2"
+                fill={filled ? rank.color : '#1a1a2e'}
+                stroke={filled ? '#fef3c7' : '#1a1a2e'}
+                strokeWidth="0.6"
               />
             );
           })}
         </g>
       </g>
 
-      {/* Crown — for top 4 ranks. Detailed with center jewel + side
-          spires + base band. */}
+      {/* Crown — top-tier ranks only */}
       {hasCrown && (
-        <g style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>
-          {/* Crown base band */}
-          <rect x="86" y="32" width="48" height="6" rx="1" fill="#fbbf24" stroke="#7c2d12" strokeWidth="0.5" />
-          {/* Five spires */}
-          <path d="M 90 32 L 92 18 L 96 32 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          <path d="M 100 32 L 102 14 L 106 32 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          <path d="M 110 32 L 110 8  L 110 32 Z" fill="none" />
-          <circle cx="110" cy="14" r="4" fill="#ef4444" stroke="#fde047" strokeWidth="0.5" />
-          <path d="M 114 32 L 118 14 L 120 32 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          <path d="M 124 32 L 128 18 L 130 32 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          {/* Side jewels on the band */}
-          <circle cx="92" cy="35" r="1.5" fill="#3b82f6" />
-          <circle cx="128" cy="35" r="1.5" fill="#3b82f6" />
+        <g style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))' }}>
+          {/* Base band with engraving */}
+          <rect x="92" y="38" width="56" height="8" rx="1" fill="#fbbf24" stroke="#92400e" strokeWidth="0.6" />
+          <line x1="92" y1="40" x2="148" y2="40" stroke="#fef3c7" strokeWidth="0.5" opacity="0.7" />
+          {/* Spires */}
+          <path d="M 96 38 L 100 22 L 104 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
+          <path d="M 108 38 L 112 16 L 116 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
+          <path d="M 124 38 L 128 16 L 132 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
+          <path d="M 136 38 L 140 22 L 144 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
+          {/* Center spire with jewel */}
+          <path d="M 116 38 L 120 6 L 124 38 Z" fill="#fde047" stroke="#92400e" strokeWidth="0.5" />
+          <circle cx="120" cy="14" r="4.5" fill="#ef4444" stroke="#fde047" strokeWidth="0.8" />
+          <ellipse cx="118" cy="12" rx="1.5" ry="1" fill="#ffffff" opacity="0.7" />
+          {/* Side jewels on band */}
+          <circle cx="98" cy="42" r="1.6" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.3" />
+          <circle cx="142" cy="42" r="1.6" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.3" />
         </g>
       )}
 
-      {/* Banner ribbon below the badge */}
-      <g style={{ filter: `drop-shadow(0 3px 6px ${rank.color}66)` }}>
+      {/* Banner ribbon */}
+      <g style={{ filter: `drop-shadow(0 4px 8px ${rank.color}88)` }}>
         <path
-          d="M 70 174 L 150 174 L 144 198 L 110 192 L 76 198 Z"
+          d="M 76 188 L 164 188 L 158 214 L 120 206 L 82 214 Z"
           fill={`url(#${id}-banner)`}
           stroke={rank.color}
-          strokeWidth="1"
+          strokeWidth="1.2"
           strokeLinejoin="round"
         />
-        {/* Banner end folds */}
-        <path d="M 70 174 L 64 184 L 76 188 Z" fill={rank.color} opacity="0.7" />
-        <path d="M 150 174 L 156 184 L 144 188 Z" fill={rank.color} opacity="0.7" />
+        <path d="M 76 188 L 70 200 L 82 204 Z" fill={rank.color} opacity="0.8" />
+        <path d="M 164 188 L 170 200 L 158 204 Z" fill={rank.color} opacity="0.8" />
         <text
-          x="110"
-          y="188"
+          x="120"
+          y="204"
           textAnchor="middle"
-          fontSize="11"
+          fontSize="12"
           fontWeight="bold"
           fontFamily="ui-monospace,monospace"
           fill="#ffffff"
-          letterSpacing="2"
+          letterSpacing="2.5"
         >
           {rank.name.toUpperCase()}
         </text>
@@ -1034,80 +1058,82 @@ const GLOBE_DOTS: [number, number, number][] = [
 
 const Globe = React.memo(function Globe() {
   return (
-    <div className="relative w-[300px] h-[300px] mx-auto">
-      {/* Star field */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 300" fill="none">
+    <div className="relative w-[320px] h-[320px] mx-auto">
+      {/* Dense star field */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320" fill="none">
         {[
-          [16, 28, 1.0], [42, 14, 0.7], [84, 22, 0.9], [128, 8, 1.0],
-          [182, 16, 0.8], [232, 24, 1.0], [266, 36, 0.7], [284, 60, 0.9],
-          [12, 90, 0.6], [294, 100, 0.8], [8, 160, 0.9], [288, 180, 0.7],
-          [22, 230, 0.8], [38, 268, 1.0], [80, 286, 0.7], [128, 292, 0.6],
-          [184, 290, 0.9], [240, 280, 0.8], [276, 256, 0.7], [288, 220, 0.6],
-          [156, 12, 0.5], [206, 14, 0.6], [60, 18, 0.55], [104, 16, 0.5],
+          [12, 24, 1.0], [38, 14, 0.7], [78, 22, 0.9], [122, 8, 1.0], [168, 14, 0.8],
+          [218, 22, 1.0], [256, 32, 0.7], [284, 56, 0.9], [302, 80, 0.6],
+          [12, 86, 0.6], [310, 116, 0.8], [8, 160, 0.9], [310, 200, 0.7],
+          [22, 250, 0.8], [38, 286, 1.0], [80, 304, 0.7], [128, 312, 0.6],
+          [184, 308, 0.9], [240, 296, 0.8], [276, 270, 0.7], [304, 234, 0.6],
+          [156, 12, 0.5], [206, 14, 0.6], [60, 18, 0.55], [100, 16, 0.5],
+          [50, 280, 0.55], [250, 264, 0.6], [180, 290, 0.5], [220, 290, 0.6],
         ].map(([x, y, r], i) => (
           <circle key={i} cx={x} cy={y} r={r} fill="#ffffff" opacity={0.5 + (i % 3) * 0.15} />
         ))}
       </svg>
 
-      {/* Soft outer atmospheric halo */}
+      {/* Outer atmospheric halo */}
       <div
         className="absolute inset-0 m-auto rounded-full pointer-events-none"
         style={{
-          width: 280,
-          height: 280,
-          background: 'radial-gradient(circle, rgba(99,102,241,0.4) 0%, rgba(56,189,248,0.18) 38%, transparent 72%)',
-          filter: 'blur(20px)',
+          width: 300,
+          height: 300,
+          background: 'radial-gradient(circle, rgba(99,102,241,0.45) 0%, rgba(56,189,248,0.2) 35%, transparent 70%)',
+          filter: 'blur(22px)',
         }}
       />
 
       <svg
-        viewBox="0 0 260 260"
+        viewBox="0 0 280 280"
         fill="none"
-        className="absolute inset-0 m-auto w-[280px] h-[280px]"
+        className="absolute inset-0 m-auto w-[300px] h-[300px]"
         style={{ overflow: 'hidden' }}
       >
         <defs>
           <clipPath id="globeClip">
-            <circle cx="130" cy="130" r="118" />
+            <circle cx="140" cy="140" r="128" />
           </clipPath>
-          {/* Ocean — purple-navy at lit upper-left fading to near-black
-              at lower-right. Matches the night-Earth look in the
-              reference. */}
-          <radialGradient id="globeOcean" cx="32%" cy="28%" r="80%">
-            <stop offset="0%"  stopColor="#393973" />
-            <stop offset="40%" stopColor="#1e1e4a" />
-            <stop offset="75%" stopColor="#0a0a1f" />
+          {/* Ocean — deep purple-navy, BRIGHT upper-left lit hemisphere
+              fading to NEAR-BLACK lower-right shadow. Strong terminator
+              for the 3D sphere read. */}
+          <radialGradient id="globeOcean" cx="30%" cy="26%" r="85%">
+            <stop offset="0%"   stopColor="#5854a3" />
+            <stop offset="20%"  stopColor="#393373" />
+            <stop offset="50%"  stopColor="#1a1542" />
+            <stop offset="80%"  stopColor="#080620" />
             <stop offset="100%" stopColor="#000000" />
           </radialGradient>
-          {/* Continent fill — LIGHTER than the ocean (this is the key
-              inversion). Pale slate-purple, dimmer on bottom for
-              sphere shading. */}
-          <linearGradient id="globeLand" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"  stopColor="#7c80b0" />
-            <stop offset="100%" stopColor="#4a4d7c" />
-          </linearGradient>
-          {/* Sphere lighting — clear lit hemisphere on upper-left,
-              shadow on lower-right. */}
-          <radialGradient id="globeLight" cx="32%" cy="26%" r="80%">
-            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.18" />
-            <stop offset="40%"  stopColor="#ffffff" stopOpacity="0" />
-            <stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
+          {/* Continent fill — soft slate-purple, bright on lit hemisphere */}
+          <radialGradient id="globeLand" cx="30%" cy="26%" r="85%">
+            <stop offset="0%"   stopColor="#a5a8d4" />
+            <stop offset="35%"  stopColor="#7c7fb0" />
+            <stop offset="70%"  stopColor="#4a4d7c" />
+            <stop offset="100%" stopColor="#2a2c50" />
           </radialGradient>
-          {/* Subtle glow for active dots — small filter so it's cheap. */}
+          {/* Sphere shadow — heavy at lower-right */}
+          <radialGradient id="globeShadow" cx="30%" cy="26%" r="80%">
+            <stop offset="0%"   stopColor="#000000" stopOpacity="0" />
+            <stop offset="55%"  stopColor="#000000" stopOpacity="0" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0.65" />
+          </radialGradient>
+          {/* Highlight — subtle bright sheen at upper-left */}
+          <radialGradient id="globeHighlight" cx="28%" cy="22%" r="35%">
+            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
           <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="1.2" />
+            <feGaussianBlur stdDeviation="1.4" />
           </filter>
         </defs>
 
-        {/* Ocean base */}
-        <circle cx="130" cy="130" r="118" fill="url(#globeOcean)" />
+        {/* Ocean base sphere */}
+        <circle cx="140" cy="140" r="128" fill="url(#globeOcean)" />
 
-        {/* Drifting world inside the globe clip. Outer static <g>
-            offsets the world strip into the globe; inner <g> takes
-            the CSS animation. Separating them keeps the SVG transform
-            attribute from being clobbered by the CSS transform. */}
+        {/* Continents + dots, drifting */}
         <g clipPath="url(#globeClip)">
-          <g transform="translate(10, 50)">
+          <g transform="translate(20, 50)">
             <g className="animate-globe-drift">
               {[0, 240].map((offset) => (
                 <g key={offset} transform={`translate(${offset}, 0)`}>
@@ -1116,19 +1142,18 @@ const Globe = React.memo(function Globe() {
                       key={i}
                       d={d}
                       fill="url(#globeLand)"
-                      stroke="#5c5e8a"
-                      strokeWidth="0.3"
-                      opacity="0.92"
+                      stroke="#3a3c64"
+                      strokeWidth="0.35"
                     />
                   ))}
-                  {/* Active-user dots — small light cyan, gentle pulse */}
+                  {/* Bigger, more clustered cyan dots */}
                   {GLOBE_DOTS.map(([x, y, delay], i) => (
                     <g key={i}>
-                      <circle cx={x} cy={y} r="2.6" fill="#67e8f9" opacity="0.4" filter="url(#dotGlow)">
-                        <animate attributeName="opacity" values="0.2; 0.55; 0.2" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
+                      <circle cx={x} cy={y} r="3.5" fill="#67e8f9" opacity="0.45" filter="url(#dotGlow)">
+                        <animate attributeName="opacity" values="0.25; 0.65; 0.25" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
                       </circle>
-                      <circle cx={x} cy={y} r="1.1" fill="#a5f3fc">
-                        <animate attributeName="opacity" values="0.6; 1; 0.6" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
+                      <circle cx={x} cy={y} r="1.4" fill="#cffafe">
+                        <animate attributeName="opacity" values="0.7; 1; 0.7" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
                       </circle>
                     </g>
                   ))}
@@ -1137,48 +1162,50 @@ const Globe = React.memo(function Globe() {
             </g>
           </g>
 
-          {/* Subtle lat/long grid — stays anchored to viewer */}
-          {[60, 90, 130, 170, 200].map((y) => {
-            const r = Math.sqrt(Math.max(0, 118 * 118 - (y - 130) * (y - 130)));
+          {/* Lat/long grid — very subtle */}
+          {[60, 90, 140, 190, 220].map((y) => {
+            const r = Math.sqrt(Math.max(0, 128 * 128 - (y - 140) * (y - 140)));
             return r > 0 ? (
               <ellipse
                 key={y}
-                cx="130"
+                cx="140"
                 cy={y}
                 rx={r}
                 ry={r * 0.18}
-                stroke="#67e8f9"
+                stroke="#a5b4fc"
                 strokeWidth="0.4"
                 fill="none"
-                opacity="0.18"
+                opacity="0.14"
               />
             ) : null;
           })}
           {[0, 30, 60, 90, 120, 150].map((deg) => {
             const rad = (deg * Math.PI) / 180;
-            const rx = Math.abs(Math.sin(rad) * 118);
+            const rx = Math.abs(Math.sin(rad) * 128);
             return (
               <ellipse
                 key={deg}
-                cx="130"
-                cy="130"
+                cx="140"
+                cy="140"
                 rx={rx}
-                ry={118}
-                stroke="#67e8f9"
+                ry={128}
+                stroke="#a5b4fc"
                 strokeWidth="0.4"
                 fill="none"
-                opacity="0.16"
+                opacity="0.12"
               />
             );
           })}
 
-          {/* Sphere lighting overlay */}
-          <circle cx="130" cy="130" r="118" fill="url(#globeLight)" />
+          {/* Sphere shadow — drives the 3D depth feel */}
+          <circle cx="140" cy="140" r="128" fill="url(#globeShadow)" />
+          {/* Highlight sheen */}
+          <circle cx="140" cy="140" r="128" fill="url(#globeHighlight)" />
         </g>
 
-        {/* Rim glow — softer than before, more like the reference */}
-        <circle cx="130" cy="130" r="118" fill="none" stroke="#67e8f9" strokeWidth="1" opacity="0.55" />
-        <circle cx="130" cy="130" r="121" fill="none" stroke="#0ea5e9" strokeWidth="1.5" opacity="0.25" />
+        {/* Rim glow */}
+        <circle cx="140" cy="140" r="128" fill="none" stroke="#67e8f9" strokeWidth="1" opacity="0.6" />
+        <circle cx="140" cy="140" r="131" fill="none" stroke="#a5b4fc" strokeWidth="1.5" opacity="0.3" />
       </svg>
     </div>
   );

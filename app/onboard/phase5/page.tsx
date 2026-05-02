@@ -39,8 +39,7 @@ const LOCATION_OPTIONS: { key: ExerciseLocation; label: string; sub: string }[] 
   { key: 'bodyweight', label: 'Bodyweight only',      sub: 'No equipment — just me.' },
 ];
 
-// Each equipment icon is a colored-fill SVG with depth shading. Renders
-// in active orange tone when selected, otherwise muted slate.
+// Recognizable equipment icons with depth + the active orange wash.
 function EquipIcon({
   active,
   color,
@@ -52,108 +51,211 @@ function EquipIcon({
 }) {
   const fill = active ? '#fb923c' : color;
   return (
-    <svg width="44" height="44" viewBox="0 0 32 32" fill="none">
+    <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
       <g style={{ color: fill }}>{children}</g>
     </svg>
   );
 }
 
+// Classic dumbbell — two large hex weight plates connected by a thin
+// short grip in the middle. Distinct from a barbell by being SHORT.
 const equipDumbbell = (active: boolean) => (
-  <EquipIcon active={active} color="#94a3b8">
-    <rect x="2"  y="11" width="4"  height="10" rx="1" fill="currentColor" />
-    <rect x="26" y="11" width="4"  height="10" rx="1" fill="currentColor" />
-    <rect x="6"  y="13" width="2.5" height="6" fill="currentColor" opacity="0.7" />
-    <rect x="23.5" y="13" width="2.5" height="6" fill="currentColor" opacity="0.7" />
-    <rect x="8.5" y="14.5" width="15" height="3" rx="0.5" fill="currentColor" />
-    <rect x="2"  y="11" width="4" height="2" fill="#ffffff" opacity="0.18" />
-    <rect x="26" y="11" width="4" height="2" fill="#ffffff" opacity="0.18" />
+  <EquipIcon active={active} color="#cbd5e1">
+    {/* Left weight stack: large hex */}
+    <path d="M3 16l3-5h4l3 5-3 5h-4z" fill="currentColor" />
+    {/* Right weight stack */}
+    <path d="M19 16l3-5h4l3 5-3 5h-4z" fill="currentColor" />
+    {/* Inner darker hex (shading) */}
+    <path d="M5.5 16l1.5-2.5h2L10.5 16 9 18.5h-2z" fill="#0c0c14" opacity="0.3" />
+    <path d="M21.5 16l1.5-2.5h2L26.5 16 25 18.5h-2z" fill="#0c0c14" opacity="0.3" />
+    {/* Grip — short bar between */}
+    <rect x="13" y="14.5" width="6" height="3" fill="currentColor" />
+    {/* Grip ridges */}
+    <line x1="14.5" y1="15" x2="14.5" y2="17" stroke="#0c0c14" strokeWidth="0.4" opacity="0.5" />
+    <line x1="16" y1="15" x2="16" y2="17" stroke="#0c0c14" strokeWidth="0.4" opacity="0.5" />
+    <line x1="17.5" y1="15" x2="17.5" y2="17" stroke="#0c0c14" strokeWidth="0.4" opacity="0.5" />
   </EquipIcon>
 );
+
+// Barbell — long thin bar with stacked plates on each end.
 const equipBarbell = (active: boolean) => (
   <EquipIcon active={active} color="#cbd5e1">
-    <rect x="0.5" y="9.5" width="3.5" height="13" rx="0.7" fill="currentColor" />
-    <rect x="28" y="9.5" width="3.5" height="13" rx="0.7" fill="currentColor" />
-    <rect x="4.5" y="11.5" width="2.5" height="9" fill="currentColor" opacity="0.7" />
-    <rect x="25" y="11.5" width="2.5" height="9" fill="currentColor" opacity="0.7" />
-    <rect x="7" y="14.5" width="18" height="3" rx="0.5" fill="currentColor" />
-    <rect x="0.5" y="9.5" width="3.5" height="2.5" fill="#ffffff" opacity="0.2" />
+    {/* Long bar */}
+    <rect x="2" y="15" width="28" height="2" rx="0.5" fill="currentColor" />
+    {/* Left plates (stacked) */}
+    <rect x="3" y="9" width="3" height="14" rx="0.5" fill="currentColor" />
+    <rect x="6.5" y="11" width="2.5" height="10" rx="0.5" fill="currentColor" />
+    <rect x="9.5" y="12.5" width="1.5" height="7" rx="0.3" fill="currentColor" opacity="0.85" />
+    {/* Right plates (stacked) */}
+    <rect x="26" y="9" width="3" height="14" rx="0.5" fill="currentColor" />
+    <rect x="23" y="11" width="2.5" height="10" rx="0.5" fill="currentColor" />
+    <rect x="21" y="12.5" width="1.5" height="7" rx="0.3" fill="currentColor" opacity="0.85" />
+    {/* Top highlight on bar */}
+    <line x1="2" y1="15" x2="30" y2="15" stroke="#ffffff" strokeWidth="0.5" opacity="0.3" />
   </EquipIcon>
 );
+
+// Kettlebell — iconic bell shape with U handle on top.
 const equipKettlebell = (active: boolean) => (
-  <EquipIcon active={active} color="#94a3b8">
-    <path d="M11 5h10c1.1 0 2 .9 2 2v1a3 3 0 01-1.5 2.6 8 8 0 11-11 0A3 3 0 019 8V7c0-1.1.9-2 2-2z" fill="currentColor" />
-    <ellipse cx="16" cy="13" rx="3.5" ry="1.5" fill="#ffffff" opacity="0.25" />
-    <ellipse cx="13" cy="20" rx="2" ry="1" fill="#ffffff" opacity="0.18" />
+  <EquipIcon active={active} color="#cbd5e1">
+    {/* U-shaped handle */}
+    <path
+      d="M11 9c0-3 2-5 5-5s5 2 5 5v3"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      fill="none"
+      strokeLinecap="round"
+    />
+    {/* Bell body — round bottom, narrows at neck */}
+    <ellipse cx="16" cy="20" rx="9" ry="8" fill="currentColor" />
+    {/* Neck (where handle meets body) */}
+    <rect x="13" y="11" width="6" height="3" fill="currentColor" />
+    {/* Body shine */}
+    <ellipse cx="13" cy="17" rx="3" ry="2.5" fill="#ffffff" opacity="0.25" />
+    {/* Base shadow */}
+    <ellipse cx="16" cy="27" rx="6" ry="1" fill="#0c0c14" opacity="0.3" />
   </EquipIcon>
 );
+
+// Bench — side view with seat pad + 2 visible legs.
 const equipBench = (active: boolean) => (
   <EquipIcon active={active} color="#cbd5e1">
-    <rect x="2" y="11" width="28" height="5" rx="1.5" fill="currentColor" />
-    <rect x="2" y="11" width="28" height="2" fill="#ffffff" opacity="0.2" />
-    <rect x="5" y="16" width="2.5" height="11" rx="0.5" fill="currentColor" opacity="0.85" />
-    <rect x="24.5" y="16" width="2.5" height="11" rx="0.5" fill="currentColor" opacity="0.85" />
-    <rect x="3" y="26" width="6" height="2" rx="0.5" fill="currentColor" opacity="0.7" />
-    <rect x="23" y="26" width="6" height="2" rx="0.5" fill="currentColor" opacity="0.7" />
+    {/* Pad */}
+    <rect x="3" y="11" width="26" height="4" rx="1.2" fill="currentColor" />
+    {/* Pad shine */}
+    <rect x="3" y="11" width="26" height="1.5" fill="#ffffff" opacity="0.25" />
+    {/* Backrest support post (small angled piece) */}
+    <rect x="25" y="6" width="3" height="6" rx="0.5" fill="currentColor" opacity="0.9" />
+    {/* Legs — A-frame */}
+    <line x1="6" y1="15" x2="4" y2="26" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="6" y1="15" x2="9" y2="26" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="26" y1="15" x2="23" y2="26" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <line x1="26" y1="15" x2="28" y2="26" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    {/* Floor */}
+    <line x1="2" y1="27" x2="30" y2="27" stroke="currentColor" strokeWidth="1" opacity="0.5" strokeLinecap="round" />
   </EquipIcon>
 );
+
+// Squat rack — two TALL posts + horizontal bar + visible J-hooks.
 const equipSquatRack = (active: boolean) => (
-  <EquipIcon active={active} color="#94a3b8">
-    <rect x="4" y="3" width="2.5" height="26" rx="0.5" fill="currentColor" />
-    <rect x="25.5" y="3" width="2.5" height="26" rx="0.5" fill="currentColor" />
-    <rect x="2" y="6" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
-    <rect x="23" y="6" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
-    <rect x="2" y="13" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
-    <rect x="23" y="13" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.85" />
-    <rect x="6.5" y="11" width="19" height="2" rx="0.5" fill="currentColor" />
+  <EquipIcon active={active} color="#cbd5e1">
+    {/* Vertical posts (clearly tall) */}
+    <rect x="4" y="3" width="3" height="26" rx="0.5" fill="currentColor" />
+    <rect x="25" y="3" width="3" height="26" rx="0.5" fill="currentColor" />
+    {/* Top horizontal connector */}
+    <rect x="3" y="3" width="26" height="2" rx="0.3" fill="currentColor" />
+    {/* J-hooks — visible little extensions sticking inward */}
+    <path d="M7 11h3v2H8" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+    <path d="M25 11h-3v2h2" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+    {/* Loaded barbell across */}
+    <rect x="6" y="11.5" width="20" height="1.8" rx="0.3" fill="currentColor" opacity="0.95" />
+    {/* Plates on bar */}
+    <rect x="7" y="9" width="2" height="7" rx="0.3" fill="currentColor" />
+    <rect x="23" y="9" width="2" height="7" rx="0.3" fill="currentColor" />
+    {/* Lower hook */}
+    <path d="M7 19h3" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    <path d="M25 19h-3" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+    {/* Floor */}
+    <line x1="2" y1="29" x2="30" y2="29" stroke="currentColor" strokeWidth="1" opacity="0.5" />
   </EquipIcon>
 );
+
+// Pull-up bar — clean horizontal bar with mounting brackets and grip
+// hand markers below.
 const equipPullup = (active: boolean) => (
   <EquipIcon active={active} color="#cbd5e1">
-    <rect x="3" y="3" width="26" height="2.5" rx="0.5" fill="currentColor" />
-    <rect x="3" y="3" width="26" height="1" fill="#ffffff" opacity="0.2" />
-    <rect x="6" y="2" width="2" height="6" rx="0.3" fill="currentColor" opacity="0.85" />
-    <rect x="24" y="2" width="2" height="6" rx="0.3" fill="currentColor" opacity="0.85" />
-    <rect x="11.5" y="5.5" width="1.5" height="9" rx="0.4" fill="currentColor" />
-    <rect x="19" y="5.5" width="1.5" height="9" rx="0.4" fill="currentColor" />
-    <circle cx="12.25" cy="14.5" r="0.6" fill="currentColor" opacity="0.5" />
-    <circle cx="19.75" cy="14.5" r="0.6" fill="currentColor" opacity="0.5" />
-    <circle cx="16" cy="20" r="3.5" fill="currentColor" opacity="0.85" />
-    <rect x="15.25" y="22" width="1.5" height="8" rx="0.4" fill="currentColor" opacity="0.7" />
+    {/* Mount brackets on wall */}
+    <rect x="3" y="6" width="3" height="8" rx="0.5" fill="currentColor" opacity="0.85" />
+    <rect x="26" y="6" width="3" height="8" rx="0.5" fill="currentColor" opacity="0.85" />
+    {/* Wall mount plates */}
+    <rect x="2" y="6" width="2" height="8" rx="0.3" fill="currentColor" opacity="0.6" />
+    <rect x="28" y="6" width="2" height="8" rx="0.3" fill="currentColor" opacity="0.6" />
+    {/* The bar itself */}
+    <rect x="6" y="9.5" width="20" height="2.5" rx="1" fill="currentColor" />
+    {/* Bar shine */}
+    <line x1="6" y1="10" x2="26" y2="10" stroke="#ffffff" strokeWidth="0.5" opacity="0.3" />
+    {/* Grip marks (where hands would go) */}
+    <circle cx="11" cy="13.5" r="1" fill="currentColor" opacity="0.7" />
+    <circle cx="21" cy="13.5" r="1" fill="currentColor" opacity="0.7" />
+    {/* Hanging chains/handles */}
+    <line x1="11" y1="14.5" x2="11" y2="22" stroke="currentColor" strokeWidth="0.6" strokeDasharray="1 1" opacity="0.5" />
+    <line x1="21" y1="14.5" x2="21" y2="22" stroke="currentColor" strokeWidth="0.6" strokeDasharray="1 1" opacity="0.5" />
   </EquipIcon>
 );
+
+// Cable machine — tall column + pulley wheel at top + cable + handle.
 const equipCable = (active: boolean) => (
-  <EquipIcon active={active} color="#94a3b8">
-    <rect x="3" y="3" width="26" height="8" rx="1.5" fill="currentColor" />
-    <rect x="3" y="3" width="26" height="2" fill="#ffffff" opacity="0.2" />
-    <line x1="16" y1="11" x2="16" y2="20" stroke="currentColor" strokeWidth="1" strokeDasharray="2 1.5" opacity="0.7" />
-    <rect x="11" y="20" width="10" height="3.5" rx="0.7" fill="currentColor" opacity="0.85" />
-    <rect x="2" y="28" width="28" height="2" rx="0.5" fill="currentColor" opacity="0.7" />
+  <EquipIcon active={active} color="#cbd5e1">
+    {/* Tower body */}
+    <rect x="11" y="4" width="10" height="18" rx="1" fill="currentColor" />
+    {/* Tower shine */}
+    <rect x="11" y="4" width="10" height="2" fill="#ffffff" opacity="0.25" />
+    {/* Pulley wheel at top */}
+    <circle cx="16" cy="6" r="2.5" fill="currentColor" stroke="#0c0c14" strokeWidth="0.5" />
+    <circle cx="16" cy="6" r="1" fill="#0c0c14" opacity="0.4" />
+    {/* Cable hanging down */}
+    <line x1="16" y1="8.5" x2="16" y2="22" stroke="currentColor" strokeWidth="0.8" />
+    {/* Handle at bottom */}
+    <rect x="13" y="22" width="6" height="2.5" rx="0.4" fill="currentColor" />
+    {/* Weight stack indicator (lines on tower) */}
+    <line x1="13" y1="11" x2="19" y2="11" stroke="#0c0c14" strokeWidth="0.5" opacity="0.4" />
+    <line x1="13" y1="14" x2="19" y2="14" stroke="#0c0c14" strokeWidth="0.5" opacity="0.4" />
+    <line x1="13" y1="17" x2="19" y2="17" stroke="#0c0c14" strokeWidth="0.5" opacity="0.4" />
+    {/* Floor */}
+    <line x1="2" y1="28" x2="30" y2="28" stroke="currentColor" strokeWidth="1" opacity="0.4" />
   </EquipIcon>
 );
+
+// Treadmill — running surface + console + side rails.
 const equipCardio = (active: boolean) => (
-  <EquipIcon active={active} color="#22c55e">
-    <rect x="2" y="24" width="28" height="3.5" rx="1" fill="currentColor" opacity="0.85" />
-    <rect x="2" y="24" width="28" height="1.5" fill="#ffffff" opacity="0.2" />
-    <path d="M5 23l4-9 5-3 5 7 4 5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    <circle cx="14" cy="11" r="2" fill="currentColor" />
+  <EquipIcon active={active} color="#cbd5e1">
+    {/* Running deck */}
+    <path d="M3 22l4-3h18l4 3v3H3z" fill="currentColor" />
+    {/* Belt lines */}
+    <line x1="9" y1="22" x2="11" y2="20" stroke="#0c0c14" strokeWidth="0.5" opacity="0.5" />
+    <line x1="15" y1="22" x2="17" y2="20" stroke="#0c0c14" strokeWidth="0.5" opacity="0.5" />
+    <line x1="21" y1="22" x2="23" y2="20" stroke="#0c0c14" strokeWidth="0.5" opacity="0.5" />
+    {/* Front motor cover */}
+    <rect x="22" y="17" width="6" height="2.5" fill="currentColor" opacity="0.85" />
+    {/* Vertical console arm */}
+    <rect x="23" y="6" width="2" height="11" fill="currentColor" />
+    {/* Console screen */}
+    <rect x="20" y="4" width="8" height="5" rx="1" fill="currentColor" />
+    <rect x="21" y="5" width="6" height="2" fill="#0c0c14" opacity="0.5" />
+    {/* Side rail */}
+    <rect x="3" y="14" width="2" height="9" rx="0.5" fill="currentColor" opacity="0.85" />
   </EquipIcon>
 );
+
+// Resistance band — stretched band with two D-handles on the ends.
 const equipBands = (active: boolean) => (
-  <EquipIcon active={active} color="#a855f7">
-    <circle cx="7" cy="16" r="4" fill="currentColor" />
-    <circle cx="7" cy="16" r="2" fill="#0c0c14" />
-    <circle cx="25" cy="16" r="4" fill="currentColor" />
-    <circle cx="25" cy="16" r="2" fill="#0c0c14" />
-    <path d="M11 14c0-3 10-3 10 2 0 5-10 5-10 0z" fill="currentColor" opacity="0.6" />
+  <EquipIcon active={active} color="#cbd5e1">
+    {/* Left D-handle */}
+    <path d="M2 12c0-3 4-3 4 0v8c0 3-4 3-4 0z" fill="currentColor" />
+    <ellipse cx="4" cy="16" rx="0.8" ry="3" fill="#0c0c14" opacity="0.4" />
+    {/* Right D-handle */}
+    <path d="M30 12c0-3-4-3-4 0v8c0 3 4 3 4 0z" fill="currentColor" />
+    <ellipse cx="28" cy="16" rx="0.8" ry="3" fill="#0c0c14" opacity="0.4" />
+    {/* Stretchy band — wavy line connecting handles */}
+    <path d="M6 16c4-3 8 3 12 0s4-3 8 0" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
+    {/* Band texture lines */}
+    <path d="M6 17c4-3 8 3 12 0s4-3 8 0" stroke="currentColor" strokeWidth="0.8" fill="none" opacity="0.5" strokeLinecap="round" />
   </EquipIcon>
 );
+
+// Bodyweight — clear standing person with arms up
 const equipBodyweight = (active: boolean) => (
-  <EquipIcon active={active} color="#fbbf24">
-    <circle cx="16" cy="6" r="3" fill="currentColor" />
-    <rect x="14.5" y="9.5" width="3" height="10" rx="1" fill="currentColor" />
-    <rect x="6" y="13" width="20" height="2.5" rx="1" fill="currentColor" opacity="0.85" />
-    <path d="M14 19l-4 9h2l3-7" fill="currentColor" />
-    <path d="M18 19l4 9h-2l-3-7" fill="currentColor" />
+  <EquipIcon active={active} color="#cbd5e1">
+    {/* Head */}
+    <circle cx="16" cy="6" r="2.5" fill="currentColor" />
+    {/* Body */}
+    <rect x="14.5" y="9" width="3" height="9" rx="0.5" fill="currentColor" />
+    {/* Arms raised in V */}
+    <line x1="15" y1="10" x2="9" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line x1="17" y1="10" x2="23" y2="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    {/* Legs apart */}
+    <line x1="15.5" y1="18" x2="11" y2="28" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <line x1="16.5" y1="18" x2="21" y2="28" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </EquipIcon>
 );
 
@@ -820,124 +922,58 @@ interface SilhouetteProps {
 }
 
 /**
- * Cleaner human silhouette with the targeted muscle highlighted.
- * Single continuous outline so it reads as a real body, not a
- * collection of blocks.
+ * Plain standing human, all body parts CLEARLY SEPARATE (head, neck,
+ * torso, arms hanging at the sides, legs slightly apart). Muscle
+ * highlight paints the targeted group in red — the rest stays dim.
  */
 function MuscleSilhouette({ muscle, active }: SilhouetteProps) {
-  const dim = '#334155';
-  const dimStroke = '#1e293b';
-  const hot = active ? 'url(#muscleHot)' : '#64748b';
-
-  // Single continuous figure — head at top, tapered torso, smooth
-  // arms hanging at the sides, legs slightly apart.
-  const SIL = `
-    M 28 4
-    C 23 4  20 8  20 13
-    C 20 17  22 20  24 22
-    L 24 24
-    C 19 24  14 27  11 32
-    C 9 36  9 38  10 40
-    L 12 44
-    C 11 47  10 52  10 58
-    L 11 70
-    C 11 73  12 75  13 75
-    L 16 75
-    C 17 75  17 73  17 71
-    L 16 60
-    L 18 60
-    L 20 70
-    C 20 75  20 76  20 76
-    L 22 76
-    Q 23 76  23 75
-    L 23 26
-    L 25 26
-    L 25 32
-    Q 24 36  24 42
-    L 24 60
-    C 24 64  25 67  26 70
-    L 26 76
-    C 26 78  27 78  28 78
-    L 29 78
-    C 30 78  31 78  31 76
-    L 31 70
-    C 32 67  33 64  33 60
-    L 33 42
-    Q 33 36  32 32
-    L 32 26
-    L 34 26
-    L 34 75
-    Q 34 76  35 76
-    L 37 76
-    C 37 76  37 75  37 70
-    L 39 60
-    L 41 60
-    L 40 71
-    C 40 73  40 75  41 75
-    L 44 75
-    C 45 75  46 73  46 70
-    L 47 58
-    C 47 52  46 47  45 44
-    L 47 40
-    C 48 38  48 36  46 32
-    C 43 27  38 24  33 24
-    L 33 22
-    C 35 20  37 17  37 13
-    C 37 8  33 4  28 4
-    Z`;
+  const dim = '#475569';
+  const HOT = active ? '#dc2626' : '#475569';
+  const fill = (m: MuscleKey) => (muscle === m && active ? HOT : dim);
 
   return (
-    <svg width="50" height="76" viewBox="0 0 56 80" fill="none" className="flex-shrink-0">
-      <defs>
-        <linearGradient id={`muscleHot-${muscle}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fde68a" />
-          <stop offset="50%" stopColor="#fb923c" />
-          <stop offset="100%" stopColor="#dc2626" />
-        </linearGradient>
-        <clipPath id={`muscleClip-${muscle}`}>
-          <path d={SIL} />
-        </clipPath>
-      </defs>
-      {/* Base silhouette */}
-      <path d={SIL} fill={dim} stroke={dimStroke} strokeWidth="0.5" />
+    <svg width="48" height="80" viewBox="0 0 56 80" fill="none" className="flex-shrink-0">
+      {/* Head */}
+      <circle cx="28" cy="9" r="6" fill={dim} />
+      {/* Neck */}
+      <rect x="26" y="14" width="4" height="3" fill={dim} />
 
-      {/* Highlighted muscle area, clipped to silhouette */}
-      <g clipPath={`url(#muscleClip-${muscle})`}>
-        {muscle === 'chest' && (
-          <>
-            <ellipse cx="22" cy="32" rx="7" ry="6" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-            <ellipse cx="34" cy="32" rx="7" ry="6" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-          </>
-        )}
-        {muscle === 'arms' && (
-          <>
-            <ellipse cx="13" cy="38" rx="4" ry="9" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-            <ellipse cx="43" cy="38" rx="4" ry="9" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-          </>
-        )}
-        {muscle === 'abs' && (
-          <rect x="23" y="38" width="10" height="20" rx="1" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-        )}
-        {muscle === 'legs' && (
-          <>
-            <ellipse cx="20" cy="68" rx="5" ry="11" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-            <ellipse cx="36" cy="68" rx="5" ry="11" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-          </>
-        )}
-        {muscle === 'shoulders' && (
-          <>
-            <ellipse cx="14" cy="26" rx="5" ry="5" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-            <ellipse cx="42" cy="26" rx="5" ry="5" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-          </>
-        )}
-        {muscle === 'back' && (
-          <>
-            <path d="M 16 28 Q 12 40 14 56 L 28 56 L 28 28 Z" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-            <path d="M 40 28 Q 44 40 42 56 L 28 56 L 28 28 Z" fill={active ? `url(#muscleHot-${muscle})` : hot} />
-            <line x1="28" y1="28" x2="28" y2="56" stroke="#0f172a" strokeWidth="0.6" opacity="0.6" />
-          </>
-        )}
-      </g>
+      {/* Shoulders / deltoids — clearly visible bumps */}
+      <ellipse cx="17" cy="20" rx="4" ry="3.5" fill={fill('shoulders')} />
+      <ellipse cx="39" cy="20" rx="4" ry="3.5" fill={fill('shoulders')} />
+
+      {/* Torso (V-taper) — separate from arms */}
+      <path
+        d="M 18 19 L 38 19 L 36 48 L 20 48 Z"
+        fill={dim}
+      />
+      {/* Chest highlight (sits on top of torso) */}
+      {muscle === 'chest' && active && (
+        <>
+          <ellipse cx="23" cy="26" rx="5" ry="4" fill={HOT} />
+          <ellipse cx="33" cy="26" rx="5" ry="4" fill={HOT} />
+        </>
+      )}
+      {/* Abs highlight */}
+      {muscle === 'abs' && active && (
+        <rect x="24" y="30" width="8" height="16" rx="1" fill={HOT} />
+      )}
+      {/* Back: paint torso fully red (since it's a back-body proxy) */}
+      {muscle === 'back' && active && (
+        <path d="M 18 19 L 38 19 L 36 48 L 20 48 Z" fill={HOT} />
+      )}
+
+      {/* Arms — clearly separate from torso, hanging at sides */}
+      <rect x="13" y="20" width="3.5" height="28" rx="1.5" fill={fill('arms')} />
+      <rect x="39.5" y="20" width="3.5" height="28" rx="1.5" fill={fill('arms')} />
+
+      {/* Legs — clearly two separate columns */}
+      <rect x="20" y="48" width="6" height="28" rx="1.5" fill={fill('legs')} />
+      <rect x="30" y="48" width="6" height="28" rx="1.5" fill={fill('legs')} />
+
+      {/* Feet hint */}
+      <ellipse cx="23" cy="77" rx="3.5" ry="1.5" fill={dim} />
+      <ellipse cx="33" cy="77" rx="3.5" ry="1.5" fill={dim} />
     </svg>
   );
 }
