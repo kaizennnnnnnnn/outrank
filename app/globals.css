@@ -265,6 +265,23 @@ body {
   will-change: transform;
 }
 
+@keyframes loader-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-loader-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: loader-shimmer 1.6s linear infinite;
+  will-change: background-position;
+}
+
 @keyframes orb-spin-transition {
   0%   { transform: rotate(0deg)   scale(1);    filter: blur(0); }
   35%  { transform: rotate(360deg) scale(1.08); filter: blur(2px) brightness(1.2); }

@@ -94,113 +94,108 @@ export default function OnboardPhase8Page() {
 // ─── Step 0: Setup loader ────────────────────────────────────────────────────
 
 /**
- * Chunky build loader. Each of 3 macro-tasks has 5-7 micro-steps; each
- * micro-step pauses 380-820ms (varied) to feel like real work happening.
- * The bar advances only when a micro-step completes — no smooth easing.
- * Sub-task labels span all 5 pillars (strength / sleep / water / focus / steps).
+ * One continuous progress bar that fills realistically — alternating
+ * between smooth runs, sprints, and "stuck" pauses. Drives a phased
+ * timeline (rAF) so each phase eases from one percentage to another
+ * over a fixed duration; "stuck" phases barely advance, "sprints"
+ * jump fast, and the classic "stuck at 99%" pause is included.
+ *
+ * The 3 task labels (Compiling profile / Calculating ranks /
+ * Personalizing plan) check off at 33%, 66%, 100%. A live sub-label
+ * cycles through pillar work (strength / sleep / hydration / focus /
+ * steps) as the bar moves through each band.
  */
 function SetupLoaderStep({ onDone }: { onDone: () => void }) {
-  const TASKS: { label: string; steps: string[] }[] = [
-    {
-      label: 'Compiling your profile',
-      steps: [
-        'Reading body stats',
-        'Mapping your goals',
-        'Cataloging equipment',
-        'Logging struggles',
-        'Saving baseline',
-      ],
-    },
-    {
-      label: 'Calculating your ranks',
-      steps: [
-        'Strength rank',
-        'Sleep rank',
-        'Hydration rank',
-        'Focus rank',
-        'Steps rank',
-        'Cross-pillar weighting',
-      ],
-    },
-    {
-      label: 'Personalizing your plan',
-      steps: [
-        'Building weekly schedule',
-        'Setting habit targets',
-        'Calibrating reminders',
-        'Linking pillars together',
-        'Finalizing plan',
-      ],
-    },
+  // Phased timeline: each entry says "go from current% to `to` over
+  // `ms`". The variation between fast / slow / stuck phases is what
+  // makes it look like real work. Total ~13s.
+  const PHASES: { to: number; ms: number }[] = [
+    { to: 6,   ms: 700  }, // quick start
+    { to: 11,  ms: 1300 }, // slowing
+    { to: 13,  ms: 1500 }, // stuck (only 2% in 1.5s)
+    { to: 28,  ms: 900  }, // sprint
+    { to: 31,  ms: 1700 }, // stuck again
+    { to: 47,  ms: 1100 }, // smooth
+    { to: 52,  ms: 1500 }, // crawl
+    { to: 68,  ms: 950  }, // sprint
+    { to: 71,  ms: 1400 }, // stuck
+    { to: 86,  ms: 1100 }, // smooth
+    { to: 91,  ms: 1300 }, // crawl
+    { to: 99,  ms: 850  }, // near-done
+    { to: 99,  ms: 1500 }, // CLASSIC stuck-at-99
+    { to: 100, ms: 450  }, // pop to done
   ];
 
-  // Pre-compute a fixed schedule of (taskIndex, subIndex, durationMs).
-  // Varied durations make the bar feel chunky and real.
-  const schedule = (() => {
-    const out: { t: number; s: number; ms: number }[] = [];
-    // Pseudo-random but deterministic so the experience is consistent.
-    let seed = 7;
-    const rand = () => {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    };
-    for (let t = 0; t < TASKS.length; t++) {
-      for (let s = 0; s < TASKS[t].steps.length; s++) {
-        // 360–820ms varied; the last sub of each task gets a little extra.
-        const isLast = s === TASKS[t].steps.length - 1;
-        const ms = Math.round(360 + rand() * 460) + (isLast ? 220 : 0);
-        out.push({ t, s, ms });
-      }
-    }
-    return out;
-  })();
+  const TASKS = [
+    { label: 'Compiling your profile',   threshold: 33 },
+    { label: 'Calculating your ranks',   threshold: 66 },
+    { label: 'Personalizing your plan',  threshold: 100 },
+  ];
 
-  const totalSubs = schedule.length;
-  const subsByTask = TASKS.map((t) => t.steps.length);
+  // Sub-labels grouped by % band so they cycle naturally as the bar
+  // moves. All 5 pillars represented in band 2.
+  const SUBS: { from: number; to: number; label: string }[] = [
+    { from: 0,  to: 8,   label: 'Reading your body stats…' },
+    { from: 8,  to: 16,  label: 'Mapping your goals…' },
+    { from: 16, to: 24,  label: 'Cataloging your equipment…' },
+    { from: 24, to: 33,  label: 'Saving your baseline…' },
+    { from: 33, to: 41,  label: 'Calculating your Strength rank…' },
+    { from: 41, to: 48,  label: 'Calculating your Sleep rank…' },
+    { from: 48, to: 55,  label: 'Calculating your Hydration rank…' },
+    { from: 55, to: 61,  label: 'Calculating your Focus rank…' },
+    { from: 61, to: 66,  label: 'Calculating your Steps rank…' },
+    { from: 66, to: 75,  label: 'Building your weekly schedule…' },
+    { from: 75, to: 83,  label: 'Setting your habit targets…' },
+    { from: 83, to: 91,  label: 'Calibrating your reminders…' },
+    { from: 91, to: 99,  label: 'Linking your pillars together…' },
+    { from: 99, to: 101, label: 'Finalizing your plan…' },
+  ];
 
-  const [completedSubs, setCompletedSubs] = useState(0); // index of next sub to start
-  const [activeTask, setActiveTask] = useState(0);
-  const [activeSubLabel, setActiveSubLabel] = useState<string>(TASKS[0].steps[0]);
+  const [pct, setPct] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    let i = 0;
+    let raf: number;
+    let phaseIdx = 0;
+    let phaseStart = performance.now();
+    let phaseFrom = 0;
 
-    const runNext = () => {
+    function tick(now: number) {
       if (cancelled) return;
-      if (i >= schedule.length) {
-        // hold "all done" briefly
-        setTimeout(() => !cancelled && onDone(), 700);
+      if (phaseIdx >= PHASES.length) {
+        setPct(100);
+        setTimeout(() => !cancelled && onDone(), 600);
         return;
       }
-      const cur = schedule[i];
-      setActiveTask(cur.t);
-      setActiveSubLabel(TASKS[cur.t].steps[cur.s]);
-      // Step duration: visible work, then mark complete.
-      setTimeout(() => {
-        if (cancelled) return;
-        i += 1;
-        setCompletedSubs(i);
-        // tiny pause between sub-steps (chunky feel)
-        setTimeout(runNext, 90);
-      }, cur.ms);
-    };
+      const phase = PHASES[phaseIdx];
+      const elapsed = now - phaseStart;
+      const t = Math.min(elapsed / phase.ms, 1);
+      // Slight ease-out so each phase decelerates into its endpoint
+      // (makes the "stuck" phases feel like real I/O wind-down).
+      const eased = 1 - Math.pow(1 - t, 1.4);
+      const cur = phaseFrom + (phase.to - phaseFrom) * eased;
+      setPct(cur);
 
-    runNext();
+      if (t >= 1) {
+        phaseFrom = phase.to;
+        phaseIdx += 1;
+        phaseStart = now;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    raf = requestAnimationFrame(tick);
     return () => {
       cancelled = true;
+      cancelAnimationFrame(raf);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Compute per-bar fill: how many subs of THIS task are done / total subs of task.
-  const barFill = (taskIdx: number) => {
-    let subsBefore = 0;
-    for (let k = 0; k < taskIdx; k++) subsBefore += subsByTask[k];
-    const doneInThis = Math.max(0, Math.min(subsByTask[taskIdx], completedSubs - subsBefore));
-    return doneInThis / subsByTask[taskIdx];
-  };
-  const overallPct = Math.round((completedSubs / totalSubs) * 100);
+  const activeSub = SUBS.find((s) => pct >= s.from && pct < s.to) ?? SUBS[SUBS.length - 1];
+  const activeTaskIdx = TASKS.findIndex((t) => pct < t.threshold);
+  const currentTask = activeTaskIdx === -1 ? TASKS.length - 1 : activeTaskIdx;
+  const displayPct = Math.min(100, Math.floor(pct));
 
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
@@ -212,84 +207,62 @@ function SetupLoaderStep({ onDone }: { onDone: () => void }) {
         Building your profile across <span className="text-orange-400 font-semibold">all 5 pillars</span> — strength, sleep, water, focus, steps.
       </p>
 
-      <div className="mt-9 w-full max-w-sm space-y-4">
-        {TASKS.map((t, i) => {
-          const fill = barFill(i);
-          const isDone = fill >= 1;
-          const isActive = i === activeTask && !isDone;
-          const pending = !isDone && !isActive;
-          return (
-            <div key={t.label}>
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  {isDone ? (
-                    <CheckCircleFullIcon size={16} className="text-orange-400" />
-                  ) : (
-                    <div className={cn(
-                      'w-4 h-4 rounded-full border-2',
-                      isActive ? 'border-orange-400 animate-pulse' : 'border-white/15',
-                    )} />
-                  )}
-                  <span className={cn(
+      <div className="mt-9 w-full max-w-sm">
+        {/* The single continuous bar */}
+        <div className="flex items-baseline justify-between mb-2">
+          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-orange-300/80">
+            {activeSub.label}
+          </span>
+          <span className="text-[13px] font-mono tabular-nums font-bold text-white">
+            {displayPct}%
+          </span>
+        </div>
+        <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden relative border border-white/[0.04]">
+          <div
+            className="h-full rounded-full relative overflow-hidden"
+            style={{
+              width: `${pct}%`,
+              background: 'linear-gradient(90deg, #dc2626, #f97316, #fb923c)',
+              boxShadow: '0 0 12px -2px rgba(249,115,22,0.7)',
+            }}
+          >
+            {/* Animated shimmer streak that runs across the filled portion */}
+            <div className="absolute inset-0 animate-loader-shimmer pointer-events-none" />
+          </div>
+        </div>
+
+        {/* 3 macro task lines — checkmarks pop as bar crosses thresholds */}
+        <div className="mt-6 space-y-2.5 text-left">
+          {TASKS.map((t, i) => {
+            const isDone = pct >= t.threshold;
+            const isActive = i === currentTask && !isDone;
+            return (
+              <div key={t.label} className="flex items-center gap-2.5">
+                {isDone ? (
+                  <CheckCircleFullIcon size={17} className="text-orange-400" />
+                ) : (
+                  <div
+                    className={cn(
+                      'w-[17px] h-[17px] rounded-full border-2 flex items-center justify-center',
+                      isActive ? 'border-orange-400' : 'border-white/15',
+                    )}
+                  >
+                    {isActive && (
+                      <span className="block w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                    )}
+                  </div>
+                )}
+                <span
+                  className={cn(
                     'text-[13px] font-bold transition-colors',
-                    isDone || isActive ? 'text-white' : 'text-slate-500',
-                  )}>
-                    {t.label}
-                  </span>
-                </div>
-                <span className="text-[11px] font-mono tabular-nums text-slate-500">
-                  {Math.round(fill * 100)}%
+                    isDone ? 'text-white/70' : isActive ? 'text-white' : 'text-slate-500',
+                  )}
+                >
+                  {t.label}
                 </span>
               </div>
-
-              {/* Chunky segmented bar — one segment per sub-step, no easing */}
-              <div className="flex gap-[3px] h-[7px]">
-                {t.steps.map((_, s) => {
-                  let subsBefore = 0;
-                  for (let k = 0; k < i; k++) subsBefore += subsByTask[k];
-                  const globalIdx = subsBefore + s;
-                  const filled = globalIdx < completedSubs;
-                  const filling = i === activeTask && s === (completedSubs - subsBefore) && !isDone;
-                  return (
-                    <div
-                      key={s}
-                      className={cn(
-                        'flex-1 rounded-[2px]',
-                        filled
-                          ? ''
-                          : filling
-                          ? 'bg-orange-400/30 animate-pulse'
-                          : 'bg-white/[0.06]',
-                      )}
-                      style={
-                        filled
-                          ? { background: 'linear-gradient(90deg, #dc2626, #f97316)' }
-                          : undefined
-                      }
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Active sub-label — only renders for the currently working task */}
-              <div className="h-[14px] mt-1.5">
-                {isActive && (
-                  <p className="text-[10.5px] text-orange-300/80 text-left flex items-center gap-1">
-                    <span className="inline-block w-1 h-1 rounded-full bg-orange-400 animate-pulse" />
-                    {activeSubLabel}
-                  </p>
-                )}
-                {isDone && (
-                  <p className="text-[10.5px] text-slate-600 text-left">{t.steps.length} sub-steps complete</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        <div className="pt-2 flex items-center justify-between border-t border-white/[0.05]">
-          <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-500">Overall</span>
-          <span className="text-[11px] font-mono tabular-nums text-slate-300">{overallPct}%</span>
+            );
+          })}
         </div>
       </div>
     </div>
