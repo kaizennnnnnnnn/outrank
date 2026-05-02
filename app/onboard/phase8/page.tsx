@@ -14,7 +14,7 @@ import { setDocument, Timestamp, doc } from '@/lib/firestore';
 import { getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { sanitizeUsername } from '@/lib/security';
-import { derivePillarGoals, clearDraft } from '@/lib/onboardingDraft';
+import { derivePillarGoals, derivePillarRanks, clearDraft } from '@/lib/onboardingDraft';
 import { Button } from '@/components/ui/Button';
 import { useUIStore } from '@/store/uiStore';
 import { CheckCircleFullIcon, SparklesIcon, TrophyIconFull, FireIcon, BoltFullIcon } from '@/components/ui/AppIcons';
@@ -74,7 +74,7 @@ export default function OnboardPhase8Page() {
           className="flex flex-col flex-1"
         >
           {step === 0 && <SetupLoaderStep onDone={() => setStep(1)} />}
-          {step === 1 && <RankingExplainerStep onContinue={() => setStep(2)} />}
+          {step === 1 && <RankingExplainerStep draft={draft} onContinue={() => setStep(2)} />}
           {step === 2 && (
             <SignupStep
               draft={draft}
@@ -271,9 +271,23 @@ function SetupLoaderStep({ onDone }: { onDone: () => void }) {
 
 // ─── Step 1: Ranking explainer ───────────────────────────────────────────────
 
-function RankingExplainerStep({ onContinue }: { onContinue: () => void }) {
+function RankingExplainerStep({
+  draft,
+  onContinue,
+}: {
+  draft: ReturnType<typeof useOnboardingDraft>['draft'];
+  onContinue: () => void;
+}) {
   type IconCmp = React.ComponentType<{ size?: number; className?: string }>;
+  type PillarKey = 'strength' | 'sleep' | 'hydration' | 'focus' | 'steps';
+
+  // Real ranks derived from the user's actual onboarding answers.
+  // (See derivePillarRanks for the heuristics.)
+  const ranks = derivePillarRanks(draft);
+  const isWeak = (k: PillarKey) => ranks.weak.includes(k);
+
   const PILLARS: {
+    key: PillarKey;
     name: string;
     sub: string;
     rank: string;
@@ -281,12 +295,20 @@ function RankingExplainerStep({ onContinue }: { onContinue: () => void }) {
     Icon: IconCmp;
     weak?: boolean;
   }[] = [
-    { name: 'Strength',  sub: 'Lifts, push-ups, gym time',     rank: 'B+', tone: '#ef4444', Icon: GymIcon as IconCmp },
-    { name: 'Sleep',     sub: 'Hours, consistency, recovery',  rank: 'C',  tone: '#a78bfa', Icon: SleepIcon as IconCmp, weak: true },
-    { name: 'Hydration', sub: 'Water vs body weight goal',     rank: 'A',  tone: '#3b82f6', Icon: WaterIcon as IconCmp },
-    { name: 'Focus',     sub: 'Deep work, less screen time',   rank: 'F',  tone: '#f59e0b', Icon: ScreenIcon as IconCmp, weak: true },
-    { name: 'Steps',     sub: 'Daily movement, NEAT activity', rank: 'A+', tone: '#22c55e', Icon: StepsIcon as IconCmp },
+    { key: 'strength',  name: 'Strength',  sub: 'Lifts, push-ups, gym time',     rank: ranks.strength,  tone: '#ef4444', Icon: GymIcon   as IconCmp, weak: isWeak('strength') },
+    { key: 'sleep',     name: 'Sleep',     sub: 'Hours, consistency, recovery',  rank: ranks.sleep,     tone: '#a78bfa', Icon: SleepIcon as IconCmp, weak: isWeak('sleep') },
+    { key: 'hydration', name: 'Hydration', sub: 'Water vs body weight goal',     rank: ranks.hydration, tone: '#3b82f6', Icon: WaterIcon as IconCmp, weak: isWeak('hydration') },
+    { key: 'focus',     name: 'Focus',     sub: 'Deep work, less screen time',   rank: ranks.focus,     tone: '#f59e0b', Icon: ScreenIcon as IconCmp, weak: isWeak('focus') },
+    { key: 'steps',     name: 'Steps',     sub: 'Daily movement, NEAT activity', rank: ranks.steps,     tone: '#22c55e', Icon: StepsIcon as IconCmp, weak: isWeak('steps') },
   ];
+
+  // Overall: average the 5 pillars on the same 8-tier ladder, then
+  // map back to a letter so the synthesis card reads consistently.
+  const LETTERS: string[] = ['F', 'D', 'C', 'C+', 'B', 'B+', 'A', 'A+'];
+  const overallIdx = Math.round(
+    PILLARS.reduce((sum, p) => sum + LETTERS.indexOf(p.rank), 0) / PILLARS.length,
+  );
+  const overall = LETTERS[Math.max(0, Math.min(LETTERS.length - 1, overallIdx))];
 
   // Light entrance stagger so the list feels alive.
   const [revealed, setRevealed] = useState(0);
@@ -380,7 +402,7 @@ function RankingExplainerStep({ onContinue }: { onContinue: () => void }) {
           <p className="text-[12px] text-slate-300 leading-snug">Average across all 5. Climb the weakest to lift it.</p>
         </div>
         <div className="font-heading font-black text-2xl text-orange-400 tabular-nums" style={{ textShadow: '0 0 16px rgba(251,146,60,0.55)' }}>
-          B
+          {overall}
         </div>
       </div>
 
