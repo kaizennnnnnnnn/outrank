@@ -56,11 +56,25 @@ interface IconShape {
 const Icon = (color: string, body: React.ReactNode): IconShape => ({ color, body });
 
 const renderIcon = (shape: IconShape, active: boolean) => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="11" fill={shape.color} fillOpacity={active ? 0.9 : 0.18} />
+  <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+    <defs>
+      <linearGradient id={`bg-${shape.color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"  stopColor={shape.color} stopOpacity={active ? 1 : 0.28} />
+        <stop offset="100%" stopColor={shape.color} stopOpacity={active ? 0.7 : 0.12} />
+      </linearGradient>
+    </defs>
+    {/* Rounded square backdrop with gradient — looks more like a real
+        app icon than the flat circle */}
+    <rect
+      x="0.5" y="0.5" width="23" height="23" rx="6"
+      fill={`url(#bg-${shape.color.replace('#', '')})`}
+      stroke={shape.color}
+      strokeOpacity={active ? 0.9 : 0.35}
+      strokeWidth="0.8"
+    />
     <g
-      stroke={active ? '#0c0c14' : shape.color}
-      strokeWidth="1.7"
+      stroke={active ? '#0c0c14' : '#fef3c7'}
+      strokeWidth="1.6"
       strokeLinecap="round"
       strokeLinejoin="round"
       fill="none"
@@ -70,75 +84,106 @@ const renderIcon = (shape: IconShape, active: boolean) => (
   </svg>
 );
 
+// Each silhouette uses cleaner geometric shapes — recognizable at
+// 32px chip size without ambiguity.
+
 const STRUGGLE_BACK = Icon('#f97316', (
   <>
-    <path d="M8 5a4 4 0 018 0v3" />
-    <path d="M7 9c-1.5 0-2 3 0 7c1.5 3 3 4 5 4s3.5-1 5-4c2-4 1.5-7 0-7" />
-    <line x1="12" y1="11" x2="12" y2="18" />
+    {/* Spine with vertebrae dots */}
+    <line x1="12" y1="4" x2="12" y2="20" strokeWidth="2.2" />
+    <circle cx="12" cy="6" r="1.3" />
+    <circle cx="12" cy="10" r="1.3" />
+    <circle cx="12" cy="14" r="1.3" />
+    <circle cx="12" cy="18" r="1.3" />
+    {/* Lightning bolt — pain indicator */}
+    <path d="M16 9l3 1-2 2 2 1" strokeWidth="1.2" />
   </>
 ));
 const STRUGGLE_KNEE = Icon('#fb923c', (
   <>
-    <path d="M9 4v5l-2 4 2 5" />
-    <path d="M15 4v5l2 4-2 5" />
-    <circle cx="12" cy="12" r="3" fill="currentColor" fillOpacity="0.15" />
+    {/* Bent leg with knee bend in middle */}
+    <line x1="9" y1="3" x2="9" y2="11" strokeWidth="2.2" />
+    <line x1="9" y1="11" x2="15" y2="14" strokeWidth="2.2" />
+    <line x1="15" y1="14" x2="15" y2="21" strokeWidth="2.2" />
+    {/* Knee joint emphasis */}
+    <circle cx="12" cy="12.5" r="2.3" strokeWidth="1.5" />
   </>
 ));
 const STRUGGLE_SHOULDER = Icon('#ef4444', (
   <>
-    <path d="M4 12c0-4 4-6 8-6s8 2 8 6" />
-    <circle cx="6" cy="9" r="2" fill="currentColor" fillOpacity="0.2" />
-    <circle cx="18" cy="9" r="2" fill="currentColor" fillOpacity="0.2" />
-    <line x1="6" y1="13" x2="6" y2="20" />
-    <line x1="18" y1="13" x2="18" y2="20" />
+    {/* Torso top with shoulders */}
+    <path d="M5 9c2-3 5-4 7-4s5 1 7 4" strokeWidth="2" />
+    <line x1="12" y1="9" x2="12" y2="20" strokeWidth="2" />
+    {/* Shoulder joint highlights */}
+    <circle cx="6" cy="9" r="2" strokeWidth="1.5" />
+    <circle cx="18" cy="9" r="2" strokeWidth="1.5" />
   </>
 ));
 const STRUGGLE_WRIST = Icon('#f59e0b', (
   <>
-    <path d="M7 4v6a5 5 0 0010 0V4" />
-    <rect x="8" y="14" width="8" height="6" rx="1.5" fill="currentColor" fillOpacity="0.2" />
+    {/* Arm + hand with wrist joint emphasized */}
+    <line x1="6" y1="4" x2="11" y2="11" strokeWidth="2" />
+    <circle cx="11" cy="12" r="2.3" strokeWidth="1.6" />
+    <line x1="13" y1="14" x2="18" y2="20" strokeWidth="2" />
   </>
 ));
 const ICON_SLEEP = Icon('#8b5cf6', (
   <>
-    <path d="M21 12.5A9 9 0 1111.5 3 7 7 0 0021 12.5z" fill="currentColor" fillOpacity="0.2" />
-    <circle cx="14" cy="9" r="0.6" fill="currentColor" />
-    <circle cx="17" cy="11" r="0.4" fill="currentColor" />
+    {/* Crescent moon */}
+    <path d="M20 13a8 8 0 11-9-9 6.5 6.5 0 009 9z" strokeWidth="2" />
+    {/* Z's */}
+    <path d="M4 4h3l-3 3h3" strokeWidth="1" />
   </>
 ));
 const ICON_PHONE = Icon('#3b82f6', (
   <>
-    <rect x="6" y="3" width="12" height="18" rx="2" fill="currentColor" fillOpacity="0.18" />
-    <line x1="11" y1="18" x2="13" y2="18" />
-    <path d="M9 7l1.5 1.5L13 6" />
+    {/* Phone outline */}
+    <rect x="7" y="3" width="10" height="18" rx="2" strokeWidth="2" />
+    {/* Screen content (dots) */}
+    <circle cx="11" cy="8" r="0.8" />
+    <circle cx="13" cy="8" r="0.8" />
+    <circle cx="11" cy="11" r="0.8" />
+    <circle cx="13" cy="11" r="0.8" />
+    {/* Home button */}
+    <circle cx="12" cy="18" r="0.9" />
   </>
 ));
 const ICON_WATER = Icon('#0ea5e9', (
   <>
-    <path d="M12 3s-6 7-6 12a6 6 0 0012 0c0-5-6-12-6-12z" fill="currentColor" fillOpacity="0.25" />
+    {/* Water drop */}
+    <path d="M12 3c-3 4-6 8-6 11a6 6 0 0012 0c0-3-3-7-6-11z" strokeWidth="2" />
+    {/* Water shine */}
+    <path d="M9 13a3 3 0 003 3" strokeWidth="1.2" />
   </>
 ));
 const ICON_ENERGY = Icon('#facc15', (
   <>
-    <rect x="3" y="8" width="14" height="8" rx="1.5" fill="currentColor" fillOpacity="0.15" />
-    <rect x="17" y="10" width="2.5" height="4" rx="0.5" fill="currentColor" />
-    <rect x="5" y="10" width="3.5" height="4" rx="0.5" fill="currentColor" fillOpacity="0.5" />
+    {/* Battery body */}
+    <rect x="3" y="8" width="16" height="9" rx="1.5" strokeWidth="2" />
+    {/* Battery terminal */}
+    <line x1="20" y1="11" x2="20" y2="14" strokeWidth="2" />
+    {/* Low charge indicator */}
+    <rect x="5" y="10" width="3" height="5" rx="0.4" />
   </>
 ));
 const ICON_STRESS = Icon('#ec4899', (
   <>
-    <path d="M3 12h3l2-5 4 10 2-5h7" />
+    {/* Heart with EKG line through it */}
+    <path d="M12 19l-6-5a3.5 3.5 0 015-5 3.5 3.5 0 015 0 3.5 3.5 0 011 5z" strokeWidth="1.8" />
+    <path d="M5 12h2l1.5-2 2 4 1-2 2 1" strokeWidth="1.3" />
   </>
 ));
 const ICON_MORNING = Icon('#fbbf24', (
   <>
-    <circle cx="12" cy="13" r="5" fill="currentColor" fillOpacity="0.25" />
-    <line x1="12" y1="3" x2="12" y2="6" />
-    <line x1="5"  y1="6" x2="7"  y2="8" />
-    <line x1="19" y1="6" x2="17" y2="8" />
-    <line x1="3" y1="13" x2="5" y2="13" />
-    <line x1="19" y1="13" x2="21" y2="13" />
-    <line x1="2" y1="20" x2="22" y2="20" />
+    {/* Half sun rising over horizon */}
+    <circle cx="12" cy="14" r="4" strokeWidth="2" />
+    <line x1="3" y1="20" x2="21" y2="20" strokeWidth="2" />
+    {/* Sun rays */}
+    <line x1="12" y1="4" x2="12" y2="6" strokeWidth="1.6" />
+    <line x1="6"  y1="7" x2="7.5" y2="9" strokeWidth="1.6" />
+    <line x1="18" y1="7" x2="16.5" y2="9" strokeWidth="1.6" />
+    <line x1="4"  y1="14" x2="6"  y2="14" strokeWidth="1.6" />
+    <line x1="18" y1="14" x2="20" y2="14" strokeWidth="1.6" />
   </>
 ));
 
@@ -166,44 +211,50 @@ const ENERGY_OPTIONS: { key: EnergyLevel; label: string; sub: string }[] = [
 
 const ICON_LOOP = Icon('#06b6d4', (
   <>
-    <path d="M21 12a9 9 0 11-3-6.7" />
-    <polyline points="21 4 21 11 14 11" />
+    {/* Circular arrow representing same routine on repeat */}
+    <path d="M20 12a8 8 0 11-3-6.2" strokeWidth="2" />
+    <polyline points="20 4 20 9 15 9" strokeWidth="2" />
   </>
 ));
 const ICON_LIMIT = Icon('#ef4444', (
   <>
-    <rect x="2" y="9" width="20" height="6" rx="1" fill="currentColor" fillOpacity="0.18" />
-    <rect x="6" y="5" width="2.5" height="14" rx="0.5" fill="currentColor" />
-    <rect x="15.5" y="5" width="2.5" height="14" rx="0.5" fill="currentColor" />
+    {/* Barbell flat — "didn't push it" */}
+    <rect x="9" y="9" width="6" height="6" rx="1" strokeWidth="2" />
+    <line x1="2" y1="12" x2="9" y2="12" strokeWidth="2" />
+    <line x1="15" y1="12" x2="22" y2="12" strokeWidth="2" />
+    {/* Stoppers each end */}
+    <line x1="2"  y1="9" x2="2"  y2="15" strokeWidth="2.2" />
+    <line x1="22" y1="9" x2="22" y2="15" strokeWidth="2.2" />
   </>
 ));
 const ICON_INVISIBLE = Icon('#94a3b8', (
   <>
-    <path d="M3 12s4-7 9-7 9 7 9 7" opacity="0.5" />
-    <line x1="3" y1="3" x2="21" y2="21" />
-    <circle cx="12" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
+    {/* Crossed-out eye */}
+    <path d="M3 12s4-7 9-7 9 7 9 7-4 7-9 7-9-7-9-7z" strokeWidth="1.8" />
+    <circle cx="12" cy="12" r="3" strokeWidth="1.6" />
+    <line x1="4" y1="4" x2="20" y2="20" strokeWidth="2" />
   </>
 ));
 const ICON_INCONSISTENT = Icon('#a855f7', (
   <>
-    <path d="M21 12.5A9 9 0 1111.5 3 7 7 0 0021 12.5z" fill="currentColor" fillOpacity="0.2" />
-    <path d="M3 18l2-2 2 3 3-3 2 2 3-2 2 2" />
+    {/* Wavy zigzag — "all over the place" */}
+    <path d="M3 8l3 4-3 4M9 6l3 6-3 6M15 8l3 4-3 4" strokeWidth="2" />
   </>
 ));
 const ICON_DISTRACTED = Icon('#22d3ee', (
   <>
-    <line x1="5" y1="5" x2="9" y2="9" />
-    <line x1="19" y1="5" x2="15" y2="9" />
-    <line x1="5" y1="19" x2="9" y2="15" />
-    <line x1="19" y1="19" x2="15" y2="15" />
-    <circle cx="12" cy="12" r="2.5" fill="currentColor" fillOpacity="0.3" />
+    {/* Center dot with scattered arrows pointing AWAY */}
+    <circle cx="12" cy="12" r="1.5" strokeWidth="1.6" />
+    <path d="M12 7l-2 -3M12 17l2 3M7 12l-3 -2M17 12l3 2M7 7l-3 -3M17 17l3 3M7 17l-3 3M17 7l3 -3" strokeWidth="1.4" />
   </>
 ));
 const ICON_BROKEN_CHAIN = Icon('#f59e0b', (
   <>
-    <path d="M10 11l-2 2a2.5 2.5 0 010-3.5l1.5-1.5a2.5 2.5 0 013.5 0L14 9" />
-    <path d="M14 13l2-2a2.5 2.5 0 010 3.5l-1.5 1.5a2.5 2.5 0 01-3.5 0L10 15" />
-    <line x1="3" y1="3" x2="21" y2="21" />
+    {/* Two chain links with break gap */}
+    <path d="M9 11a3 3 0 11-3 3" strokeWidth="2" />
+    <path d="M15 13a3 3 0 113-3" strokeWidth="2" />
+    {/* Break gap — diagonal slash */}
+    <line x1="9" y1="9" x2="15" y2="15" strokeWidth="2.2" />
   </>
 ));
 
@@ -680,191 +731,196 @@ interface BodyFigureProps {
   idSuffix?: string;
 }
 
+/**
+ * Natural-proportions athletic body silhouette. Single continuous
+ * outline (no chunky disjoint limbs), smooth curves, and proper
+ * head-to-body ratio. Muscle highlight overlays sit on top of the
+ * base silhouette where applicable. Reads as a clean human figure
+ * rather than a robotic mannequin.
+ */
 function BodyFigure({ highlight = [], weak = [], scale = 1, idSuffix = '' }: BodyFigureProps) {
   const baseId = `bf-base${idSuffix}`;
   const hotId = `bf-hot${idSuffix}`;
   const dimRedId = `bf-dim${idSuffix}`;
   const shineId = `bf-shine${idSuffix}`;
-  const shadowId = `bf-shadow${idSuffix}`;
   const isHot = (m: AnatomyMuscle) => highlight.includes(m);
   const isWeak = (m: AnatomyMuscle) => weak.includes(m);
   const fillFor = (m: AnatomyMuscle) =>
     isHot(m) ? `url(#${hotId})` : isWeak(m) ? `url(#${dimRedId})` : `url(#${baseId})`;
 
-  const w = 140 * scale;
+  const w = 160 * scale;
   const h = 280 * scale;
 
+  // Single silhouette outline path — one continuous shape covering
+  // head + neck + shoulders + arms + torso + legs. Proportional
+  // (head ~1/8 of body), smoothly curved transitions.
+  const SILHOUETTE = `
+    M 80 12
+    C 71 12  64 18  64 30
+    C 64 38  68 44  72 47
+    L 72 50
+    C 64 50  56 54  50 60
+    C 46 64  46 68  50 70
+    L 52 76
+    C 50 80  46 90  46 102
+    L 50 134
+    C 50 142  52 148  54 152
+    L 52 158
+    C 50 168  50 180  50 196
+    L 52 220
+    C 52 230  54 240  56 248
+    L 56 256
+    C 56 260  58 264  62 264
+    L 70 264
+    C 73 264  74 260  74 256
+    L 74 230
+    C 74 220  76 200  78 188
+    L 80 184
+    L 82 188
+    C 84 200  86 220  86 230
+    L 86 256
+    C 86 260  87 264  90 264
+    L 98 264
+    C 102 264  104 260  104 256
+    L 104 248
+    C 106 240  108 230  108 220
+    L 110 196
+    C 110 180  110 168  108 158
+    L 106 152
+    C 108 148  110 142  110 134
+    L 114 102
+    C 114 90  110 80  108 76
+    L 110 70
+    C 114 68  114 64  110 60
+    C 104 54  96 50  88 50
+    L 88 47
+    C 92 44  96 38  96 30
+    C 96 18  89 12  80 12
+    Z`;
+
   return (
-    <svg width={w} height={h} viewBox="0 0 140 280" fill="none">
+    <svg width={w} height={h} viewBox="0 0 160 280" fill="none">
       <defs>
-        {/* Base muscle — slate to navy. Lighter top, darker bottom for
-            depth. */}
+        {/* Base — cool slate gradient for the resting silhouette */}
         <linearGradient id={baseId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#64748b" />
-          <stop offset="40%" stopColor="#334155" />
-          <stop offset="80%" stopColor="#1e293b" />
-          <stop offset="100%" stopColor="#0c1322" />
+          <stop offset="0%"  stopColor="#475569" />
+          <stop offset="50%" stopColor="#334155" />
+          <stop offset="100%" stopColor="#1e293b" />
         </linearGradient>
-        {/* Hot muscle — saturated amber to deep red */}
+        {/* Hot — saturated red→amber for highlighted muscles */}
         <linearGradient id={hotId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#fef3c7" />
-          <stop offset="20%" stopColor="#fde68a" />
-          <stop offset="50%" stopColor="#fb923c" />
-          <stop offset="85%" stopColor="#dc2626" />
+          <stop offset="0%"  stopColor="#fde68a" />
+          <stop offset="40%" stopColor="#fb923c" />
+          <stop offset="80%" stopColor="#dc2626" />
           <stop offset="100%" stopColor="#7f1d1d" />
         </linearGradient>
-        {/* Weak muscle — desaturated dark red */}
+        {/* Weak — desaturated red for blind-spot muscles */}
         <linearGradient id={dimRedId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#9a1717" />
-          <stop offset="50%" stopColor="#5c0c0c" />
-          <stop offset="100%" stopColor="#2a0606" />
+          <stop offset="0%"  stopColor="#7f1d1d" />
+          <stop offset="100%" stopColor="#3a0a0a" />
         </linearGradient>
-        {/* Specular sheen */}
+        {/* Body shine */}
         <linearGradient id={shineId} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%"  stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="40%" stopColor="#ffffff" stopOpacity="0.18" />
-          <stop offset="60%" stopColor="#ffffff" stopOpacity="0.18" />
+          <stop offset="35%" stopColor="#ffffff" stopOpacity="0.15" />
+          <stop offset="65%" stopColor="#ffffff" stopOpacity="0.15" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
-        {/* Drop shadow under figure */}
-        <radialGradient id={shadowId} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#000000" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-        </radialGradient>
+        {/* Clip the muscle overlays to the silhouette so highlights
+            never bleed outside the body outline */}
+        <clipPath id={`bf-clip${idSuffix}`}>
+          <path d={SILHOUETTE} />
+        </clipPath>
       </defs>
 
       {/* Floor shadow */}
-      <ellipse cx="70" cy="274" rx="36" ry="5" fill={`url(#${shadowId})`} />
+      <ellipse cx="80" cy="270" rx="42" ry="4" fill="#000000" opacity="0.4" />
 
-      {/* Head — oval with a soft jawline */}
-      <path
-        d="M 70 6 Q 56 6 54 18 Q 53 28 56 35 Q 60 42 70 42 Q 80 42 84 35 Q 87 28 86 18 Q 84 6 70 6 Z"
-        fill={`url(#${baseId})`}
-      />
-      {/* Cheek shadow */}
-      <path d="M 56 24 Q 60 32 70 36 Q 80 32 84 24" stroke="#0c1322" strokeWidth="0.4" fill="none" opacity="0.5" />
+      {/* Base silhouette */}
+      <path d={SILHOUETTE} fill={`url(#${baseId})`} />
 
-      {/* Neck */}
-      <path d="M 63 38 Q 63 44 60 50 Q 70 52 80 50 Q 77 44 77 38 Z" fill={`url(#${baseId})`} />
-
-      {/* Trapezius (back of neck to shoulders) */}
-      <path
-        d="M 56 50 Q 42 52 28 58 Q 22 60 22 64 L 118 64 Q 118 60 112 58 Q 98 52 84 50 Q 78 53 70 54 Q 62 53 56 50 Z"
-        fill={`url(#${baseId})`}
-      />
-
-      {/* Deltoids — wider and more rounded */}
-      <ellipse cx="24" cy="68" rx="14" ry="14" fill={fillFor('shoulders')} />
-      <ellipse cx="116" cy="68" rx="14" ry="14" fill={fillFor('shoulders')} />
-      {/* Delt fiber striations */}
-      <path d="M 14 64 Q 22 60 30 65" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
-      <path d="M 110 64 Q 118 60 126 65" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
-      <path d="M 14 72 Q 22 76 30 73" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
-      <path d="M 110 72 Q 118 76 126 73" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
-
-      {/* Upper chest — pec plates with anatomical shape */}
-      <path
-        d="M 38 64 Q 60 62 68 66 L 68 100 Q 56 102 44 96 Q 34 90 34 80 Z"
-        fill={fillFor('chest')}
-      />
-      <path
-        d="M 102 64 Q 80 62 72 66 L 72 100 Q 84 102 96 96 Q 106 90 106 80 Z"
-        fill={fillFor('chest')}
-      />
-      {/* Pec separation crease */}
-      <line x1="70" y1="66" x2="70" y2="100" stroke="#0c1322" strokeWidth="1.2" opacity="0.65" />
-      {/* Pec underline */}
-      <path d="M 36 90 Q 50 98 68 98" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.45" />
-      <path d="M 104 90 Q 90 98 72 98" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.45" />
-
-      {/* Biceps — pronounced peaks */}
-      <path
-        d="M 12 76 Q 8 96 14 116 L 28 116 Q 32 96 28 74 Q 20 70 12 76 Z"
-        fill={fillFor('biceps')}
-      />
-      <path
-        d="M 128 76 Q 132 96 126 116 L 112 116 Q 108 96 112 74 Q 120 70 128 76 Z"
-        fill={fillFor('biceps')}
-      />
-      {/* Bicep peak highlight */}
-      <ellipse cx="20" cy="90" rx="4" ry="9" fill={fillFor('biceps')} opacity="0.5" />
-      <ellipse cx="120" cy="90" rx="4" ry="9" fill={fillFor('biceps')} opacity="0.5" />
-      {/* Bicep/tricep separation */}
-      <path d="M 14 80 Q 18 94 16 110" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.5" />
-      <path d="M 126 80 Q 122 94 124 110" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.5" />
-
-      {/* Forearms — tapered */}
-      <path
-        d="M 14 116 Q 11 134 14 150 L 26 150 Q 30 134 28 116 Z"
-        fill={fillFor('forearms')}
-      />
-      <path
-        d="M 126 116 Q 129 134 126 150 L 114 150 Q 110 134 112 116 Z"
-        fill={fillFor('forearms')}
-      />
-      {/* Forearm muscle definition */}
-      <path d="M 18 122 Q 20 134 18 146" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
-      <path d="M 122 122 Q 120 134 122 146" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
-
-      {/* Lats — visible from front along the sides */}
-      <path
-        d="M 34 80 Q 28 110 32 130 L 40 130 Q 40 110 40 80 Z"
-        fill={fillFor('lats')}
-      />
-      <path
-        d="M 106 80 Q 112 110 108 130 L 100 130 Q 100 110 100 80 Z"
-        fill={fillFor('lats')}
-      />
-
-      {/* Mid torso — serratus + transition */}
-      <path d="M 40 100 L 100 100 L 96 130 Q 86 138 70 138 Q 54 138 44 130 Z" fill={`url(#${baseId})`} />
-
-      {/* Obliques — V-cut at the waist */}
-      <path d="M 44 130 Q 38 142 40 154 L 52 154 Q 52 138 52 130 Z" fill={fillFor('obliques')} />
-      <path d="M 96 130 Q 102 142 100 154 L 88 154 Q 88 138 88 130 Z" fill={fillFor('obliques')} />
-
-      {/* Abs — 6-pack grid with deeper separations */}
-      <g>
-        <rect x="55" y="100" width="30" height="44" rx="2" fill={fillFor('abs')} />
-        <line x1="70" y1="100" x2="70" y2="144" stroke="#0c1322" strokeWidth="1" opacity={isHot('abs') ? 0.7 : 0.55} />
-        <line x1="55" y1="112" x2="85" y2="112" stroke="#0c1322" strokeWidth="0.8" opacity={isHot('abs') ? 0.7 : 0.5} />
-        <line x1="55" y1="124" x2="85" y2="124" stroke="#0c1322" strokeWidth="0.8" opacity={isHot('abs') ? 0.7 : 0.5} />
-        <line x1="55" y1="136" x2="85" y2="136" stroke="#0c1322" strokeWidth="0.8" opacity={isHot('abs') ? 0.7 : 0.5} />
-        {/* Ab brightness highlights when hot */}
-        {isHot('abs') && (
+      {/* Muscle highlight overlays — clipped to silhouette */}
+      <g clipPath={`url(#bf-clip${idSuffix})`}>
+        {/* Shoulders / deltoids */}
+        {(isHot('shoulders') || isWeak('shoulders')) && (
           <>
-            <rect x="56" y="101" width="13" height="10" rx="1" fill="#ffffff" opacity="0.18" />
-            <rect x="71" y="101" width="13" height="10" rx="1" fill="#ffffff" opacity="0.18" />
+            <ellipse cx="52" cy="60" rx="11" ry="10" fill={fillFor('shoulders')} />
+            <ellipse cx="108" cy="60" rx="11" ry="10" fill={fillFor('shoulders')} />
+          </>
+        )}
+        {/* Chest — pec plates */}
+        {(isHot('chest') || isWeak('chest')) && (
+          <>
+            <path d="M 56 64 Q 78 62 80 66 L 80 92 Q 68 96 60 90 Q 54 80 56 64 Z" fill={fillFor('chest')} />
+            <path d="M 104 64 Q 82 62 80 66 L 80 92 Q 92 96 100 90 Q 106 80 104 64 Z" fill={fillFor('chest')} />
+          </>
+        )}
+        {/* Biceps */}
+        {(isHot('biceps') || isWeak('biceps')) && (
+          <>
+            <ellipse cx="50" cy="86" rx="6" ry="14" fill={fillFor('biceps')} />
+            <ellipse cx="110" cy="86" rx="6" ry="14" fill={fillFor('biceps')} />
+          </>
+        )}
+        {/* Forearms */}
+        {(isHot('forearms') || isWeak('forearms')) && (
+          <>
+            <ellipse cx="50" cy="120" rx="5" ry="14" fill={fillFor('forearms')} />
+            <ellipse cx="110" cy="120" rx="5" ry="14" fill={fillFor('forearms')} />
+          </>
+        )}
+        {/* Lats */}
+        {(isHot('lats') || isWeak('lats')) && (
+          <>
+            <path d="M 56 80 Q 52 110 56 132 L 64 132 Q 64 108 64 80 Z" fill={fillFor('lats')} />
+            <path d="M 104 80 Q 108 110 104 132 L 96 132 Q 96 108 96 80 Z" fill={fillFor('lats')} />
+          </>
+        )}
+        {/* Abs */}
+        {(isHot('abs') || isWeak('abs')) && (
+          <>
+            <rect x="68" y="92" width="24" height="46" rx="2" fill={fillFor('abs')} />
+            <line x1="80" y1="92" x2="80" y2="138" stroke="#0c1322" strokeWidth="0.8" opacity="0.55" />
+            <line x1="68" y1="104" x2="92" y2="104" stroke="#0c1322" strokeWidth="0.7" opacity="0.5" />
+            <line x1="68" y1="116" x2="92" y2="116" stroke="#0c1322" strokeWidth="0.7" opacity="0.5" />
+            <line x1="68" y1="128" x2="92" y2="128" stroke="#0c1322" strokeWidth="0.7" opacity="0.5" />
+          </>
+        )}
+        {/* Obliques */}
+        {(isHot('obliques') || isWeak('obliques')) && (
+          <>
+            <path d="M 60 110 Q 56 132 60 144 L 68 144 Q 68 122 68 110 Z" fill={fillFor('obliques')} />
+            <path d="M 100 110 Q 104 132 100 144 L 92 144 Q 92 122 92 110 Z" fill={fillFor('obliques')} />
+          </>
+        )}
+        {/* Quads */}
+        {(isHot('quads') || isWeak('quads')) && (
+          <>
+            <ellipse cx="64" cy="195" rx="9" ry="32" fill={fillFor('quads')} />
+            <ellipse cx="96" cy="195" rx="9" ry="32" fill={fillFor('quads')} />
+          </>
+        )}
+        {/* Calves */}
+        {(isHot('calves') || isWeak('calves')) && (
+          <>
+            <ellipse cx="65" cy="246" rx="6" ry="13" fill={fillFor('calves')} />
+            <ellipse cx="95" cy="246" rx="6" ry="13" fill={fillFor('calves')} />
           </>
         )}
       </g>
 
-      {/* Hip waistband / pelvis */}
-      <path d="M 40 152 Q 46 158 70 158 Q 94 158 100 152 L 102 168 Q 88 172 70 172 Q 52 172 38 168 Z" fill={`url(#${baseId})`} />
+      {/* Subtle body line markings — chest centerline + ab grid hint
+          even on resting state, so the figure has anatomy hints */}
+      <line x1="80" y1="56" x2="80" y2="138" stroke="#0c1322" strokeWidth="0.6" opacity="0.45" />
+      <path d="M 56 92 Q 70 95 80 95" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
+      <path d="M 104 92 Q 90 95 80 95" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.4" />
+      <path d="M 60 152 Q 80 155 100 152" stroke="#0c1322" strokeWidth="0.5" fill="none" opacity="0.45" />
 
-      {/* Quads — distinct outer + inner separation */}
-      <path d="M 44 170 Q 38 200 38 234 L 56 234 Q 64 200 64 170 Z" fill={fillFor('quads')} />
-      <path d="M 96 170 Q 102 200 102 234 L 84 234 Q 76 200 76 170 Z" fill={fillFor('quads')} />
-      {/* Vastus lateralis (outer thigh ridge) */}
-      <path d="M 42 178 Q 40 200 42 226" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.45" />
-      <path d="M 98 178 Q 100 200 98 226" stroke="#0c1322" strokeWidth="0.6" fill="none" opacity="0.45" />
-      {/* Inner-thigh separation */}
-      <path d="M 58 178 Q 58 200 58 230" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.55" />
-      <path d="M 82 178 Q 82 200 82 230" stroke="#0c1322" strokeWidth="0.7" fill="none" opacity="0.55" />
+      {/* Whole-body specular shine */}
+      <path d={SILHOUETTE} fill={`url(#${shineId})`} opacity="0.55" />
 
-      {/* Knee caps */}
-      <ellipse cx="50" cy="237" rx="6" ry="3.5" fill={`url(#${baseId})`} />
-      <ellipse cx="90" cy="237" rx="6" ry="3.5" fill={`url(#${baseId})`} />
-
-      {/* Calves — diamond shape */}
-      <path d="M 44 242 Q 38 256 44 272 L 56 272 Q 60 256 56 242 Z" fill={fillFor('calves')} />
-      <path d="M 96 242 Q 102 256 96 272 L 84 272 Q 80 256 84 242 Z" fill={fillFor('calves')} />
-      {/* Calf muscle bulge highlight */}
-      <ellipse cx="50" cy="252" rx="3" ry="6" fill={fillFor('calves')} opacity="0.55" />
-      <ellipse cx="90" cy="252" rx="3" ry="6" fill={fillFor('calves')} opacity="0.55" />
-
-      {/* Whole-body shine — narrow vertical strip down the middle */}
-      <ellipse cx="70" cy="140" rx="50" ry="130" fill={`url(#${shineId})`} opacity="0.7" />
+      {/* Outline stroke for definition */}
+      <path d={SILHOUETTE} fill="none" stroke="#0c1322" strokeWidth="1" opacity="0.4" />
     </svg>
   );
 }

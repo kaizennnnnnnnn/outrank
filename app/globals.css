@@ -258,10 +258,10 @@ body {
    first, giving a seamless loop. */
 @keyframes globe-drift {
   from { transform: translateX(0); }
-  to   { transform: translateX(-220px); }
+  to   { transform: translateX(-240px); }
 }
 .animate-globe-drift {
-  animation: globe-drift 36s linear infinite;
+  animation: globe-drift 40s linear infinite;
   will-change: transform;
 }
 

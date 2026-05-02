@@ -819,87 +819,125 @@ interface SilhouetteProps {
   active: boolean;
 }
 
+/**
+ * Cleaner human silhouette with the targeted muscle highlighted.
+ * Single continuous outline so it reads as a real body, not a
+ * collection of blocks.
+ */
 function MuscleSilhouette({ muscle, active }: SilhouetteProps) {
-  const dim = '#1e293b';
-  const dimStroke = '#334155';
-  const hot = active ? 'url(#muscleHot)' : '#475569';
+  const dim = '#334155';
+  const dimStroke = '#1e293b';
+  const hot = active ? 'url(#muscleHot)' : '#64748b';
+
+  // Single continuous figure — head at top, tapered torso, smooth
+  // arms hanging at the sides, legs slightly apart.
+  const SIL = `
+    M 28 4
+    C 23 4  20 8  20 13
+    C 20 17  22 20  24 22
+    L 24 24
+    C 19 24  14 27  11 32
+    C 9 36  9 38  10 40
+    L 12 44
+    C 11 47  10 52  10 58
+    L 11 70
+    C 11 73  12 75  13 75
+    L 16 75
+    C 17 75  17 73  17 71
+    L 16 60
+    L 18 60
+    L 20 70
+    C 20 75  20 76  20 76
+    L 22 76
+    Q 23 76  23 75
+    L 23 26
+    L 25 26
+    L 25 32
+    Q 24 36  24 42
+    L 24 60
+    C 24 64  25 67  26 70
+    L 26 76
+    C 26 78  27 78  28 78
+    L 29 78
+    C 30 78  31 78  31 76
+    L 31 70
+    C 32 67  33 64  33 60
+    L 33 42
+    Q 33 36  32 32
+    L 32 26
+    L 34 26
+    L 34 75
+    Q 34 76  35 76
+    L 37 76
+    C 37 76  37 75  37 70
+    L 39 60
+    L 41 60
+    L 40 71
+    C 40 73  40 75  41 75
+    L 44 75
+    C 45 75  46 73  46 70
+    L 47 58
+    C 47 52  46 47  45 44
+    L 47 40
+    C 48 38  48 36  46 32
+    C 43 27  38 24  33 24
+    L 33 22
+    C 35 20  37 17  37 13
+    C 37 8  33 4  28 4
+    Z`;
+
   return (
-    <svg width="56" height="80" viewBox="0 0 56 80" fill="none" className="flex-shrink-0">
+    <svg width="50" height="76" viewBox="0 0 56 80" fill="none" className="flex-shrink-0">
       <defs>
-        <linearGradient id="muscleHot" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fb923c" />
+        <linearGradient id={`muscleHot-${muscle}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fde68a" />
+          <stop offset="50%" stopColor="#fb923c" />
           <stop offset="100%" stopColor="#dc2626" />
         </linearGradient>
+        <clipPath id={`muscleClip-${muscle}`}>
+          <path d={SIL} />
+        </clipPath>
       </defs>
-      {/* Base silhouette — body in dim slate */}
-      {muscle !== 'back' ? (
-        // Front view
-        <g fill={dim} stroke={dimStroke} strokeWidth="0.5">
-          <circle cx="28" cy="10" r="6" />
-          <rect x="25" y="15" width="6" height="3" />
-          <path d="M 18 22 Q 16 19 22 18 Q 27 16 28 16 Q 29 16 34 18 Q 40 19 38 22 L 40 36 Q 38 50 36 60 L 20 60 Q 18 50 16 36 Z" />
-          <path d="M 18 22 Q 14 32 13 44 L 19 44 Q 20 30 22 22 Z" />
-          <path d="M 38 22 Q 42 32 43 44 L 37 44 Q 36 30 34 22 Z" />
-          <path d="M 20 60 Q 18 70 19 78 L 26 78 Q 27 70 27 60 Z" />
-          <path d="M 36 60 Q 38 70 37 78 L 30 78 Q 29 70 29 60 Z" />
-        </g>
-      ) : (
-        // Back view
-        <g fill={dim} stroke={dimStroke} strokeWidth="0.5">
-          <circle cx="28" cy="10" r="6" />
-          <rect x="25" y="15" width="6" height="3" />
-          <path d="M 18 22 Q 16 19 22 18 Q 27 16 28 16 Q 29 16 34 18 Q 40 19 38 22 L 40 36 Q 38 50 36 60 L 20 60 Q 18 50 16 36 Z" />
-          <path d="M 18 22 Q 14 32 13 44 L 19 44 Q 20 30 22 22 Z" />
-          <path d="M 38 22 Q 42 32 43 44 L 37 44 Q 36 30 34 22 Z" />
-          <path d="M 20 60 Q 18 70 19 78 L 26 78 Q 27 70 27 60 Z" />
-          <path d="M 36 60 Q 38 70 37 78 L 30 78 Q 29 70 29 60 Z" />
-        </g>
-      )}
+      {/* Base silhouette */}
+      <path d={SIL} fill={dim} stroke={dimStroke} strokeWidth="0.5" />
 
-      {/* Hot overlay — only the targeted muscle */}
-      {muscle === 'chest' && (
-        <g fill={hot}>
-          <path d="M 21 22 Q 27 24 28 26 L 28 36 Q 22 35 20 32 Z" />
-          <path d="M 35 22 Q 29 24 28 26 L 28 36 Q 34 35 36 32 Z" />
-        </g>
-      )}
-      {muscle === 'arms' && (
-        <g fill={hot}>
-          {/* Biceps + forearms on both arms */}
-          <path d="M 18 22 Q 14 30 14 40 L 19 40 Q 20 30 22 22 Z" />
-          <path d="M 38 22 Q 42 30 42 40 L 37 40 Q 36 30 34 22 Z" />
-        </g>
-      )}
-      {muscle === 'abs' && (
-        <g fill={hot}>
-          <rect x="24" y="38" width="8" height="22" rx="1" />
-          <line x1="24" y1="44" x2="32" y2="44" stroke={dimStroke} strokeWidth="0.4" />
-          <line x1="24" y1="50" x2="32" y2="50" stroke={dimStroke} strokeWidth="0.4" />
-          <line x1="24" y1="56" x2="32" y2="56" stroke={dimStroke} strokeWidth="0.4" />
-          <line x1="28" y1="38" x2="28" y2="60" stroke={dimStroke} strokeWidth="0.4" />
-        </g>
-      )}
-      {muscle === 'legs' && (
-        <g fill={hot}>
-          <path d="M 20 60 Q 18 70 19 78 L 26 78 Q 27 70 27 60 Z" />
-          <path d="M 36 60 Q 38 70 37 78 L 30 78 Q 29 70 29 60 Z" />
-        </g>
-      )}
-      {muscle === 'shoulders' && (
-        <g fill={hot}>
-          <ellipse cx="20" cy="22" rx="5" ry="4" />
-          <ellipse cx="36" cy="22" rx="5" ry="4" />
-        </g>
-      )}
-      {muscle === 'back' && (
-        <g fill={hot}>
-          {/* Lats + traps as a single back area */}
-          <path d="M 21 22 Q 18 28 18 38 Q 19 50 22 60 L 28 60 L 28 22 Z" />
-          <path d="M 35 22 Q 38 28 38 38 Q 37 50 34 60 L 28 60 L 28 22 Z" />
-          {/* Spine line */}
-          <line x1="28" y1="22" x2="28" y2="60" stroke="#0f172a" strokeWidth="0.6" />
-        </g>
-      )}
+      {/* Highlighted muscle area, clipped to silhouette */}
+      <g clipPath={`url(#muscleClip-${muscle})`}>
+        {muscle === 'chest' && (
+          <>
+            <ellipse cx="22" cy="32" rx="7" ry="6" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+            <ellipse cx="34" cy="32" rx="7" ry="6" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+          </>
+        )}
+        {muscle === 'arms' && (
+          <>
+            <ellipse cx="13" cy="38" rx="4" ry="9" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+            <ellipse cx="43" cy="38" rx="4" ry="9" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+          </>
+        )}
+        {muscle === 'abs' && (
+          <rect x="23" y="38" width="10" height="20" rx="1" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+        )}
+        {muscle === 'legs' && (
+          <>
+            <ellipse cx="20" cy="68" rx="5" ry="11" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+            <ellipse cx="36" cy="68" rx="5" ry="11" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+          </>
+        )}
+        {muscle === 'shoulders' && (
+          <>
+            <ellipse cx="14" cy="26" rx="5" ry="5" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+            <ellipse cx="42" cy="26" rx="5" ry="5" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+          </>
+        )}
+        {muscle === 'back' && (
+          <>
+            <path d="M 16 28 Q 12 40 14 56 L 28 56 L 28 28 Z" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+            <path d="M 40 28 Q 44 40 42 56 L 28 56 L 28 28 Z" fill={active ? `url(#muscleHot-${muscle})` : hot} />
+            <line x1="28" y1="28" x2="28" y2="56" stroke="#0f172a" strokeWidth="0.6" opacity="0.6" />
+          </>
+        )}
+      </g>
     </svg>
   );
 }
