@@ -983,77 +983,125 @@ function ActiveLiftersGlobeStep({
  * globe circle so they only show on the visible hemisphere.
  */
 
-// Continent silhouettes for a 240-wide horizontal world map. The KEY
-// invert from the previous version: continents are LIGHTER than the
-// ocean (matching the user's reference), so they read as raised land
-// against a deep night ocean. Shapes are hand-drawn to roughly match
-// real continents — Mexico tail on NA, V-shape on SA, recognizable
-// Africa horn, India peninsula, Australia, etc.
+// Continent silhouettes — more detailed shapes with proper bezier
+// curves so Africa/India/Asia/Australia are clearly recognizable
+// against the dark ocean. Each path uses many control points so the
+// outline reads as a real continent, not a blob.
 const CONTINENTS = [
-  // North America — with Alaska wrap, Canada, US, Mexico tail
-  'M 4 30 Q 14 22 28 22 Q 42 22 54 24 Q 66 26 74 32 Q 78 42 74 54 Q 66 60 58 60 Q 50 64 46 72 Q 44 82 38 88 Q 30 84 24 76 Q 16 68 10 58 Q 4 46 4 30 Z',
+  // North America — Alaska, Canada, US, Florida, Mexico tail, Cuba
+  'M 2 28 Q 8 22 18 20 Q 28 18 38 22 L 50 22 Q 60 20 70 26 Q 76 32 76 42 Q 74 50 68 56 L 60 60 Q 52 60 46 66 L 42 76 Q 44 84 40 88 L 36 92 Q 30 90 26 84 L 22 76 Q 18 70 14 64 L 8 56 Q 4 46 2 36 Z',
   // Greenland
-  'M 78 16 Q 88 14 96 22 Q 96 32 90 38 Q 80 38 78 32 Z',
-  // Central America bridge
-  'M 38 90 L 48 88 L 52 100 L 44 100 Z',
-  // South America — V-shape with Andes side
-  'M 48 100 Q 62 96 72 102 Q 76 116 74 132 Q 70 154 64 168 Q 58 174 52 168 Q 46 152 46 130 Q 46 114 48 100 Z',
-  // UK
-  'M 100 50 Q 106 48 108 54 Q 106 58 102 58 Z',
-  // Western Europe
-  'M 110 52 Q 124 50 132 54 Q 136 64 130 70 Q 118 72 112 66 Z',
+  'M 80 14 Q 90 12 98 18 Q 100 28 96 36 Q 88 38 80 34 L 78 22 Z',
+  // Central America strip
+  'M 38 90 L 46 88 Q 52 92 56 98 L 54 104 L 48 102 Z',
+  // Caribbean cluster
+  'M 56 96 L 62 95 L 64 98 L 60 100 Z',
+  // South America — distinct V/teardrop with Brazil bulge
+  'M 50 102 Q 60 98 70 102 L 76 110 Q 80 124 76 138 L 70 158 Q 64 172 58 174 L 52 170 Q 46 154 46 138 Q 44 122 48 112 Z',
+  // UK / Ireland
+  'M 100 50 Q 106 48 108 52 Q 108 58 104 60 Q 100 58 100 54 Z',
   // Iberia
-  'M 100 64 Q 110 64 112 70 Q 110 74 102 74 Z',
+  'M 100 64 Q 108 64 112 70 Q 110 74 104 76 Q 100 72 100 68 Z',
+  // Western Europe
+  'M 112 52 Q 122 50 130 54 Q 136 60 132 68 Q 122 70 116 66 Q 112 60 112 56 Z',
+  // Italy boot
+  'M 124 68 Q 128 70 130 76 L 128 80 L 126 76 Z',
   // Scandinavia
-  'M 122 32 Q 138 28 142 38 Q 142 50 132 52 Q 124 50 122 42 Z',
-  // Africa — recognizable shape, horn east, narrow south
-  'M 102 76 Q 124 74 138 80 Q 142 92 142 102 Q 144 116 138 130 Q 130 144 122 156 Q 114 158 110 150 Q 104 132 100 114 Q 98 96 102 76 Z',
+  'M 124 30 Q 138 28 142 36 Q 144 50 134 52 Q 126 50 124 42 Z',
+  // Africa — wide head, horn east, narrow south
+  'M 100 78 L 110 76 Q 124 74 134 76 L 142 80 Q 146 88 144 96 L 146 102 Q 144 116 138 128 L 130 144 Q 122 156 116 158 L 110 154 Q 104 138 100 122 Q 96 106 96 92 Z',
   // Madagascar
-  'M 144 130 Q 152 128 152 142 Q 150 150 146 150 Q 142 144 144 130 Z',
-  // Middle East / Saudi Arabia
-  'M 138 80 Q 150 78 156 86 Q 158 96 150 98 Q 142 94 138 88 Z',
-  // Asia mainland (Russia/China)
-  'M 138 30 Q 162 24 188 24 Q 210 26 226 32 Q 234 42 232 56 Q 226 70 218 78 Q 204 84 188 86 Q 172 86 158 80 Q 146 70 142 58 Q 138 44 138 30 Z',
-  // India peninsula
-  'M 162 88 Q 176 88 178 100 Q 178 116 170 124 Q 162 120 158 108 Q 158 96 162 88 Z',
-  // SE Asia / Indochina
-  'M 178 90 Q 192 88 196 100 Q 196 110 188 114 Q 178 110 178 100 Z',
-  // Japan
-  'M 222 56 Q 230 60 232 70 Q 228 78 222 76 Q 220 66 222 56 Z',
-  // Indonesia archipelago
-  'M 178 116 Q 192 114 200 120 Q 198 128 188 130 Q 180 126 178 122 Z',
-  // Philippines
-  'M 200 102 Q 208 100 210 110 Q 206 116 202 114 Z',
+  'M 146 132 Q 152 130 152 142 Q 150 152 146 152 Z',
+  // Saudi Arabia / Arabian peninsula
+  'M 138 82 Q 150 80 156 88 Q 158 96 152 100 Q 144 100 140 92 Z',
+  // Caspian / Black Sea hint (skipped, water)
+  // Russia + central Asia — long horizontal band
+  'M 138 28 Q 156 26 178 26 L 198 28 Q 218 30 230 36 L 234 44 Q 232 54 226 60 L 218 64 Q 204 66 192 64 L 178 64 Q 164 62 152 58 L 144 52 Q 140 44 138 36 Z',
+  // China + Korea
+  'M 188 64 Q 210 62 222 68 Q 224 78 218 82 L 208 84 Q 196 84 188 80 Z',
+  // India peninsula — clear triangle
+  'M 162 86 Q 174 86 178 96 Q 180 110 174 122 Q 168 130 164 124 Q 160 114 158 100 Q 158 90 162 86 Z',
+  // Sri Lanka
+  'M 168 130 L 172 130 L 172 134 L 169 134 Z',
+  // SE Asia (Indochina)
+  'M 188 92 Q 198 92 202 100 Q 202 110 196 114 Q 188 112 186 106 Z',
+  // Japan archipelago — chain of small islands
+  'M 226 58 L 230 60 L 230 64 L 226 64 Z',
+  'M 230 65 L 234 67 L 234 72 L 230 72 Z',
+  'M 232 73 L 236 75 L 236 80 L 232 80 Z',
+  // Philippines cluster
+  'M 206 96 L 210 96 L 210 102 L 206 102 Z',
+  'M 208 104 L 212 104 L 212 108 L 208 108 Z',
+  // Indonesia archipelago — multiple small landmasses
+  'M 184 116 Q 196 114 204 118 Q 204 124 198 124 Q 188 124 184 120 Z',
+  'M 206 122 L 214 120 L 216 126 L 208 126 Z',
+  'M 218 122 L 222 122 L 222 126 L 218 126 Z',
   // Australia
-  'M 188 132 Q 212 128 222 138 Q 222 152 214 162 Q 200 166 190 162 Q 184 150 188 132 Z',
+  'M 200 134 Q 222 132 230 140 Q 232 154 224 162 Q 210 166 200 162 L 196 152 Z',
+  // Tasmania
+  'M 218 168 L 222 168 L 222 172 L 218 172 Z',
   // New Zealand
-  'M 224 162 Q 232 160 232 172 Q 226 174 222 172 Z',
+  'M 234 156 L 238 156 L 238 162 L 234 162 Z',
+  'M 236 164 L 240 164 L 240 170 L 236 170 Z',
 ];
 
-// 35 dot clusters across populated regions. Coordinates are in the
-// 0..240 world-strip space. Smaller (2px halo + 1px core) and
-// lighter cyan than before — reading as "city lights at night."
+// Major-city activity dots — 60+ across populated regions to give
+// the dense "cities lit at night" cluster look from the reference.
 const GLOBE_DOTS: [number, number, number][] = [
-  // North America cluster
-  [16, 50, 0.0], [22, 56, 0.4], [28, 50, 0.8], [38, 50, 0.2], [44, 56, 0.6], [50, 64, 1.0], [42, 78, 1.4],
-  // South America cluster
-  [60, 110, 0.3], [56, 130, 0.7], [62, 150, 1.1], [66, 134, 1.5],
-  // Europe cluster
-  [104, 56, 0.0], [114, 56, 0.4], [122, 58, 0.8], [128, 62, 1.2], [120, 50, 1.6], [108, 64, 0.3],
-  // Africa cluster (north)
-  [120, 80, 0.5], [128, 90, 0.9], [114, 96, 1.3], [120, 110, 1.7],
-  // Africa cluster (south)
-  [122, 142, 0.2], [134, 150, 0.6],
-  // Middle East
-  [148, 86, 0.3], [142, 92, 0.7],
-  // India dense
-  [166, 102, 0.0], [170, 110, 0.4], [174, 116, 0.8], [168, 118, 1.2],
-  // SE Asia / China
-  [186, 76, 0.5], [196, 70, 0.9], [206, 80, 1.3], [188, 102, 1.7],
-  // Japan / Korea
-  [222, 60, 0.2], [228, 68, 0.6],
-  // Australia / NZ
-  [196, 148, 0.4], [206, 152, 0.8], [214, 156, 1.2], [228, 168, 1.6],
+  // North America — east coast cluster
+  [38, 48, 0.0], [40, 52, 0.5], [42, 50, 1.0], [44, 56, 1.5],
+  // West coast
+  [16, 52, 0.2], [18, 56, 0.7], [20, 60, 1.2],
+  // Central / Mexico
+  [30, 56, 0.4], [34, 64, 0.9], [40, 76, 1.4],
+  // Caribbean / Cuba
+  [56, 96, 0.3], [60, 98, 0.8],
+  // South America cluster (Brazil)
+  [62, 116, 0.6], [66, 124, 1.1], [60, 132, 1.6],
+  // Buenos Aires
+  [62, 158, 0.5],
+  // UK / Ireland
+  [102, 54, 0.0], [104, 56, 0.5], [106, 56, 1.0],
+  // Western Europe — dense
+  [114, 56, 0.2], [118, 56, 0.7], [120, 58, 1.2], [122, 58, 1.7], [124, 60, 0.3],
+  [126, 62, 0.8], [120, 62, 1.3], [116, 62, 1.8],
+  // Iberia
+  [104, 70, 0.6], [108, 72, 1.1],
+  // Italy
+  [126, 70, 0.4],
+  // Scandinavia
+  [130, 36, 0.9], [134, 40, 1.4],
+  // Eastern Europe
+  [128, 50, 0.7], [132, 54, 1.2],
+  // Russia
+  [148, 36, 0.5], [160, 32, 1.0], [180, 32, 1.5], [200, 34, 0.2],
+  // North Africa
+  [118, 82, 0.8], [124, 86, 1.3], [130, 88, 1.8], [114, 90, 0.4],
+  // West Africa
+  [108, 102, 0.6],
+  // Central / South Africa
+  [118, 110, 0.9], [124, 124, 1.2], [120, 140, 0.5], [122, 150, 1.0],
+  // Middle East — dense (Dubai, Riyadh, Tehran, Israel)
+  [142, 86, 0.3], [148, 90, 0.8], [152, 92, 1.3], [144, 92, 1.7],
+  // India — VERY dense (matches reference)
+  [164, 96, 0.0], [168, 98, 0.4], [170, 102, 0.8], [172, 106, 1.2], [168, 108, 1.6],
+  [166, 112, 0.2], [170, 116, 0.6], [172, 118, 1.0], [168, 120, 1.4], [170, 122, 1.8],
+  [166, 124, 0.5],
+  // Pakistan / Bangladesh
+  [160, 92, 0.7], [178, 102, 1.2],
+  // China — dense
+  [192, 70, 0.0], [200, 72, 0.5], [208, 74, 1.0], [216, 76, 1.5],
+  [196, 78, 0.3], [204, 80, 0.8], [212, 82, 1.3],
+  // Korea
+  [220, 70, 0.6],
+  // Japan — multiple dots
+  [228, 62, 0.4], [232, 68, 0.9], [232, 74, 1.4],
+  // SE Asia
+  [192, 100, 0.7], [196, 106, 1.2], [200, 110, 1.7],
+  // Indonesia / Philippines
+  [188, 118, 0.5], [194, 120, 1.0], [208, 100, 1.5], [210, 124, 0.3],
+  // Australia
+  [206, 142, 0.6], [216, 146, 1.1], [222, 154, 1.6], [228, 162, 0.4],
 ];
 
 const Globe = React.memo(function Globe() {
