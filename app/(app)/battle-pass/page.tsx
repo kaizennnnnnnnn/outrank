@@ -218,7 +218,7 @@ export default function BattlePassPage() {
 
           {/* Season progress bar — tiers 0 → 60 */}
           <div className="relative mt-5">
-            <div className="h-3 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30] relative">
+            <div className="h-3 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30] relative">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
@@ -232,7 +232,7 @@ export default function BattlePassPage() {
               {[10, 20, 30, 40, 50].map((n) => (
                 <span
                   key={n}
-                  className="absolute top-0 bottom-0 w-[1.5px] bg-[#08080f]"
+                  className="absolute top-0 bottom-0 w-[1.5px] bg-[#0d0d15]"
                   style={{ left: `${(n / SEASON_PASS_TIERS) * 100}%` }}
                 />
               ))}
@@ -255,7 +255,7 @@ export default function BattlePassPage() {
                   <span className="text-slate-500"> / {SEASON_PASS_XP_PER_TIER}</span>
                 </span>
               </div>
-              <div className="h-2 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30] relative">
+              <div className="h-2 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30] relative">
                 <div
                   className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
                   style={{
@@ -590,7 +590,7 @@ function MissionCard({
             <span>{progress} / {mission.goal}</span>
             <span>{Math.floor(pct)}%</span>
           </div>
-          <div className="h-1.5 rounded-full overflow-hidden bg-[#08080f] border border-[#1e1e30]">
+          <div className="h-1.5 rounded-full overflow-hidden bg-[#0d0d15] border border-[#1e1e30]">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{

@@ -79,7 +79,7 @@ export function Avatar({ src, alt = 'User', size = 'md', online, className, leve
       </div>
       {online !== undefined && (
         <span className={cn(
-          'absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#08080f] z-20',
+          'absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0d0d15] z-20',
           online ? 'bg-emerald-500' : 'bg-slate-600'
         )} />
       )}

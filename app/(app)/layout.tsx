@@ -8,7 +8,7 @@ import { RecapLogFlight } from '@/components/recap/RecapLogFlight';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#08080f]">
+    <div className="min-h-screen bg-[#0d0d15]">
       <Sidebar />
       <div className="lg:ml-[240px] overflow-x-hidden">
         <TopBar />

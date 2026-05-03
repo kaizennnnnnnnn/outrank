@@ -13,7 +13,7 @@ interface DuelVsScreenProps {
 
 export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsScreenProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#10101a] to-[#08080f] border border-[#1e1e30] p-8">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#10101a] to-[#0d0d15] border border-[#1e1e30] p-8">
       {/* Background glow effects */}
       <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-red-600/5 to-transparent" />
       <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-600/5 to-transparent" />

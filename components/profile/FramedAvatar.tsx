@@ -131,7 +131,7 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
       >
         {/* Inner cut-out — sized to match the avatar exactly (no black gap) */}
         <div
-          className="absolute rounded-full bg-[#08080f]"
+          className="absolute rounded-full bg-[#0d0d15]"
           style={{ inset: pad }}
         />
       </div>
@@ -149,7 +149,7 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
           }}
         >
           <div
-            className="absolute rounded-full bg-[#08080f]"
+            className="absolute rounded-full bg-[#0d0d15]"
             style={{ inset: 2 }}
           />
         </div>

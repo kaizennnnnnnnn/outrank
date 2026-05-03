@@ -35,7 +35,7 @@ export function MobileNav() {
   const rightItems = sideItems.slice(2);
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#08080f]/95 backdrop-blur-xl border-t border-[#1e1e30] safe-area-bottom">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0d0d15]/95 backdrop-blur-xl border-t border-[#1e1e30] safe-area-bottom">
       <div className="relative flex items-end justify-around h-16 px-2">
         {leftItems.map((item) => (
           <TabItem key={item.href} item={item} pathname={pathname} />
@@ -54,7 +54,7 @@ export function MobileNav() {
                 wrap the 58px FAB bezel cleanly. */}
             <span
               aria-hidden
-              className="absolute left-1/2 -translate-x-1/2 bg-[#08080f] border-t border-x border-[#1e1e30]"
+              className="absolute left-1/2 -translate-x-1/2 bg-[#0d0d15] border-t border-x border-[#1e1e30]"
               style={{
                 width: 74,
                 height: 38,
@@ -123,7 +123,7 @@ export function MobileNav() {
               >
                 <span className="absolute inset-0 rounded-full animate-ping bg-pink-500/70" />
                 <span
-                  className="relative w-2.5 h-2.5 rounded-full border-2 border-[#08080f]"
+                  className="relative w-2.5 h-2.5 rounded-full border-2 border-[#0d0d15]"
                   style={{ background: awakening >= 100 ? '#fde047' : '#ec4899' }}
                 />
               </span>

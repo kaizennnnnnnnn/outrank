@@ -41,7 +41,7 @@ export default function OnboardPhase8Page() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#08080f] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -552,7 +552,7 @@ function SignupStep({
             <div className="w-full border-t border-white/8" />
           </div>
           <div className="relative flex justify-center text-[11px]">
-            <span className="bg-[#08080f] px-3 text-slate-500 uppercase tracking-widest font-bold">Or with email</span>
+            <span className="bg-[#0d0d15] px-3 text-slate-500 uppercase tracking-widest font-bold">Or with email</span>
           </div>
         </div>
 
@@ -616,7 +616,7 @@ function WelcomeFinalStep({ name, onContinue }: { name: string; onContinue: () =
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#08080f] flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
       {/* Aurora */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div

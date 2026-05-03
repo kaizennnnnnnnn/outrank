@@ -61,7 +61,7 @@ export function Sidebar() {
   const xpProgress = user ? getXPProgress(user.totalXP) : null;
 
   return (
-    <aside className="hidden lg:flex flex-col w-[240px] h-screen fixed left-0 top-0 bg-[#08080f] border-r border-[#1e1e30] z-40">
+    <aside className="hidden lg:flex flex-col w-[240px] h-screen fixed left-0 top-0 bg-[#0d0d15] border-r border-[#1e1e30] z-40">
       {/* Logo */}
       <div className="px-6 py-5 border-b border-[#1e1e30]">
         <Link href="/dashboard">

@@ -174,7 +174,7 @@ export default function DashboardPage() {
                   {xpProgress.current.toLocaleString()} / {xpProgress.needed.toLocaleString()} XP
                 </span>
               </div>
-              <div className="w-full h-2.5 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30]">
+              <div className="w-full h-2.5 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30]">
                 <motion.div
                   className="h-full rounded-full"
                   style={{

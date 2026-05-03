@@ -146,7 +146,7 @@ export function WaterPillarRow({ habit, isLoggedToday }: Props) {
 
       {/* Goal progress bar — shows fill toward today's goal */}
       <div className="mt-3 ml-12">
-        <div className="w-full h-1.5 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30]">
+        <div className="w-full h-1.5 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30]">
           <motion.div
             className="h-full rounded-full"
             style={{

@@ -241,7 +241,7 @@ export default function IntroCarouselPage() {
   const skip = () => router.push('/onboard');
 
   return (
-    <div className="min-h-screen bg-[#08080f] flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
       {/* Aurora */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div

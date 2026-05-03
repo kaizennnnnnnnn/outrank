@@ -356,7 +356,7 @@ export default function OnboardPhase4Page() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#08080f] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
         <PhoenixMascot size={100} paused />
       </div>
     );

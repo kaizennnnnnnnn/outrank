@@ -42,9 +42,9 @@ const EMBERS: { left: number; size: number; color: string; dur: number; delay: n
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#08080f]">
+    <div className="min-h-screen bg-[#0d0d15]">
       {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#08080f]/80 backdrop-blur-xl border-b border-[#1e1e30]">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0d0d15]/80 backdrop-blur-xl border-b border-[#1e1e30]">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-3">
@@ -177,7 +177,7 @@ export default function LandingPage() {
                   {['#f97316', '#ef4444', '#fbbf24', '#ec4899'].map((c, i) => (
                     <span
                       key={i}
-                      className="w-5 h-5 rounded-full border border-[#08080f]"
+                      className="w-5 h-5 rounded-full border border-[#0d0d15]"
                       style={{ background: `linear-gradient(135deg, ${c}, #7f1d1d)` }}
                     />
                   ))}
@@ -198,11 +198,11 @@ export default function LandingPage() {
           <div className="mt-14 relative">
             <div
               className="absolute inset-y-0 left-0 w-16 z-10 pointer-events-none"
-              style={{ background: 'linear-gradient(90deg, #08080f, transparent)' }}
+              style={{ background: 'linear-gradient(90deg, #0d0d15, transparent)' }}
             />
             <div
               className="absolute inset-y-0 right-0 w-16 z-10 pointer-events-none"
-              style={{ background: 'linear-gradient(-90deg, #08080f, transparent)' }}
+              style={{ background: 'linear-gradient(-90deg, #0d0d15, transparent)' }}
             />
 
             <div className="overflow-hidden py-1">

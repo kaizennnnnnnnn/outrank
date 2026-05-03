@@ -188,7 +188,7 @@ function PrestigeConfirmModal({ isOpen, onClose, onConfirm, loading, currentPres
             </div>
 
             {/* Before → After */}
-            <div className="mx-6 mb-4 p-4 rounded-2xl bg-[#08080f] border border-[#1e1e30] flex items-center justify-around">
+            <div className="mx-6 mb-4 p-4 rounded-2xl bg-[#0d0d15] border border-[#1e1e30] flex items-center justify-around">
               <div className="text-center">
                 <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-1">Current</div>
                 <p className="font-heading text-2xl font-bold text-white">+{currentBonus}%</p>

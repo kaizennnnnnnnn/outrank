@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg-primary: #08080f;
+  --color-bg-primary: #0d0d15;
   --color-bg-card: #10101a;
   --color-bg-elevated: #18182a;
   --color-bg-hover: #1e1e30;
@@ -50,7 +50,7 @@ html, body {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
 body {
-  background: #08080f;
+  background: #0d0d15;
   color: #f8fafc;
   font-family: var(--font-plus-jakarta), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -436,7 +436,7 @@ body {
 @keyframes corruption-flash-out {
   0%   { background: #ffffff; opacity: 1; }
   60%  { background: #ffffff; opacity: 0.9; }
-  100% { background: #08080f; opacity: 1; }
+  100% { background: #0d0d15; opacity: 1; }
 }
 .animate-corruption-flash-out {
   animation: corruption-flash-out 0.45s ease-out forwards;

@@ -109,11 +109,11 @@ export function ScrollPicker({
         {/* Edge fades */}
         <div
           className="absolute inset-y-0 left-0 w-16 pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to right, #08080f, transparent)' }}
+          style={{ background: 'linear-gradient(to right, #0d0d15, transparent)' }}
         />
         <div
           className="absolute inset-y-0 right-0 w-16 pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to left, #08080f, transparent)' }}
+          style={{ background: 'linear-gradient(to left, #0d0d15, transparent)' }}
         />
 
         <div

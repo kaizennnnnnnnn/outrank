@@ -29,7 +29,7 @@ export function EmailVerifyGuard({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080f] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center space-y-6">
         <div className="flex justify-center"><MailFullIcon size={56} className="text-orange-400" /></div>
         <h1 className="text-2xl font-bold text-white font-heading">Verify Your Email</h1>

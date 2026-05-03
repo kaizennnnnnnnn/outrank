@@ -180,7 +180,7 @@ export default function SchedulePage() {
       </div>
 
       {/* Mobile: sticky horizontal habit strip just below the TopBar (which is h-14 = 56px) */}
-      <div className="lg:hidden sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-2 bg-[#08080f]/95 backdrop-blur-md border-b border-[#1e1e30]">
+      <div className="lg:hidden sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-2 bg-[#0d0d15]/95 backdrop-blur-md border-b border-[#1e1e30]">
         {habitsLoading ? (
           <div className="flex gap-2 overflow-x-auto">
             {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-32 rounded-xl flex-shrink-0" />)}

@@ -313,7 +313,7 @@ function LeagueInfoCard({ weeklyXP, categoryColor, categoryName }: {
             <span className="text-pink-400 font-bold uppercase tracking-widest">Max tier</span>
           )}
         </div>
-        <div className="w-full h-2 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30]">
+        <div className="w-full h-2 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30]">
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{
@@ -333,7 +333,7 @@ function LeagueInfoCard({ weeklyXP, categoryColor, categoryName }: {
           const l = LEAGUES[idx];
           if (!l) {
             return (
-              <div key={i} className="rounded-xl p-3 text-center bg-[#08080f] border border-dashed border-[#1e1e30] opacity-60">
+              <div key={i} className="rounded-xl p-3 text-center bg-[#0d0d15] border border-dashed border-[#1e1e30] opacity-60">
                 <p className="text-[10px] text-slate-600">— top —</p>
               </div>
             );

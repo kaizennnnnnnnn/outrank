@@ -144,9 +144,9 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080f] flex flex-col">
+    <div className="min-h-screen bg-[#0d0d15] flex flex-col">
       {/* Progress Bar */}
-      <div className="sticky top-0 z-50 bg-[#08080f]/80 backdrop-blur-xl border-b border-[#1e1e30] px-4 py-3">
+      <div className="sticky top-0 z-50 bg-[#0d0d15]/80 backdrop-blur-xl border-b border-[#1e1e30] px-4 py-3">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-slate-500">Step {step + 1} of {STEPS.length}</span>

@@ -130,7 +130,7 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
         </div>
 
         {/* Progress bar */}
-        <div className="w-full h-1.5 bg-[#08080f] rounded-full overflow-hidden border border-[#1e1e30]">
+        <div className="w-full h-1.5 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30]">
           <motion.div
             className="h-full rounded-full"
             style={{

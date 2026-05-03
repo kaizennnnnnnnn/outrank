@@ -41,7 +41,7 @@ export function WizardShell({
   const progress = Math.min(((step + 1) / totalSteps) * 100, 100);
 
   return (
-    <div className={cn('min-h-screen bg-[#08080f] flex flex-col relative overflow-hidden', className)}>
+    <div className={cn('min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden', className)}>
       {/* Aurora background — quieter than the welcome carousel since the
           mascot is the visual lead now. */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>

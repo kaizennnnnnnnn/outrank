@@ -146,7 +146,7 @@ export default function InvitePage({ params }: PageProps) {
   }, [authLoading, firebaseUser, user, username, state.kind, addToast]);
 
   return (
-    <div className="min-h-screen bg-[#08080f] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {state.kind === 'loading' && <LoadingCard username={username} />}
         {state.kind === 'not-found' && <NotFoundCard username={username} router={router} />}

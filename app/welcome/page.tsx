@@ -14,7 +14,7 @@ import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
  */
 export default function WelcomePage() {
   return (
-    <div className="min-h-screen bg-[#08080f] flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
       {/* Aurora — same red/orange palette as the marketing landing */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div

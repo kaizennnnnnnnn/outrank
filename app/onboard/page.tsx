@@ -76,7 +76,7 @@ export default function OnboardPhase2Page() {
   // draft loads.
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#08080f] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -745,7 +745,7 @@ function WelcomeStep({ name, onContinue }: { name: string; onContinue: () => voi
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#08080f] flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
       {/* Aurora */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
         <div
