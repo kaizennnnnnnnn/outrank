@@ -15,6 +15,7 @@ import { getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { sanitizeUsername } from '@/lib/security';
 import { derivePillarGoals, derivePillarRanks, clearDraft } from '@/lib/onboardingDraft';
+import { recommendCalories } from '@/lib/dietCalculator';
 import { Button } from '@/components/ui/Button';
 import { useUIStore } from '@/store/uiStore';
 import { CheckCircleFullIcon, SparklesIcon, TrophyIconFull, FireIcon, BoltFullIcon } from '@/components/ui/AppIcons';
@@ -465,6 +466,32 @@ function SignupStep({
     if (draft.workoutReminderTime) draftFields.workoutReminderTime = draft.workoutReminderTime;
     if (draft.bestLifts)        draftFields.bestLifts = draft.bestLifts;
     if (draft.tier)             draftFields.tier = draft.tier;
+
+    // Diet — store the user's chosen activity/goal/target weight, then
+    // compute their calorieGoal + macroGoals if we have everything we
+    // need (height, weight, age, sex, activity, goal). The diet page
+    // reads these flat fields off users/{uid}.
+    if (draft.activityLevel)    draftFields.activityLevel = draft.activityLevel;
+    if (draft.dietGoal)         draftFields.dietGoal = draft.dietGoal;
+    if (draft.targetWeight)     draftFields.targetWeight = draft.targetWeight;
+
+    if (
+      draft.height && draft.weight && typeof draft.age === 'number'
+      && draft.sex && draft.activityLevel && draft.dietGoal
+    ) {
+      const rec = recommendCalories({
+        height:        draft.height,
+        weight:        draft.weight,
+        age:           draft.age,
+        sex:           draft.sex,
+        activityLevel: draft.activityLevel,
+        dietGoal:      draft.dietGoal,
+      });
+      draftFields.calorieGoal = rec.calorieGoal;
+      draftFields.macroGoals  = rec.macroGoals;
+      draftFields.bmr         = rec.bmr;
+      draftFields.tdee        = rec.tdee;
+    }
 
     // setDocument's 4th arg is `merge` boolean, not an options object.
     await setDocument('users', uid, draftFields, true);

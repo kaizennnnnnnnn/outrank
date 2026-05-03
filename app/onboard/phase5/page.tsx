@@ -306,7 +306,7 @@ export default function OnboardPhase5Page() {
 
   const next = () => {
     if (step < TOTAL_STEPS - 1) setStep((s) => s + 1);
-    else router.push('/onboard/phase6');
+    else router.push('/onboard/phase5diet');
   };
   const back = () => {
     if (step > 0) setStep((s) => s - 1);

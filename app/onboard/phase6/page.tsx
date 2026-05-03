@@ -110,7 +110,7 @@ export default function OnboardPhase6Page() {
   };
   const back = () => {
     if (step > 0) setStep((s) => s - 1);
-    else router.push('/onboard/phase5');
+    else router.push('/onboard/phase5diet');
   };
 
   if (!hydrated) {

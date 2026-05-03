@@ -21,6 +21,7 @@ import { WaterPillarRow } from '@/components/habits/WaterPillarRow';
 import { GymPillarRow } from '@/components/habits/GymPillarRow';
 import { StreakRepairBanner } from '@/components/habits/StreakRepairBanner';
 import { PILLARS, isPillarSlug } from '@/constants/pillars';
+import { FoodIcon } from '@/components/ui/CategoryIcons';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -197,6 +198,48 @@ export default function DashboardPage() {
             active repair offer (broken streak ≥ 3, within 48h window).
             Self-hides after repair or expiry. */}
         <StreakRepairBanner />
+
+        {/* DIET QUICK-LINK — diet tracker is its own first-class feature
+            (not a pillar). Surfacing it here on the dashboard so it's
+            discoverable on mobile, where MobileNav is too tight to add
+            another tab. */}
+        <Link
+          href="/diet"
+          className="block group rounded-2xl border overflow-hidden relative transition-transform active:scale-[0.99]"
+          style={{
+            background:
+              'radial-gradient(ellipse 100% 80% at 100% 50%, rgba(34,197,94,0.15), transparent 60%),' +
+              'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(16,185,129,0.04) 50%, #10101a 100%)',
+            borderColor: 'rgba(34,197,94,0.30)',
+            boxShadow: '0 0 24px -10px rgba(34,197,94,0.5)',
+          }}
+        >
+          <div className="relative p-4 flex items-center gap-4">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #22c55e, #15803d)',
+                boxShadow: '0 4px 14px -4px rgba(34,197,94,0.7)',
+              }}
+            >
+              <FoodIcon size={26} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-emerald-300 mb-0.5">
+                New
+              </p>
+              <p className="font-heading font-bold text-white text-base leading-tight">
+                Track your diet
+              </p>
+              <p className="text-[12px] text-slate-300/80 mt-0.5 leading-relaxed">
+                Type what you ate · AI counts the calories.
+              </p>
+            </div>
+            <span className="text-emerald-300 text-2xl font-bold group-hover:translate-x-0.5 transition-transform">
+              →
+            </span>
+          </div>
+        </Link>
 
         {/* TODAY'S PILLARS — fixed five-row list. Each pillar is either
             an active HabitCard (logs flow into the published recap) or a
