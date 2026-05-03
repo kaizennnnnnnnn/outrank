@@ -12,3 +12,4 @@ export { scheduleNotifier } from './scheduleNotifier';
 export { pillarReminders } from './pillarReminders';
 export { friendsLeagueSettle } from './friendsLeagueSettle';
 export { resolvePact } from './resolvePact';
+export { parseFoodWithClaude } from './parseFoodWithClaude';

@@ -87,6 +87,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // DIET LOG ENTRIES (meal-by-meal calorie/macro tracking)
+    // Private to the user — diet data is sensitive, no global read.
+    match /dietLogs/{userId}/entries/{entryId} {
+      allow read:   if isOwner(userId);
+      allow create: if isOwner(userId) && isNotBanned();
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // DIET QUOTAS (rate-limit counters for the AI parse endpoint)
+    // Read-only from the client — only the parseFoodWithClaude
+    // Cloud Function (running as admin) writes to this collection.
+    match /dietQuotas/{userId} {
+      allow read:  if isOwner(userId);
+      allow write: if false;
+    }
+
     // LEADERBOARDS
     match /leaderboards/{categorySlug}/{period}/{entryUserId} {
       allow read: if isAuthenticated();

@@ -128,6 +128,11 @@ export interface OnboardingDraft {
   tier?: Tier;
   trialReminderDays?: 2 | 3;
 
+  // Diet (first-class feature, not a pillar — feeds calorie goal calc)
+  activityLevel?: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
+  dietGoal?: 'lose' | 'maintain' | 'gain';
+  targetWeight?: Measurement<'kg' | 'lbs'>;
+
   // Metadata
   startedAt?: number;          // Date.now() — when the funnel started
   completedAt?: number;
