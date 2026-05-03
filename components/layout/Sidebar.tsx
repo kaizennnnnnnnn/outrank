@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Avatar } from '@/components/ui/Avatar';
 import { Logo } from '@/components/ui/Logo';
 import { HomeIcon, TargetIcon, TrophyIcon, SwordsIcon, LeagueIcon, UsersIcon, FeedIcon, BellIcon, SettingsIcon } from '@/components/ui/Icons';
+import { FoodIcon } from '@/components/ui/CategoryIcons';
 
 // Small SVG orb glyph for the sidebar "My Orb" entry — avoids importing the
 // full MiniOrb (which reads user state) into a static nav list.
@@ -34,6 +35,7 @@ const navItems: { href: string; label: string; icon: ReactNode }[] = [
   { href: '/dashboard', label: 'Dashboard', icon: <HomeIcon /> },
   { href: '/orb', label: 'My Orb', icon: <OrbSidebarIcon /> },
   { href: '/habits', label: 'Habits', icon: <TargetIcon /> },
+  { href: '/diet', label: 'Diet', icon: <FoodIcon size={20} /> },
   { href: '/leaderboard', label: 'Leaderboard', icon: <TrophyIcon /> },
   { href: '/compete', label: 'Compete', icon: <SwordsIcon /> },
   { href: '/leagues', label: 'Leagues', icon: <LeagueIcon /> },
