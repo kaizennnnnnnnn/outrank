@@ -441,11 +441,11 @@ function renderFooter(
 
 // ─── Shared bits ─────────────────────────────────────────────────────────────
 
-function MascotRow({ message }: { message: React.ReactNode }) {
+function MascotRow({ message }: { message: React.ReactNode }) { /* phoenix nods on each step mount */
   return (
     <div className="flex items-end gap-3 mt-4 mb-6">
       <div className="flex-shrink-0">
-        <PhoenixMascot size={90} />
+        <PhoenixMascot size={90} react={1} />
       </div>
       <SpeechBubble className="flex-1 mb-2">{message}</SpeechBubble>
     </div>

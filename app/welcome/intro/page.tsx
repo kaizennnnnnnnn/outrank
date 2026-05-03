@@ -146,32 +146,32 @@ function OrbCustomizationShowcase() {
     const at = (ms: number, fn: () => void) => timeouts.push(setTimeout(fn, ms));
 
     let t = 0;
-    // Phase 1 — cycle bases (650ms each)
+    // Phase 1 — cycle bases (faster: 320ms each)
     SHOWCASE_BASES.forEach((b) => {
       at(t, () => setConfig((c) => ({ ...c, base: b })));
-      t += 650;
+      t += 320;
     });
 
     // Brief pause holding the last base
-    t += 300;
+    t += 180;
 
-    // Phase 2 — cycle pulses fast & aggressive (350ms each)
+    // Phase 2 — cycle pulses (200ms each — really aggressive)
     SHOWCASE_PULSES.forEach((p) => {
       at(t, () => setConfig((c) => ({ ...c, pulse: p })));
-      t += 350;
+      t += 200;
     });
 
     // Brief pause
-    t += 300;
+    t += 180;
 
-    // Phase 3 — cycle rings (650ms each)
+    // Phase 3 — cycle rings (320ms each)
     SHOWCASE_RINGS.forEach((r) => {
       at(t, () => setConfig((c) => ({ ...c, ring: r })));
-      t += 650;
+      t += 320;
     });
 
     // Brief pause before finale
-    t += 300;
+    t += 180;
 
     // Transition phase — kick off the one-shot spin + flash. The
     // animation runs for 1.4s; we swap colors mid-transition (at 0.7s,

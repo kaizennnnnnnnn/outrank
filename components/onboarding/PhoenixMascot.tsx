@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -30,6 +31,12 @@ interface PhoenixMascotProps {
    *  normal idle flutter. Used when the mascot first appears alone
    *  on screen and is "greeting" the user. */
   greeting?: boolean;
+  /** Counter / token. Each time this value changes, the mascot plays
+   *  a one-shot "react" animation (quick head shake + nod) — useful
+   *  for acknowledging that the user just answered something. Pass
+   *  the current onboarding step index, the count of selected items,
+   *  etc. */
+  react?: number | string;
 }
 
 export function PhoenixMascot({
@@ -39,9 +46,26 @@ export function PhoenixMascot({
   className,
   paused = false,
   greeting = false,
+  react,
 }: PhoenixMascotProps) {
   // Aspect ratio matches the viewBox below.
   const aspectRatio = 180 / 160;
+
+  // Play a one-shot react animation whenever `react` changes (or on
+  // first mount, if it's defined). We toggle the class off, force a
+  // reflow, then add it back — this re-triggers the CSS keyframe
+  // without remounting the SVG, so the eye-blink and wing animations
+  // inside keep their independent timing.
+  const reactRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (react === undefined) return;
+    const el = reactRef.current;
+    if (!el) return;
+    el.classList.remove('animate-phoenix-react');
+    void el.offsetWidth;
+    el.classList.add('animate-phoenix-react');
+  }, [react]);
+
   return (
     <div
       className={cn(
@@ -51,6 +75,7 @@ export function PhoenixMascot({
       )}
       style={{ width: size, height: size * aspectRatio }}
     >
+      <div ref={reactRef} className="w-full h-full">
       <svg
         viewBox="0 0 160 180"
         width="100%"
@@ -509,18 +534,22 @@ export function PhoenixMascot({
           />
         </g>
 
-        {/* ─── Eyes ─── */}
-        <ellipse cx="70" cy="62" rx="5" ry="6" fill="#0c0c14" />
-        <ellipse cx="90" cy="62" rx="5" ry="6" fill="#0c0c14" />
-        {/* Subtle bird-eyering — thin warm rim around each eye */}
-        <ellipse cx="70" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
-        <ellipse cx="90" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
-        {/* Big shines */}
-        <circle cx="71.6" cy="59.8" r="1.7" fill="#ffffff" />
-        <circle cx="91.6" cy="59.8" r="1.7" fill="#ffffff" />
-        {/* Small secondary shines */}
-        <circle cx="68.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
-        <circle cx="88.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
+        {/* ─── Eyes ─── Each eye is wrapped in its own group so the
+            phoenix-blink keyframe (defined in globals.css) can scale
+            the group down vertically about its bounding-box center.
+            The two eyes share a single keyframe and stay in sync. */}
+        <g className="phoenix-eye">
+          <ellipse cx="70" cy="62" rx="5" ry="6" fill="#0c0c14" />
+          <ellipse cx="70" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
+          <circle cx="71.6" cy="59.8" r="1.7" fill="#ffffff" />
+          <circle cx="68.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
+        </g>
+        <g className="phoenix-eye">
+          <ellipse cx="90" cy="62" rx="5" ry="6" fill="#0c0c14" />
+          <ellipse cx="90" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
+          <circle cx="91.6" cy="59.8" r="1.7" fill="#ffffff" />
+          <circle cx="88.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
+        </g>
 
         {/* ─── Beak — proper bird shape with upper/lower mandibles ─── */}
         {/* Upper mandible — slight downward curve, broader at base */}
@@ -551,6 +580,7 @@ export function PhoenixMascot({
         <ellipse cx="61" cy="68" rx="3.2" ry="2.1" fill="#ef4444" opacity="0.45" />
         <ellipse cx="99" cy="68" rx="3.2" ry="2.1" fill="#ef4444" opacity="0.45" />
       </svg>
+      </div>
     </div>
   );
 }

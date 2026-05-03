@@ -455,10 +455,14 @@ function renderFooter(
 // ─── Shared bits ─────────────────────────────────────────────────────────────
 
 function MascotRow({ message }: { message: React.ReactNode }) {
+  // react={1} triggers the one-shot nod animation each time MascotRow
+  // mounts. Since each phase step renders a fresh MascotRow inside an
+  // AnimatePresence keyed on `step`, the phoenix nods on every step
+  // transition — acknowledging the user just answered something.
   return (
     <div className="flex items-end gap-3 mt-4 mb-6">
       <div className="flex-shrink-0">
-        <PhoenixMascot size={90} />
+        <PhoenixMascot size={90} react={1} />
       </div>
       <SpeechBubble className="flex-1 mb-2">{message}</SpeechBubble>
     </div>

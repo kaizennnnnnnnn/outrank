@@ -701,9 +701,11 @@ function SummaryCorruptionStep({
 
           {/* Single shockwave ring expanding from the button. Loops
               while held — when the user releases and progress drains,
-              opacity scales down with progress so it fades out. */}
+              opacity scales down with progress so it fades out. The
+              ring's keyframe carries translate(-50%, -50%) so it
+              stays centered on the button regardless of size. */}
           <div
-            className="absolute rounded-full animate-awaken-shockwave"
+            className="absolute rounded-full animate-awaken-spread-ring"
             style={{
               left: `${origin.x}%`,
               top: `${origin.y}%`,

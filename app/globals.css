@@ -265,6 +265,36 @@ body {
   will-change: transform;
 }
 
+@keyframes phoenix-blink {
+  /* Eyes are open most of the loop; quick close near the end. */
+  0%, 92%, 100% { transform: scaleY(1); }
+  95%, 97%      { transform: scaleY(0.05); }
+}
+.phoenix-eye {
+  /* transform-box: fill-box so the transform-origin "center" maps to
+     each eye's own bounding-box center, not the SVG canvas center. */
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: phoenix-blink 5.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes phoenix-react {
+  /* Quick acknowledgment nod-shake — head dips, swings side to side,
+     then settles. Kept under 700ms so it never gets in the way of the
+     user's next tap. */
+  0%   { transform: rotate(0deg)  translateY(0)  scale(1); }
+  20%  { transform: rotate(-7deg) translateY(3px) scale(1.04); }
+  50%  { transform: rotate(6deg)  translateY(-2px) scale(1.04); }
+  80%  { transform: rotate(-2deg) translateY(0)  scale(1.02); }
+  100% { transform: rotate(0deg)  translateY(0)  scale(1); }
+}
+.animate-phoenix-react {
+  animation: phoenix-react 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: 50% 80%;
+  will-change: transform;
+}
+
 @keyframes loader-shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -789,6 +819,21 @@ body {
 }
 .animate-awaken-shockwave {
   animation: awaken-shockwave 3s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+/* Onboarding hold-to-awaken ring — same idea as awaken-shockwave but
+   absolutely positioned by point (left/top %), so every transform
+   keyframe carries translate(-50%, -50%) to keep the ring centered
+   on its origin. The SoulOrb shockwaves use inset-0 instead and
+   would break if we baked translate into the shared keyframe. */
+@keyframes awaken-spread-ring {
+  0%   { opacity: 0;   transform: translate(-50%, -50%) scale(0.4); border-width: 7px; }
+  25%  { opacity: 1;   transform: translate(-50%, -50%) scale(1);   border-width: 5px; }
+  100% { opacity: 0;   transform: translate(-50%, -50%) scale(4);   border-width: 1px; }
+}
+.animate-awaken-spread-ring {
+  animation: awaken-spread-ring 1.8s ease-out infinite;
   will-change: transform, opacity;
 }
 
