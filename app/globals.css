@@ -20,6 +20,66 @@
   --font-mono: var(--font-jetbrains);
 }
 
+/* ─── Direction B — Editorial Mono design tokens ──────────────────────
+   Magazine / periodical aesthetic, dark variant. The "paper" is the
+   existing app dark background; "ink" is a warm off-white that reads
+   as printed type. Hairline rules + tinted ink levels approximate a
+   newspaper's grayscale type hierarchy. Accent color stays the
+   existing red so the brand doesn't shift.
+
+   Usage from React: just style with `var(--b-ink)` etc. Editorial
+   screens add `.dir-b` to their root for global font defaults. */
+:root {
+  --b-paper:   #0d0d15;
+  --b-paper-2: #14141d;
+  --b-ink:     #f5f1ea;
+  --b-ink-60:  rgba(245, 241, 234, 0.58);
+  --b-ink-40:  rgba(245, 241, 234, 0.34);
+  --b-ink-15:  rgba(245, 241, 234, 0.15);
+  --b-rule:    rgba(245, 241, 234, 0.12);
+  --b-accent:  #dc2626;
+  --b-accent-2:#f97316;
+  --accent-1:  var(--b-accent);
+}
+
+/* Editorial typography helpers */
+.dir-b {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color: var(--b-ink);
+  background: var(--b-paper);
+  -webkit-font-smoothing: antialiased;
+}
+.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-feature-settings: 'ss01', 'ss02', 'cv01', 'cv02';
+  letter-spacing: -0.01em;
+}
+.font-body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+.font-tabular,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+/* Spread — the small-caps eyebrow used everywhere in the design.
+   Inter at 9-10px with wide tracking reads as printed text leading. */
+.spread {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+}
+/* Tap-target row on a hairline grid — rule below, comfortable padding.
+   Used everywhere editorial lists appear (habits, dispatches, town). */
+.b-row {
+  border-bottom: 1px solid var(--b-rule);
+  padding: 12px 0;
+}
+.b-row-top {
+  border-top: 1px solid var(--b-ink);
+}
+.b-rule-thin { border-color: var(--b-rule); }
+
 * {
   scrollbar-width: thin;
   scrollbar-color: #1e1e30 transparent;

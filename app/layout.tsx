@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Orbitron, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { Orbitron, Plus_Jakarta_Sans, JetBrains_Mono, Fraunces, Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
@@ -18,6 +18,24 @@ const plusJakarta = Plus_Jakarta_Sans({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-jetbrains',
+  display: 'swap',
+});
+
+// Editorial Direction B — Fraunces (display, supports italic) and
+// Inter (body / UI). Loaded alongside the existing fonts so individual
+// screens can opt in to the editorial design without breaking existing
+// premium-styled pages mid-migration.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+  display: 'swap',
+  weight: ['400', '500', '600'],
+  style: ['normal', 'italic'],
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -48,7 +66,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${orbitron.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className={`${orbitron.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${fraunces.variable} ${inter.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>
