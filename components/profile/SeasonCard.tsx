@@ -12,11 +12,8 @@ import { RanksModal } from './RanksModal';
 
 interface Props { user: UserProfile; }
 
-/**
- * Season / League / Pass mini-dashboard. Replaces the old flat XP bar with
- * ranked context: current season number, countdown, league tier, and season
- * pass progress bar.
- */
+const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
 export function SeasonCard({ user }: Props) {
   const [ranksOpen, setRanksOpen] = useState(false);
   const weeklyXP = user.weeklyXP || 0;
@@ -34,112 +31,151 @@ export function SeasonCard({ user }: Props) {
     ? (weeklyXP - league.minWeeklyXP) / (nextLeague.minWeeklyXP - league.minWeeklyXP)
     : 1;
 
+  const leagueIndex = LEAGUES.indexOf(league);
+
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-4"
       style={{
-        background: `linear-gradient(135deg, ${league.color}15 0%, #10101a 50%, #0b0b14 100%)`,
-        border: `1px solid ${league.color}35`,
-        boxShadow: `0 0 22px -10px ${league.color}55`,
+        padding: '14px 0',
+        borderTop: `2px solid ${league.color}`,
+        borderBottom: '1px solid var(--b-rule)',
       }}
     >
-      <div
-        className="absolute -top-16 -right-16 w-48 h-48 rounded-full opacity-[0.18] blur-3xl pointer-events-none"
-        style={{ background: league.color }}
-      />
-
-      <div className="relative flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+          >
             Season {season}
-          </p>
-          <h3
-            className="text-2xl font-bold font-heading mt-0.5"
-            style={{ color: league.color, textShadow: `0 0 18px ${league.color}55` }}
+          </div>
+          <div
+            className="font-display"
+            style={{
+              fontSize: 28,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1,
+              marginTop: 2,
+              color: league.color,
+            }}
           >
             {league.name}
-          </h3>
-          <p className="text-[11px] text-slate-500">
+          </div>
+          <div
+            className="font-body"
+            style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 4 }}
+          >
             {daysLeft} {daysLeft === 1 ? 'day' : 'days'} until reset
-          </p>
+          </div>
         </div>
 
-        <LeagueBadge color={league.color} index={LEAGUES.indexOf(league)} />
-      </div>
-
-      {/* Promotion bar — click to see all league tiers */}
-      <button
-        onClick={() => setRanksOpen(true)}
-        className="relative mt-3 w-full text-left group"
-        aria-label="See league details"
-      >
-        <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-          <span className="group-hover:text-orange-400 transition-colors">Promotion · view ranks →</span>
-          <span>
-            {weeklyXP} / {nextLeague ? nextLeague.minWeeklyXP : '—'}
-            {nextLeague && <span className="text-slate-600"> XP → {nextLeague.name}</span>}
+        {/* Roman numeral crest */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 56,
+            height: 56,
+            border: `1px solid ${league.color}`,
+            flexShrink: 0,
+          }}
+        >
+          <span
+            className="font-display tabular"
+            style={{
+              fontSize: 22,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              color: league.color,
+            }}
+          >
+            {NUMERALS[leagueIndex] ?? ''}
           </span>
         </div>
-        <div className="h-2 bg-[#18182a] rounded-full overflow-hidden">
+      </div>
+
+      {/* Promotion bar */}
+      <button
+        onClick={() => setRanksOpen(true)}
+        style={{
+          marginTop: 14,
+          width: '100%',
+          textAlign: 'left',
+          background: 'transparent',
+          border: 'none',
+          padding: 0,
+          cursor: 'pointer',
+          color: 'inherit',
+        }}
+      >
+        <div
+          className="font-body"
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            fontSize: 10,
+            color: 'var(--b-ink-60)',
+            marginBottom: 4,
+          }}
+        >
+          <span>Promotion · view ranks →</span>
+          <span className="tabular">
+            {weeklyXP} / {nextLeague ? nextLeague.minWeeklyXP : '—'}
+            {nextLeague && <span style={{ color: 'var(--b-ink-40)' }}> · {nextLeague.name}</span>}
+          </span>
+        </div>
+        <div style={{ height: 2, background: 'var(--b-rule)' }}>
           <div
-            className="h-full rounded-full transition-all"
             style={{
+              height: '100%',
               width: `${Math.max(4, Math.min(100, promoProgress * 100))}%`,
-              background: `linear-gradient(90deg, ${league.color}, ${nextLeague?.color ?? league.color})`,
-              boxShadow: `0 0 8px ${league.color}80`,
+              background: league.color,
+              transition: 'width 500ms',
             }}
           />
         </div>
       </button>
 
-      {/* Season pass — click to go to battle-pass page */}
-      <Link href="/battle-pass" className="relative mt-4 block group">
-        <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-          <span className="group-hover:text-orange-400 transition-colors">Season Pass · view tiers →</span>
-          <span>Tier {passTier} / {SEASON_PASS_TIERS}</span>
+      {/* Season pass */}
+      <Link
+        href="/battle-pass"
+        style={{
+          display: 'block',
+          marginTop: 12,
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
+        <div
+          className="font-body"
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            fontSize: 10,
+            color: 'var(--b-ink-60)',
+            marginBottom: 4,
+          }}
+        >
+          <span>Season Pass · view tiers →</span>
+          <span className="tabular">Tier {passTier} / {SEASON_PASS_TIERS}</span>
         </div>
-        <div className="h-2 bg-[#18182a] rounded-full overflow-hidden">
+        <div style={{ height: 2, background: 'var(--b-rule)' }}>
           <div
-            className="h-full rounded-full transition-all"
             style={{
+              height: '100%',
               width: `${Math.max(3, Math.min(100, passProgress * 100))}%`,
-              background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24)',
-              boxShadow: '0 0 8px rgba(249,115,22,0.5)',
+              background: 'var(--b-accent)',
+              transition: 'width 500ms',
             }}
           />
         </div>
       </Link>
 
       <RanksModal isOpen={ranksOpen} onClose={() => setRanksOpen(false)} weeklyXP={weeklyXP} />
-    </div>
-  );
-}
-
-function LeagueBadge({ color, index }: { color: string; index: number }) {
-  // Small hex-shaped crest with roman numeral for the league index.
-  const numerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
-  return (
-    <div
-      className="relative w-14 h-16 flex items-center justify-center shrink-0"
-      style={{
-        clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)',
-        background: `linear-gradient(145deg, ${color}55, #0b0b14)`,
-      }}
-    >
-      <div
-        className="absolute inset-[2px] flex items-center justify-center"
-        style={{
-          clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)',
-          background: `linear-gradient(145deg, ${color}25, #10101a)`,
-        }}
-      >
-        <span
-          className="font-heading font-bold text-lg"
-          style={{ color, textShadow: `0 0 10px ${color}80` }}
-        >
-          {numerals[index] ?? ''}
-        </span>
-      </div>
     </div>
   );
 }

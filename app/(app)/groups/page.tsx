@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, query, where, getDocs, setDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
-import { cn } from '@/lib/utils';
+import { collection, onSnapshot, query, getDocs, setDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Masthead } from '@/components/editorial/Masthead';
 
 interface Group {
   id: string;
@@ -17,8 +17,6 @@ interface Group {
   memberCount?: number;
 }
 
-// Seeded built-in groups — pre-written so every user sees the same set even
-// before any custom groups are created by users.
 const BUILTIN_GROUPS: Group[] = [
   { id: 'early-risers',  name: 'Early Risers',  description: 'Log before 7 AM.',            color: '#f59e0b' },
   { id: 'runners',       name: 'Runners',       description: 'Chase the kilometers.',       color: '#f97316' },
@@ -38,8 +36,6 @@ export default function GroupsPage() {
   const [loading, setLoading] = useState(true);
   const [counts, setCounts] = useState<Record<string, number>>({});
 
-  // Subscribe to my memberships via a collection-group-ish approach:
-  // iterate through BUILTIN_GROUPS and check member docs.
   useEffect(() => {
     if (!user) return;
     const unsubs = BUILTIN_GROUPS.map((g) =>
@@ -54,7 +50,6 @@ export default function GroupsPage() {
     return () => { unsubs.forEach((u) => u()); };
   }, [user]);
 
-  // Also fetch member counts (non-realtime, one-shot)
   useEffect(() => {
     (async () => {
       const c: Record<string, number> = {};
@@ -76,7 +71,6 @@ export default function GroupsPage() {
         avatarUrl: user.avatarUrl || '',
         joinedAt: Timestamp.now(),
       });
-      // Ensure the parent group document exists (it's ok to set repeatedly)
       await setDoc(doc(db, `groups/${g.id}`), {
         name: g.name, description: g.description, color: g.color, isBuiltin: true,
       }, { merge: true } as { merge?: boolean });
@@ -97,51 +91,116 @@ export default function GroupsPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white font-heading">Groups</h1>
-        <p className="text-sm text-slate-500">Self-join communities. See who shares your grind.</p>
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Communities" />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {loading
-          ? [1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)
-          : BUILTIN_GROUPS.map((g) => {
-              const joined = myMemberships.includes(g.id);
-              const count = counts[g.id] ?? 0;
-              return (
-                <div
-                  key={g.id}
-                  className={cn('relative overflow-hidden rounded-2xl p-4 transition-all')}
-                  style={{
-                    background: `linear-gradient(145deg, ${g.color}14, #0b0b14 55%)`,
-                    border: `1px solid ${joined ? g.color + '80' : g.color + '30'}`,
-                    boxShadow: joined ? `0 0 18px -6px ${g.color}80` : undefined,
-                  }}
-                >
-                  <div
-                    className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-[0.12] blur-3xl pointer-events-none"
-                    style={{ background: g.color }}
-                  />
-                  <div className="relative flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-bold text-white">{g.name}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{g.description}</p>
-                      <p className="text-[10px] text-slate-600 mt-2">
-                        {count} {count === 1 ? 'member' : 'members'}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={joined ? 'secondary' : 'primary'}
-                      onClick={() => joined ? leave(g) : join(g)}
+        <div style={{ padding: '0 22px' }}>
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Communities
+          </div>
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+          >
+            <em style={{ fontStyle: 'italic' }}>Groups</em>
+          </h1>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            Self-join communities. See who shares your grind.
+          </p>
+
+          <div
+            style={{
+              marginTop: 22,
+              paddingTop: 12,
+              borderTop: '1px solid var(--b-ink)',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: 8,
+            }}
+          >
+            <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+              The Roster
+            </div>
+            <div
+              className="font-mono tabular"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+            >
+              § {String(BUILTIN_GROUPS.length).padStart(2, '0')}
+            </div>
+          </div>
+
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {loading
+              ? [1, 2, 3, 4].map((i) => (
+                  <li key={i} style={{ padding: '14px 0', borderBottom: '1px solid var(--b-rule)' }}>
+                    <Skeleton className="h-12" />
+                  </li>
+                ))
+              : BUILTIN_GROUPS.map((g, i) => {
+                  const joined = myMemberships.includes(g.id);
+                  const count = counts[g.id] ?? 0;
+                  return (
+                    <li
+                      key={g.id}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '40px 1fr auto',
+                        gap: 12,
+                        alignItems: 'center',
+                        padding: '14px 0',
+                        borderBottom: '1px solid var(--b-rule)',
+                        borderLeft: joined ? `3px solid ${g.color}` : 'none',
+                        paddingLeft: joined ? 8 : 0,
+                      }}
                     >
-                      {joined ? 'Leave' : 'Join'}
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+                      <div
+                        className="font-mono tabular"
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--b-ink-40)',
+                          textAlign: 'right',
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {String(i + 1).padStart(2, '0')}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          className="font-display"
+                          style={{ fontSize: 16, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.1, color: g.color }}
+                        >
+                          {g.name}
+                        </div>
+                        <div
+                          className="font-body"
+                          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 2, lineHeight: 1.4 }}
+                        >
+                          {g.description}
+                        </div>
+                        <div
+                          className="font-mono tabular"
+                          style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 4, letterSpacing: '0.04em' }}
+                        >
+                          {count} {count === 1 ? 'member' : 'members'}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={joined ? 'secondary' : 'primary'}
+                        onClick={() => joined ? leave(g) : join(g)}
+                      >
+                        {joined ? 'Leave' : 'Join'}
+                      </Button>
+                    </li>
+                  );
+                })}
+          </ul>
+        </div>
       </div>
     </div>
   );

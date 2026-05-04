@@ -10,10 +10,9 @@ import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { updateDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Masthead } from '@/components/editorial/Masthead';
 
-// Rarity lookup — mirrors what's in the shop. Anything not listed falls back to common.
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
 const RARITY_BY_ID: Record<string, Rarity> = {
   // base
@@ -47,12 +46,15 @@ const RARITY_BY_ID: Record<string, Rarity> = {
   name_rainbow: 'mythic', name_ascendant: 'mythic', name_eternal: 'mythic',
 };
 
-const rarityStyles: Record<Rarity, { label: string; text: string; bg: string; border: string }> = {
-  common:    { label: 'Common',    text: '#94a3b8', bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.35)' },
-  rare:      { label: 'Rare',      text: '#60a5fa', bg: 'rgba(59,130,246,0.15)',  border: 'rgba(59,130,246,0.4)'   },
-  epic:      { label: 'Epic',      text: '#c084fc', bg: 'rgba(168,85,247,0.15)',  border: 'rgba(168,85,247,0.4)'   },
-  legendary: { label: 'Legendary', text: '#fbbf24', bg: 'rgba(245,158,11,0.15)',  border: 'rgba(245,158,11,0.45)'  },
-  mythic:    { label: 'Mythic',    text: '#f9a8d4', bg: 'rgba(236,72,153,0.18)',  border: 'rgba(236,72,153,0.5)'   },
+const rarityToneByLevel: Record<Rarity, string> = {
+  common:    'var(--b-ink-60)',
+  rare:      '#60a5fa',
+  epic:      '#c084fc',
+  legendary: '#fbbf24',
+  mythic:    '#f472b6',
+};
+const rarityLabelByLevel: Record<Rarity, string> = {
+  common: 'Common', rare: 'Rare', epic: 'Epic', legendary: 'Legendary', mythic: 'Mythic',
 };
 
 const rarityRank: Record<Rarity, number> = { common: 0, rare: 1, epic: 2, legendary: 3, mythic: 4 };
@@ -67,13 +69,11 @@ export default function InventoryPage() {
   const [sort, setSort] = useState<SortMode>('rarity');
   const [filter, setFilter] = useState<FilterType>('all');
 
-  if (!user) return null;
-
-  const userData = user as unknown as Record<string, unknown>;
+  const userData = (user || {}) as unknown as Record<string, unknown>;
   const ownedColors: string[] = (userData.ownedColors as string[]) || ['crimson', 'fire', 'ring_default'];
   const ownedCosmetics: string[] = (userData.ownedCosmetics as string[]) || [];
   const fragments: number = (userData.fragments as number) || 0;
-  const streakFreezes: number = user.streakFreezeTokens || 0;
+  const streakFreezes: number = user?.streakFreezeTokens || 0;
   const xpBoostAt = userData.xpBoostActivatedAt;
   const boostActive = isXPBoostActive(xpBoostAt as never);
   const equippedBase: string = (userData.orbBaseColor as string) || 'crimson';
@@ -103,6 +103,8 @@ export default function InventoryPage() {
     [ownedCosmetics, sort],
   );
 
+  if (!user) return null;
+
   const equipBase = async (id: string) => {
     try { await updateDocument('users', user.uid, { orbBaseColor: id }); addToast({ type: 'success', message: 'Base color equipped' }); }
     catch { addToast({ type: 'error', message: 'Failed to equip' }); }
@@ -130,134 +132,176 @@ export default function InventoryPage() {
   const showNames = filter === 'all' || filter === 'name';
   const showRing = filter === 'all' || filter === 'ring';
 
+  const filters: { value: FilterType; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'base', label: 'Base' },
+    { value: 'pulse', label: 'Pulse' },
+    { value: 'ring', label: 'Ring' },
+    { value: 'frame', label: 'Frames' },
+    { value: 'name', label: 'Names' },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-2xl font-bold text-white font-heading">Inventory</h1>
-          <p className="text-sm text-slate-500">Everything you own — equip with one tap.</p>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="The Wardrobe" />
+
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            The Wardrobe
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>Inventory</em>
+            </h1>
+            <Link
+              href="/shop"
+              className="font-body"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-accent)',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              Open shop →
+            </Link>
+          </div>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            Everything you own — equip with one tap.
+          </p>
+
+          {/* Stat strip */}
+          <div
+            style={{
+              marginTop: 14,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-rule)',
+            }}
+          >
+            <StatCell label="Fragments" value={fragments.toLocaleString()} accent="#f97316" />
+            <StatCell label="Freezes" value={String(streakFreezes)} accent="#06b6d4" border />
+            <StatCell label="XP Boost" value={boostActive ? 'Active' : 'Idle'} accent={boostActive ? '#fb923c' : 'var(--b-ink-60)'} extra={boostActive ? <XPBoostBadge activatedAt={xpBoostAt as never} size="sm" /> : null} border />
+            <StatCell label="Orb Tier" value={String((userData.orbTier as number) || 1)} accent="#a855f7" border />
+          </div>
+
+          {/* Filter + sort */}
+          <div style={{ marginTop: 18 }}>
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 6 }}
+            >
+              Show
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {filters.map((f) => (
+                <FilterChip key={f.value} label={f.label} active={filter === f.value} onClick={() => setFilter(f.value)} />
+              ))}
+            </div>
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 12, marginBottom: 6 }}
+            >
+              Sort
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <FilterChip label="Rarity" active={sort === 'rarity'} onClick={() => setSort('rarity')} />
+              <FilterChip label="Name" active={sort === 'name'} onClick={() => setSort('name')} />
+            </div>
+          </div>
+
+          {/* Sections */}
+          {showBase && (
+            <ColorSection
+              title="Base Colors"
+              count={ownedBaseColors.length}
+              empty="No base colors yet. Visit the shop."
+              colors={ownedBaseColors}
+              equippedId={equippedBase}
+              onEquip={equipBase}
+              variant="orb"
+            />
+          )}
+
+          {showPulse && (
+            <ColorSection
+              title="Pulse Colors"
+              count={ownedPulseColors.length}
+              empty="No pulse colors yet. Visit the shop."
+              colors={ownedPulseColors}
+              equippedId={equippedPulse}
+              onEquip={equipPulse}
+              variant="orb"
+            />
+          )}
+
+          {showRing && (
+            <ColorSection
+              title="Ring Colors"
+              count={ownedRingColors.length}
+              empty="No ring colors yet. Visit the shop."
+              colors={ownedRingColors}
+              equippedId={equippedRing}
+              onEquip={equipRing}
+              variant="ring"
+            />
+          )}
+
+          {showFrames && (
+            <Section title="Profile Frames" count={ownedFrames.length}>
+              {ownedFrames.length === 0 ? (
+                <Empty>No frames yet. Unlock them from shop, battle pass, or ascend your orb.</Empty>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+                  {ownedFrames.map((f) => (
+                    <FrameCard
+                      key={f.id}
+                      id={f.id}
+                      name={f.name}
+                      avatarUrl={user.avatarUrl}
+                      alt={user.username}
+                      equipped={equippedFrame === f.id}
+                      onEquip={() => equipFrame(f.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </Section>
+          )}
+
+          {showNames && (
+            <Section title="Name Effects" count={ownedNames.length}>
+              {ownedNames.length === 0 ? (
+                <Empty>No name effects yet. Earn them from shop, battle pass, or ascend.</Empty>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+                  {ownedNames.map((n) => (
+                    <NameEffectCard
+                      key={n.id}
+                      id={n.id}
+                      name={n.name}
+                      userName={user.username}
+                      equipped={equippedNameEffect === n.id}
+                      onEquip={() => equipNameEffect(n.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </Section>
+          )}
         </div>
-        <Link href="/shop">
-          <span className="text-xs text-orange-400 hover:underline">Open shop &rarr;</span>
-        </Link>
       </div>
-
-      {/* Currencies + Consumables */}
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatPill label="Fragments" value={fragments.toLocaleString()} color="#f97316" icon={<FragmentIcon />} />
-        <StatPill label="Streak Freezes" value={streakFreezes.toString()} color="#06b6d4" icon={<ShieldIcon />} />
-        <StatPill label="XP Boost" value={boostActive ? 'Active' : 'Idle'} color={boostActive ? '#fb923c' : '#475569'} icon={<BoltIcon />} extra={boostActive ? <XPBoostBadge activatedAt={xpBoostAt as never} size="sm" /> : null} />
-        <StatPill label="Orb Tier" value={String((userData.orbTier as number) || 1)} color="#a855f7" icon={<OrbIcon />} />
-      </section>
-
-      {/* Filter + sort controls */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">Show</span>
-        <FilterChip label="All" active={filter === 'all'} onClick={() => setFilter('all')} />
-        <FilterChip label="Base" active={filter === 'base'} onClick={() => setFilter('base')} />
-        <FilterChip label="Pulse" active={filter === 'pulse'} onClick={() => setFilter('pulse')} />
-        <FilterChip label="Rings" active={filter === 'ring'} onClick={() => setFilter('ring')} />
-        <FilterChip label="Frames" active={filter === 'frame'} onClick={() => setFilter('frame')} />
-        <FilterChip label="Names" active={filter === 'name'} onClick={() => setFilter('name')} />
-        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1 ml-2">Sort</span>
-        <FilterChip label="Rarity" active={sort === 'rarity'} onClick={() => setSort('rarity')} />
-        <FilterChip label="Name" active={sort === 'name'} onClick={() => setSort('name')} />
-      </div>
-
-      {/* Base Colors */}
-      {showBase && (
-        <ColorSection
-          title="Base Colors"
-          count={ownedBaseColors.length}
-          empty="No base colors yet. Visit the shop."
-          colors={ownedBaseColors}
-          equippedId={equippedBase}
-          onEquip={equipBase}
-          variant="orb"
-        />
-      )}
-
-      {/* Pulse Colors */}
-      {showPulse && (
-        <ColorSection
-          title="Pulse Colors"
-          count={ownedPulseColors.length}
-          empty="No pulse colors yet. Visit the shop."
-          colors={ownedPulseColors}
-          equippedId={equippedPulse}
-          onEquip={equipPulse}
-          variant="orb"
-        />
-      )}
-
-      {/* Ring Colors */}
-      {showRing && (
-        <ColorSection
-          title="Ring Colors"
-          count={ownedRingColors.length}
-          empty="No ring colors yet. Visit the shop."
-          colors={ownedRingColors}
-          equippedId={equippedRing}
-          onEquip={equipRing}
-          variant="ring"
-        />
-      )}
-
-      {/* PFP Frames */}
-      {showFrames && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-            Profile Frames <span className="text-slate-600">({ownedFrames.length})</span>
-          </h2>
-          {ownedFrames.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#1e1e30] bg-[#0b0b14] p-6 text-center">
-              <p className="text-xs text-slate-500">No frames yet. Unlock them from shop, battle pass, or ascend your orb.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {ownedFrames.map((f) => (
-                <FrameCard
-                  key={f.id}
-                  id={f.id}
-                  name={f.name}
-                  avatarUrl={user.avatarUrl}
-                  alt={user.username}
-                  equipped={equippedFrame === f.id}
-                  onEquip={() => equipFrame(f.id)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Name Effects */}
-      {showNames && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-            Name Effects <span className="text-slate-600">({ownedNames.length})</span>
-          </h2>
-          {ownedNames.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#1e1e30] bg-[#0b0b14] p-6 text-center">
-              <p className="text-xs text-slate-500">No name effects yet. Earn them from shop, battle pass, or ascend.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {ownedNames.map((n) => (
-                <NameEffectCard
-                  key={n.id}
-                  id={n.id}
-                  name={n.name}
-                  userName={user.username}
-                  equipped={equippedNameEffect === n.id}
-                  onEquip={() => equipNameEffect(n.id)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
     </div>
   );
 }
@@ -277,90 +321,9 @@ function sortCosmeticsByRarity<T extends { id: string; name: string }>(list: T[]
   return sorted;
 }
 
-function FrameCard({
-  id, name, avatarUrl, alt, equipped, onEquip,
-}: {
-  id: string; name: string; avatarUrl?: string; alt: string; equipped: boolean; onEquip: () => void;
-}) {
-  const rarity = RARITY_BY_ID[id] || 'common';
-  const rs = rarityStyles[rarity];
-  return (
-    <button
-      onClick={onEquip}
-      disabled={equipped}
-      className={cn('relative overflow-hidden rounded-xl p-3 text-left transition-all hover:border-orange-500/40')}
-      style={{
-        border: equipped ? '1px solid rgba(249,115,22,0.5)' : `1px solid ${rs.border}`,
-        background: equipped
-          ? 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 60%)'
-          : `linear-gradient(145deg, ${rs.bg}, #0b0b14 60%)`,
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <FramedAvatar src={avatarUrl} alt={alt} size="sm" frameId={id} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{name}</p>
-          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-            <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
-              style={{ color: rs.text, background: rs.bg, border: `1px solid ${rs.border}` }}>
-              {rs.label}
-            </span>
-            {equipped && (
-              <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-[1px] rounded">
-                Equipped
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-}
-
-function NameEffectCard({
-  id, name, userName, equipped, onEquip,
-}: {
-  id: string; name: string; userName: string; equipped: boolean; onEquip: () => void;
-}) {
-  const rarity = RARITY_BY_ID[id] || 'common';
-  const rs = rarityStyles[rarity];
-  return (
-    <button
-      onClick={onEquip}
-      disabled={equipped}
-      className={cn('relative overflow-hidden rounded-xl p-3 text-left transition-all hover:border-orange-500/40')}
-      style={{
-        border: equipped ? '1px solid rgba(249,115,22,0.5)' : `1px solid ${rs.border}`,
-        background: equipped
-          ? 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 60%)'
-          : `linear-gradient(145deg, ${rs.bg}, #0b0b14 60%)`,
-      }}
-    >
-      <div className="h-12 flex items-center justify-center mb-2 bg-[#0b0b14] border border-[#1e1e30] rounded-lg">
-        <NamePlate name={userName} effectId={id} size="md" />
-      </div>
-      <div className="flex items-center gap-1 flex-wrap">
-        <span className="text-sm font-semibold text-white">{name}</span>
-      </div>
-      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
-          style={{ color: rs.text, background: rs.bg, border: `1px solid ${rs.border}` }}>
-          {rs.label}
-        </span>
-        {equipped && (
-          <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-[1px] rounded">
-            Equipped
-          </span>
-        )}
-      </div>
-    </button>
-  );
-}
-
 function sortColors(list: OrbColorSet[], mode: SortMode): OrbColorSet[] {
   const sorted = [...list];
   if (mode === 'rarity') {
-    // Mythic first, then Legendary, Epic, Rare, Common. Tie-break by name.
     sorted.sort((a, b) => {
       const ra = rarityRank[RARITY_BY_ID[a.id] || 'common'];
       const rb = rarityRank[RARITY_BY_ID[b.id] || 'common'];
@@ -371,6 +334,84 @@ function sortColors(list: OrbColorSet[], mode: SortMode): OrbColorSet[] {
     sorted.sort((a, b) => a.name.localeCompare(b.name));
   }
   return sorted;
+}
+
+function StatCell({
+  label, value, accent, extra, border,
+}: { label: string; value: string; accent: string; extra?: React.ReactNode; border?: boolean }) {
+  return (
+    <div
+      style={{
+        padding: '10px 0',
+        textAlign: 'center',
+        borderLeft: border ? '1px solid var(--b-rule)' : 'none',
+      }}
+    >
+      <div
+        className="font-display tabular"
+        style={{ fontSize: 18, fontWeight: 500, lineHeight: 1, color: accent }}
+      >
+        {value}
+      </div>
+      <div
+        className="font-body"
+        style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.14em' }}
+      >
+        {label}
+      </div>
+      {extra && <div style={{ marginTop: 4 }}>{extra}</div>}
+    </div>
+  );
+}
+
+function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="font-body"
+      style={{
+        padding: '5px 10px',
+        background: active ? 'var(--b-ink)' : 'transparent',
+        color: active ? 'var(--b-paper)' : 'var(--b-ink-60)',
+        border: '1px solid var(--b-ink)',
+        cursor: 'pointer',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
+  return (
+    <section style={{ marginTop: 24 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+          {title}
+        </div>
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+        >
+          § {String(count).padStart(2, '0')}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
 }
 
 function ColorSection({
@@ -385,16 +426,11 @@ function ColorSection({
   variant: 'orb' | 'ring';
 }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">
-        {title} <span className="text-slate-600">({count})</span>
-      </h2>
+    <Section title={title} count={count}>
       {colors.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[#1e1e30] bg-[#0b0b14] p-6 text-center">
-          <p className="text-xs text-slate-500">{empty}</p>
-        </div>
+        <Empty>{empty}</Empty>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
           {colors.map((c) => (
             <ColorCard
               key={c.id}
@@ -406,7 +442,58 @@ function ColorSection({
           ))}
         </div>
       )}
-    </section>
+    </Section>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: '18px 14px',
+        textAlign: 'center',
+        border: '1px dashed var(--b-rule)',
+      }}
+    >
+      <p
+        className="font-body"
+        style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+      >
+        {children}
+      </p>
+    </div>
+  );
+}
+
+function rarityChip(rarity: Rarity) {
+  return (
+    <span
+      className="spread"
+      style={{
+        fontSize: 8,
+        color: rarityToneByLevel[rarity],
+        padding: '1px 5px',
+        border: `1px solid ${rarityToneByLevel[rarity]}80`,
+      }}
+    >
+      {rarityLabelByLevel[rarity]}
+    </span>
+  );
+}
+
+function equippedChip() {
+  return (
+    <span
+      className="spread"
+      style={{
+        fontSize: 8,
+        color: 'var(--b-accent)',
+        padding: '1px 5px',
+        border: '1px solid var(--b-accent)',
+      }}
+    >
+      Equipped
+    </span>
   );
 }
 
@@ -416,97 +503,120 @@ function ColorCard({
   color: OrbColorSet; variant: 'orb' | 'ring'; equipped: boolean; onEquip: () => void;
 }) {
   const rarity = RARITY_BY_ID[color.id] || 'common';
-  const rs = rarityStyles[rarity];
   return (
     <button
       onClick={onEquip}
       disabled={equipped}
-      className={cn(
-        'group relative overflow-hidden rounded-xl p-3 text-left transition-all',
-        equipped ? 'cursor-default' : 'hover:border-orange-500/40'
-      )}
       style={{
-        border: equipped ? '1px solid rgba(249,115,22,0.5)' : `1px solid ${rs.border}`,
-        background: equipped
-          ? 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 60%)'
-          : `linear-gradient(145deg, ${rs.bg}, #0b0b14 60%)`,
-        boxShadow: rarity === 'mythic' || rarity === 'legendary'
-          ? `0 0 14px -6px ${rs.text}55`
-          : undefined,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px',
+        background: 'transparent',
+        border: equipped ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+        cursor: equipped ? 'default' : 'pointer',
+        textAlign: 'left',
+        color: 'var(--b-ink)',
       }}
     >
-      <div className="flex items-center gap-3">
-        <OrbColorPreview colorSet={color} variant={variant} id={color.id} size={48} />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">{color.name}</p>
-          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-            <span
-              className="text-[8px] font-bold uppercase tracking-[0.06em] px-1.5 py-[1px] rounded whitespace-nowrap"
-              style={{ color: rs.text, background: rs.bg, border: `1px solid ${rs.border}` }}
-            >
-              {rs.label}
-            </span>
-            {equipped && (
-              <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-[1px] rounded whitespace-nowrap">
-                Equipped
-              </span>
-            )}
-          </div>
-          {!equipped && (
-            <p className="text-[10px] text-slate-500 mt-1">Tap to equip</p>
-          )}
+      <OrbColorPreview colorSet={color} variant={variant} id={color.id} size={42} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          className="font-display"
+          style={{ fontSize: 13, fontStyle: 'italic', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {color.name}
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+          {rarityChip(rarity)}
+          {equipped && equippedChip()}
         </div>
       </div>
     </button>
   );
 }
 
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function FrameCard({
+  id, name, avatarUrl, alt, equipped, onEquip,
+}: {
+  id: string; name: string; avatarUrl?: string; alt: string; equipped: boolean; onEquip: () => void;
+}) {
+  const rarity = RARITY_BY_ID[id] || 'common';
   return (
     <button
-      onClick={onClick}
-      className={cn(
-        'text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors border',
-        active
-          ? 'text-white border-orange-500/50 bg-gradient-to-br from-red-600/25 to-orange-500/15'
-          : 'text-slate-400 border-[#1e1e30] bg-[#0b0b14] hover:text-white hover:border-[#2a2a3d]'
-      )}
+      onClick={onEquip}
+      disabled={equipped}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '10px',
+        background: 'transparent',
+        border: equipped ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+        cursor: equipped ? 'default' : 'pointer',
+        textAlign: 'left',
+        color: 'var(--b-ink)',
+      }}
     >
-      {label}
+      <FramedAvatar src={avatarUrl} alt={alt} size="sm" frameId={id} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          className="font-display"
+          style={{ fontSize: 13, fontStyle: 'italic', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {name}
+        </div>
+        <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+          {rarityChip(rarity)}
+          {equipped && equippedChip()}
+        </div>
+      </div>
     </button>
   );
 }
 
-function StatPill({
-  label, value, color, icon, extra,
+function NameEffectCard({
+  id, name, userName, equipped, onEquip,
 }: {
-  label: string; value: string; color: string; icon: React.ReactNode; extra?: React.ReactNode;
+  id: string; name: string; userName: string; equipped: boolean; onEquip: () => void;
 }) {
+  const rarity = RARITY_BY_ID[id] || 'common';
   return (
-    <div
-      className="relative overflow-hidden rounded-xl p-3 text-center"
+    <button
+      onClick={onEquip}
+      disabled={equipped}
       style={{
-        background: `linear-gradient(145deg, ${color}15 0%, #10101a 60%, #0b0b14 100%)`,
-        border: `1px solid ${color}25`,
+        padding: '10px',
+        background: 'transparent',
+        border: equipped ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+        cursor: equipped ? 'default' : 'pointer',
+        textAlign: 'left',
+        color: 'var(--b-ink)',
       }}
     >
-      <div className="flex justify-center mb-1" style={{ color }}>{icon}</div>
-      <p className="font-mono text-lg font-bold text-white">{value}</p>
-      <p className="text-[10px] text-slate-500">{label}</p>
-      {extra && <div className="mt-1">{extra}</div>}
-    </div>
+      <div
+        style={{
+          height: 40,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 8,
+          border: '1px solid var(--b-rule)',
+          background: 'var(--b-paper-2, transparent)',
+        }}
+      >
+        <NamePlate name={userName} effectId={id} size="md" />
+      </div>
+      <div
+        className="font-display"
+        style={{ fontSize: 13, fontStyle: 'italic', fontWeight: 500 }}
+      >
+        {name}
+      </div>
+      <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+        {rarityChip(rarity)}
+        {equipped && equippedChip()}
+      </div>
+    </button>
   );
-}
-
-function FragmentIcon() {
-  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>);
-}
-function ShieldIcon() {
-  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>);
-}
-function BoltIcon() {
-  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>);
-}
-function OrbIcon() {
-  return (<svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.3" /></svg>);
 }

@@ -8,10 +8,10 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { createDocument, removeDocument, Timestamp } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
-import { cn } from '@/lib/utils';
 import { UserHabit } from '@/types/habit';
 import { ScheduleEntry } from '@/types/schedule';
 import Link from 'next/link';
+import { Masthead } from '@/components/editorial/Masthead';
 
 // 0 = Monday through 6 = Sunday (European convention)
 const DAYS = [
@@ -27,10 +27,13 @@ const DAYS = [
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6);
 
 function fmtHour(h: number): string {
-  if (h === 0) return '12 AM';
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return '12 PM';
-  return `${h - 12} PM`;
+  if (h === 0) return '12';
+  if (h < 12) return `${h}`;
+  if (h === 12) return '12';
+  return `${h - 12}`;
+}
+function fmtHourMeridian(h: number): string {
+  return h < 12 ? 'AM' : 'PM';
 }
 
 export default function SchedulePage() {
@@ -39,17 +42,14 @@ export default function SchedulePage() {
   const { entries, loading: scheduleLoading } = useSchedule();
   const addToast = useUIStore((s) => s.addToast);
 
-  // Habit selected via tap-to-place (mobile) or being dragged (desktop)
   const [selectedHabit, setSelectedHabit] = useState<UserHabit | null>(null);
   const [placing, setPlacing] = useState(false);
 
-  // Live clock — used to highlight the current day + hour row
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
-  // Mon=0..Sun=6
   const todayIdx = (now.getDay() + 6) % 7;
   const currentHour = now.getHours();
   const tz = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
@@ -72,7 +72,6 @@ export default function SchedulePage() {
     }
   };
 
-  // Map (day, hour) -> entry for O(1) lookup while rendering
   const entryMap = useMemo(() => {
     const m = new Map<string, ScheduleEntry>();
     for (const e of entries) m.set(`${e.dayOfWeek}-${e.hour}`, e);
@@ -115,7 +114,6 @@ export default function SchedulePage() {
     }
   };
 
-  // HTML5 drag handlers (desktop)
   const onHabitDragStart = (e: React.DragEvent, habit: UserHabit) => {
     e.dataTransfer.setData('application/habit-slug', habit.categorySlug);
     e.dataTransfer.effectAllowed = 'copy';
@@ -132,7 +130,6 @@ export default function SchedulePage() {
     if (habit) placeHabit(habit, dayOfWeek, hour);
   };
 
-  // Tap-to-place (mobile + desktop click)
   const onSlotClick = (dayOfWeek: number, hour: number) => {
     const key = `${dayOfWeek}-${hour}`;
     const existing = entryMap.get(key);
@@ -148,270 +145,456 @@ export default function SchedulePage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-white font-heading">Schedule</h1>
-          <p className="text-sm text-slate-500">
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-5xl mx-auto pb-32">
+        <Masthead section="The Almanac" />
+
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            The Almanac
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>Schedule</em>
+            </h1>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+              <button
+                onClick={sendTestNotification}
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  padding: '5px 10px',
+                  background: 'transparent',
+                  border: '1px solid var(--b-ink)',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'var(--b-ink)',
+                }}
+                title={`Your timezone: ${tz}`}
+              >
+                Test push
+              </button>
+              <Link
+                href="/dashboard"
+                className="font-body"
+                style={{ fontSize: 10, color: 'var(--b-ink-60)', textDecoration: 'none', letterSpacing: '0.08em' }}
+              >
+                ← BACK
+              </Link>
+            </div>
+          </div>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 420, lineHeight: 1.5 }}
+          >
             {selectedHabit
-              ? <>Tap a slot to place <span className="text-orange-400 font-medium">{selectedHabit.categoryName}</span>.</>
+              ? <>Tap a slot to place <em style={{ color: 'var(--b-accent)' }}>{selectedHabit.categoryName}</em>.</>
               : (
                 <>
-                  <span className="lg:hidden">Tap a habit above, then tap a slot.</span>
+                  <span className="lg:hidden">Tap a habit, then tap a slot.</span>
                   <span className="hidden lg:inline">Pick a habit on the right, then tap a slot — or drag it onto the grid.</span>
                 </>
               )
             }
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={sendTestNotification}
-            className="text-[11px] px-2.5 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 transition-colors"
-            title={`Your timezone: ${tz}`}
+
+          {/* Mobile habit strip */}
+          <div
+            className="lg:hidden"
+            style={{
+              marginTop: 14,
+              paddingTop: 10,
+              paddingBottom: 10,
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-rule)',
+              position: 'sticky',
+              top: 0,
+              zIndex: 20,
+              background: 'var(--b-paper)',
+            }}
           >
-            Test push
-          </button>
-          <Link href="/dashboard" className="text-xs text-slate-500 hover:text-orange-400 transition-colors">
-            &larr; Back
-          </Link>
-        </div>
-      </div>
-
-      {/* Mobile: sticky horizontal habit strip just below the TopBar (which is h-14 = 56px) */}
-      <div className="lg:hidden sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-2 bg-[#0d0d15]/95 backdrop-blur-md border-b border-[#1e1e30]">
-        {habitsLoading ? (
-          <div className="flex gap-2 overflow-x-auto">
-            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-32 rounded-xl flex-shrink-0" />)}
-          </div>
-        ) : habits.length === 0 ? (
-          <div className="text-center py-2">
-            <Link href="/habits" className="text-xs text-orange-400 hover:underline">
-              Add habits first &rarr;
-            </Link>
-          </div>
-        ) : (
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {habits.map((habit) => {
-              const isSelected = selectedHabit?.categorySlug === habit.categorySlug;
-              return (
-                <button
-                  key={habit.categorySlug}
-                  onClick={() => setSelectedHabit(isSelected ? null : habit)}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-xl border transition-all flex-shrink-0 cursor-pointer active:scale-95',
-                    isSelected
-                      ? 'border-orange-500/60 shadow-[0_0_16px_-4px_rgba(249,115,22,0.5)]'
-                      : 'border-[#1e1e30] hover:border-orange-500/20'
-                  )}
-                  style={{
-                    background: isSelected
-                      ? `linear-gradient(145deg, ${habit.color}20, #0b0b14)`
-                      : '#0b0b14',
-                  }}
-                >
-                  <CategoryIcon
-                    icon={habit.categoryIcon}
-                    color={habit.color}
-                    size="sm"
-                    slug={habit.categorySlug}
-                  />
-                  <span className="text-xs font-semibold text-white whitespace-nowrap">
-                    {habit.categoryName}
-                  </span>
-                </button>
-              );
-            })}
-            {selectedHabit && (
-              <button
-                onClick={() => setSelectedHabit(null)}
-                className="flex-shrink-0 text-[10px] text-slate-500 hover:text-slate-300 transition-colors px-2 self-center"
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 6 }}
+            >
+              Your Habits
+            </div>
+            {habitsLoading ? (
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} style={{ minWidth: 120 }}>
+                    <Skeleton className="h-10" />
+                  </div>
+                ))}
+              </div>
+            ) : habits.length === 0 ? (
+              <Link
+                href="/habits"
+                className="font-body"
+                style={{ fontSize: 11, color: 'var(--b-accent)', letterSpacing: '0.04em' }}
               >
-                Clear
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Main layout: grid + sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4">
-        {/* Scheduler grid */}
-        <div className="glass-card rounded-2xl p-3 overflow-x-auto">
-          {scheduleLoading ? (
-            <Skeleton className="h-[500px] rounded-xl" />
-          ) : (
-            <div className="min-w-[720px]">
-              {/* Day headers */}
-              <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-2">
-                {/* Sticky top-left corner so it stays pinned when scrolling horizontally */}
-                <div className="sticky left-0 z-[12] bg-[#0b0b14]" />
-                {DAYS.map((d) => {
-                  const isToday = d.idx === todayIdx;
+                Add habits first →
+              </Link>
+            ) : (
+              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                {habits.map((habit) => {
+                  const isSelected = selectedHabit?.categorySlug === habit.categorySlug;
                   return (
-                    <div
-                      key={d.idx}
-                      className={cn(
-                        'text-center text-[11px] font-bold uppercase tracking-wider py-2 rounded-md transition-colors',
-                        isToday
-                          ? 'text-white bg-gradient-to-b from-red-600/30 to-orange-500/15 border border-orange-500/40 shadow-[0_0_18px_-6px_rgba(249,115,22,0.6)]'
-                          : 'text-slate-400 bg-[#0b0b14]'
-                      )}
+                    <button
+                      key={habit.categorySlug}
+                      onClick={() => setSelectedHabit(isSelected ? null : habit)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 10px',
+                        flexShrink: 0,
+                        background: isSelected ? 'var(--b-ink)' : 'transparent',
+                        color: isSelected ? 'var(--b-paper)' : 'var(--b-ink)',
+                        border: '1px solid var(--b-ink)',
+                        cursor: 'pointer',
+                      }}
                     >
-                      {d.short}
-                      {isToday && <div className="text-[9px] text-orange-400 font-mono mt-0.5">today</div>}
-                    </div>
+                      <CategoryIcon
+                        icon={habit.categoryIcon}
+                        color={isSelected ? '#fff' : habit.color}
+                        size="sm"
+                        slug={habit.categorySlug}
+                      />
+                      <span
+                        className="font-body"
+                        style={{ fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
+                      >
+                        {habit.categoryName}
+                      </span>
+                    </button>
                   );
                 })}
+                {selectedHabit && (
+                  <button
+                    onClick={() => setSelectedHabit(null)}
+                    style={{
+                      flexShrink: 0,
+                      fontSize: 9,
+                      color: 'var(--b-ink-60)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0 6px',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
+            )}
+          </div>
 
-              {/* Rows: one per hour */}
-              {HOURS.map((h) => {
-                const isCurrentHour = h === currentHour;
-                return (
-                <div
-                  key={h}
-                  className={cn(
-                    'grid grid-cols-[60px_repeat(7,minmax(0,1fr))] gap-1 mb-1 relative',
-                    isCurrentHour && 'before:absolute before:left-[60px] before:right-0 before:top-1/2 before:h-px before:bg-gradient-to-r before:from-orange-500/60 before:to-transparent before:pointer-events-none'
-                  )}
-                >
-                  {/* Sticky time column with opaque background so grid doesn't show through */}
-                  <div className={cn(
-                    'sticky left-0 z-[11] text-[10px] font-mono text-right pr-2 pt-2 whitespace-nowrap rounded-md',
-                    isCurrentHour ? 'bg-[#0b0b14] text-orange-400 font-bold' : 'bg-[#0b0b14] text-slate-500',
-                  )}>
-                    {fmtHour(h)}
-                  </div>
-                  {DAYS.map((d) => {
-                    const key = `${d.idx}-${h}`;
-                    const entry = entryMap.get(key);
-                    if (entry) {
+          {/* Grid + sidebar */}
+          <div
+            style={{
+              marginTop: 18,
+              display: 'grid',
+              gap: 14,
+            }}
+            className="lg:grid-cols-[1fr_220px]"
+          >
+            {/* Grid */}
+            <div style={{ overflowX: 'auto', border: '1px solid var(--b-rule)', padding: 10 }}>
+              {scheduleLoading ? (
+                <Skeleton className="h-[500px]" />
+              ) : (
+                <div style={{ minWidth: 720 }}>
+                  {/* Day headers */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '50px repeat(7, minmax(0, 1fr))',
+                      gap: 2,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <div style={{ position: 'sticky', left: 0, zIndex: 12, background: 'var(--b-paper)' }} />
+                    {DAYS.map((d) => {
+                      const isToday = d.idx === todayIdx;
                       return (
-                        <button
-                          key={key}
-                          onClick={() => onSlotClick(d.idx, h)}
-                          className="relative h-12 rounded-md text-[10px] font-medium text-white transition-all overflow-hidden group"
+                        <div
+                          key={d.idx}
+                          className="font-body"
                           style={{
-                            background: `linear-gradient(145deg, ${entry.habitColor}40, ${entry.habitColor}15)`,
-                            border: `1px solid ${entry.habitColor}60`,
-                            boxShadow: `0 0 14px -6px ${entry.habitColor}60`,
+                            textAlign: 'center',
+                            padding: '8px 0',
+                            fontSize: 10,
+                            fontWeight: isToday ? 700 : 500,
+                            letterSpacing: '0.14em',
+                            textTransform: 'uppercase',
+                            color: isToday ? 'var(--b-accent)' : 'var(--b-ink-60)',
+                            borderBottom: isToday ? '2px solid var(--b-accent)' : '1px solid var(--b-rule)',
                           }}
                         >
-                          <div className="absolute inset-0 flex items-center gap-1 px-1.5">
-                            <CategoryIcon
-                              slug={entry.habitSlug}
-                              icon={entry.habitIcon}
-                              color={entry.habitColor}
-                              size="sm"
-                            />
-                            <span className="truncate text-[10px]">{entry.habitName}</span>
-                          </div>
-                          <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/40 text-white/70 text-[9px] leading-4 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            &times;
-                          </span>
-                        </button>
+                          {d.short}
+                          {isToday && (
+                            <div
+                              className="font-mono"
+                              style={{ fontSize: 8, color: 'var(--b-accent)', marginTop: 2 }}
+                            >
+                              today
+                            </div>
+                          )}
+                        </div>
                       );
-                    }
-                    const isNow = d.idx === todayIdx && h === currentHour;
+                    })}
+                  </div>
+
+                  {/* Hour rows */}
+                  {HOURS.map((h) => {
+                    const isCurrentHour = h === currentHour;
                     return (
-                      <button
-                        key={key}
-                        onClick={() => onSlotClick(d.idx, h)}
-                        onDragOver={onSlotDragOver}
-                        onDrop={(e) => onSlotDrop(e, d.idx, h)}
-                        className={cn(
-                          'h-12 rounded-md border border-dashed transition-all',
-                          selectedHabit
-                            ? 'border-orange-500/40 bg-orange-500/5 hover:bg-orange-500/15 hover:border-orange-400/60 hover:shadow-[0_0_12px_-4px_rgba(249,115,22,0.5)]'
-                            : isNow
-                              ? 'border-orange-500/25 bg-orange-500/[0.03]'
-                              : 'border-[#1e1e30] bg-[#0b0b14] hover:bg-[#10101a] hover:border-[#2a2a3d]'
-                        )}
-                        aria-label={`${d.long} ${fmtHour(h)}`}
-                      />
+                      <div
+                        key={h}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '50px repeat(7, minmax(0, 1fr))',
+                          gap: 2,
+                          marginBottom: 2,
+                        }}
+                      >
+                        <div
+                          className="font-mono tabular"
+                          style={{
+                            position: 'sticky',
+                            left: 0,
+                            zIndex: 11,
+                            fontSize: 10,
+                            textAlign: 'right',
+                            paddingRight: 6,
+                            paddingTop: 4,
+                            background: 'var(--b-paper)',
+                            color: isCurrentHour ? 'var(--b-accent)' : 'var(--b-ink-40)',
+                            fontWeight: isCurrentHour ? 700 : 400,
+                          }}
+                        >
+                          {fmtHour(h)}
+                          <span
+                            style={{
+                              fontSize: 7,
+                              marginLeft: 1,
+                              color: 'var(--b-ink-40)',
+                            }}
+                          >
+                            {fmtHourMeridian(h)}
+                          </span>
+                        </div>
+                        {DAYS.map((d) => {
+                          const key = `${d.idx}-${h}`;
+                          const entry = entryMap.get(key);
+                          if (entry) {
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => onSlotClick(d.idx, h)}
+                                style={{
+                                  position: 'relative',
+                                  height: 38,
+                                  padding: '0 6px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  background: `${entry.habitColor}18`,
+                                  border: `1px solid ${entry.habitColor}80`,
+                                  borderLeft: `3px solid ${entry.habitColor}`,
+                                  cursor: 'pointer',
+                                  overflow: 'hidden',
+                                  color: 'var(--b-ink)',
+                                }}
+                              >
+                                <CategoryIcon
+                                  slug={entry.habitSlug}
+                                  icon={entry.habitIcon}
+                                  color={entry.habitColor}
+                                  size="sm"
+                                />
+                                <span
+                                  className="font-body"
+                                  style={{
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {entry.habitName}
+                                </span>
+                              </button>
+                            );
+                          }
+                          const isNow = d.idx === todayIdx && h === currentHour;
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => onSlotClick(d.idx, h)}
+                              onDragOver={onSlotDragOver}
+                              onDrop={(e) => onSlotDrop(e, d.idx, h)}
+                              aria-label={`${d.long} ${fmtHour(h)}${fmtHourMeridian(h)}`}
+                              style={{
+                                height: 38,
+                                background: selectedHabit
+                                  ? 'rgba(249,115,22,0.06)'
+                                  : isNow
+                                    ? 'rgba(249,115,22,0.04)'
+                                    : 'transparent',
+                                border: selectedHabit
+                                  ? '1px dashed var(--b-accent)'
+                                  : '1px dashed var(--b-rule)',
+                                cursor: 'pointer',
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>
-                );
-              })}
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Habit sidebar — desktop only (mobile uses top strip) */}
-        <div className="hidden lg:block glass-card rounded-2xl p-3 h-fit lg:sticky lg:top-4">
-          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">
-            Your Habits
-          </h2>
-          {habitsLoading ? (
-            <div className="space-y-2">
-              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
-            </div>
-          ) : habits.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-xs text-slate-500 mb-3">No habits yet</p>
-              <Link
-                href="/habits"
-                className="text-xs text-orange-400 hover:underline"
+            {/* Desktop sidebar */}
+            <div
+              className="hidden lg:block"
+              style={{
+                position: 'sticky',
+                top: 16,
+                alignSelf: 'flex-start',
+                height: 'fit-content',
+              }}
+            >
+              <div
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
               >
-                Add a habit &rarr;
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {habits.map((habit) => {
-                const isSelected = selectedHabit?.categorySlug === habit.categorySlug;
-                return (
-                  <button
-                    key={habit.categorySlug}
-                    draggable
-                    onDragStart={(e) => onHabitDragStart(e, habit)}
-                    onDragEnd={() => setSelectedHabit(null)}
-                    onClick={() =>
-                      setSelectedHabit(isSelected ? null : habit)
-                    }
-                    className={cn(
-                      'w-full flex items-center gap-2.5 p-2.5 rounded-xl transition-all text-left cursor-grab active:cursor-grabbing',
-                      isSelected
-                        ? 'bg-orange-500/15 border border-orange-500/40 shadow-[0_0_16px_-4px_rgba(249,115,22,0.4)]'
-                        : 'bg-[#0b0b14] border border-[#1e1e30] hover:border-orange-500/20'
-                    )}
+                Your Habits
+              </div>
+              {habitsLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10" />)}
+                </div>
+              ) : habits.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '14px 0' }}>
+                  <p className="font-body" style={{ fontSize: 11, color: 'var(--b-ink-60)', marginBottom: 6 }}>
+                    No habits yet
+                  </p>
+                  <Link
+                    href="/habits"
+                    className="font-body"
+                    style={{ fontSize: 11, color: 'var(--b-accent)', textDecoration: 'none', letterSpacing: '0.04em' }}
                   >
-                    <CategoryIcon
-                      icon={habit.categoryIcon}
-                      color={habit.color}
-                      size="sm"
-                      slug={habit.categorySlug}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-white truncate">
-                        {habit.categoryName}
-                      </p>
-                      <p className="text-[10px] text-slate-600">
-                        {habit.goal} {habit.unit}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+                    Add a habit →
+                  </Link>
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderTop: '1px solid var(--b-rule)' }}>
+                  {habits.map((habit) => {
+                    const isSelected = selectedHabit?.categorySlug === habit.categorySlug;
+                    return (
+                      <li key={habit.categorySlug}>
+                        <button
+                          draggable
+                          onDragStart={(e) => onHabitDragStart(e, habit)}
+                          onDragEnd={() => setSelectedHabit(null)}
+                          onClick={() => setSelectedHabit(isSelected ? null : habit)}
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '10px 6px',
+                            background: isSelected ? `${habit.color}15` : 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid var(--b-rule)',
+                            cursor: 'grab',
+                            textAlign: 'left',
+                            color: 'var(--b-ink)',
+                          }}
+                        >
+                          <CategoryIcon
+                            icon={habit.categoryIcon}
+                            color={habit.color}
+                            size="sm"
+                            slug={habit.categorySlug}
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div
+                              className="font-display"
+                              style={{ fontSize: 13, fontStyle: 'italic', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            >
+                              {habit.categoryName}
+                            </div>
+                            <div
+                              className="font-body tabular"
+                              style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                            >
+                              {habit.goal} {habit.unit}
+                            </div>
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
               {selectedHabit && (
                 <button
                   onClick={() => setSelectedHabit(null)}
-                  className="w-full text-[10px] text-slate-500 hover:text-slate-300 transition-colors py-1"
+                  className="font-body"
+                  style={{
+                    marginTop: 8,
+                    width: '100%',
+                    padding: '6px 0',
+                    fontSize: 9,
+                    color: 'var(--b-ink-60)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                  }}
                 >
                   Clear selection
                 </button>
               )}
-            </div>
-          )}
 
-          {/* Tip */}
-          <div className="mt-4 p-2.5 rounded-lg bg-[#0b0b14] border border-[#1e1e30]">
-            <p className="text-[10px] text-slate-500 leading-relaxed">
-              <span className="text-orange-400 font-medium">Tip:</span> drag on desktop, or tap a habit then tap a slot on mobile. Tap a scheduled block to remove it.
-            </p>
+              {/* Tip block */}
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: '10px 12px',
+                  border: '1px solid var(--b-rule)',
+                  background: 'var(--b-paper-2, transparent)',
+                }}
+              >
+                <div
+                  className="spread"
+                  style={{ fontSize: 8, color: 'var(--b-accent)', marginBottom: 4 }}
+                >
+                  Note
+                </div>
+                <p
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)', lineHeight: 1.5 }}
+                >
+                  Drag on desktop, or tap a habit then tap a slot on mobile. Tap a scheduled block to remove it.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

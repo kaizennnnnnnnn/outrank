@@ -52,7 +52,6 @@ export default function DirectMessageThread({
 
   const threadId = user ? threadIdFor(user.uid, friendId) : null;
 
-  // Load the friend profile once
   useEffect(() => {
     if (!friendId) return;
     (async () => {
@@ -70,7 +69,6 @@ export default function DirectMessageThread({
     })();
   }, [friendId]);
 
-  // Subscribe to the thread's messages
   useEffect(() => {
     if (!threadId) return;
     const q = query(
@@ -89,7 +87,6 @@ export default function DirectMessageThread({
     return unsub;
   }, [threadId]);
 
-  // Autoscroll to newest on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -110,14 +107,9 @@ export default function DirectMessageThread({
 
     setSending(true);
     try {
-      // Ensure thread metadata doc exists (setDoc+merge — create or update).
-      // Write messages first so the message count doesn't lag behind lastAt
-      // if the thread write fails but the message write succeeds.
-      // Client-side timestamps so the message appears instantly in the
-      // orderBy('createdAt') snapshot query. serverTimestamp() leaves the
-      // field null while pending, which pushes the doc to an undefined
-      // position in the ordered result and hides it until the server
-      // round-trip completes.
+      // Client timestamp because serverTimestamp() leaves the field null
+      // while pending, hiding the doc from the orderBy('createdAt') query
+      // until the server round-trip completes.
       const now = Timestamp.now();
       await addDoc(collection(db, `messages/${threadId}/items`), {
         senderId: user.uid,
@@ -137,8 +129,6 @@ export default function DirectMessageThread({
       );
       setDraft('');
     } catch (err) {
-      // Surface the failure — previously swallowed, which is why "click
-      // send and nothing happens" was the user-visible symptom.
       const rawMsg = err instanceof Error ? err.message : String(err);
       console.error('Message send failed:', err);
       const isPermission =
@@ -165,121 +155,211 @@ export default function DirectMessageThread({
   if (!user) return null;
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col h-[calc(100vh-10rem)]">
-      {/* Header */}
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
       <div
-        className="relative overflow-hidden rounded-2xl border mb-3 shrink-0"
+        className="max-w-2xl mx-auto"
         style={{
-          background:
-            'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(236,72,153,0.18), transparent 55%),' +
-            'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(236,72,153,0.25)',
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 8rem)',
+          padding: '14px 22px 22px',
         }}
       >
-        <div className="flex items-center gap-3 p-4">
-          <Link href="/friends" className="p-1.5 rounded-lg hover:bg-[#1e1e30] transition-colors" aria-label="Back">
-            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </Link>
-          {friend ? (
-            <Link href={`/profile/${friend.username}`} className="flex items-center gap-3 min-w-0 flex-1">
-              <FramedAvatar src={friend.avatarUrl} alt={friend.username} size="md" frameId={friend.equippedFrame} />
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-pink-300">Messaging</p>
-                <span className="min-w-0 truncate">
-                  <NamePlate name={friend.username} effectId={friend.equippedNameEffect} size="md" />
-                </span>
-              </div>
+        {/* Header */}
+        <div
+          style={{
+            paddingBottom: 12,
+            borderBottom: '1px solid var(--b-ink)',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link
+              href="/messages"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                color: 'var(--b-ink-60)',
+                textDecoration: 'none',
+                padding: 4,
+              }}
+              aria-label="Back"
+            >
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
             </Link>
-          ) : (
-            <Skeleton className="h-10 w-48 rounded" />
-          )}
-        </div>
-      </div>
-
-      {/* Messages scroll area */}
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-2.5 px-1 pb-2"
-      >
-        {loading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className={cn('h-10 rounded-xl', i % 2 === 0 ? 'w-2/3' : 'w-1/2 ml-auto')} />
-            ))}
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="font-heading text-lg text-white">Say hi 👋</p>
-            <p className="text-xs text-slate-500 mt-1">
-              Messages are between just the two of you.
-            </p>
-          </div>
-        ) : (
-          messages.map((m, i) => {
-            const mine = m.senderId === user.uid;
-            const prev = messages[i - 1];
-            const showTime = !prev || !m.createdAt || !prev.createdAt
-              || (m.createdAt.toMillis() - prev.createdAt.toMillis() > 5 * 60 * 1000);
-            return (
-              <div key={m.id}>
-                {showTime && m.createdAt?.toDate && (
-                  <p className="text-center text-[10px] text-slate-600 font-mono py-2">
-                    {formatRelativeTime(m.createdAt.toDate())}
-                  </p>
-                )}
-                <div className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
+            {friend ? (
+              <Link
+                href={`/profile/${friend.username}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flex: 1,
+                  minWidth: 0,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <FramedAvatar src={friend.avatarUrl} alt={friend.username} size="md" frameId={friend.equippedFrame} />
+                <div style={{ minWidth: 0 }}>
+                  <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+                    Messaging
+                  </div>
                   <div
-                    className={cn(
-                      'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed',
-                      mine
-                        ? 'bg-gradient-to-br from-red-600 to-orange-500 text-white rounded-br-sm'
-                        : 'bg-[#18182a] text-slate-200 rounded-bl-sm border border-[#2d2d45]',
-                    )}
-                    style={
-                      mine
-                        ? { boxShadow: '0 6px 20px -10px rgba(239,68,68,0.6)' }
-                        : undefined
-                    }
+                    className="font-display"
+                    style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.1, marginTop: 2 }}
                   >
-                    {m.content}
+                    <NamePlate name={friend.username} effectId={friend.equippedNameEffect} size="md" />
                   </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+              </Link>
+            ) : (
+              <Skeleton className="h-10 w-48" />
+            )}
+          </div>
+        </div>
 
-      {/* Input */}
-      <div
-        className="shrink-0 rounded-2xl border p-2 flex items-end gap-2"
-        style={{
-          background: 'linear-gradient(145deg, #10101a, #0b0b14)',
-          borderColor: '#1e1e30',
-        }}
-      >
-        <textarea
-          rows={1}
-          placeholder="Type a message…"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value.slice(0, MAX_LEN))}
-          onKeyDown={onKeyDown}
-          className="flex-1 bg-transparent resize-none outline-none text-sm text-white placeholder:text-slate-600 min-h-[36px] max-h-32 p-2 font-body"
-        />
-        <Button
-          size="sm"
-          onClick={send}
-          loading={sending}
-          disabled={!draft.trim()}
+        {/* Messages */}
+        <div
+          ref={scrollRef}
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '14px 0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
         >
-          Send
-        </Button>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1, 2, 3].map((i) => (
+                <Skeleton
+                  key={i}
+                  className={cn('h-10', i % 2 === 0 ? 'w-2/3' : 'w-1/2 ml-auto')}
+                />
+              ))}
+            </div>
+          ) : messages.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p
+                className="font-display"
+                style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500 }}
+              >
+                Say hi.
+              </p>
+              <p
+                className="font-body"
+                style={{ fontSize: 12, color: 'var(--b-ink-60)', marginTop: 4 }}
+              >
+                Messages are between just the two of you.
+              </p>
+            </div>
+          ) : (
+            messages.map((m, i) => {
+              const mine = m.senderId === user.uid;
+              const prev = messages[i - 1];
+              const showTime = !prev || !m.createdAt || !prev.createdAt
+                || (m.createdAt.toMillis() - prev.createdAt.toMillis() > 5 * 60 * 1000);
+              return (
+                <div key={m.id}>
+                  {showTime && m.createdAt?.toDate && (
+                    <div
+                      className="font-mono tabular"
+                      style={{
+                        textAlign: 'center',
+                        fontSize: 9,
+                        color: 'var(--b-ink-40)',
+                        padding: '6px 0',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {formatRelativeTime(m.createdAt.toDate())}
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: mine ? 'flex-end' : 'flex-start',
+                    }}
+                  >
+                    <div
+                      className="font-body"
+                      style={{
+                        maxWidth: '80%',
+                        padding: '8px 12px',
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        background: mine ? 'var(--b-ink)' : 'transparent',
+                        color: mine ? 'var(--b-paper)' : 'var(--b-ink)',
+                        border: mine ? '1px solid var(--b-ink)' : '1px solid var(--b-rule)',
+                      }}
+                    >
+                      {m.content}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Input */}
+        <div
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'flex-end',
+            gap: 8,
+            padding: 8,
+            border: '1px solid var(--b-ink)',
+          }}
+        >
+          <textarea
+            rows={1}
+            placeholder="Type a message…"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, MAX_LEN))}
+            onKeyDown={onKeyDown}
+            className="font-body"
+            style={{
+              flex: 1,
+              background: 'transparent',
+              resize: 'none',
+              outline: 'none',
+              fontSize: 13,
+              color: 'var(--b-ink)',
+              minHeight: 36,
+              maxHeight: 128,
+              padding: 4,
+              border: 'none',
+              fontFamily: 'inherit',
+            }}
+          />
+          <Button
+            size="sm"
+            onClick={send}
+            loading={sending}
+            disabled={!draft.trim()}
+          >
+            Send
+          </Button>
+        </div>
+        <div
+          className="font-mono tabular"
+          style={{
+            fontSize: 9,
+            color: 'var(--b-ink-40)',
+            textAlign: 'center',
+            marginTop: 6,
+          }}
+        >
+          {draft.length}/{MAX_LEN}
+        </div>
       </div>
-      <p className="text-[10px] text-slate-600 text-center mt-1">
-        {draft.length}/{MAX_LEN}
-      </p>
     </div>
   );
 }

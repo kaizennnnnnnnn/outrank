@@ -10,10 +10,9 @@ import {
 } from 'firebase/firestore';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { UsersFullIcon } from '@/components/ui/AppIcons';
 import { formatRelativeTime } from '@/lib/utils';
+import { Masthead } from '@/components/editorial/Masthead';
 
 interface ThreadSummary {
   threadId: string;
@@ -22,7 +21,6 @@ interface ThreadSummary {
   lastAt?: Timestamp;
   lastSenderId?: string;
   participants: string[];
-  // Lazily loaded friend profile
   username?: string;
   avatarUrl?: string;
   frame?: string;
@@ -37,7 +35,6 @@ export default function MessagesIndex() {
 
   useEffect(() => {
     if (!user?.uid) return;
-    // Subscribe to threads that contain me
     const q = query(
       collection(db, 'messageThreads'),
       where('participants', 'array-contains', user.uid),
@@ -58,7 +55,6 @@ export default function MessagesIndex() {
           participants,
         };
       });
-      // Hydrate friend profiles — sequential is fine at small N
       for (const r of rows) {
         if (!r.otherUid) continue;
         try {
@@ -79,74 +75,151 @@ export default function MessagesIndex() {
   }, [user?.uid]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      {/* Header */}
-      <div
-        className="relative overflow-hidden rounded-2xl p-5 border"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(236,72,153,0.22), transparent 55%),' +
-            'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(236,72,153,0.25)',
-        }}
-      >
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-pink-300">Direct</p>
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-0.5">Messages</h1>
-        <p className="text-[11px] text-slate-500 mt-1">Chat one-on-one with your friends.</p>
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Direct" />
 
-      {/* Start a new thread — friend picker */}
-      {friends.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-            Start a chat
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {friends.slice(0, 20).map((f) => (
-              <FriendQuickPick key={f.id} friendId={f.id} />
-            ))}
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Direct
           </div>
-        </div>
-      )}
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+          >
+            <em style={{ fontStyle: 'italic' }}>Messages</em>
+          </h1>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            Chat one-on-one with your friends.
+          </p>
 
-      {/* Existing threads */}
-      {loading ? (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
-        </div>
-      ) : threads.length === 0 ? (
-        <EmptyState
-          icon={<UsersFullIcon size={40} className="text-pink-400" />}
-          title="No messages yet"
-          description="Tap a friend above to say hi."
-        />
-      ) : (
-        <div className="space-y-2">
-          {threads.map((t) => (
-            <Link
-              key={t.threadId}
-              href={`/messages/${t.otherUid}`}
-              className="flex items-center gap-3 rounded-xl p-3 border border-[#1e1e30] bg-[#10101a] hover:bg-[#1a1a2a] transition-colors"
-            >
-              <FramedAvatar src={t.avatarUrl} alt={t.username || 'Friend'} size="md" frameId={t.frame} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <NamePlate name={t.username || 'Friend'} effectId={t.nameEffect} size="sm" />
-                  {t.lastAt?.toDate && (
-                    <span className="text-[10px] text-slate-600 font-mono">
-                      {formatRelativeTime(t.lastAt.toDate())}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                  {t.lastSenderId === user?.uid && 'You: '}
-                  {t.lastMessage || '…'}
-                </p>
+          {/* Quick picks */}
+          {friends.length > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <div
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
+              >
+                Start a chat
               </div>
-            </Link>
-          ))}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  overflowX: 'auto',
+                  paddingBottom: 4,
+                  scrollbarWidth: 'none',
+                }}
+              >
+                {friends.slice(0, 20).map((f) => (
+                  <FriendQuickPick key={f.id} friendId={f.id} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Section header */}
+          <div
+            style={{
+              marginTop: 22,
+              paddingTop: 12,
+              borderTop: '1px solid var(--b-ink)',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: 4,
+            }}
+          >
+            <div
+              className="font-display"
+              style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}
+            >
+              Open Threads
+            </div>
+            <div
+              className="font-mono tabular"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+            >
+              § {String(threads.length).padStart(2, '0')}
+            </div>
+          </div>
+
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14" />)}
+            </div>
+          ) : threads.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '36px 0' }}>
+              <p
+                className="font-display"
+                style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+              >
+                No messages yet.
+              </p>
+              <p
+                className="font-body"
+                style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+              >
+                Tap a friend above to say hi.
+              </p>
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {threads.map((t) => (
+                <li key={t.threadId}>
+                  <Link
+                    href={`/messages/${t.otherUid}`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 0',
+                      borderBottom: '1px solid var(--b-rule)',
+                      textDecoration: 'none',
+                      color: 'inherit',
+                    }}
+                  >
+                    <FramedAvatar src={t.avatarUrl} alt={t.username || 'Friend'} size="md" frameId={t.frame} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
+                        <NamePlate name={t.username || 'Friend'} effectId={t.nameEffect} size="sm" />
+                        {t.lastAt?.toDate && (
+                          <span
+                            className="font-mono tabular"
+                            style={{ fontSize: 9, color: 'var(--b-ink-40)' }}
+                          >
+                            {formatRelativeTime(t.lastAt.toDate())}
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className="font-body"
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--b-ink-60)',
+                          marginTop: 2,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {t.lastSenderId === user?.uid && (
+                          <em style={{ color: 'var(--b-ink-40)', fontStyle: 'italic' }}>You: </em>
+                        )}
+                        {t.lastMessage || '…'}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -171,10 +244,32 @@ function FriendQuickPick({ friendId }: { friendId: string }) {
   return (
     <Link
       href={`/messages/${friendId}`}
-      className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl bg-[#10101a] border border-[#1e1e30] hover:border-pink-500/40 transition-colors shrink-0 w-16"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 4,
+        padding: '8px 6px',
+        textDecoration: 'none',
+        color: 'inherit',
+        flexShrink: 0,
+        width: 64,
+        border: '1px solid var(--b-rule)',
+      }}
     >
       <FramedAvatar src={profile?.avatarUrl} alt={profile?.username || ''} size="sm" frameId={profile?.frame} />
-      <span className="text-[10px] text-slate-400 truncate max-w-full">
+      <span
+        className="font-body"
+        style={{
+          fontSize: 9,
+          color: 'var(--b-ink-60)',
+          maxWidth: '100%',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          letterSpacing: '0.04em',
+        }}
+      >
         {profile?.username || '…'}
       </span>
     </Link>

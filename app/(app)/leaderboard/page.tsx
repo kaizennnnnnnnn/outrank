@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
@@ -9,7 +8,6 @@ import { CATEGORIES } from '@/constants/categories';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { LeaderboardPeriod } from '@/types/leaderboard';
-import { TrophyIconFull } from '@/components/ui/AppIcons';
 import { getCollection, orderBy as fbOrderBy, limit as fbLimit } from '@/lib/firestore';
 import { QueryConstraint, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -17,8 +15,8 @@ import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { MiniOrb } from '@/components/profile/MiniOrb';
 import { UserProfile } from '@/types/user';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Masthead } from '@/components/editorial/Masthead';
 
 type View = 'global' | 'friends' | 'category';
 
@@ -28,24 +26,14 @@ const periods: { value: LeaderboardPeriod; label: string }[] = [
   { value: 'alltime', label: 'All Time' },
 ];
 
-const rankColor: Record<number, string> = {
-  1: 'text-yellow-400',
-  2: 'text-slate-300',
-  3: 'text-amber-700',
-};
+const views: { value: View; label: string }[] = [
+  { value: 'global', label: 'Global' },
+  { value: 'friends', label: 'Friends' },
+  { value: 'category', label: 'Per Habit' },
+];
 
-function MedalIcon({ rank, className }: { rank: number; className?: string }) {
-  // 1-3 get a medal wreath, others get nothing (number shown instead)
-  if (rank > 3) return null;
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="12" cy="14" r="6" fill="currentColor" opacity="0.15" />
-      <circle cx="12" cy="14" r="6" />
-      <path d="M8.21 13.89L7 22l5-3 5 3-1.21-8.12" />
-      <path d="M15 2h-2l-1 4-1-4H9" />
-    </svg>
-  );
-}
+// Roman numerals for the top three — magazine convention.
+const romans = ['I', 'II', 'III'];
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
@@ -54,14 +42,9 @@ export default function LeaderboardPage() {
   const [period, setPeriod] = useState<LeaderboardPeriod>('weekly');
   const [selectedCategory, setSelectedCategory] = useState('gym');
 
-  // Global leaderboard: query users ordered by selected-period XP field
   const [globalEntries, setGlobalEntries] = useState<UserProfile[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
 
-  // Friends leaderboard: pulls each accepted friend's user doc (plus the
-  // current user's) and sorts them locally by the active XP field. N is
-  // typically small (<50), so a batch of getDoc reads is fine and lets us
-  // avoid maintaining a separate friends-XP projection in Firestore.
   const [friendsEntries, setFriendsEntries] = useState<UserProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(true);
 
@@ -76,7 +59,6 @@ export default function LeaderboardPage() {
       fbOrderBy(field, 'desc'),
       fbLimit(100),
     ];
-    // Hide banned + non-leaderboard-visible users where possible (falls back silently)
     getCollection<UserProfile>('users', constraints)
       .then((rows) => {
         const visible = rows.filter((u) => {
@@ -136,8 +118,6 @@ export default function LeaderboardPage() {
     period,
   );
 
-  // Per-category entries are lightweight; pull each user's cosmetics on demand
-  // so the row can render the same FramedAvatar + NamePlate + MiniOrb combo.
   interface CosmeticSnap {
     frame?: string; name?: string; tier?: number;
     baseColor?: string; pulseColor?: string; ringColor?: string;
@@ -174,279 +154,423 @@ export default function LeaderboardPage() {
 
   const topCategories = useMemo(() => CATEGORIES.slice(0, 30), []);
 
+  const periodLabel =
+    period === 'weekly' ? 'this week' :
+    period === 'monthly' ? 'this month' :
+    'of all time';
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white font-heading">Leaderboard</h1>
-        <p className="text-sm text-slate-500">See who's outranking everyone this {period === 'alltime' ? 'era' : period.replace('ly', '')}.</p>
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Standings" />
 
-      {/* View toggle */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setView('global')}
-          className={cn(
-            'flex-1 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all',
-            view === 'global'
-              ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_6px_20px_-10px_rgba(239,68,68,0.8)]'
-              : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
-          )}
-        >
-          Global
-        </button>
-        <button
-          onClick={() => setView('friends')}
-          className={cn(
-            'flex-1 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all',
-            view === 'friends'
-              ? 'bg-gradient-to-r from-pink-600 to-fuchsia-500 text-white shadow-[0_6px_20px_-10px_rgba(236,72,153,0.8)]'
-              : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
-          )}
-        >
-          Friends
-        </button>
-        <button
-          onClick={() => setView('category')}
-          className={cn(
-            'flex-1 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all',
-            view === 'category'
-              ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_6px_20px_-10px_rgba(239,68,68,0.8)]'
-              : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
-          )}
-        >
-          Per Habit
-        </button>
-      </div>
-
-      {/* Period tabs */}
-      <div className="flex gap-1 bg-[#10101a] rounded-xl p-1 border border-[#1e1e30] w-fit">
-        {periods.map((p) => (
-          <button
-            key={p.value}
-            onClick={() => setPeriod(p.value)}
-            className={cn(
-              'px-4 py-2 rounded-lg text-xs font-medium transition-all',
-              period === p.value ? 'bg-red-600 text-white' : 'text-slate-500 hover:text-white'
-            )}
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Standings
+          </div>
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
           >
-            {p.label}
-          </button>
-        ))}
-      </div>
+            <em style={{ fontStyle: 'italic' }}>Leaderboard</em>
+          </h1>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 360, lineHeight: 1.5 }}
+          >
+            Who&rsquo;s outranking everyone {periodLabel}.
+          </p>
 
-      {/* Category picker — only when in per-habit mode */}
-      {view === 'category' && (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {topCategories.map((cat) => {
-            const selected = selectedCategory === cat.slug;
-            return (
-              <button
-                key={cat.slug}
-                onClick={() => setSelectedCategory(cat.slug)}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border whitespace-nowrap text-xs transition-all shrink-0',
-                  selected
-                    ? 'text-white'
-                    : 'border-[#1e1e30] text-slate-500 hover:text-white hover:border-[#2d2d45]'
-                )}
-                style={selected ? {
-                  borderColor: `${cat.color}80`,
-                  background: `${cat.color}15`,
-                } : undefined}
-              >
-                <CategoryIcon slug={cat.slug} icon={cat.icon} color={cat.color} size="sm" />
-                <span>{cat.name}</span>
-              </button>
-            );
-          })}
+          {/* View toggle — hairline tab grid */}
+          <div
+            style={{
+              marginTop: 18,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-rule)',
+            }}
+          >
+            {views.map((v, i) => {
+              const active = view === v.value;
+              return (
+                <button
+                  key={v.value}
+                  onClick={() => setView(v.value)}
+                  className="font-body"
+                  style={{
+                    padding: '12px 0',
+                    background: 'transparent',
+                    border: 'none',
+                    borderLeft: i === 0 ? 'none' : '1px solid var(--b-rule)',
+                    borderBottom: active ? '2px solid var(--b-accent)' : '2px solid transparent',
+                    cursor: 'pointer',
+                    fontSize: 11,
+                    fontWeight: active ? 700 : 500,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                  }}
+                >
+                  {v.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Period toggle — outlined chips */}
+          <div style={{ display: 'flex', gap: 6, marginTop: 14, flexWrap: 'wrap' }}>
+            {periods.map((p) => {
+              const active = period === p.value;
+              return (
+                <button
+                  key={p.value}
+                  onClick={() => setPeriod(p.value)}
+                  className="font-body"
+                  style={{
+                    padding: '5px 10px',
+                    background: active ? 'var(--b-ink)' : 'transparent',
+                    color: active ? 'var(--b-paper)' : 'var(--b-ink-60)',
+                    border: '1px solid var(--b-ink)',
+                    cursor: 'pointer',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Category picker — only when in per-habit mode */}
+          {view === 'category' && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 6,
+                overflowX: 'auto',
+                paddingBottom: 4,
+                marginTop: 12,
+                scrollbarWidth: 'none',
+              }}
+            >
+              {topCategories.map((cat) => {
+                const selected = selectedCategory === cat.slug;
+                return (
+                  <button
+                    key={cat.slug}
+                    onClick={() => setSelectedCategory(cat.slug)}
+                    className="font-body"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 10px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                      background: selected ? `${cat.color}15` : 'transparent',
+                      border: selected ? `1px solid ${cat.color}80` : '1px solid var(--b-rule)',
+                      cursor: 'pointer',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: selected ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                    }}
+                  >
+                    <CategoryIcon slug={cat.slug} icon={cat.icon} color={cat.color} size="sm" />
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* The Roll — section header */}
+          <div
+            style={{
+              marginTop: 24,
+              paddingTop: 12,
+              borderTop: '1px solid var(--b-ink)',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: 4,
+            }}
+          >
+            <div
+              className="font-display"
+              style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}
+            >
+              The Roll
+            </div>
+            <div
+              className="font-mono tabular"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+            >
+              § {periods.find((p) => p.value === period)?.label.toUpperCase()}
+            </div>
+          </div>
+
+          {/* Table */}
+          <div>
+            {view === 'global' ? (
+              globalLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
+                  {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12" />)}
+                </div>
+              ) : globalEntries.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {globalEntries.map((entry, i) => {
+                    const rank = i + 1;
+                    const isMe = entry.uid === user?.uid;
+                    const score = (entry as unknown as Record<string, number>)[activeField] || 0;
+                    const u = entry as unknown as Record<string, unknown>;
+                    return (
+                      <Row
+                        key={entry.uid}
+                        rank={rank}
+                        isMe={isMe}
+                        username={entry.username}
+                        avatarUrl={entry.avatarUrl}
+                        score={score}
+                        frameId={u.equippedFrame as string | undefined}
+                        nameEffectId={u.equippedNameEffect as string | undefined}
+                        orbTier={(u.orbTier as number) || 1}
+                        orbBaseColor={u.orbBaseColor as string | undefined}
+                        orbPulseColor={u.orbPulseColor as string | undefined}
+                        orbRingColor={u.orbRingColor as string | undefined}
+                      />
+                    );
+                  })}
+                </ul>
+              )
+            ) : view === 'friends' ? (
+              friendsLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
+                  {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12" />)}
+                </div>
+              ) : friendsEntries.length === 0 ? (
+                <FriendsEmpty />
+              ) : (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {friendsEntries.map((entry, i) => {
+                    const rank = i + 1;
+                    const isMe = entry.uid === user?.uid;
+                    const score = (entry as unknown as Record<string, number>)[activeField] || 0;
+                    const u = entry as unknown as Record<string, unknown>;
+                    return (
+                      <Row
+                        key={entry.uid}
+                        rank={rank}
+                        isMe={isMe}
+                        username={entry.username}
+                        avatarUrl={entry.avatarUrl}
+                        score={score}
+                        frameId={u.equippedFrame as string | undefined}
+                        nameEffectId={u.equippedNameEffect as string | undefined}
+                        orbTier={(u.orbTier as number) || 1}
+                        orbBaseColor={u.orbBaseColor as string | undefined}
+                        orbPulseColor={u.orbPulseColor as string | undefined}
+                        orbRingColor={u.orbRingColor as string | undefined}
+                      />
+                    );
+                  })}
+                </ul>
+              )
+            ) : (
+              catLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
+                  {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12" />)}
+                </div>
+              ) : catEntries.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {catEntries.map((entry, i) => {
+                    const rank = i + 1;
+                    const isMe = entry.userId === user?.uid;
+                    const c = cosmeticsById[entry.userId] || {};
+                    return (
+                      <Row
+                        key={entry.userId}
+                        rank={rank}
+                        isMe={isMe}
+                        username={entry.username}
+                        avatarUrl={entry.avatarUrl}
+                        score={entry.score}
+                        delta={entry.delta}
+                        frameId={c.frame}
+                        nameEffectId={c.name}
+                        orbTier={c.tier}
+                        orbBaseColor={c.baseColor}
+                        orbPulseColor={c.pulseColor}
+                        orbRingColor={c.ringColor}
+                      />
+                    );
+                  })}
+                </ul>
+              )
+            )}
+          </div>
         </div>
-      )}
-
-      {/* Table */}
-      <div className="glass-card rounded-2xl overflow-hidden">
-        {view === 'global' ? (
-          globalLoading ? (
-            <div className="p-4 space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
-            </div>
-          ) : globalEntries.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <div className="divide-y divide-[#1e1e30]">
-              {globalEntries.map((entry, i) => {
-                const rank = i + 1;
-                const isMe = entry.uid === user?.uid;
-                const score = (entry as unknown as Record<string, number>)[activeField] || 0;
-                const u = entry as unknown as Record<string, unknown>;
-                return (
-                  <Row
-                    key={entry.uid}
-                    index={i}
-                    rank={rank}
-                    isMe={isMe}
-                    username={entry.username}
-                    avatarUrl={entry.avatarUrl}
-                    score={score}
-                    frameId={u.equippedFrame as string | undefined}
-                    nameEffectId={u.equippedNameEffect as string | undefined}
-                    orbTier={(u.orbTier as number) || 1}
-                    orbBaseColor={u.orbBaseColor as string | undefined}
-                    orbPulseColor={u.orbPulseColor as string | undefined}
-                    orbRingColor={u.orbRingColor as string | undefined}
-                  />
-                );
-              })}
-            </div>
-          )
-        ) : view === 'friends' ? (
-          friendsLoading ? (
-            <div className="p-4 space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
-            </div>
-          ) : friendsEntries.length === 0 ? (
-            <FriendsEmpty />
-          ) : (
-            <div className="divide-y divide-[#1e1e30]">
-              {friendsEntries.map((entry, i) => {
-                const rank = i + 1;
-                const isMe = entry.uid === user?.uid;
-                const score = (entry as unknown as Record<string, number>)[activeField] || 0;
-                const u = entry as unknown as Record<string, unknown>;
-                return (
-                  <Row
-                    key={entry.uid}
-                    index={i}
-                    rank={rank}
-                    isMe={isMe}
-                    username={entry.username}
-                    avatarUrl={entry.avatarUrl}
-                    score={score}
-                    frameId={u.equippedFrame as string | undefined}
-                    nameEffectId={u.equippedNameEffect as string | undefined}
-                    orbTier={(u.orbTier as number) || 1}
-                    orbBaseColor={u.orbBaseColor as string | undefined}
-                    orbPulseColor={u.orbPulseColor as string | undefined}
-                    orbRingColor={u.orbRingColor as string | undefined}
-                  />
-                );
-              })}
-            </div>
-          )
-        ) : (
-          catLoading ? (
-            <div className="p-4 space-y-3">
-              {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
-            </div>
-          ) : catEntries.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <div className="divide-y divide-[#1e1e30]">
-              {catEntries.map((entry, i) => {
-                const rank = i + 1;
-                const isMe = entry.userId === user?.uid;
-                const c = cosmeticsById[entry.userId] || {};
-                return (
-                  <Row
-                    key={entry.userId}
-                    index={i}
-                    rank={rank}
-                    isMe={isMe}
-                    username={entry.username}
-                    avatarUrl={entry.avatarUrl}
-                    score={entry.score}
-                    delta={entry.delta}
-                    frameId={c.frame}
-                    nameEffectId={c.name}
-                    orbTier={c.tier}
-                    orbBaseColor={c.baseColor}
-                    orbPulseColor={c.pulseColor}
-                    orbRingColor={c.ringColor}
-                  />
-                );
-              })}
-            </div>
-          )
-        )}
       </div>
     </div>
   );
 }
 
 function Row({
-  index, rank, isMe, username, avatarUrl, score, delta,
+  rank, isMe, username, avatarUrl, score, delta,
   frameId, nameEffectId, orbTier, orbBaseColor, orbPulseColor, orbRingColor,
 }: {
-  index: number; rank: number; isMe: boolean; username: string; avatarUrl: string; score: number; delta?: number;
+  rank: number; isMe: boolean; username: string; avatarUrl: string; score: number; delta?: number;
   frameId?: string; nameEffectId?: string;
   orbTier?: number; orbBaseColor?: string; orbPulseColor?: string; orbRingColor?: string;
 }) {
+  const rankLabel = rank <= 3 ? romans[rank - 1] : String(rank);
+  const isPodium = rank <= 3;
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: Math.min(index * 0.03, 0.4) }}
-      className={cn('flex items-center gap-3 px-4 py-3', isMe && 'bg-red-500/5')}
+    <li
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '38px 1fr auto',
+        gap: 12,
+        alignItems: 'center',
+        padding: '12px 0',
+        borderBottom: '1px solid var(--b-rule)',
+        background: isMe ? 'var(--b-paper-2, transparent)' : 'transparent',
+      }}
     >
-      <div className={cn('w-10 flex items-center justify-center gap-0.5', rankColor[rank] || 'text-slate-600')}>
-        {rank <= 3 ? (
-          <MedalIcon rank={rank} className={rankColor[rank]} />
-        ) : (
-          <span className="font-mono text-sm font-bold text-slate-600">#{rank}</span>
-        )}
+      <div
+        className="font-display tabular"
+        style={{
+          fontSize: isPodium ? 22 : 14,
+          fontStyle: isPodium ? 'italic' : 'normal',
+          fontWeight: 500,
+          textAlign: 'right',
+          color: isPodium ? 'var(--b-ink)' : 'var(--b-ink-40)',
+          letterSpacing: isPodium ? 0 : '0.02em',
+        }}
+      >
+        {rankLabel}
       </div>
-      <Link href={`/profile/${username}`} className="flex items-center gap-2.5 flex-1 min-w-0">
+      <Link
+        href={`/profile/${username}`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          minWidth: 0,
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
         <FramedAvatar src={avatarUrl} alt={username} size="sm" frameId={frameId} />
-        <div className="min-w-0 flex items-center gap-1.5">
+        <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
           <NamePlate
             name={username}
             effectId={nameEffectId}
             size="sm"
-            className={cn('truncate', isMe && !nameEffectId && 'text-orange-400')}
+            className={isMe && !nameEffectId ? 'truncate' : 'truncate'}
           />
-          {isMe && <span className="text-xs text-orange-500">(you)</span>}
+          {isMe && (
+            <span
+              className="spread"
+              style={{ fontSize: 8, color: 'var(--b-accent)' }}
+            >
+              You
+            </span>
+          )}
           {orbTier !== undefined && (
             <MiniOrb
               tier={orbTier}
               baseColorId={orbBaseColor}
               pulseColorId={orbPulseColor}
               ringColorId={orbRingColor}
-              size={18}
+              size={16}
             />
           )}
         </div>
       </Link>
-      <div className="text-right">
-        <p className="font-mono text-sm font-bold text-white">{score.toLocaleString()}</p>
+      <div style={{ textAlign: 'right' }}>
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 13, fontWeight: 600 }}
+        >
+          {score.toLocaleString()}
+        </div>
         {typeof delta === 'number' && delta !== 0 && (
-          <p className={cn('text-[10px] font-mono', delta > 0 ? 'text-emerald-400' : 'text-red-400')}>
+          <div
+            className="font-mono"
+            style={{
+              fontSize: 9,
+              color: delta > 0 ? '#34d399' : '#ef4444',
+              marginTop: 1,
+            }}
+          >
             {delta > 0 ? `▲${delta}` : `▼${Math.abs(delta)}`}
-          </p>
+          </div>
         )}
       </div>
-    </motion.div>
+    </li>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="p-12 text-center">
-      <div className="mb-3"><TrophyIconFull size={40} className="text-yellow-400 mx-auto" /></div>
-      <p className="text-slate-500">No entries yet. Be the first!</p>
+    <div style={{ textAlign: 'center', padding: '48px 0' }}>
+      <p
+        className="font-display"
+        style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+      >
+        No entries yet.
+      </p>
+      <p
+        className="font-body"
+        style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+      >
+        Be the first.
+      </p>
     </div>
   );
 }
 
 function FriendsEmpty() {
   return (
-    <div className="p-12 text-center">
-      <div className="mb-3"><TrophyIconFull size={40} className="text-pink-400 mx-auto" /></div>
-      <p className="text-slate-300 font-semibold">Just you here — for now</p>
-      <p className="text-slate-500 text-sm mt-1">Add friends to race them across weekly, monthly, and all-time XP.</p>
+    <div style={{ textAlign: 'center', padding: '48px 0' }}>
+      <p
+        className="font-display"
+        style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+      >
+        Just you here.
+      </p>
+      <p
+        className="font-body"
+        style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 280, marginInline: 'auto' }}
+      >
+        Add friends to race them across weekly, monthly, and all-time XP.
+      </p>
       <Link
         href="/friends"
-        className="inline-block mt-4 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider border border-pink-500/40 bg-pink-500/10 text-pink-300 hover:bg-pink-500/20 transition-colors"
+        className="font-body"
+        style={{
+          display: 'inline-block',
+          marginTop: 16,
+          padding: '8px 14px',
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'var(--b-paper)',
+          background: 'var(--b-ink)',
+          textDecoration: 'none',
+        }}
       >
-        Find friends
+        Find friends →
       </Link>
     </div>
   );

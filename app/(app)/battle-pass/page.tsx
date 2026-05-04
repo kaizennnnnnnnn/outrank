@@ -9,14 +9,8 @@ import { updateDocument } from '@/lib/firestore';
 import { increment, arrayUnion } from 'firebase/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { Button } from '@/components/ui/Button';
-import { cn } from '@/lib/utils';
-
-const rankStyles = {
-  minor:    { color: '#cbd5e1', bg: 'rgba(148,163,184,0.08)',  border: 'rgba(148,163,184,0.22)' },
-  medium:   { color: '#60a5fa', bg: 'rgba(59,130,246,0.12)',   border: 'rgba(59,130,246,0.40)' },
-  major:    { color: '#fbbf24', bg: 'rgba(245,158,11,0.14)',   border: 'rgba(245,158,11,0.50)' },
-  capstone: { color: '#f9a8d4', bg: 'rgba(236,72,153,0.18)',   border: 'rgba(236,72,153,0.55)' },
-} as const;
+import { Masthead } from '@/components/editorial/Masthead';
+import { BLockGlyph } from '@/components/editorial/BGlyphs';
 
 export default function BattlePassPage() {
   const { user } = useAuth();
@@ -28,19 +22,15 @@ export default function BattlePassPage() {
   const currentTier = getSeasonPassTier(seasonPassXP);
   const season = getCurrentSeason();
   const daysLeft = getSeasonDaysLeft();
-  // XP position within the current tier — used for the progress bar so the
-  // user can see exactly how much is needed to tier up. Before this, pass
-  // progression was invisible.
   const xpInTier = seasonPassXP % SEASON_PASS_XP_PER_TIER;
   const xpToNext = SEASON_PASS_XP_PER_TIER - xpInTier;
   const tierProgress = (xpInTier / SEASON_PASS_XP_PER_TIER) * 100;
-  // Premium track is permanently locked for now (coming soon).
+  const seasonProgress = (currentTier / SEASON_PASS_TIERS) * 100;
   const isPremium = false;
   const claimed = (userRaw?.claimedPassTiers as number[]) || [];
 
   const [claiming, setClaiming] = useState<string | null>(null);
 
-  // ---- Mission progress + claim bookkeeping ----
   const todayStr = new Date().toDateString();
   const weekStr = isoWeekKey();
   const dailyClaimed = (userRaw?.dailyMissionsClaimed as Record<string, string>) || {};
@@ -97,14 +87,6 @@ export default function BattlePassPage() {
 
   const claimKey = (row: PassRow) => `${row.tier}-${row.track}`;
 
-  const canClaim = (row: PassRow) =>
-    row.tier <= currentTier &&
-    !claimed.includes(parseInt(claimKey(row)) as never) &&
-    !claimedSet().has(claimKey(row)) &&
-    (row.track === 'free' || isPremium);
-
-  // We store claimed rows as string keys `${tier}-free` or `${tier}-premium` in
-  // the same claimedPassTiers array for simplicity.
   function claimedSet(): Set<string> {
     return new Set((claimed as unknown as string[]).map(String));
   }
@@ -131,7 +113,6 @@ export default function BattlePassPage() {
     }
   };
 
-  // Group free + premium rows per tier so we render one row per tier with two reward cells
   const grouped: Record<number, { free: PassRow; premium: PassRow }> = {};
   for (const r of BATTLE_PASS) {
     grouped[r.tier] = grouped[r.tier] || ({} as { free: PassRow; premium: PassRow });
@@ -142,245 +123,275 @@ export default function BattlePassPage() {
   if (!user) return null;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
-      {/* Header — premium banner with layered gradients + chromatic dust + animated progress */}
-      <div
-        className="relative overflow-hidden rounded-2xl border"
-        style={{
-          background:
-            'radial-gradient(ellipse 120% 100% at 100% 0%, rgba(236,72,153,0.22), transparent 50%),' +
-            'radial-gradient(ellipse 120% 100% at 0% 100%, rgba(251,191,36,0.18), transparent 60%),' +
-            'linear-gradient(135deg, rgba(249,115,22,0.22), rgba(220,38,38,0.1) 40%, #0b0b14 100%)',
-          borderColor: 'rgba(251,191,36,0.35)',
-          boxShadow: '0 0 44px -14px rgba(249,115,22,0.55), inset 0 1px 0 rgba(251,191,36,0.18)',
-        }}
-      >
-        {/* Chromatic dust — scattered gems */}
-        {Array.from({ length: 20 }).map((_, i) => {
-          const left = (i * 37) % 100;
-          const top = (i * 61) % 100;
-          const size = 2 + (i % 3);
-          const colors = ['#fbbf24', '#ec4899', '#60a5fa', '#f97316', '#a855f7'];
-          return (
-            <span
-              key={i}
-              className="absolute rounded-full pointer-events-none animate-frame-pulse"
-              style={{
-                left: `${left}%`,
-                top: `${top}%`,
-                width: size,
-                height: size,
-                background: colors[i % colors.length],
-                boxShadow: `0 0 6px ${colors[i % colors.length]}`,
-                opacity: 0.55,
-                animationDelay: `${(i % 7) * 0.3}s`,
-              }}
-            />
-          );
-        })}
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section={`Volume ${season}`} />
 
-        <div className="relative p-5">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Volume {season} · {daysLeft}d remaining
+          </div>
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+          >
+            <em style={{ fontStyle: 'italic' }}>The Season Pass</em>
+          </h1>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 360, lineHeight: 1.5 }}
+          >
+            Every habit log earns season-pass XP. Climb {SEASON_PASS_TIERS} tiers to claim exclusive cosmetics.
+          </p>
+
+          {/* Tier strip — current tier on the right, season progress bar */}
+          <div
+            style={{
+              marginTop: 18,
+              padding: '14px 0',
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-rule)',
+              display: 'grid',
+              gridTemplateColumns: '1fr auto',
+              gap: 16,
+              alignItems: 'center',
+            }}
+          >
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-[0.25em] bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
-                  Season {season}
-                </span>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest">·</span>
-                <span className="text-[10px] text-slate-400 font-mono">{daysLeft}d left</span>
+              <div
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+              >
+                Tier {currentTier} → {currentTier + 1}
               </div>
-              <h1 className="font-heading text-4xl font-bold mt-1.5 leading-none">
-                <span className="bg-gradient-to-r from-yellow-200 via-orange-300 to-pink-300 bg-clip-text text-transparent">
-                  Battle Pass
-                </span>
-              </h1>
-              <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed max-w-[260px]">
-                Every habit log earns season-pass XP. Climb 60 tiers to claim exclusive cosmetics.
-              </p>
+              <div
+                className="font-body tabular"
+                style={{ fontSize: 11, color: 'var(--b-ink)', marginTop: 2 }}
+              >
+                <b>{xpInTier}</b>
+                <span style={{ color: 'var(--b-ink-60)' }}> / {SEASON_PASS_XP_PER_TIER}</span>
+                <span style={{ color: 'var(--b-ink-60)' }}> Pass XP</span>
+              </div>
+              {/* Tier progress bar — hairline + filled */}
+              <div
+                style={{
+                  marginTop: 6,
+                  height: 2,
+                  background: 'var(--b-rule)',
+                  position: 'relative',
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${Math.max(2, tierProgress)}%`,
+                    background: 'var(--b-accent)',
+                    transition: 'width 700ms',
+                  }}
+                />
+              </div>
+              <div
+                className="font-body"
+                style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 6 }}
+              >
+                {xpToNext} more for tier {currentTier + 1}
+              </div>
             </div>
-
-            {/* Big tier crystal */}
-            <div
-              className="relative flex flex-col items-center justify-center py-3 px-4 rounded-xl animate-frame-pulse"
-              style={{
-                background: 'linear-gradient(145deg, rgba(251,191,36,0.18), rgba(236,72,153,0.12))',
-                border: '1px solid rgba(251,191,36,0.5)',
-                boxShadow: '0 0 24px -6px rgba(251,191,36,0.6), inset 0 0 12px rgba(251,191,36,0.15)',
-              }}
-            >
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-yellow-300">Tier</p>
-              <p className="font-heading text-4xl font-bold leading-none mt-0.5 bg-gradient-to-b from-yellow-100 to-orange-400 bg-clip-text text-transparent">
+            <div style={{ textAlign: 'center' }}>
+              <div
+                className="font-display tabular"
+                style={{ fontSize: 38, fontStyle: 'italic', fontWeight: 500, lineHeight: 1, color: 'var(--b-accent)' }}
+              >
                 {currentTier}
-              </p>
-              <p className="text-[9px] text-slate-500 font-mono mt-1">/ {SEASON_PASS_TIERS}</p>
+              </div>
+              <div
+                className="font-mono tabular"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 2 }}
+              >
+                / {SEASON_PASS_TIERS}
+              </div>
             </div>
           </div>
 
-          {/* Season progress bar — tiers 0 → 60 */}
-          <div className="relative mt-5">
-            <div className="h-3 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30] relative">
+          {/* Season-wide bar */}
+          <div style={{ marginTop: 12 }}>
+            <div
+              style={{
+                height: 4,
+                background: 'var(--b-rule)',
+                position: 'relative',
+              }}
+            >
               <div
-                className="h-full rounded-full transition-all duration-700"
                 style={{
-                  width: `${Math.max(3, (currentTier / SEASON_PASS_TIERS) * 100)}%`,
-                  background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24, #ec4899)',
-                  backgroundSize: '200% 100%',
-                  animation: 'awakening-fill-flow 3.5s linear infinite',
-                  boxShadow: '0 0 16px rgba(251,191,36,0.55)',
+                  height: '100%',
+                  width: `${Math.max(2, seasonProgress)}%`,
+                  background: 'var(--b-ink)',
                 }}
               />
               {[10, 20, 30, 40, 50].map((n) => (
                 <span
                   key={n}
-                  className="absolute top-0 bottom-0 w-[1.5px] bg-[#0d0d15]"
-                  style={{ left: `${(n / SEASON_PASS_TIERS) * 100}%` }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: `${(n / SEASON_PASS_TIERS) * 100}%`,
+                    width: 1,
+                    background: 'var(--b-paper)',
+                  }}
                 />
               ))}
             </div>
-            <div className="flex justify-between text-[9px] text-slate-600 font-mono mt-1 px-0.5">
+            <div
+              className="font-mono tabular"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontSize: 8,
+                color: 'var(--b-ink-40)',
+                marginTop: 4,
+              }}
+            >
               <span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span>
             </div>
           </div>
 
-          {/* Current-tier XP bar — shows exactly how close you are to the
-              next tier, so progress stops feeling "random". */}
-          {currentTier < SEASON_PASS_TIERS && (
-            <div className="relative mt-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-yellow-200/90">
-                  Tier {currentTier} → {currentTier + 1}
-                </span>
-                <span className="text-[11px] font-mono text-yellow-200">
-                  <b>{xpInTier}</b>
-                  <span className="text-slate-500"> / {SEASON_PASS_XP_PER_TIER}</span>
-                </span>
-              </div>
-              <div className="h-2 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30] relative">
-                <div
-                  className="h-full rounded-full transition-all duration-700 relative overflow-hidden"
-                  style={{
-                    width: `${Math.max(2, tierProgress)}%`,
-                    background: 'linear-gradient(90deg, #fbbf24, #f97316, #ec4899)',
-                    backgroundSize: '200% 100%',
-                    animation: 'awakening-fill-flow 2.4s linear infinite',
-                    boxShadow: '0 0 10px rgba(251,191,36,0.6)',
-                  }}
-                >
-                  <div
-                    className="absolute inset-y-0 w-1/3 pointer-events-none"
-                    style={{
-                      background: 'linear-gradient(95deg, transparent, rgba(255,255,255,0.55), transparent)',
-                      animation: 'awakening-shimmer 2.4s ease-in-out infinite',
-                      willChange: 'transform',
-                    }}
-                  />
-                </div>
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1.5 text-center">
-                <b className="text-yellow-200">{xpToNext} Pass XP</b> to tier {currentTier + 1}. Complete missions below for chunky rewards.
-              </p>
-            </div>
-          )}
-
-          {/* Premium track — locked banner */}
+          {/* Premium banner — locked */}
           <div
-            className="relative mt-4 w-full rounded-xl py-2.5 px-3 text-center flex items-center justify-center gap-2"
             style={{
-              background:
-                'linear-gradient(90deg, rgba(236,72,153,0.18), rgba(249,115,22,0.14) 50%, rgba(251,191,36,0.14))',
-              border: '1px solid rgba(236,72,153,0.35)',
-              boxShadow: 'inset 0 1px 0 rgba(236,72,153,0.25)',
+              marginTop: 14,
+              padding: '10px 14px',
+              border: '1px dashed var(--b-rule)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              justifyContent: 'center',
+              color: 'var(--b-ink-60)',
             }}
           >
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-300">
-              <rect x="3" y="11" width="18" height="11" rx="2" />
-              <path d="M7 11V7a5 5 0 0110 0v4" />
-            </svg>
-            <span className="text-xs font-bold bg-gradient-to-r from-pink-300 via-orange-300 to-yellow-300 bg-clip-text text-transparent">
+            <BLockGlyph size={12} />
+            <span
+              className="spread"
+              style={{ fontSize: 9 }}
+            >
               Premium Track — coming soon
             </span>
           </div>
-        </div>
-      </div>
 
-      {/* Missions — primary way to earn Pass XP. Separate from random habit
-          logging so the user always has concrete "claim +200" tasks visible. */}
-      <MissionsPanel
-        missions={MISSIONS}
-        progressFor={missionProgress}
-        claimedFor={missionClaimed}
-        onClaim={handleClaimMission}
-        claimingId={claiming}
-      />
+          {/* Missions section */}
+          <MissionsPanel
+            missions={MISSIONS}
+            progressFor={missionProgress}
+            claimedFor={missionClaimed}
+            onClaim={handleClaimMission}
+            claimingId={claiming}
+          />
 
-      {/* Column headers */}
-      <div className="grid grid-cols-[52px_1fr_1fr] gap-2 px-1">
-        <div />
-        <div className="text-center">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Free</span>
-        </div>
-        <div className="text-center">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] bg-gradient-to-r from-pink-400 via-orange-400 to-yellow-300 bg-clip-text text-transparent">
-            Premium
-          </span>
-        </div>
-      </div>
-
-      {/* Tier list */}
-      <div className="space-y-1.5">
-        {tiers.map(({ free, premium }) => {
-          const reached = free.tier <= currentTier;
-          const freeKey = `${free.tier}-free`;
-          const premKey = `${free.tier}-premium`;
-          const freeClaimed = claimedSet().has(freeKey);
-          const premClaimed = claimedSet().has(premKey);
-          const isMilestone = free.tier % 10 === 0 || free.tier === 60;
-          return (
+          {/* Section header for tiers */}
+          <div
+            style={{
+              marginTop: 28,
+              paddingTop: 12,
+              borderTop: '1px solid var(--b-ink)',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: 8,
+            }}
+          >
+            <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+              The Tier Ladder
+            </div>
             <div
-              key={free.tier}
-              className={cn(
-                'grid grid-cols-[52px_1fr_1fr] gap-2 p-2 rounded-xl border transition-colors relative overflow-hidden',
-                reached ? 'bg-[#0b0b14]' : 'bg-[#08080e] opacity-80',
-              )}
-              style={{
-                border: `1px solid ${isMilestone && reached ? 'rgba(251,191,36,0.35)' : '#1e1e30'}`,
-                boxShadow: isMilestone && reached ? '0 0 22px -10px rgba(251,191,36,0.5)' : undefined,
-              }}
+              className="font-mono tabular"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
             >
-              {/* Milestone ambient glow */}
-              {isMilestone && reached && (
-                <div
-                  className="absolute -top-8 left-1/2 -translate-x-1/2 w-40 h-16 blur-3xl pointer-events-none"
-                  style={{ background: 'radial-gradient(ellipse, rgba(251,191,36,0.35), transparent 70%)' }}
-                />
-              )}
+              § {String(SEASON_PASS_TIERS).padStart(2, '0')}
+            </div>
+          </div>
 
-              {/* Tier badge */}
+          {/* Column header */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '40px 1fr 1fr',
+              gap: 8,
+              padding: '6px 0',
+              borderBottom: '1px solid var(--b-rule)',
+            }}
+          >
+            <div />
+            <div
+              className="spread"
+              style={{ fontSize: 8, color: 'var(--b-ink-60)', textAlign: 'center' }}
+            >
+              Free
+            </div>
+            <div
+              className="spread"
+              style={{ fontSize: 8, color: 'var(--b-ink-40)', textAlign: 'center' }}
+            >
+              Premium
+            </div>
+          </div>
+
+          {/* Tier rows */}
+          {tiers.map(({ free, premium }) => {
+            const reached = free.tier <= currentTier;
+            const freeKey = `${free.tier}-free`;
+            const premKey = `${free.tier}-premium`;
+            const freeClaimed = claimedSet().has(freeKey);
+            const premClaimedFlag = claimedSet().has(premKey);
+            const isMilestone = free.tier % 10 === 0 || free.tier === 60;
+            return (
               <div
-                className={cn(
-                  'relative flex flex-col items-center justify-center rounded-lg font-heading font-bold',
-                  isMilestone && 'shadow-[inset_0_0_12px_rgba(251,191,36,0.2)]',
-                )}
+                key={free.tier}
                 style={{
-                  background: isMilestone && reached
-                    ? 'linear-gradient(145deg, rgba(251,191,36,0.18), rgba(249,115,22,0.1))'
-                    : reached
-                      ? 'rgba(249,115,22,0.12)'
-                      : '#0b0b14',
-                  border: `1px solid ${isMilestone && reached ? 'rgba(251,191,36,0.55)' : reached ? 'rgba(249,115,22,0.5)' : '#1e1e30'}`,
+                  display: 'grid',
+                  gridTemplateColumns: '40px 1fr 1fr',
+                  gap: 8,
+                  padding: '10px 0',
+                  borderBottom: isMilestone ? '1px solid var(--b-ink)' : '1px solid var(--b-rule)',
+                  opacity: reached ? 1 : 0.55,
                 }}
               >
-                <span className="text-lg"
-                  style={{ color: isMilestone && reached ? '#fbbf24' : reached ? '#f97316' : '#475569' }}>
+                {/* Tier number */}
+                <div
+                  className="font-display tabular"
+                  style={{
+                    fontSize: isMilestone ? 22 : 16,
+                    fontStyle: isMilestone ? 'italic' : 'normal',
+                    fontWeight: 500,
+                    textAlign: 'center',
+                    color: reached
+                      ? (isMilestone ? 'var(--b-accent)' : 'var(--b-ink)')
+                      : 'var(--b-ink-40)',
+                  }}
+                >
                   {free.tier}
-                </span>
+                </div>
+                <RewardCell
+                  row={free}
+                  reached={reached}
+                  claimed={freeClaimed}
+                  locked={false}
+                  onClaim={() => handleClaim(free)}
+                  claiming={claiming === freeKey}
+                />
+                <RewardCell
+                  row={premium}
+                  reached={reached}
+                  claimed={premClaimedFlag}
+                  locked={!isPremium}
+                  onClaim={() => handleClaim(premium)}
+                  claiming={claiming === premKey}
+                />
               </div>
-
-              <RewardCell row={free} reached={reached} claimed={freeClaimed} locked={false} onClaim={() => handleClaim(free)} claiming={claiming === freeKey} />
-              <RewardCell row={premium} reached={reached} claimed={premClaimed} locked={!isPremium} onClaim={() => handleClaim(premium)} claiming={claiming === premKey} />
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -391,62 +402,72 @@ function RewardCell({
 }: {
   row: PassRow; reached: boolean; claimed: boolean; locked: boolean; onClaim: () => void; claiming: boolean;
 }) {
-  const s = rankStyles[row.rank];
   const isPremium = row.track === 'premium';
-
   return (
     <div
-      className="relative rounded-lg p-2 overflow-hidden"
       style={{
-        background: isPremium
-          // Premium cells get a pink→orange→yellow tinted surface regardless of rank,
-          // so at-a-glance the two tracks look different.
-          ? reached
-            ? 'linear-gradient(135deg, rgba(236,72,153,0.15), rgba(249,115,22,0.08) 50%, rgba(251,191,36,0.08))'
-            : 'linear-gradient(135deg, rgba(236,72,153,0.06), rgba(251,191,36,0.04))'
-          : reached ? s.bg : '#0b0b14',
-        border: `1px solid ${
-          isPremium
-            ? reached ? 'rgba(251,191,36,0.4)' : 'rgba(236,72,153,0.25)'
-            : reached ? s.border : '#1e1e30'
-        }`,
+        position: 'relative',
+        padding: '8px 10px',
+        border: '1px solid var(--b-rule)',
+        background: claimed
+          ? 'rgba(16,185,129,0.06)'
+          : reached
+            ? 'transparent'
+            : 'transparent',
+        opacity: locked ? 0.45 : 1,
       }}
     >
-      {/* Premium lock overlay + shimmer */}
-      {isPremium && locked && (
-        <>
-          <div
-            className="absolute inset-0 rounded-lg pointer-events-none"
-            style={{
-              background:
-                'repeating-linear-gradient(45deg, rgba(0,0,0,0.35) 0 6px, transparent 6px 12px)',
-            }}
-          />
-          <div className="absolute top-1 right-1">
-            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-pink-300">
-              <rect x="3" y="11" width="18" height="11" rx="2" />
-              <path d="M7 11V7a5 5 0 0110 0v4" />
-            </svg>
-          </div>
-        </>
+      {locked && (
+        <div style={{ position: 'absolute', top: 4, right: 4, color: 'var(--b-ink-40)' }}>
+          <BLockGlyph size={10} />
+        </div>
       )}
-
-      <div className="relative flex items-center justify-between gap-1">
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
         <span
-          className={cn('text-[8px] font-bold uppercase tracking-wider',
-            isPremium && 'bg-gradient-to-r from-pink-400 to-yellow-300 bg-clip-text text-transparent')}
-          style={{ color: isPremium ? undefined : reached ? s.color : '#475569' }}
+          className="spread"
+          style={{
+            fontSize: 8,
+            color: isPremium ? 'var(--b-ink-40)' : 'var(--b-ink-60)',
+          }}
         >
-          {isPremium ? 'Premium' : s === rankStyles.minor ? 'Free' : s === rankStyles.capstone ? 'Capstone' : s === rankStyles.major ? 'Major' : 'Milestone'}
+          {row.rank === 'capstone' ? 'Capstone' : row.rank === 'major' ? 'Major' : row.rank === 'medium' ? 'Milestone' : 'Free'}
         </span>
-        {claimed && <span className="text-[8px] font-bold text-emerald-400 uppercase">Claimed</span>}
+        {claimed && (
+          <span
+            className="spread"
+            style={{ fontSize: 8, color: '#10b981' }}
+          >
+            ✓
+          </span>
+        )}
       </div>
-      <p className={cn('relative font-mono text-sm font-bold mt-0.5', isPremium ? 'text-yellow-200' : 'text-white')}>
+      <div
+        className="font-display tabular"
+        style={{
+          fontSize: 16,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          marginTop: 2,
+          color: claimed ? 'var(--b-ink-60)' : 'var(--b-ink)',
+        }}
+      >
         +{row.fragments}
-      </p>
-      {row.extra && <p className={cn('relative text-[9px] leading-tight', isPremium ? 'text-pink-200/80' : 'text-slate-500')}>{row.extra}</p>}
+      </div>
+      {row.extra && (
+        <div
+          className="font-body"
+          style={{
+            fontSize: 10,
+            color: 'var(--b-ink-60)',
+            marginTop: 1,
+            lineHeight: 1.3,
+          }}
+        >
+          {row.extra}
+        </div>
+      )}
       {reached && !claimed && !locked && (
-        <Button size="sm" className="w-full mt-1.5" loading={claiming} onClick={onClaim}>
+        <Button size="sm" className="w-full mt-2" loading={claiming} onClick={onClaim}>
           Claim
         </Button>
       )}
@@ -454,12 +475,10 @@ function RewardCell({
   );
 }
 
-// ---- Missions panel ----
-
-const kindAccent: Record<Mission['kind'], { label: string; color: string; chipBg: string; chipBorder: string }> = {
-  daily:     { label: 'Daily',     color: '#f97316', chipBg: 'rgba(249,115,22,0.14)', chipBorder: 'rgba(249,115,22,0.45)' },
-  weekly:    { label: 'Weekly',    color: '#60a5fa', chipBg: 'rgba(96,165,250,0.14)', chipBorder: 'rgba(96,165,250,0.45)' },
-  permanent: { label: 'Milestone', color: '#fbbf24', chipBg: 'rgba(251,191,36,0.16)', chipBorder: 'rgba(251,191,36,0.55)' },
+const kindLabel: Record<Mission['kind'], { label: string; color: string }> = {
+  daily:     { label: 'Daily',     color: '#f97316' },
+  weekly:    { label: 'Weekly',    color: '#60a5fa' },
+  permanent: { label: 'Milestone', color: '#fbbf24' },
 };
 
 function MissionsPanel({
@@ -471,30 +490,35 @@ function MissionsPanel({
   onClaim: (m: Mission) => void;
   claimingId: string | null;
 }) {
-  // Sort: ready-to-claim first, then in-progress, then claimed
   const ready = missions.filter((m) => !claimedFor(m) && progressFor(m) >= m.goal);
   const inProgress = missions.filter((m) => !claimedFor(m) && progressFor(m) < m.goal);
   const done = missions.filter((m) => claimedFor(m));
   const ordered = [...ready, ...inProgress, ...done];
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center gap-2">
-        <span
-          className="w-1.5 h-1.5 rounded-full animate-pulse"
-          style={{ background: '#fbbf24', boxShadow: '0 0 8px #fbbf24' }}
-        />
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-yellow-200">
+    <section style={{ marginTop: 24 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
           Missions
-        </p>
-        {ready.length > 0 && (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400 bg-orange-500/15 border border-orange-500/40 px-1.5 py-0.5 rounded animate-notif-dot-pulse">
-            {ready.length} ready
-          </span>
-        )}
+        </div>
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 9, color: ready.length > 0 ? 'var(--b-accent)' : 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+        >
+          {ready.length > 0 ? `${ready.length} READY` : `§ ${String(missions.length).padStart(2, '0')}`}
+        </div>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div style={{ display: 'grid', gap: 10 }} className="sm:grid-cols-2">
         {ordered.map((m) => (
           <MissionCard
             key={m.id}
@@ -519,107 +543,124 @@ function MissionCard({
   claiming: boolean;
   onClaim: () => void;
 }) {
-  const accent = kindAccent[mission.kind];
+  const accent = kindLabel[mission.kind];
   const pct = Math.min(100, (progress / mission.goal) * 100);
   const ready = !claimed && progress >= mission.goal;
 
   return (
     <div
-      className={cn(
-        'relative rounded-xl p-3 border overflow-hidden transition-all',
-        ready && 'animate-notif-unread-pulse',
-      )}
       style={{
-        background: claimed
-          ? 'linear-gradient(145deg, rgba(16,185,129,0.08), #0b0b14 70%)'
-          : ready
-            ? `linear-gradient(145deg, ${accent.chipBg}, ${accent.chipBg.replace('0.14', '0.06').replace('0.16', '0.06')} 60%, #0b0b14 100%)`
-            : 'linear-gradient(145deg, #10101a, #0b0b14 80%)',
-        borderColor: claimed
-          ? 'rgba(16,185,129,0.3)'
-          : ready
-            ? accent.chipBorder
-            : '#1e1e30',
-        boxShadow: ready ? `inset 0 0 12px ${accent.color}22` : undefined,
+        position: 'relative',
+        padding: '12px 14px',
+        border: ready ? `1px solid ${accent.color}` : '1px solid var(--b-rule)',
+        borderLeft: `3px solid ${claimed ? '#10b981' : accent.color}`,
+        background: claimed ? 'rgba(16,185,129,0.04)' : 'transparent',
       }}
     >
-      {/* Accent stripe */}
-      <div
-        className="absolute top-0 left-0 bottom-0 w-[2px]"
-        style={{
-          background: claimed ? '#10b981' : accent.color,
-          opacity: claimed ? 0.8 : ready ? 1 : 0.5,
-          boxShadow: ready ? `0 0 6px ${accent.color}` : undefined,
-        }}
-      />
-
-      <div className="relative">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <span
-              className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-block"
-              style={{
-                background: accent.chipBg,
-                color: accent.color,
-                border: `1px solid ${accent.chipBorder}`,
-              }}
-            >
-              {accent.label}
-            </span>
-            <p className={cn('text-sm font-semibold mt-1.5 leading-tight', claimed ? 'text-slate-500 line-through' : 'text-white')}>
-              {mission.text}
-            </p>
-            {mission.hint && !claimed && (
-              <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{mission.hint}</p>
-            )}
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Pass XP</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span
+            className="spread"
+            style={{ fontSize: 8, color: accent.color }}
+          >
+            {accent.label}
+          </span>
+          <p
+            className="font-body"
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              marginTop: 4,
+              lineHeight: 1.35,
+              color: claimed ? 'var(--b-ink-60)' : 'var(--b-ink)',
+              textDecoration: claimed ? 'line-through' : 'none',
+            }}
+          >
+            {mission.text}
+          </p>
+          {mission.hint && !claimed && (
             <p
-              className="font-mono text-lg font-bold leading-none mt-0.5"
-              style={{ color: claimed ? '#64748b' : accent.color }}
-            >
-              +{mission.reward}
-            </p>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="mt-2.5">
-          <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
-            <span>{progress} / {mission.goal}</span>
-            <span>{Math.floor(pct)}%</span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden bg-[#0d0d15] border border-[#1e1e30]">
-            <div
-              className="h-full rounded-full transition-all duration-500"
+              className="font-body"
               style={{
-                width: `${Math.max(2, pct)}%`,
-                background: claimed
-                  ? 'linear-gradient(90deg, #10b981, #34d399)'
-                  : `linear-gradient(90deg, ${accent.color}, ${accent.color}cc)`,
-                boxShadow: ready ? `0 0 8px ${accent.color}` : undefined,
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                marginTop: 2,
+                lineHeight: 1.4,
               }}
-            />
-          </div>
-        </div>
-
-        {/* Action */}
-        <div className="mt-2.5">
-          {claimed ? (
-            <p className="text-[10px] text-center text-emerald-400 font-bold uppercase tracking-widest py-1">
-              Claimed ✓
-            </p>
-          ) : ready ? (
-            <Button size="sm" className="w-full" loading={claiming} onClick={onClaim}>
-              Claim +{mission.reward} XP
-            </Button>
-          ) : (
-            <p className="text-[10px] text-center text-slate-600 py-1">
-              {mission.goal - progress} to go
+            >
+              {mission.hint}
             </p>
           )}
         </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div
+            className="spread"
+            style={{ fontSize: 8, color: 'var(--b-ink-60)' }}
+          >
+            Pass XP
+          </div>
+          <div
+            className="font-display tabular"
+            style={{
+              fontSize: 18,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1,
+              marginTop: 2,
+              color: claimed ? 'var(--b-ink-60)' : accent.color,
+            }}
+          >
+            +{mission.reward}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 8 }}>
+        <div
+          className="font-mono tabular"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: 9,
+            color: 'var(--b-ink-60)',
+            marginBottom: 4,
+          }}
+        >
+          <span>{progress} / {mission.goal}</span>
+          <span>{Math.floor(pct)}%</span>
+        </div>
+        <div style={{ height: 2, background: 'var(--b-rule)' }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${Math.max(2, pct)}%`,
+              background: claimed ? '#10b981' : accent.color,
+              transition: 'width 500ms',
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ marginTop: 10 }}>
+        {claimed ? (
+          <p
+            className="spread"
+            style={{ fontSize: 9, color: '#10b981', textAlign: 'center', padding: '4px 0' }}
+          >
+            Claimed ✓
+          </p>
+        ) : ready ? (
+          <Button size="sm" className="w-full" loading={claiming} onClick={onClaim}>
+            Claim +{mission.reward} XP
+          </Button>
+        ) : (
+          <p
+            className="font-body"
+            style={{ fontSize: 10, color: 'var(--b-ink-40)', textAlign: 'center', padding: '4px 0' }}
+          >
+            {mission.goal - progress} to go
+          </p>
+        )}
       </div>
     </div>
   );

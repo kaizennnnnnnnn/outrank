@@ -21,6 +21,7 @@ import { useUIStore } from '@/store/uiStore';
 import { UserProfile } from '@/types/user';
 import { UsersFullIcon, SwordsCrossIcon } from '@/components/ui/AppIcons';
 import { FriendHabitModal } from '@/components/social/FriendHabitModal';
+import { Masthead } from '@/components/editorial/Masthead';
 import Link from 'next/link';
 
 // Cosmetic fields aren't declared on UserProfile but live on the same doc.
@@ -206,340 +207,524 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Premium header — matches the Orb / Messages page treatment */}
-      <div
-        className="relative overflow-hidden rounded-2xl p-5 border"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(249,115,22,0.24), transparent 55%),' +
-            'radial-gradient(ellipse 60% 60% at 0% 100%, rgba(236,72,153,0.14), transparent 60%),' +
-            'linear-gradient(165deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(249,115,22,0.28)',
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-300">Your Circle</p>
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-0.5">Friends</h1>
-            <p className="text-[11px] text-slate-500 mt-1 max-w-sm">
-              Build an inner circle. Challenge, message, and race them across the leaderboards.
-            </p>
-          </div>
-          {/* Stat chips: friends / pending */}
-          <div className="flex gap-2 shrink-0">
-            <StatChip label="Friends" value={friendCount} tint="#f97316" />
-            {pendingCount > 0 && (
-              <StatChip label="Pending" value={pendingCount} tint="#fbbf24" />
-            )}
-          </div>
-        </div>
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Your Circle" />
 
-      {/* Friends League + Pacts shortcuts — the social-stakes surfaces */}
-      {friendCount > 0 && (
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            href="/friends-league"
-            className="relative overflow-hidden rounded-2xl p-3 border transition-colors hover:border-violet-500/40"
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Your Circle
+          </div>
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+          >
+            <em style={{ fontStyle: 'italic' }}>Friends</em>
+          </h1>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 360, lineHeight: 1.5 }}
+          >
+            Build an inner circle. Challenge, message, and race them across the leaderboards.
+          </p>
+
+          {/* Inline stat strip */}
+          <div
             style={{
-              background: 'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(168,85,247,0.18), transparent 55%), linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-              borderColor: 'rgba(168,85,247,0.22)',
+              marginTop: 14,
+              display: 'grid',
+              gridTemplateColumns: pendingCount > 0 ? 'repeat(2, 1fr)' : '1fr',
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-rule)',
             }}
           >
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-violet-400">
-              Weekly
-            </p>
-            <p className="font-heading text-base font-bold text-white mt-0.5">Friends League</p>
-            <p className="text-[10px] font-mono text-slate-500 mt-1">Top 3 split fragments →</p>
-          </Link>
-          <Link
-            href="/pacts"
-            className="relative overflow-hidden rounded-2xl p-3 border transition-colors hover:border-orange-500/40"
-            style={{
-              background: 'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(249,115,22,0.18), transparent 55%), linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-              borderColor: 'rgba(249,115,22,0.22)',
-            }}
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
-              Pacts
-            </p>
-            <p className="font-heading text-base font-bold text-white mt-0.5">
-              {activePacts.length} active
-            </p>
-            <p className="text-[10px] font-mono text-slate-500 mt-1">
-              Both win or both lose →
-            </p>
-          </Link>
-        </div>
-      )}
-
-      {/* Search — styled to feel like a primary CTA */}
-      <div
-        className="rounded-2xl p-3 border"
-        style={{
-          background: 'linear-gradient(145deg, #10101a, #0b0b14)',
-          borderColor: 'rgba(249,115,22,0.16)',
-        }}
-      >
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-400 mb-2 px-1">
-          Find someone
-        </p>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Search by username..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <Button onClick={handleSearch} loading={searching}>Search</Button>
-        </div>
-
-        {/* Invite link — share the URL, the receiving end auto-friends. */}
-        {user && (
-          <div className="mt-3 pt-3 border-t border-white/[0.04]">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-slate-500 mb-1.5 px-1">
-              Or share your invite link
-            </p>
-            <div className="flex items-center gap-2 bg-[#0c0c16] border border-[#1e1e30] rounded-xl px-3 py-2">
-              <span className="text-[12px] text-slate-400 flex-1 truncate font-mono">
-                outrank-ten.vercel.app/invite/{user.username}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `https://outrank-ten.vercel.app/invite/${user.username}`,
-                  );
-                  addToast({ type: 'success', message: 'Invite link copied' });
+            <div style={{ padding: '10px 0', textAlign: 'center' }}>
+              <div
+                className="font-display tabular"
+                style={{ fontSize: 26, fontWeight: 500, lineHeight: 1, color: 'var(--b-accent)' }}
+              >
+                {friendCount}
+              </div>
+              <div
+                className="font-body"
+                style={{
+                  fontSize: 9,
+                  color: 'var(--b-ink-60)',
+                  marginTop: 4,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
                 }}
               >
-                Copy
-              </Button>
+                Friends
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Search Results */}
-      {searchResults.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-bold text-slate-400">Search Results</h2>
-          {searchResults.map((u) => {
-            const isFriend = friendIds.includes(u.uid);
-            const isPending = allConnectionIds.includes(u.uid) && !isFriend;
-            const uc = u as unknown as UserProfile & FriendCosmetics;
-            return (
-              <div key={u.uid} className="flex items-center gap-3 glass-card rounded-xl p-3">
-                <Link href={`/profile/${u.username}`}>
-                  <FramedAvatar src={u.avatarUrl} alt={u.username} size="md" frameId={uc.equippedFrame} />
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <Link href={`/profile/${u.username}`} className="flex items-center gap-1.5 min-w-0">
-                    <span className="min-w-0 truncate">
-                      <NamePlate name={u.username} effectId={uc.equippedNameEffect} size="sm" className="hover:text-orange-400" />
-                    </span>
-                    {uc.orbTier !== undefined && (
-                      <MiniOrb tier={uc.orbTier} baseColorId={uc.orbBaseColor} pulseColorId={uc.orbPulseColor} ringColorId={uc.orbRingColor} size={16} />
-                    )}
-                  </Link>
-                  <p className="text-xs text-slate-500">Lv.{u.level} &bull; {u.totalXP.toLocaleString()} XP</p>
+            {pendingCount > 0 && (
+              <div
+                style={{
+                  padding: '10px 0',
+                  textAlign: 'center',
+                  borderLeft: '1px solid var(--b-rule)',
+                }}
+              >
+                <div
+                  className="font-display tabular"
+                  style={{ fontSize: 26, fontWeight: 500, lineHeight: 1, color: 'var(--b-ink)' }}
+                >
+                  {pendingCount}
                 </div>
-                {isFriend ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-emerald-400 font-medium">Friends</span>
-                    <Button size="sm" variant="secondary" onClick={() => setDuelTarget({
-                      id: u.uid,
-                      username: u.username,
-                      avatar: u.avatarUrl || '',
-                    })}>
-                      <SwordsCrossIcon size={12} /> Challenge
-                    </Button>
+                <div
+                  className="font-body"
+                  style={{
+                    fontSize: 9,
+                    color: 'var(--b-ink-60)',
+                    marginTop: 4,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.14em',
+                  }}
+                >
+                  Pending
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Friends League + Pacts shortcut rows */}
+          {friendCount > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <Link
+                href="/friends-league"
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  padding: '10px 0',
+                  borderBottom: '1px solid var(--b-rule)',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <div>
+                  <div
+                    className="spread"
+                    style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                  >
+                    Weekly
                   </div>
-                ) : isPending ? (
-                  <span className="text-xs text-yellow-400 font-medium">Pending</span>
-                ) : (
-                  <Button size="sm" onClick={() => sendRequest(u.uid)}>Add</Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  <div
+                    className="font-display"
+                    style={{ fontSize: 16, fontStyle: 'italic', fontWeight: 500, marginTop: 2 }}
+                  >
+                    Friends League
+                  </div>
+                  <div
+                    className="font-body"
+                    style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+                  >
+                    Top 3 split fragments
+                  </div>
+                </div>
+                <span
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.08em' }}
+                >
+                  ENTER →
+                </span>
+              </Link>
+              <Link
+                href="/pacts"
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  padding: '10px 0',
+                  borderBottom: '1px solid var(--b-rule)',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <div>
+                  <div
+                    className="spread"
+                    style={{ fontSize: 9, color: 'var(--b-accent)' }}
+                  >
+                    Pacts
+                  </div>
+                  <div
+                    className="font-display"
+                    style={{ fontSize: 16, fontStyle: 'italic', fontWeight: 500, marginTop: 2 }}
+                  >
+                    {activePacts.length} active
+                  </div>
+                  <div
+                    className="font-body"
+                    style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+                  >
+                    Both win or both lose
+                  </div>
+                </div>
+                <span
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.08em' }}
+                >
+                  ENTER →
+                </span>
+              </Link>
+            </div>
+          )}
 
-      {/* Pending Requests */}
-      {resolvedPending.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-sm font-bold text-yellow-400">Pending Requests</h2>
-          {resolvedPending.map((req) => (
-            <div key={req.id} className="flex items-center gap-3 glass-card rounded-xl p-3 border border-yellow-500/10">
-              <FramedAvatar src={req.profile?.avatarUrl} alt={req.profile?.username || '?'} size="md" frameId={req.profile?.equippedFrame} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="min-w-0 truncate">
-                    <NamePlate name={req.profile?.username || 'Unknown user'} effectId={req.profile?.equippedNameEffect} size="sm" />
+          {/* Search */}
+          <div style={{ marginTop: 22 }}>
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 6 }}
+            >
+              Find someone
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input
+                placeholder="Search by username..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <Button onClick={handleSearch} loading={searching}>Search</Button>
+            </div>
+
+            {/* Invite link — share the URL, the receiving end auto-friends. */}
+            {user && (
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--b-rule)' }}>
+                <div
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 6 }}
+                >
+                  Or share your invite link
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    border: '1px solid var(--b-rule)',
+                    padding: '8px 10px',
+                  }}
+                >
+                  <span
+                    className="font-mono"
+                    style={{ fontSize: 11, color: 'var(--b-ink-60)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    outrank-ten.vercel.app/invite/{user.username}
                   </span>
-                  {req.profile?.orbTier !== undefined && (
-                    <MiniOrb tier={req.profile.orbTier} baseColorId={req.profile.orbBaseColor} pulseColorId={req.profile.orbPulseColor} ringColorId={req.profile.orbRingColor} size={16} />
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `https://outrank-ten.vercel.app/invite/${user.username}`,
+                      );
+                      addToast({ type: 'success', message: 'Invite link copied' });
+                    }}
+                  >
+                    Copy
+                  </Button>
                 </div>
-                <p className="text-xs text-slate-500">Lv.{req.profile?.level || 1} &bull; {(req.profile?.totalXP || 0).toLocaleString()} XP</p>
               </div>
-              <div className="flex gap-2">
-                <Button size="sm" onClick={() => acceptRequest(req.id)}>Accept</Button>
-                <Button size="sm" variant="ghost" onClick={() => removeFriend(req.id)}>Decline</Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Friends List */}
-      <div className="space-y-2">
-        <h2 className="text-sm font-bold text-slate-400">Friends ({resolvedFriends.length})</h2>
-        {loading || loadingProfiles ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+            )}
           </div>
-        ) : resolvedFriends.length === 0 ? (
-          <EmptyState
-            icon={<UsersFullIcon size={40} className="text-red-400" />}
-            title="No friends yet"
-            description="Search for friends by username to start competing together."
-          />
-        ) : (
-          resolvedFriends.map((friend) => {
-            const activePact = activePactByFriend.get(friend.friendId);
-            return (
-            <div key={friend.friendId} className="glass-card rounded-xl p-4 space-y-3">
-              {/* Top row: avatar + info */}
-              <div className="flex items-center gap-3">
-                <Link href={`/profile/${friend.profile?.username || friend.friendId}`}>
-                  <FramedAvatar
-                    src={friend.profile?.avatarUrl}
-                    alt={friend.profile?.username || '?'}
-                    size="md"
-                    frameId={friend.profile?.equippedFrame}
-                  />
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <Link href={`/profile/${friend.profile?.username || friend.friendId}`} className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                    <span className="min-w-0 truncate">
-                      <NamePlate
-                        name={friend.profile?.username || 'Unknown'}
-                        effectId={friend.profile?.equippedNameEffect}
-                        size="sm"
-                        className="hover:text-orange-400"
-                      />
-                    </span>
-                    {friend.profile?.orbTier !== undefined && (
-                      <MiniOrb
-                        tier={friend.profile.orbTier}
-                        baseColorId={friend.profile.orbBaseColor}
-                        pulseColorId={friend.profile.orbPulseColor}
-                        ringColorId={friend.profile.orbRingColor}
-                        size={18}
-                      />
-                    )}
-                    {activePact && (
-                      <span
-                        className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-[1px] rounded"
-                        style={{
-                          color: activePact.habitColor,
-                          background: `${activePact.habitColor}18`,
-                          border: `1px solid ${activePact.habitColor}55`,
-                        }}
-                        title={`${activePact.durationDays}-day ${activePact.habitName} pact in progress`}
-                      >
-                        Pact · {activePact.habitName}
-                      </span>
-                    )}
-                  </Link>
-                  <p className="text-xs text-slate-500">
-                    Lv.{friend.profile?.level || 1} {friend.profile?.currentTitle || 'Rookie'} &bull; {(friend.profile?.totalXP || 0).toLocaleString()} XP
-                  </p>
-                  <p className="text-[10px] text-slate-600">Friends since {friend.since}</p>
-                </div>
-              </div>
 
-              {/* Action buttons */}
-              <div className="flex gap-2">
-                {challengedIds.includes(friend.friendId) ? (
-                  <Button size="sm" variant="secondary" className="flex-1" disabled>
-                    Challenged!
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    className="flex-1"
-                    onClick={() => setDuelTarget({
-                      id: friend.friendId,
-                      username: friend.profile?.username || 'Friend',
-                      avatar: friend.profile?.avatarUrl || '',
-                    })}
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <>
+              <SectionHeader label="Search Results" count={searchResults.length} />
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {searchResults.map((u) => {
+                  const isFriend = friendIds.includes(u.uid);
+                  const isPending = allConnectionIds.includes(u.uid) && !isFriend;
+                  const uc = u as unknown as UserProfile & FriendCosmetics;
+                  return (
+                    <li
+                      key={u.uid}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 0',
+                        borderBottom: '1px solid var(--b-rule)',
+                      }}
+                    >
+                      <Link href={`/profile/${u.username}`}>
+                        <FramedAvatar src={u.avatarUrl} alt={u.username} size="md" frameId={uc.equippedFrame} />
+                      </Link>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Link
+                          href={`/profile/${u.username}`}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, textDecoration: 'none' }}
+                        >
+                          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <NamePlate name={u.username} effectId={uc.equippedNameEffect} size="sm" />
+                          </span>
+                          {uc.orbTier !== undefined && (
+                            <MiniOrb tier={uc.orbTier} baseColorId={uc.orbBaseColor} pulseColorId={uc.orbPulseColor} ringColorId={uc.orbRingColor} size={16} />
+                          )}
+                        </Link>
+                        <div
+                          className="font-body tabular"
+                          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 2 }}
+                        >
+                          Lv.{u.level} · {u.totalXP.toLocaleString()} XP
+                        </div>
+                      </div>
+                      {isFriend ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span
+                            className="spread"
+                            style={{ fontSize: 9, color: '#34d399' }}
+                          >
+                            Friends
+                          </span>
+                          <Button size="sm" variant="secondary" onClick={() => setDuelTarget({
+                            id: u.uid,
+                            username: u.username,
+                            avatar: u.avatarUrl || '',
+                          })}>
+                            <SwordsCrossIcon size={12} /> Duel
+                          </Button>
+                        </div>
+                      ) : isPending ? (
+                        <span
+                          className="spread"
+                          style={{ fontSize: 9, color: '#fbbf24' }}
+                        >
+                          Pending
+                        </span>
+                      ) : (
+                        <Button size="sm" onClick={() => sendRequest(u.uid)}>Add</Button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+
+          {/* Pending Requests */}
+          {resolvedPending.length > 0 && (
+            <>
+              <SectionHeader label="Pending Requests" count={resolvedPending.length} accent="#fbbf24" />
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {resolvedPending.map((req) => (
+                  <li
+                    key={req.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 0',
+                      borderBottom: '1px solid var(--b-rule)',
+                    }}
                   >
-                    <SwordsCrossIcon size={14} />
-                    Challenge
-                  </Button>
-                )}
-                <Link href={`/messages/${friend.friendId}`} className="flex-1">
-                  <Button size="sm" variant="secondary" className="w-full">
-                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                    </svg>
-                    Message
-                  </Button>
-                </Link>
-                {/* Pact button — opens the create modal pre-picked to
-                    this friend. Hides when an active pact already
-                    exists between us (the pill above already advertises
-                    it; another button would be redundant clutter). */}
-                {!activePact ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="flex-1"
-                    onClick={() => friend.profile && setPactTarget(friend.profile)}
-                  >
-                    Pact
-                  </Button>
-                ) : (
-                  <Link href="/pacts" className="flex-1">
-                    <Button size="sm" variant="secondary" className="w-full">
-                      View pact
-                    </Button>
-                  </Link>
-                )}
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => setHabitTarget({
-                    id: friend.friendId,
-                    username: friend.profile?.username || 'Friend',
-                    avatar: friend.profile?.avatarUrl || '',
-                  })}
-                >
-                  Status
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setRemoveTarget({
-                    id: friend.friendId,
-                    name: friend.profile?.username || 'this friend',
-                  })}
-                  className="text-slate-600 hover:text-red-400"
-                >
-                  &times;
-                </Button>
-              </div>
+                    <FramedAvatar src={req.profile?.avatarUrl} alt={req.profile?.username || '?'} size="md" frameId={req.profile?.equippedFrame} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <NamePlate name={req.profile?.username || 'Unknown user'} effectId={req.profile?.equippedNameEffect} size="sm" />
+                        </span>
+                        {req.profile?.orbTier !== undefined && (
+                          <MiniOrb tier={req.profile.orbTier} baseColorId={req.profile.orbBaseColor} pulseColorId={req.profile.orbPulseColor} ringColorId={req.profile.orbRingColor} size={16} />
+                        )}
+                      </div>
+                      <div
+                        className="font-body tabular"
+                        style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 2 }}
+                      >
+                        Lv.{req.profile?.level || 1} · {(req.profile?.totalXP || 0).toLocaleString()} XP
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <Button size="sm" onClick={() => acceptRequest(req.id)}>Accept</Button>
+                      <Button size="sm" variant="ghost" onClick={() => removeFriend(req.id)}>Decline</Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {/* Friends List */}
+          <SectionHeader label="The Roster" count={resolvedFriends.length} />
+          {loading || loadingProfiles ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20" />)}
             </div>
-            );
-          })
-        )}
+          ) : resolvedFriends.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '36px 0' }}>
+              <div style={{ color: 'var(--b-ink-40)', display: 'flex', justifyContent: 'center' }}>
+                <UsersFullIcon size={32} />
+              </div>
+              <p
+                className="font-display"
+                style={{ fontSize: 20, fontStyle: 'italic', fontWeight: 500, marginTop: 10 }}
+              >
+                No friends yet.
+              </p>
+              <p
+                className="font-body"
+                style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 280, marginInline: 'auto', marginTop: 4 }}
+              >
+                Search for friends by username above to start competing together.
+              </p>
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {resolvedFriends.map((friend) => {
+                const activePact = activePactByFriend.get(friend.friendId);
+                return (
+                  <li
+                    key={friend.friendId}
+                    style={{
+                      padding: '14px 0',
+                      borderBottom: '1px solid var(--b-rule)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <Link href={`/profile/${friend.profile?.username || friend.friendId}`}>
+                        <FramedAvatar
+                          src={friend.profile?.avatarUrl}
+                          alt={friend.profile?.username || '?'}
+                          size="md"
+                          frameId={friend.profile?.equippedFrame}
+                        />
+                      </Link>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <Link
+                          href={`/profile/${friend.profile?.username || friend.friendId}`}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flexWrap: 'wrap', textDecoration: 'none' }}
+                        >
+                          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <NamePlate
+                              name={friend.profile?.username || 'Unknown'}
+                              effectId={friend.profile?.equippedNameEffect}
+                              size="sm"
+                            />
+                          </span>
+                          {friend.profile?.orbTier !== undefined && (
+                            <MiniOrb
+                              tier={friend.profile.orbTier}
+                              baseColorId={friend.profile.orbBaseColor}
+                              pulseColorId={friend.profile.orbPulseColor}
+                              ringColorId={friend.profile.orbRingColor}
+                              size={18}
+                            />
+                          )}
+                          {activePact && (
+                            <span
+                              className="spread"
+                              style={{
+                                fontSize: 9,
+                                color: activePact.habitColor,
+                                padding: '1px 6px',
+                                border: `1px solid ${activePact.habitColor}80`,
+                              }}
+                              title={`${activePact.durationDays}-day ${activePact.habitName} pact in progress`}
+                            >
+                              Pact · {activePact.habitName}
+                            </span>
+                          )}
+                        </Link>
+                        <div
+                          className="font-body tabular"
+                          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 2 }}
+                        >
+                          Lv.{friend.profile?.level || 1} {friend.profile?.currentTitle || 'Rookie'} · {(friend.profile?.totalXP || 0).toLocaleString()} XP
+                        </div>
+                        <div
+                          className="font-mono"
+                          style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 2, letterSpacing: '0.04em' }}
+                        >
+                          Since {friend.since}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action row */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: 6,
+                        marginTop: 10,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      {challengedIds.includes(friend.friendId) ? (
+                        <Button size="sm" variant="secondary" className="flex-1" disabled>
+                          Challenged
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          className="flex-1"
+                          onClick={() => setDuelTarget({
+                            id: friend.friendId,
+                            username: friend.profile?.username || 'Friend',
+                            avatar: friend.profile?.avatarUrl || '',
+                          })}
+                        >
+                          <SwordsCrossIcon size={14} />
+                          Duel
+                        </Button>
+                      )}
+                      <Link href={`/messages/${friend.friendId}`} className="flex-1">
+                        <Button size="sm" variant="secondary" className="w-full">
+                          Message
+                        </Button>
+                      </Link>
+                      {!activePact ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="flex-1"
+                          onClick={() => friend.profile && setPactTarget(friend.profile)}
+                        >
+                          Pact
+                        </Button>
+                      ) : (
+                        <Link href="/pacts" className="flex-1">
+                          <Button size="sm" variant="secondary" className="w-full">
+                            View pact
+                          </Button>
+                        </Link>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="flex-1"
+                        onClick={() => setHabitTarget({
+                          id: friend.friendId,
+                          username: friend.profile?.username || 'Friend',
+                          avatar: friend.profile?.avatarUrl || '',
+                        })}
+                      >
+                        Status
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setRemoveTarget({
+                          id: friend.friendId,
+                          name: friend.profile?.username || 'this friend',
+                        })}
+                        style={{ color: 'var(--b-ink-40)' }}
+                      >
+                        &times;
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
 
       {/* Remove Confirmation */}
@@ -589,24 +774,31 @@ export default function FriendsPage() {
   );
 }
 
-function StatChip({ label, value, tint }: { label: string; value: number; tint: string }) {
+function SectionHeader({ label, count, accent }: { label: string; count: number; accent?: string }) {
   return (
     <div
-      className="flex flex-col items-center justify-center rounded-xl px-3 py-1.5 border min-w-[56px]"
       style={{
-        background: `linear-gradient(145deg, ${tint}1a, #0b0b14 80%)`,
-        borderColor: `${tint}44`,
+        marginTop: 28,
+        paddingTop: 12,
+        borderTop: '1px solid var(--b-ink)',
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        marginBottom: 4,
       }}
     >
-      <span
-        className="font-mono text-lg font-bold leading-none"
-        style={{ color: tint }}
+      <div
+        className="font-display"
+        style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, color: accent || 'var(--b-ink)' }}
       >
-        {value}
-      </span>
-      <span className="text-[9px] uppercase tracking-widest text-slate-500 mt-0.5">
         {label}
-      </span>
+      </div>
+      <div
+        className="font-mono tabular"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+      >
+        § {String(count).padStart(2, '0')}
+      </div>
     </div>
   );
 }

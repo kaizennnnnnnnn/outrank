@@ -28,12 +28,17 @@ interface TitleDisplayProps {
 
 export function TitleDisplay({ totalXP, size = 'md' }: TitleDisplayProps) {
   const level = getLevelForXP(totalXP);
-  const color = titleColors[level.title] || '#94a3b8';
+  const color = titleColors[level.title] || 'var(--b-ink-60)';
 
   return (
     <span
-      className={`font-heading font-bold ${size === 'sm' ? 'text-xs' : 'text-sm'}`}
-      style={{ color }}
+      className="font-display"
+      style={{
+        fontSize: size === 'sm' ? 12 : 14,
+        fontStyle: 'italic',
+        fontWeight: 500,
+        color,
+      }}
     >
       {level.title}
     </span>

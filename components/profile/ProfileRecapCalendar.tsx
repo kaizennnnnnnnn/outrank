@@ -7,26 +7,10 @@ import { useMonthRecaps } from '@/hooks/useMonthRecaps';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 interface Props {
-  /** Whose calendar — current user (own) or a friend. */
   uid: string;
-  /** Owner sees draft cells too; friends are query-restricted to
-   *  published only (rule denies drafts on the read either way). */
   isOwner: boolean;
 }
 
-/**
- * Month-grid calendar of published recaps. Each filled cell is shaded
- * by the day's totalXP relative to the heaviest day in the month — at
- * a glance you see your "documented streak" of submitted records.
- *
- * Tap any filled cell → `/recap/{uid}/{YYYY-MM-DD}` for the full
- * detail view (story, comments, verifications). Today's cell is
- * outlined whether or not it has a recap yet.
- *
- * Prev / next chevrons walk one month at a time. No far-future cap
- * for v1; far-past is bounded by however many month-clicks the user
- * makes — Firestore queries on the localDate range are cheap.
- */
 export function ProfileRecapCalendar({ uid, isOwner }: Props) {
   const [monthDate, setMonthDate] = useState(() => {
     const d = new Date();
@@ -39,8 +23,6 @@ export function ProfileRecapCalendar({ uid, isOwner }: Props) {
   const monthLabel = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const todayKey = todayLocalKey();
 
-  // Heat-map normalization: peak XP this month = full color; smaller
-  // days scale toward the floor.
   const allXP = Object.values(byDate).map((r) => r.totalXP || 0);
   const maxXP = allXP.length > 0 ? Math.max(...allXP, 1) : 1;
 
@@ -48,27 +30,41 @@ export function ProfileRecapCalendar({ uid, isOwner }: Props) {
   const totalXP = allXP.reduce((s, x) => s + x, 0);
 
   return (
-    <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] overflow-hidden">
+    <div style={{ border: '1px solid var(--b-rule)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
-        <div className="flex items-center gap-2">
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
-          />
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          padding: '10px 14px',
+          borderBottom: '1px solid var(--b-rule)',
+        }}
+      >
+        <div>
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
             Records
-          </p>
-          <span className="text-[10px] font-mono text-slate-500 ml-1">
-            · {totalRecaps} this month
-            {totalXP > 0 && (
-              <span className="ml-1.5">· +{totalXP.toLocaleString()} XP</span>
-            )}
-          </span>
+          </div>
+          <div
+            className="font-body tabular"
+            style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+          >
+            {totalRecaps} this month
+            {totalXP > 0 && <span> · +{totalXP.toLocaleString()} XP</span>}
+          </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <NavButton onClick={() => setMonthDate(addMonths(monthDate, -1))} aria-label="Previous month">‹</NavButton>
-          <span className="text-[11px] font-bold text-slate-300 min-w-[110px] text-center">
+          <span
+            className="font-display"
+            style={{
+              fontSize: 13,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              minWidth: 110,
+              textAlign: 'center',
+            }}
+          >
             {monthLabel}
           </span>
           <NavButton onClick={() => setMonthDate(addMonths(monthDate, 1))} aria-label="Next month">›</NavButton>
@@ -76,19 +72,29 @@ export function ProfileRecapCalendar({ uid, isOwner }: Props) {
       </div>
 
       {/* Weekday header */}
-      <div className="grid grid-cols-7 gap-1 px-3 pt-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, padding: '10px 12px 4px' }}>
         {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <span key={i} className="text-[9px] font-bold uppercase tracking-widest text-slate-600 text-center">
+          <span
+            key={i}
+            className="font-mono"
+            style={{
+              fontSize: 8,
+              color: 'var(--b-ink-40)',
+              textAlign: 'center',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}
+          >
             {d}
           </span>
         ))}
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-7 gap-1 p-3 pt-2">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, padding: '4px 12px 12px' }}>
         {loading
           ? Array.from({ length: 35 }).map((_, i) => (
-              <Skeleton key={i} className="h-9 rounded-md" />
+              <Skeleton key={i} className="h-8" />
             ))
           : cells.map((cell, i) => (
               <DayCell
@@ -106,7 +112,6 @@ export function ProfileRecapCalendar({ uid, isOwner }: Props) {
 }
 
 interface MonthCell {
-  /** YYYY-MM-DD if the cell belongs to the current month, null otherwise (leading/trailing fill). */
   dateKey: string | null;
   dayNum: number | null;
 }
@@ -116,20 +121,16 @@ function buildMonthCells(monthDate: Date): MonthCell[] {
   const m = monthDate.getMonth();
   const first = new Date(y, m, 1);
   const last = new Date(y, m + 1, 0);
-  // Mon=0, Sun=6 — match the "M T W T F S S" header
   const firstDayOfWeek = ((first.getDay() + 6) % 7);
   const cells: MonthCell[] = [];
 
-  // Leading blank cells
   for (let i = 0; i < firstDayOfWeek; i++) {
     cells.push({ dateKey: null, dayNum: null });
   }
-  // Days of the month
   for (let d = 1; d <= last.getDate(); d++) {
     const dateKey = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     cells.push({ dateKey, dayNum: d });
   }
-  // Trailing blanks to fill the grid (multiple of 7)
   while (cells.length % 7 !== 0) {
     cells.push({ dateKey: null, dayNum: null });
   }
@@ -156,7 +157,18 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className="w-7 h-7 rounded-md bg-[#0c0c16] border border-[#1e1e30] text-slate-400 text-sm hover:text-white hover:border-slate-500 transition-colors flex items-center justify-center"
+      style={{
+        width: 26,
+        height: 26,
+        background: 'transparent',
+        border: '1px solid var(--b-rule)',
+        color: 'var(--b-ink-60)',
+        fontSize: 14,
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
       {...rest}
     >
       {children}
@@ -178,43 +190,47 @@ function DayCell({
   uid: string;
 }) {
   if (!cell.dayNum || !cell.dateKey) {
-    return <div className="h-9" />;
+    return <div style={{ height: 30 }} />;
   }
   const isPublished = recap?.status === 'published';
   const isDraft = recap?.status === 'draft';
 
-  // Heat-map intensity (0..1) based on the day's XP relative to peak.
-  // Cap the floor at 0.18 for visibility — even the smallest day still
-  // looks like "something happened."
-  const intensity = recap && maxXP > 0 ? Math.max(0.18, Math.min(1, (recap.totalXP || 0) / maxXP)) : 0;
+  const intensity = recap && maxXP > 0 ? Math.max(0.2, Math.min(1, (recap.totalXP || 0) / maxXP)) : 0;
 
-  const baseStyle: React.CSSProperties = {};
+  const baseStyle: React.CSSProperties = {
+    height: 30,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
   if (isPublished) {
-    baseStyle.background = `rgba(249,115,22,${intensity * 0.55})`;
+    baseStyle.background = `rgba(249,115,22,${intensity * 0.5})`;
     baseStyle.border = `1px solid rgba(249,115,22,${0.4 + intensity * 0.4})`;
-    baseStyle.boxShadow = `inset 0 0 8px rgba(249,115,22,${intensity * 0.3})`;
   } else if (isDraft) {
-    baseStyle.background = 'rgba(255,255,255,0.02)';
-    baseStyle.border = '1px dashed rgba(249,115,22,0.35)';
+    baseStyle.background = 'transparent';
+    baseStyle.border = '1px dashed var(--b-accent)';
   } else {
-    baseStyle.background = 'rgba(255,255,255,0.02)';
-    baseStyle.border = '1px solid rgba(255,255,255,0.04)';
+    baseStyle.background = 'transparent';
+    baseStyle.border = '1px solid var(--b-rule)';
   }
   if (isToday) {
-    // Replace the border with a brighter today ring
-    baseStyle.border = '1px solid rgba(249,115,22,0.85)';
-    baseStyle.boxShadow = isPublished
-      ? `inset 0 0 8px rgba(249,115,22,${intensity * 0.3}), 0 0 6px rgba(249,115,22,0.5)`
-      : '0 0 6px rgba(249,115,22,0.5)';
+    baseStyle.border = '1px solid var(--b-accent)';
+    baseStyle.borderWidth = '2px';
   }
 
   const inner = (
     <motion.div
       whileTap={isPublished ? { scale: 0.94 } : undefined}
-      className="h-9 rounded-md flex items-center justify-center text-[11px] font-mono transition-colors"
       style={baseStyle}
     >
-      <span className={isPublished ? 'text-white font-bold' : 'text-slate-500'}>
+      <span
+        className={isPublished ? 'font-mono tabular' : 'font-mono tabular'}
+        style={{
+          fontSize: 11,
+          color: isPublished ? 'var(--b-ink)' : 'var(--b-ink-40)',
+          fontWeight: isPublished ? 600 : 400,
+        }}
+      >
         {cell.dayNum}
       </span>
     </motion.div>

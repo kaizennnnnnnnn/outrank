@@ -643,11 +643,12 @@ function ItemPreviewModal({
   } else if (item.type === 'name_effect') {
     preview = (
       <div
-        className="px-6 py-8 rounded-2xl flex items-center justify-center border"
         style={{
-          background: `linear-gradient(145deg, ${accent.border}22, #0b0b14 80%)`,
-          borderColor: `${accent.border}55`,
-          boxShadow: `inset 0 0 20px ${accent.border}33`,
+          padding: '24px 28px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px solid var(--b-rule)',
         }}
       >
         <NamePlate name="Example" effectId={item.id} size="xl" />
@@ -656,13 +657,15 @@ function ItemPreviewModal({
   } else {
     preview = (
       <div
-        className="w-28 h-28 rounded-2xl flex items-center justify-center"
         style={{
-          background: `linear-gradient(145deg, ${accent.border}44, ${accent.border}11 70%)`,
+          width: 112,
+          height: 112,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           color: accent.text,
-          border: `1px solid ${accent.border}66`,
-          boxShadow: `0 0 24px -2px ${accent.border}66, inset 0 0 12px ${accent.border}44`,
-          transform: 'scale(1.6)',
+          border: '1px solid var(--b-rule)',
+          transform: 'scale(1.4)',
         }}
       >
         {iconFor(item.type)}
@@ -687,66 +690,109 @@ function ItemPreviewModal({
 
   return (
     <Modal isOpen={!!item} onClose={onClose} title="Preview" size="sm">
-      <div className="space-y-4">
-        {/* Big preview — centered so the isolated item gets full attention */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Big preview */}
         <div
-          className="flex items-center justify-center rounded-2xl py-8 px-4 border"
           style={{
-            background: `radial-gradient(ellipse 80% 70% at 50% 30%, ${accent.border}1a, transparent 65%), linear-gradient(165deg, #0d0d17 0%, #06060c 100%)`,
-            borderColor: `${accent.border}33`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '32px 16px',
+            border: '1px solid var(--b-rule)',
+            background: 'var(--b-paper-2, transparent)',
           }}
         >
           {preview}
         </div>
 
-        {/* Name + description + rarity */}
+        {/* Title block */}
         <div>
-          <span
-            className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded inline-block mb-1.5"
-            style={{
-              background: `${accent.border}22`,
-              color: accent.text,
-              border: `1px solid ${accent.border}55`,
-            }}
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: accent.text, marginBottom: 4 }}
           >
             {rarityLabels[item.rarity]}
-          </span>
-          <p className="text-lg font-bold text-white">{item.name}</p>
-          <p className="text-[12px] text-slate-400 leading-snug">{item.description}</p>
+          </div>
+          <div
+            className="font-display"
+            style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.1 }}
+          >
+            {item.name}
+          </div>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', lineHeight: 1.5, marginTop: 4 }}
+          >
+            {item.description}
+          </p>
         </div>
 
-        {/* Fragments ledger — only when it's a purchase */}
+        {/* Fragments ledger — purchase only */}
         {!owned && !isFree && (
           <div
-            className="rounded-xl p-3 border flex items-center justify-between"
             style={{
-              background: 'linear-gradient(145deg, rgba(249,115,22,0.08), #0b0b14 70%)',
-              borderColor: 'rgba(249,115,22,0.22)',
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              gap: 8,
+              alignItems: 'center',
+              padding: '10px 14px',
+              border: '1px solid var(--b-ink)',
+              borderTop: '2px solid var(--b-ink)',
+              borderBottom: '2px solid var(--b-ink)',
             }}
           >
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Cost</p>
-              <p className="font-mono text-xl font-bold text-orange-400">{item.price}</p>
+              <div
+                className="spread"
+                style={{ fontSize: 8, color: 'var(--b-ink-60)' }}
+              >
+                Cost
+              </div>
+              <div
+                className="font-display tabular"
+                style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, color: 'var(--b-accent)', lineHeight: 1, marginTop: 2 }}
+              >
+                {item.price}
+              </div>
             </div>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500">
-              <path d="M5 12h14" />
-              <path d="M13 6l6 6-6 6" />
-            </svg>
-            <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">After</p>
-              <p className={`font-mono text-xl font-bold ${after < 0 ? 'text-red-400' : 'text-white'}`}>{after}</p>
+            <span
+              className="font-mono"
+              style={{ fontSize: 14, color: 'var(--b-ink-40)' }}
+            >
+              →
+            </span>
+            <div style={{ textAlign: 'right' }}>
+              <div
+                className="spread"
+                style={{ fontSize: 8, color: 'var(--b-ink-60)' }}
+              >
+                After
+              </div>
+              <div
+                className="font-display tabular"
+                style={{
+                  fontSize: 22,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  lineHeight: 1,
+                  marginTop: 2,
+                  color: after < 0 ? '#ef4444' : 'var(--b-ink)',
+                }}
+              >
+                {after}
+              </div>
             </div>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 8 }}>
           <Button variant="ghost" className="flex-1" onClick={onClose}>
             Close
           </Button>
           <Button
             variant="primary"
-            className="flex-[1.5]"
+            style={{ flex: 1.5 }}
             disabled={primaryDisabled}
             onClick={onConfirm}
           >
@@ -775,54 +821,77 @@ function RaritySection({
   const accent = rarityAccent[rarity];
 
   return (
-    <section className="space-y-3">
+    <section style={{ marginTop: 18 }}>
       {showBanner ? (
         <div
-          className={cn(
-            'relative overflow-hidden rounded-2xl p-4 border',
-            rarity === 'mythic' && 'animate-shop-mythic-border',
-            rarity === 'legendary' && 'animate-shop-legendary-border',
-          )}
           style={{
-            background: rarity === 'mythic'
-              ? 'linear-gradient(90deg, #ec489922, #a855f722, #22d3ee22, #fbbf2422, #ec489922)'
-              : `linear-gradient(135deg, ${accent.bg}, #10101a 70%)`,
-            borderColor: accent.border,
-            backgroundSize: rarity === 'mythic' ? '200% 100%' : undefined,
+            paddingTop: 14,
+            paddingBottom: 12,
+            borderTop: `2px solid ${accent.border}`,
+            borderBottom: '1px solid var(--b-rule)',
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 12,
           }}
         >
-          <div className={cn('flex items-center gap-3', rarity === 'mythic' && 'animate-shop-mythic-bg')}>
-            <RaritySigil rarity={rarity} />
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: accent.text }}>
-                {rarityLabels[rarity]} tier
-              </p>
-              <p className="font-heading text-xl font-bold text-white mt-0.5">
-                {rarityTagline(rarity)}
-              </p>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                {items.length} item{items.length === 1 ? '' : 's'}
-              </p>
+          <div>
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: accent.text }}
+            >
+              {rarityLabels[rarity]} tier
             </div>
+            <div
+              className="font-display"
+              style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, marginTop: 2 }}
+            >
+              {rarityTagline(rarity)}
+            </div>
+          </div>
+          <div
+            className="font-mono tabular"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+          >
+            § {String(items.length).padStart(2, '0')}
           </div>
         </div>
       ) : (
-        <h2
-          className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em]"
-          style={{ color: accent.text }}
+        <div
+          style={{
+            paddingTop: 12,
+            paddingBottom: 8,
+            borderTop: '1px solid var(--b-ink)',
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            marginBottom: 10,
+          }}
         >
-          <RaritySigil rarity={rarity} small />
-          {rarityLabels[rarity]}
-          <span className="text-slate-600 font-mono">{items.length}</span>
-        </h2>
+          <div
+            className="font-display"
+            style={{ fontSize: 16, fontStyle: 'italic', fontWeight: 500, color: accent.text }}
+          >
+            {rarityLabels[rarity]}
+          </div>
+          <div
+            className="font-mono tabular"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+          >
+            § {String(items.length).padStart(2, '0')}
+          </div>
+        </div>
       )}
 
-      <div className={cn(
-        'grid gap-3',
-        tab === 'base' || tab === 'pulse' || tab === 'rings' || tab === 'account'
-          ? 'grid-cols-2 sm:grid-cols-3'
-          : 'grid-cols-1 sm:grid-cols-2',
-      )}>
+      <div
+        className={cn(
+          'grid gap-3',
+          tab === 'base' || tab === 'pulse' || tab === 'rings' || tab === 'account'
+            ? 'grid-cols-2 sm:grid-cols-3'
+            : 'grid-cols-1 sm:grid-cols-2',
+        )}
+      >
         {items.map((item) => (
           <ShopCard
             key={item.id}
@@ -930,174 +999,67 @@ function ShopCard({
     label = `Buy · ${item.price}`;
   }
 
-  // Visual tier per rarity — backgrounds use layered corner gradients so the
-  // card stays colorful all the way across instead of fading to pure black.
-  // Mythic stacks 4-corner color washes; Legendary does warm gold; Epic adds
-  // a single purple corner wash; Rare is clean blue; Common stays flat.
-  const isMythic = item.rarity === 'mythic';
-  const isLegendary = item.rarity === 'legendary';
-  const isEpic = item.rarity === 'epic';
-  const isRare = item.rarity === 'rare';
-
-  const cardBg = isMythic
-    ? [
-        'radial-gradient(ellipse 80% 70% at 0% 0%,   rgba(236,72,153,0.38), transparent 60%)',
-        'radial-gradient(ellipse 70% 70% at 100% 0%, rgba(251,191,36,0.22), transparent 55%)',
-        'radial-gradient(ellipse 90% 80% at 100% 100%, rgba(34,211,238,0.30), transparent 60%)',
-        'radial-gradient(ellipse 90% 80% at 0% 100%, rgba(168,85,247,0.28), transparent 60%)',
-        'linear-gradient(145deg, rgba(34,17,50,0.6), rgba(15,11,24,0.85))',
-      ].join(',')
-    : isLegendary
-      ? [
-          'radial-gradient(ellipse 85% 75% at 0% 0%,   rgba(251,191,36,0.32), transparent 58%)',
-          'radial-gradient(ellipse 75% 70% at 100% 100%, rgba(180,83,9,0.28), transparent 60%)',
-          'linear-gradient(145deg, rgba(42,26,10,0.55), rgba(14,14,24,0.88))',
-        ].join(',')
-      : isEpic
-        ? [
-            'radial-gradient(ellipse 80% 70% at 0% 0%, rgba(168,85,247,0.28), transparent 60%)',
-            'radial-gradient(ellipse 70% 60% at 100% 100%, rgba(124,58,237,0.18), transparent 60%)',
-            'linear-gradient(145deg, rgba(26,16,48,0.55), rgba(14,14,24,0.9))',
-          ].join(',')
-        : isRare
-          ? [
-              'radial-gradient(ellipse 75% 65% at 0% 0%, rgba(59,130,246,0.22), transparent 60%)',
-              'linear-gradient(145deg, rgba(14,22,48,0.55), rgba(14,14,24,0.9))',
-            ].join(',')
-          : `linear-gradient(145deg, ${accent.bg}, #10101a 55%, #0b0b14 100%)`;
-
   const cardStyle: React.CSSProperties = {
-    background: cardBg,
-    border: `1px solid ${equipped ? '#f97316aa' : accent.border + (isMythic ? '99' : isLegendary ? '77' : '40')}`,
-    opacity: !canAfford && !owned && !isFree ? 0.72 : 1,
-    // Isolate each card's paint / layout / style so animations on one card
-    // don't invalidate the whole shop grid. Big perf win for lots of mythic
-    // + legendary cards rendering on-screen at once.
+    border: '1px solid var(--b-rule)',
+    borderLeft: `3px solid ${accent.border}`,
+    background: 'transparent',
+    opacity: !canAfford && !owned && !isFree ? 0.7 : 1,
     contain: 'layout style paint',
   };
 
   return (
-    <div className="relative">
-      {/* Pulsing glow halo — sibling of the card so the shadow can extend past
-          its overflow-clipped edge. Animates opacity only (GPU-composited)
-          instead of box-shadow, which used to re-rasterize every frame across
-          dozens of mythic cards. Visually identical. */}
-      {(isMythic || isLegendary) && (
-        <div
-          aria-hidden
-          className={cn(
-            'absolute inset-0 rounded-xl pointer-events-none',
-            isMythic ? 'shop-card-glow-mythic' : 'shop-card-glow-legendary',
-          )}
-        />
-      )}
-      {/* The whole card is now the tap target for the preview modal —
-          previously only the inner Button triggered onBuy, so users
-          couldn't see what an item looked like without committing to
-          the buy/equip flow. Using role=button on a div (instead of a
-          real <button>) because the card already contains an inner
-          Button — nesting <button> inside <button> is invalid HTML. */}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onBuy(item)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onBuy(item);
+        }
+      }}
+      style={{
+        ...cardStyle,
+        padding: 12,
+        cursor: 'pointer',
+        position: 'relative',
+        outline: 'none',
+      }}
+    >
+      {/* Rarity tag + state pill */}
       <div
-        role="button"
-        tabIndex={0}
-        onClick={() => onBuy(item)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onBuy(item);
-          }
-        }}
-        className="relative overflow-hidden rounded-xl p-3 transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
-        style={cardStyle}
-      >
-      {/* --- Layered decorations by rarity --- */}
-
-      {/* Mythic: subtle dot-matrix sparkle field (4 fixed sparkles) */}
-      {isMythic && (
-        <>
-          <span className="absolute w-0.5 h-0.5 rounded-full bg-white animate-frame-spark" style={{ top: '20%', left: '15%', boxShadow: '0 0 4px #fff, 0 0 2px #ec4899' }} />
-          <span className="absolute w-0.5 h-0.5 rounded-full bg-white animate-frame-spark" style={{ top: '65%', right: '18%', animationDelay: '0.3s', boxShadow: '0 0 4px #fff, 0 0 2px #22d3ee' }} />
-          <span className="absolute w-[3px] h-[3px] rounded-full animate-frame-spark" style={{ top: '40%', right: '8%', background: '#fde047', animationDelay: '0.6s', boxShadow: '0 0 6px #fde047' }} />
-          <span className="absolute w-[2px] h-[2px] rounded-full animate-frame-spark" style={{ bottom: '15%', left: '22%', background: '#a855f7', animationDelay: '0.9s', boxShadow: '0 0 4px #a855f7' }} />
-        </>
-      )}
-
-      {/* Mythic: animated diagonal holographic shine */}
-      {isMythic && (
-        <div
-          className="absolute inset-0 pointer-events-none animate-shop-mythic-bg"
-          style={{
-            background: 'linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%)',
-            backgroundSize: '200% 100%',
-            mixBlendMode: 'screen',
-          }}
-        />
-      )}
-
-      {/* Top corner gems intentionally removed — they were sharp triangles
-          clipped by the card's rounded-xl overflow, producing a visible
-          notch against the rounded corner. The inner rim glow + rarity pill
-          already carry the premium signal. */}
-
-      {/* Legendary: slow diagonal shine */}
-      {isLegendary && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: 'linear-gradient(115deg, transparent 40%, rgba(253,224,71,0.12) 50%, transparent 62%)',
-            backgroundSize: '220% 100%',
-            backgroundPosition: '0% 0%',
-            animation: 'shop-mythic-bg 7s linear infinite',
-          }}
-        />
-      )}
-
-      {/* Epic: small diamond accent */}
-      {isEpic && (
-        <div
-          className="absolute top-1.5 right-1.5 w-2 h-2 rotate-45 pointer-events-none"
-          style={{
-            background: 'linear-gradient(135deg, #c084fc, #7c3aed)',
-            boxShadow: '0 0 6px rgba(168,85,247,0.7)',
-          }}
-        />
-      )}
-
-      {/* Inner border glow — readable rim on premium cards */}
-      {(isMythic || isLegendary) && (
-        <div
-          className="absolute inset-0 rounded-xl pointer-events-none"
-          style={{
-            boxShadow: `inset 0 0 0 1px ${isMythic ? 'rgba(236,72,153,0.25)' : 'rgba(251,191,36,0.22)'}`,
-          }}
-        />
-      )}
-
-      {/* Rarity pill (top-left) */}
-      <span
-        className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded z-10"
         style={{
-          background: `${accent.border}2a`,
-          color: accent.text,
-          border: `1px solid ${accent.border}66`,
-          textShadow: isMythic ? `0 0 6px ${accent.border}` : undefined,
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 6,
+          marginBottom: 8,
         }}
       >
-        {rarityLabels[item.rarity]}
-      </span>
-
-      {equipped && (
-        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/15 px-1.5 py-0.5 rounded z-10">
-          Equipped
+        <span
+          className="spread"
+          style={{ fontSize: 8, color: accent.text }}
+        >
+          {rarityLabels[item.rarity]}
         </span>
-      )}
-      {owned && !equipped && (
-        <span className="absolute top-2 right-2 text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded z-10">
-          Owned
-        </span>
-      )}
+        {equipped ? (
+          <span
+            className="spread"
+            style={{ fontSize: 8, color: 'var(--b-accent)' }}
+          >
+            Equipped
+          </span>
+        ) : owned ? (
+          <span
+            className="spread"
+            style={{ fontSize: 8, color: '#34d399' }}
+          >
+            Owned
+          </span>
+        ) : null}
+      </div>
 
-      <div className="relative flex items-center gap-3 mb-3 mt-5">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         {item.type === 'base_color' || item.type === 'pulse_color' || item.type === 'ring_color' ? (
           <OrbColorPreview
             colorSet={getOrbSet(item)}
@@ -1109,66 +1071,88 @@ function ShopCard({
                   : 'orb'
             }
             id={colorIdForPreview(item)}
-            size={48}
+            size={42}
             rarity={item.rarity}
           />
         ) : item.type === 'frame' ? (
-          <div className="flex-shrink-0">
+          <div style={{ flexShrink: 0 }}>
             <FramedAvatar alt={item.name} size="sm" frameId={item.id} />
           </div>
         ) : item.type === 'name_effect' ? (
           <div
-            className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center border"
             style={{
-              background: `linear-gradient(145deg, ${accent.border}22, #0b0b14 80%)`,
-              borderColor: `${accent.border}55`,
-              boxShadow: `inset 0 0 10px ${accent.border}22`,
+              width: 42,
+              height: 42,
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid var(--b-rule)',
             }}
           >
             <NamePlate name="Aa" effectId={item.id} size="lg" />
           </div>
         ) : (
           <div
-            className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
             style={{
-              background: `linear-gradient(145deg, ${accent.border}33, ${accent.border}11 70%)`,
+              width: 42,
+              height: 42,
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               color: accent.text,
-              border: `1px solid ${accent.border}55`,
-              boxShadow: `0 0 12px -2px ${accent.border}55, inset 0 0 8px ${accent.border}33`,
+              border: '1px solid var(--b-rule)',
             }}
           >
             {iconFor(item.type)}
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          <p
-            className="text-sm font-semibold truncate"
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            className="font-display"
             style={{
-              color: isMythic ? '#ffffff' : '#ffffff',
-              textShadow: isMythic ? `0 0 8px ${accent.border}88` : undefined,
+              fontSize: 14,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1.1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {item.name}
+          </div>
+          <p
+            className="font-body"
+            style={{
+              fontSize: 10,
+              color: 'var(--b-ink-60)',
+              lineHeight: 1.35,
+              marginTop: 2,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
+            {item.description}
           </p>
-          <p className="text-[10px] text-slate-400 leading-tight line-clamp-2">{item.description}</p>
         </div>
       </div>
       <Button
         size="sm"
-        className="w-full relative z-10"
+        className="w-full"
         variant={primary ? 'primary' : 'secondary'}
         disabled={disabled}
         loading={buying === item.id}
         onClick={(e) => {
-          // Outer card already opens the preview modal; stopping here
-          // prevents a redundant double-fire onto the same setConfirm.
           e.stopPropagation();
           onBuy(item);
         }}
       >
         {label}
       </Button>
-      </div>
     </div>
   );
 }
