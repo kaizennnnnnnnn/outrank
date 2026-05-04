@@ -6,12 +6,10 @@ import { useFriends } from '@/hooks/useFriends';
 import { getDocument } from '@/lib/firestore';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { getOrbTier } from '@/constants/orbTiers';
 import { UserProfile } from '@/types/user';
-import { TrophyIconFull, StarIcon } from '@/components/ui/AppIcons';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Masthead } from '@/components/editorial/Masthead';
 
 interface OrbRanking {
   userId: string;
@@ -21,8 +19,10 @@ interface OrbRanking {
   orbEnergy: number;
   fragments: number;
   tierName: string;
-  score: number; // tier * 100 + energy
+  score: number;
 }
+
+const ROMANS = ['I', 'II', 'III'];
 
 export default function OrbLeaderboardPage() {
   const { user } = useAuth();
@@ -36,7 +36,6 @@ export default function OrbLeaderboardPage() {
     async function fetchRankings() {
       const entries: OrbRanking[] = [];
 
-      // Add self
       const ud = user as unknown as Record<string, unknown>;
       entries.push({
         userId: user!.uid,
@@ -49,7 +48,6 @@ export default function OrbLeaderboardPage() {
         score: ((ud.orbTier as number) || 1) * 100 + ((ud.orbEnergy as number) || 50),
       });
 
-      // Add friends
       for (const f of friends) {
         try {
           const profile = await getDocument<UserProfile>('users', f.id);
@@ -69,7 +67,6 @@ export default function OrbLeaderboardPage() {
         } catch { /* skip */ }
       }
 
-      // Sort by score (tier * 100 + energy)
       entries.sort((a, b) => b.score - a.score);
       setRankings(entries);
       setLoading(false);
@@ -79,79 +76,172 @@ export default function OrbLeaderboardPage() {
   }, [user, friends]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white font-heading">Orb Rankings</h1>
-        <p className="text-sm text-slate-500">Compete for the strongest Soul Orb among friends.</p>
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Orb Rankings" />
 
-      {/* Weekly Prize Banner */}
-      <div className="glass-card rounded-2xl p-4 border border-yellow-500/20 bg-gradient-to-r from-yellow-500/5 to-[#10101a]">
-        <div className="flex items-center gap-3">
-          <TrophyIconFull size={24} className="text-yellow-400" />
-          <div>
-            <p className="text-sm font-bold text-white">Weekly Prize</p>
-            <p className="text-xs text-slate-400">#1 gets 50 fragments + exclusive badge. Top 3 get 25 fragments.</p>
+        <div style={{ padding: '0 22px' }}>
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Soul Orb · Friends-only
           </div>
-        </div>
-      </div>
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+          >
+            <em style={{ fontStyle: 'italic' }}>Orb Rankings</em>
+          </h1>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            Compete for the strongest Soul Orb among friends.
+          </p>
 
-      {/* Rankings */}
-      <div className="glass-card rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
+          {/* Prize banner */}
+          <div
+            style={{
+              marginTop: 18,
+              padding: '12px 16px',
+              border: '1px solid var(--b-ink)',
+              borderTop: '2px solid #fbbf24',
+            }}
+          >
+            <div className="spread" style={{ fontSize: 9, color: '#fbbf24' }}>
+              Weekly Prize
+            </div>
+            <p
+              className="font-body"
+              style={{ fontSize: 12, color: 'var(--b-ink)', marginTop: 4, lineHeight: 1.5 }}
+            >
+              #1 gets <b>50 fragments</b> + exclusive badge. Top 3 get <b>25 fragments</b>.
+            </p>
           </div>
-        ) : rankings.length === 0 ? (
-          <EmptyState icon={<StarIcon size={40} className="text-orange-400" />} title="No rankings yet" />
-        ) : (
-          <div className="divide-y divide-[#1e1e30]">
-            {rankings.map((entry, i) => {
-              const rank = i + 1;
-              const isMe = entry.userId === user?.uid;
-              const tierConfig = getOrbTier(entry.orbTier);
 
-              return (
-                <div key={entry.userId} className={cn(
-                  'flex items-center gap-4 px-4 py-3',
-                  isMe && 'bg-red-500/5',
-                  rank === 1 && 'bg-yellow-500/5'
-                )}>
-                  {/* Rank */}
-                  <span className={cn(
-                    'font-mono text-lg font-bold w-8 text-center',
-                    rank === 1 && 'text-yellow-400',
-                    rank === 2 && 'text-slate-300',
-                    rank === 3 && 'text-amber-700',
-                    rank > 3 && 'text-slate-600'
-                  )}>
-                    {rank}
-                  </span>
+          <div
+            style={{
+              marginTop: 22,
+              paddingTop: 12,
+              borderTop: '1px solid var(--b-ink)',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: 4,
+            }}
+          >
+            <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+              The Roll
+            </div>
+            <div
+              className="font-mono tabular"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+            >
+              § {String(rankings.length).padStart(2, '0')}
+            </div>
+          </div>
 
-                  {/* User */}
-                  <Link href={`/profile/${entry.username}`} className="flex items-center gap-3 flex-1 min-w-0">
-                    <Avatar src={entry.avatarUrl} alt={entry.username} size="sm" />
-                    <div className="min-w-0">
-                      <p className={cn('text-sm font-medium truncate', isMe ? 'text-orange-400' : 'text-white')}>
-                        {entry.username} {isMe && '(you)'}
-                      </p>
-                      <p className="text-[10px] text-slate-500">
-                        {entry.tierName} &bull; {entry.orbEnergy}% energy &bull; {entry.fragments} fragments
-                      </p>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 8 }}>
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}
+            </div>
+          ) : rankings.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '36px 0' }}>
+              <p
+                className="font-display"
+                style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500 }}
+              >
+                No rankings yet.
+              </p>
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {rankings.map((entry, i) => {
+                const rank = i + 1;
+                const isMe = entry.userId === user?.uid;
+                const isPodium = rank <= 3;
+                const tierConfig = getOrbTier(entry.orbTier);
+                const rankLabel = isPodium ? ROMANS[rank - 1] : String(rank);
+                return (
+                  <li
+                    key={entry.userId}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '38px 1fr auto',
+                      gap: 12,
+                      alignItems: 'center',
+                      padding: '12px 0',
+                      borderBottom: '1px solid var(--b-rule)',
+                    }}
+                  >
+                    <div
+                      className="font-display tabular"
+                      style={{
+                        fontSize: isPodium ? 22 : 14,
+                        fontStyle: isPodium ? 'italic' : 'normal',
+                        fontWeight: 500,
+                        textAlign: 'right',
+                        color: isPodium ? 'var(--b-ink)' : 'var(--b-ink-40)',
+                      }}
+                    >
+                      {rankLabel}
                     </div>
-                  </Link>
-
-                  {/* Tier badge */}
-                  <div className="text-right">
-                    <p className="font-heading text-sm font-bold" style={{ color: tierConfig.colors.mid }}>
+                    <Link
+                      href={`/profile/${entry.username}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        minWidth: 0,
+                        textDecoration: 'none',
+                        color: 'inherit',
+                      }}
+                    >
+                      <Avatar src={entry.avatarUrl} alt={entry.username} size="sm" />
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          className="font-display"
+                          style={{
+                            fontSize: 14,
+                            fontStyle: 'italic',
+                            fontWeight: 500,
+                            lineHeight: 1.1,
+                            color: isMe ? 'var(--b-accent)' : 'var(--b-ink)',
+                          }}
+                        >
+                          {entry.username}
+                          {isMe && (
+                            <span
+                              className="spread"
+                              style={{ fontSize: 8, color: 'var(--b-accent)', marginLeft: 6 }}
+                            >
+                              You
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className="font-body tabular"
+                          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 1 }}
+                        >
+                          {entry.tierName} · {entry.orbEnergy}% energy · {entry.fragments} fragments
+                        </div>
+                      </div>
+                    </Link>
+                    <div
+                      className="font-display tabular"
+                      style={{
+                        fontSize: 16,
+                        fontStyle: 'italic',
+                        fontWeight: 500,
+                        color: tierConfig.colors.mid,
+                      }}
+                    >
                       T{entry.orbTier}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

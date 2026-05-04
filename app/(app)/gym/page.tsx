@@ -10,18 +10,8 @@ import { Button } from '@/components/ui/Button';
 import { getTodaysDay, clearActiveProgram } from '@/lib/gym';
 import { useUIStore } from '@/store/uiStore';
 import { useState } from 'react';
+import { Masthead } from '@/components/editorial/Masthead';
 
-/**
- * Gym pillar landing surface. Three modes:
- *
- *   1. **No active program** → renders the program picker.
- *   2. **Active program** → today's planned workout + recent history.
- *   3. **Loading** → skeletons.
- *
- * "Switch program" sits in the header so the user can change routes
- * without losing workout history (history persists across program
- * changes — gym state stays per-user, not per-program).
- */
 export default function GymPage() {
   const { user } = useAuth();
   const { state, loading } = useGymState();
@@ -31,28 +21,40 @@ export default function GymPage() {
 
   if (!user || loading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-5">
-        <Skeleton className="h-32 rounded-2xl" />
-        <Skeleton className="h-40 rounded-2xl" />
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto" style={{ padding: '24px 22px' }}>
+          <Skeleton className="h-32" />
+          <div style={{ marginTop: 14 }}>
+            <Skeleton className="h-40" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!state?.activeProgramId) {
     return (
-      <div className="max-w-3xl mx-auto">
-        <GymProgramPicker />
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto pb-32">
+          <Masthead section="Gym" />
+          <div style={{ padding: '0 22px' }}>
+            <GymProgramPicker />
+          </div>
+        </div>
       </div>
     );
   }
 
   const today = getTodaysDay(state);
   if (!today) {
-    // Active program id is stale (program removed from constants).
-    // Bounce the user back to the picker.
     return (
-      <div className="max-w-3xl mx-auto">
-        <GymProgramPicker />
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto pb-32">
+          <Masthead section="Gym" />
+          <div style={{ padding: '0 22px' }}>
+            <GymProgramPicker />
+          </div>
+        </div>
       </div>
     );
   }
@@ -70,94 +72,152 @@ export default function GymPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header strip — program identity + switch link */}
-      <div className="flex items-end justify-between gap-3 px-1">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400">Gym</p>
-          <h1 className="font-heading text-2xl font-bold text-white mt-0.5 leading-none">
-            {today.program.name}
-          </h1>
-          <p className="text-[11px] text-slate-500 mt-1.5 font-mono">
-            {today.program.audience} · {state.totalWorkouts || 0} workouts logged
-          </p>
-        </div>
-        <SwitchLink onClick={handleSwitch} disabled={switching} />
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Gym" />
 
-      <TodayWorkoutCard program={today.program} day={today.day} dayIndex={today.dayIndex} />
-
-      {/* History strip */}
-      <section>
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: '#ef4444', boxShadow: '0 0 6px #ef4444' }}
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-red-400">
-              Recent Workouts
-            </p>
-          </div>
-        </div>
-
-        {historyLoading ? (
-          <Skeleton className="h-24 rounded-xl" />
-        ) : workouts.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[#1e1e30] px-4 py-6 text-center">
-            <p className="text-[12px] text-slate-500">
-              No workouts yet — your first session is one tap away.
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
-            {workouts.map((w) => (
-              <Link
-                key={w.id}
-                href={`/gym/workout/${w.id}`}
-                className="block px-4 py-3 hover:bg-white/[0.02] transition-colors"
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div className="spread" style={{ fontSize: 9, color: '#ef4444' }}>
+                Gym · Active Program
+              </div>
+              <h1
+                className="font-display"
+                style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-bold text-white truncate">{w.dayName}</p>
-                    <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-                      {w.programName} · {w.startedAt?.toDate?.().toLocaleDateString() || ''}
-                      {w.completedAt && (
-                        <>
-                          <span className="text-slate-700 mx-1.5">·</span>
-                          <span className="text-emerald-400">complete</span>
-                        </>
-                      )}
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-[12px] font-mono text-white">
-                      {w.totalSets || 0} <span className="text-slate-500">sets</span>
-                    </p>
-                    {w.totalVolume ? (
-                      <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-                        {Math.round(w.totalVolume).toLocaleString()} vol
-                      </p>
-                    ) : (
-                      <p className="text-[10px] font-mono text-slate-700 mt-0.5">in progress</p>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
+                <em style={{ fontStyle: 'italic' }}>{today.program.name}</em>
+              </h1>
+              <p
+                className="font-body tabular"
+                style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+              >
+                {today.program.audience} · {state.totalWorkouts || 0} workouts logged
+              </p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleSwitch} disabled={switching}>
+              Switch program
+            </Button>
           </div>
-        )}
-      </section>
-    </div>
-  );
-}
 
-function SwitchLink({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
-  // Use a button styled as a quiet link rather than a Button, so it
-  // doesn't compete with the "Start workout" primary CTA below.
-  return (
-    <Button variant="ghost" size="sm" onClick={onClick} disabled={disabled}>
-      Switch program
-    </Button>
+          <div style={{ marginTop: 18 }}>
+            <TodayWorkoutCard program={today.program} day={today.day} dayIndex={today.dayIndex} />
+          </div>
+
+          {/* History */}
+          <section style={{ marginTop: 24 }}>
+            <div
+              style={{
+                paddingTop: 12,
+                borderTop: '1px solid var(--b-ink)',
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                marginBottom: 4,
+              }}
+            >
+              <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+                Recent Workouts
+              </div>
+              <div
+                className="font-mono tabular"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+              >
+                § {String(workouts.length).padStart(2, '0')}
+              </div>
+            </div>
+
+            {historyLoading ? (
+              <Skeleton className="h-20" />
+            ) : workouts.length === 0 ? (
+              <div
+                style={{
+                  padding: '20px 14px',
+                  border: '1px dashed var(--b-rule)',
+                  textAlign: 'center',
+                }}
+              >
+                <p
+                  className="font-body"
+                  style={{ fontSize: 12, color: 'var(--b-ink-60)', fontStyle: 'italic' }}
+                >
+                  No workouts yet — your first session is one tap away.
+                </p>
+              </div>
+            ) : (
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {workouts.map((w) => (
+                  <li key={w.id}>
+                    <Link
+                      href={`/gym/workout/${w.id}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        padding: '12px 0',
+                        borderBottom: '1px solid var(--b-rule)',
+                        textDecoration: 'none',
+                        color: 'inherit',
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          className="font-display"
+                          style={{ fontSize: 14, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.1 }}
+                        >
+                          {w.dayName}
+                        </div>
+                        <div
+                          className="font-mono tabular"
+                          style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 2, letterSpacing: '0.04em' }}
+                        >
+                          {w.programName} · {w.startedAt?.toDate?.().toLocaleDateString() || ''}
+                          {w.completedAt && (
+                            <>
+                              <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+                              <span style={{ color: '#34d399' }}>complete</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div
+                          className="font-mono tabular"
+                          style={{ fontSize: 12, color: 'var(--b-ink)' }}
+                        >
+                          {w.totalSets || 0}
+                          <span
+                            style={{ color: 'var(--b-ink-60)', marginLeft: 4 }}
+                          >
+                            sets
+                          </span>
+                        </div>
+                        {w.totalVolume ? (
+                          <div
+                            className="font-mono tabular"
+                            style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 1 }}
+                          >
+                            {Math.round(w.totalVolume).toLocaleString()} vol
+                          </div>
+                        ) : (
+                          <div
+                            className="font-mono"
+                            style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 1, fontStyle: 'italic' }}
+                          >
+                            in progress
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
   );
 }

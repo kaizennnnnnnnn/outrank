@@ -6,20 +6,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useWorkout } from '@/hooks/useGymState';
 import { ActiveWorkoutSession } from '@/components/gym/ActiveWorkoutSession';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { ActivityIcon } from '@/components/ui/AppIcons';
 import { formatRelativeTime } from '@/lib/utils';
+import { Masthead } from '@/components/editorial/Masthead';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-/**
- * Active workout route. If the workout is still in progress, mounts
- * the ActiveWorkoutSession orchestrator. If it's already completed,
- * renders a read-only summary so the user can review past sessions
- * from /gym's history list.
- */
 export default function GymWorkoutPage({ params }: PageProps) {
   const { id } = use(params);
   const { user } = useAuth();
@@ -27,27 +20,52 @@ export default function GymWorkoutPage({ params }: PageProps) {
 
   if (!user || loading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-40 rounded-2xl" />
-        <Skeleton className="h-40 rounded-2xl" />
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto" style={{ padding: '24px 22px' }}>
+          <Skeleton className="h-24" />
+          <div style={{ marginTop: 14 }}>
+            <Skeleton className="h-40" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!workout) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <EmptyState
-          icon={<ActivityIcon size={40} className="text-orange-400" />}
-          title="Workout not found"
-          description="This session may have been deleted, or it doesn't belong to your account."
-          action={
-            <Link href="/gym" className="text-orange-400 hover:underline text-sm">
-              Back to gym
-            </Link>
-          }
-        />
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto" style={{ padding: '60px 22px', textAlign: 'center' }}>
+          <p
+            className="font-display"
+            style={{ fontSize: 28, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+          >
+            Workout not found.
+          </p>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            This session may have been deleted, or it doesn&rsquo;t belong to your account.
+          </p>
+          <Link
+            href="/gym"
+            className="font-body"
+            style={{
+              display: 'inline-block',
+              marginTop: 14,
+              padding: '8px 14px',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--b-paper)',
+              background: 'var(--b-ink)',
+              textDecoration: 'none',
+            }}
+          >
+            Back to gym →
+          </Link>
+        </div>
       </div>
     );
   }
@@ -68,104 +86,183 @@ function CompletedSummary({
 }) {
   const completedAt = workout.completedAt?.toDate();
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
-      <div
-        className="relative overflow-hidden rounded-2xl border p-5"
-        style={{
-          background:
-            'radial-gradient(ellipse 100% 80% at 100% 0%, rgba(34,197,94,0.15), transparent 55%),' +
-            'linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(34,197,94,0.25)',
-        }}
-      >
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-400">
-          Completed
-        </p>
-        <h1 className="font-heading text-2xl font-bold text-white mt-1 leading-none">
-          {workout.dayName}
-        </h1>
-        <p className="text-[11px] font-mono text-slate-500 mt-1.5">
-          {workout.programName}
-          {completedAt && (
-            <>
-              <span className="text-slate-700 mx-1.5">·</span>
-              {formatRelativeTime(completedAt)}
-            </>
-          )}
-        </p>
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              Sets
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Completed" />
+
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div
+            style={{
+              paddingTop: 4,
+              paddingBottom: 14,
+              borderTop: '2px solid #34d399',
+              borderBottom: '1px solid var(--b-rule)',
+            }}
+          >
+            <div className="spread" style={{ fontSize: 9, color: '#34d399' }}>
+              Workout Complete
+            </div>
+            <h1
+              className="font-display"
+              style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, margin: '4px 0' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>{workout.dayName}</em>
+            </h1>
+            <p
+              className="font-mono tabular"
+              style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.04em' }}
+            >
+              {workout.programName}
+              {completedAt && (
+                <>
+                  <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+                  {formatRelativeTime(completedAt)}
+                </>
+              )}
             </p>
-            <p className="font-heading text-2xl font-bold text-white mt-0.5">
-              {workout.totalSets || 0}
-            </p>
+            <div
+              style={{
+                marginTop: 14,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                border: '1px solid var(--b-rule)',
+              }}
+            >
+              <div style={{ padding: '12px 16px', borderRight: '1px solid var(--b-rule)' }}>
+                <div className="spread" style={{ fontSize: 8, color: 'var(--b-ink-60)' }}>
+                  Sets
+                </div>
+                <div
+                  className="font-display tabular"
+                  style={{ fontSize: 24, fontStyle: 'italic', fontWeight: 500, lineHeight: 1, marginTop: 4 }}
+                >
+                  {workout.totalSets || 0}
+                </div>
+              </div>
+              <div style={{ padding: '12px 16px' }}>
+                <div className="spread" style={{ fontSize: 8, color: 'var(--b-ink-60)' }}>
+                  Volume
+                </div>
+                <div
+                  className="font-display tabular"
+                  style={{ fontSize: 24, fontStyle: 'italic', fontWeight: 500, lineHeight: 1, marginTop: 4 }}
+                >
+                  {Math.round(workout.totalVolume || 0).toLocaleString()}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              Volume
-            </p>
-            <p className="font-heading text-2xl font-bold text-white mt-0.5">
-              {Math.round(workout.totalVolume || 0).toLocaleString()}
-            </p>
+
+          {/* Exercise list */}
+          <div
+            style={{
+              marginTop: 22,
+              paddingTop: 12,
+              borderTop: '1px solid var(--b-ink)',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: 8,
+            }}
+          >
+            <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+              Exercises
+            </div>
+            <div
+              className="font-mono tabular"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+            >
+              § {String(workout.exercises.length).padStart(2, '0')}
+            </div>
+          </div>
+
+          <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            {workout.exercises.map((ex) => {
+              const completed = ex.sets.filter((s) => s.completed);
+              const heaviest = completed.reduce<{ reps: number; weight: number } | null>(
+                (best, s) => (!best || s.weight > best.weight ? { reps: s.reps, weight: s.weight } : best),
+                null,
+              );
+              return (
+                <li
+                  key={ex.exerciseId + workoutId}
+                  style={{
+                    padding: '12px 0',
+                    borderBottom: '1px solid var(--b-rule)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        className="font-display"
+                        style={{ fontSize: 15, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.1 }}
+                      >
+                        {ex.exerciseName}
+                      </div>
+                      <div
+                        className="font-mono tabular"
+                        style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2, letterSpacing: '0.04em', textTransform: 'capitalize' }}
+                      >
+                        {ex.primaryMuscle}
+                        <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+                        {completed.length} of {ex.sets.length} sets
+                      </div>
+                    </div>
+                    {heaviest && (
+                      <div
+                        className="font-mono tabular"
+                        style={{ fontSize: 11, color: 'var(--b-ink)', flexShrink: 0 }}
+                      >
+                        {heaviest.reps}
+                        <span style={{ color: 'var(--b-ink-40)', margin: '0 2px' }}>×</span>
+                        {heaviest.weight}
+                        <span style={{ color: 'var(--b-ink-40)', marginLeft: 2 }}>
+                          {heaviest.weight > 0 ? 'kg' : 'bw'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                    {ex.sets.map((s, i) => (
+                      <span
+                        key={i}
+                        className="font-mono tabular"
+                        style={{
+                          fontSize: 10,
+                          padding: '2px 6px',
+                          background: s.completed ? 'rgba(34,197,94,0.12)' : 'transparent',
+                          border: `1px solid ${s.completed ? '#34d39966' : 'var(--b-rule)'}`,
+                          color: s.completed ? '#34d399' : 'var(--b-ink-40)',
+                        }}
+                      >
+                        {s.completed ? `${s.reps}×${s.weight || 'bw'}` : '—'}
+                      </span>
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div style={{ marginTop: 18, textAlign: 'center' }}>
+            <Link
+              href="/gym"
+              className="font-body"
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--b-accent)',
+                textDecoration: 'none',
+              }}
+            >
+              Back to gym →
+            </Link>
           </div>
         </div>
       </div>
-
-      <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
-        {workout.exercises.map((ex) => {
-          const completed = ex.sets.filter((s) => s.completed);
-          const heaviest = completed.reduce<{ reps: number; weight: number } | null>(
-            (best, s) => (!best || s.weight > best.weight ? { reps: s.reps, weight: s.weight } : best),
-            null,
-          );
-          return (
-            <div key={ex.exerciseId + workoutId} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{ex.exerciseName}</p>
-                  <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-                    <span className="capitalize">{ex.primaryMuscle}</span>
-                    <span className="text-slate-700 mx-1.5">·</span>
-                    {completed.length} of {ex.sets.length} sets
-                  </p>
-                </div>
-                {heaviest && (
-                  <p className="text-[11px] font-mono text-slate-300 flex-shrink-0">
-                    <span>{heaviest.reps}</span>
-                    <span className="text-slate-600 mx-0.5">×</span>
-                    <span>{heaviest.weight}</span>
-                    <span className="text-slate-600 ml-0.5">{heaviest.weight > 0 ? 'kg' : 'bw'}</span>
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-1 mt-2 flex-wrap">
-                {ex.sets.map((s, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                    style={{
-                      background: s.completed ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${s.completed ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.05)'}`,
-                      color: s.completed ? '#86efac' : '#475569',
-                    }}
-                  >
-                    {s.completed ? `${s.reps}×${s.weight || 'bw'}` : '—'}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <Link
-        href="/gym"
-        className="block text-center text-[11px] font-bold uppercase tracking-widest text-orange-400 hover:text-orange-300"
-      >
-        Back to gym →
-      </Link>
     </div>
   );
 }

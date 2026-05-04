@@ -9,8 +9,6 @@ import { StreakFlame } from '@/components/habits/StreakFlame';
 import { HabitLogHistory } from '@/components/habits/HabitLogHistory';
 import { HabitProgressGraph } from '@/components/habits/HabitProgressGraph';
 import { LeaderboardRow } from '@/components/competition/LeaderboardRow';
-import { StatCard } from '@/components/profile/StatCard';
-import { LeagueCrest } from '@/components/profile/RanksModal';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PillarTip } from '@/components/habits/PillarTip';
@@ -19,12 +17,11 @@ import { PillarStatsCard } from '@/components/habits/PillarStatsCard';
 import { GymPRsBlock } from '@/components/habits/GymPRsBlock';
 import { isPillarSlug } from '@/constants/pillars';
 import { UserHabit } from '@/types/habit';
-import { FireIcon, TrophyIconFull, ChartBarIcon, TargetFullIcon, SearchIcon } from '@/components/ui/AppIcons';
 import { LeaderboardPeriod } from '@/types/leaderboard';
 import { updateDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
-import { cn } from '@/lib/utils';
 import { LEAGUES, getLeague, getNextLeague } from '@/constants/seasons';
+import { Masthead } from '@/components/editorial/Masthead';
 
 const periods: { value: LeaderboardPeriod; label: string }[] = [
   { value: 'weekly', label: 'Weekly' },
@@ -73,195 +70,378 @@ export default function HabitDetailPage({ params }: { params: Promise<{ slug: st
 
   if (!category) {
     return (
-      <div className="max-w-3xl mx-auto text-center py-20">
-        <SearchIcon size={48} className="text-slate-600 mx-auto" />
-        <h1 className="text-xl font-bold text-white mt-4">Category not found</h1>
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto" style={{ padding: '60px 22px', textAlign: 'center' }}>
+          <p
+            className="font-display"
+            style={{ fontSize: 28, fontStyle: 'italic', fontWeight: 500 }}
+          >
+            Category not found.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="glass-card rounded-2xl p-6">
-        <div className="flex items-center gap-4">
-          <CategoryIcon icon={category.icon} color={category.color} size="lg" slug={category.slug} />
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white font-heading">{category.name}</h1>
-            <p className="text-sm text-slate-500">{category.section} &bull; {category.unit}</p>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section={category.section || 'Habit'} />
+
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            {category.section}
           </div>
-          {habit && habit.currentStreak > 0 && (
-            <StreakFlame streak={habit.currentStreak} size="lg" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <CategoryIcon icon={category.icon} color={category.color} size="lg" slug={category.slug} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1
+                className="font-display"
+                style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, margin: '2px 0' }}
+              >
+                <em style={{ fontStyle: 'italic' }}>{category.name}</em>
+              </h1>
+              <div
+                className="font-body"
+                style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+              >
+                Measured in {category.unit}
+              </div>
+            </div>
+            {habit && habit.currentStreak > 0 && (
+              <StreakFlame streak={habit.currentStreak} size="lg" />
+            )}
+          </div>
+
+          {/* Pillar daily tip */}
+          <div style={{ marginTop: 14 }}>
+            <PillarTip slug={category.slug} color={category.color} />
+          </div>
+
+          {/* Pillar reminder settings */}
+          {(category.slug === 'water' || category.slug === 'sleep') && (
+            <div style={{ marginTop: 14 }}>
+              <PillarReminderSettings pillar={category.slug} color={category.color} />
+            </div>
+          )}
+
+          {/* Pillar stats */}
+          {habit && isPillarSlug(category.slug) && (
+            <div style={{ marginTop: 14 }}>
+              <PillarStatsCard habit={habit} />
+            </div>
+          )}
+
+          {/* Gym PRs */}
+          {category.slug === 'gym' && (
+            <div style={{ marginTop: 14 }}>
+              <GymPRsBlock />
+            </div>
+          )}
+
+          {/* Stats */}
+          {habitLoading ? (
+            <div style={{ marginTop: 18 }}>
+              <Skeleton className="h-20" />
+            </div>
+          ) : habit ? (
+            <div
+              style={{
+                marginTop: 18,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                borderTop: '1px solid var(--b-ink)',
+                borderBottom: '1px solid var(--b-rule)',
+              }}
+            >
+              <StatCell label="Streak" value={`${habit.currentStreak}d`} accent="#f97316" />
+              <StatCell label="Best" value={`${habit.longestStreak}d`} accent="#fbbf24" border />
+              <StatCell label="Total Logs" value={habit.totalLogs.toString()} accent="#ef4444" border />
+              <div
+                style={{
+                  padding: '10px 0',
+                  textAlign: 'center',
+                  borderLeft: '1px solid var(--b-rule)',
+                  background: editingGoal ? 'rgba(249,115,22,0.06)' : 'transparent',
+                }}
+              >
+                {editingGoal ? (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 4, paddingTop: 4 }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="100000"
+                        value={goalDraft}
+                        onChange={(e) => setGoalDraft(e.target.value)}
+                        className="font-display tabular"
+                        style={{
+                          width: 60,
+                          background: 'transparent',
+                          border: '1px solid var(--b-accent)',
+                          padding: '2px 4px',
+                          textAlign: 'center',
+                          fontSize: 16,
+                          fontStyle: 'italic',
+                          fontWeight: 500,
+                          color: 'var(--b-ink)',
+                          outline: 'none',
+                        }}
+                        autoFocus
+                      />
+                      <span
+                        className="font-body"
+                        style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                      >
+                        {habit.unit}
+                      </span>
+                    </div>
+                    <div
+                      className="spread"
+                      style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 4 }}
+                    >
+                      Daily Goal
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 4 }}>
+                      <button
+                        onClick={saveGoal}
+                        disabled={savingGoal}
+                        className="font-body"
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: 9,
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          background: 'var(--b-accent)',
+                          color: '#fff',
+                          border: 'none',
+                          cursor: savingGoal ? 'wait' : 'pointer',
+                        }}
+                      >
+                        {savingGoal ? '…' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => { setEditingGoal(false); setGoalDraft(String(habit.goal)); }}
+                        className="font-body"
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: 9,
+                          fontWeight: 600,
+                          background: 'transparent',
+                          color: 'var(--b-ink-60)',
+                          border: '1px solid var(--b-rule)',
+                          cursor: 'pointer',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div
+                      className="font-display tabular"
+                      style={{ fontSize: 18, fontWeight: 500, lineHeight: 1, color: 'var(--b-accent)' }}
+                    >
+                      {habit.goal}
+                      <span
+                        className="font-body"
+                        style={{ fontSize: 10, color: 'var(--b-ink-60)', fontWeight: 400, marginLeft: 2 }}
+                      >
+                        {habit.unit}
+                      </span>
+                    </div>
+                    <div
+                      className="spread"
+                      style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 4 }}
+                    >
+                      Daily Goal
+                    </div>
+                    <button
+                      onClick={() => setEditingGoal(true)}
+                      className="font-body"
+                      style={{
+                        marginTop: 4,
+                        padding: '2px 6px',
+                        fontSize: 8,
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        background: 'transparent',
+                        color: 'var(--b-accent)',
+                        border: '1px solid var(--b-accent)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                marginTop: 18,
+                padding: '24px',
+                border: '1px dashed var(--b-rule)',
+                textAlign: 'center',
+              }}
+            >
+              <p
+                className="font-body"
+                style={{ fontSize: 12, color: 'var(--b-ink-60)', fontStyle: 'italic' }}
+              >
+                You haven&rsquo;t added this habit yet.
+              </p>
+            </div>
+          )}
+
+          {/* Progress vs Goal */}
+          {user && habit && (
+            <Section title="Progress vs Goal" eyebrow="Trend">
+              <HabitProgressGraph
+                userId={user.uid}
+                habitId={slug}
+                goal={habit.goal}
+                unit={habit.unit}
+                color={category.color}
+              />
+            </Section>
+          )}
+
+          {/* League info */}
+          {user && (
+            <LeagueInfoCard
+              weeklyXP={user.weeklyXP || 0}
+              categoryColor={category.color}
+              categoryName={category.name}
+            />
+          )}
+
+          {/* Leaderboard */}
+          <Section title="Leaderboard" eyebrow="Standings">
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+              {periods.map((p) => {
+                const active = period === p.value;
+                return (
+                  <button
+                    key={p.value}
+                    onClick={() => setPeriod(p.value)}
+                    className="font-body"
+                    style={{
+                      padding: '5px 10px',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      background: active ? 'var(--b-ink)' : 'transparent',
+                      color: active ? 'var(--b-paper)' : 'var(--b-ink-60)',
+                      border: '1px solid var(--b-ink)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div>
+              {lbLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}
+                </div>
+              ) : entries.length === 0 ? (
+                <p
+                  className="font-body"
+                  style={{ fontSize: 12, color: 'var(--b-ink-40)', padding: '24px 0', textAlign: 'center', fontStyle: 'italic' }}
+                >
+                  No entries yet.
+                </p>
+              ) : (
+                entries.slice(0, 20).map((entry, i) => (
+                  <LeaderboardRow
+                    key={entry.userId}
+                    rank={i + 1}
+                    username={entry.username}
+                    avatarUrl={entry.avatarUrl}
+                    score={entry.score}
+                    delta={entry.delta}
+                    isCurrentUser={entry.userId === user?.uid}
+                    index={i}
+                  />
+                ))
+              )}
+            </div>
+          </Section>
+
+          {/* Recent logs */}
+          {user && habit && (
+            <Section title="Recent Logs" eyebrow="History">
+              <HabitLogHistory userId={user.uid} habitId={slug} />
+            </Section>
           )}
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* Daily rotating tip — pillars only, returns null otherwise */}
-      <PillarTip slug={category.slug} color={category.color} />
-
-      {/* Reminder settings — water + sleep only. The pillarReminders
-          Cloud Function (every 15 min) reads pillarSettings on the
-          user doc to fire pushes inside the waking window / before
-          bedtime. */}
-      {(category.slug === 'water' || category.slug === 'sleep') && (
-        <PillarReminderSettings pillar={category.slug} color={category.color} />
-      )}
-
-      {/* Pillar deep stats — 30-day average / hit rate / mini-bar
-          chart. Pillar-only. */}
-      {habit && isPillarSlug(category.slug) && <PillarStatsCard habit={habit} />}
-
-      {/* Gym personal records — gym-only addendum to the stats card. */}
-      {category.slug === 'gym' && <GymPRsBlock />}
-
-      {/* My Stats */}
-      {habitLoading ? (
-        <Skeleton className="h-24 rounded-2xl" />
-      ) : habit ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard icon={<FireIcon size={24} className="text-orange-400" />} value={`${habit.currentStreak}d`} label="Current Streak" />
-          <StatCard icon={<TrophyIconFull size={24} className="text-yellow-400" />} value={`${habit.longestStreak}d`} label="Best Streak" />
-          <StatCard icon={<ChartBarIcon size={24} className="text-red-400" />} value={habit.totalLogs.toString()} label="Total Logs" />
-
-          {/* Editable Daily Goal */}
-          <div className={cn(
-            'relative rounded-xl p-4 text-center border-2 transition-all',
-            editingGoal
-              ? 'bg-orange-500/5 border-orange-500/40'
-              : 'bg-[#10101a] border-orange-500/25 hover:border-orange-500/50'
-          )}>
-            <div className="flex justify-center"><TargetFullIcon size={24} className="text-orange-400" /></div>
-
-            {editingGoal ? (
-              <>
-                <div className="mt-2 flex items-center justify-center gap-1">
-                  <input
-                    type="number"
-                    min="1"
-                    max="100000"
-                    value={goalDraft}
-                    onChange={(e) => setGoalDraft(e.target.value)}
-                    className="w-20 bg-[#0b0b14] border border-orange-500/40 rounded-md px-2 py-1 text-center font-mono text-lg font-bold text-white focus:outline-none focus:border-orange-400"
-                    autoFocus
-                  />
-                  <span className="text-xs text-slate-500">{habit.unit}</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Daily Goal</p>
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  <button
-                    onClick={saveGoal}
-                    disabled={savingGoal}
-                    className="px-3 py-1 rounded-md bg-orange-500 hover:bg-orange-400 text-[11px] font-bold text-white transition-colors disabled:opacity-60"
-                  >
-                    {savingGoal ? 'Saving...' : 'Save'}
-                  </button>
-                  <button
-                    onClick={() => { setEditingGoal(false); setGoalDraft(String(habit.goal)); }}
-                    className="px-3 py-1 rounded-md bg-[#1e1e30] hover:bg-[#2a2a40] text-[11px] font-medium text-slate-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="font-mono text-lg font-bold text-white mt-1">
-                  {habit.goal} <span className="text-xs text-slate-500 font-normal">{habit.unit}</span>
-                </p>
-                <p className="text-xs text-slate-500 mt-1">Daily Goal</p>
-                <button
-                  onClick={() => setEditingGoal(true)}
-                  className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 text-orange-400 text-[11px] font-semibold transition-colors"
-                >
-                  <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
-                  </svg>
-                  Edit Goal
-                </button>
-              </>
-            )}
-          </div>
+function Section({ title, eyebrow, children }: { title: string; eyebrow?: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginTop: 24 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+          {title}
         </div>
-      ) : (
-        <div className="glass-card rounded-2xl p-6 text-center">
-          <p className="text-slate-500">You haven&apos;t added this habit yet.</p>
-        </div>
-      )}
-
-      {/* Progress Graph */}
-      {user && habit && (
-        <div className="glass-card rounded-2xl p-4">
-          <h2 className="text-sm font-bold text-white mb-3">Progress vs Goal</h2>
-          <HabitProgressGraph
-            userId={user.uid}
-            habitId={slug}
-            goal={habit.goal}
-            unit={habit.unit}
-            color={category.color}
-          />
-        </div>
-      )}
-
-      {/* League info — where you stand on this habit's weekly ladder */}
-      {user && (
-        <LeagueInfoCard
-          weeklyXP={user.weeklyXP || 0}
-          categoryColor={category.color}
-          categoryName={category.name}
-        />
-      )}
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Leaderboard */}
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold text-white">Leaderboard</h2>
-          <div className="flex gap-1 bg-[#10101a] rounded-xl p-1 border border-[#1e1e30] w-fit">
-            {periods.map((p) => (
-              <button
-                key={p.value}
-                onClick={() => setPeriod(p.value)}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                  period === p.value ? 'bg-red-600 text-white' : 'text-slate-500 hover:text-white'
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="glass-card rounded-2xl overflow-hidden divide-y divide-[#1e1e30]">
-            {lbLoading ? (
-              <div className="p-4 space-y-2">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
-              </div>
-            ) : entries.length === 0 ? (
-              <p className="p-8 text-center text-slate-600">No entries yet</p>
-            ) : (
-              entries.slice(0, 20).map((entry, i) => (
-                <LeaderboardRow
-                  key={entry.userId}
-                  rank={i + 1}
-                  username={entry.username}
-                  avatarUrl={entry.avatarUrl}
-                  score={entry.score}
-                  delta={entry.delta}
-                  isCurrentUser={entry.userId === user?.uid}
-                  index={i}
-                />
-              ))
-            )}
-          </div>
-        </div>
-
-        {/* Log History */}
-        {user && habit && (
-          <div className="space-y-3">
-            <h2 className="text-lg font-bold text-white">Recent Logs</h2>
-            <HabitLogHistory userId={user.uid} habitId={slug} />
+        {eyebrow && (
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+          >
+            {eyebrow}
           </div>
         )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function StatCell({ label, value, accent, border }: { label: string; value: string; accent: string; border?: boolean }) {
+  return (
+    <div
+      style={{
+        padding: '10px 0',
+        textAlign: 'center',
+        borderLeft: border ? '1px solid var(--b-rule)' : 'none',
+      }}
+    >
+      <div
+        className="font-display tabular"
+        style={{ fontSize: 18, fontWeight: 500, lineHeight: 1, color: accent }}
+      >
+        {value}
+      </div>
+      <div
+        className="spread"
+        style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 4 }}
+      >
+        {label}
       </div>
     </div>
   );
@@ -279,89 +459,155 @@ function LeagueInfoCard({ weeklyXP, categoryColor, categoryName }: {
   const segmentSpan = next ? (next.minWeeklyXP - current.minWeeklyXP) : 1;
   const segmentProgress = next ? ((weeklyXP - current.minWeeklyXP) / segmentSpan) * 100 : 100;
 
+  const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+
   return (
-    <div
-      className="relative overflow-hidden rounded-2xl p-5 border"
-      style={{
-        background: `radial-gradient(ellipse 120% 80% at 100% 0%, ${current.color}22, transparent 55%), linear-gradient(160deg, #10101a 0%, #0b0b14 100%)`,
-        borderColor: `${current.color}40`,
-        boxShadow: `0 0 28px -10px ${current.color}66`,
-      }}
-    >
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: current.color }}>
-            League · {categoryName}
-          </p>
-          <p className="font-heading text-xl font-bold text-white mt-1">
-            You&rsquo;re in <span style={{ color: current.color }}>{current.name}</span>
-          </p>
-          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed max-w-[320px]">
-            Your <b>weekly XP</b> determines your league on every habit leaderboard. Log <b style={{ color: categoryColor }}>{categoryName}</b> to keep climbing.
-          </p>
-        </div>
-        <LeagueCrest color={current.color} tier={current.id} size={52} />
-      </div>
-
-      {/* Progress to next league */}
-      <div className="mt-4">
-        <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1.5">
-          <span>{weeklyXP.toLocaleString()} weekly XP</span>
-          {next ? (
-            <span>{toNext.toLocaleString()} to <b style={{ color: next.color }}>{next.name}</b></span>
-          ) : (
-            <span className="text-pink-400 font-bold uppercase tracking-widest">Max tier</span>
-          )}
-        </div>
-        <div className="w-full h-2 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30]">
+    <section style={{ marginTop: 24 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: `2px solid ${current.color}`,
+          borderBottom: '1px solid var(--b-rule)',
+          paddingBottom: 14,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: current.color }}
+            >
+              League · {categoryName}
+            </div>
+            <div
+              className="font-display"
+              style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.1, marginTop: 2 }}
+            >
+              You&rsquo;re in <span style={{ color: current.color }}>{current.name}</span>
+            </div>
+            <p
+              className="font-body"
+              style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 4, lineHeight: 1.5, maxWidth: 360 }}
+            >
+              Your <b>weekly XP</b> determines your league on every habit leaderboard. Log <b style={{ color: categoryColor }}>{categoryName}</b> to keep climbing.
+            </p>
+          </div>
           <div
-            className="h-full rounded-full transition-all duration-700"
             style={{
-              width: `${Math.min(100, Math.max(0, segmentProgress))}%`,
-              background: next
-                ? `linear-gradient(90deg, ${current.color}, ${next.color})`
-                : `linear-gradient(90deg, ${current.color}, #fde047)`,
-              boxShadow: `0 0 10px ${current.color}aa`,
+              width: 52,
+              height: 52,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: `1px solid ${current.color}`,
+              flexShrink: 0,
             }}
-          />
+          >
+            <span
+              className="font-display tabular"
+              style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, color: current.color }}
+            >
+              {NUMERALS[currentIdx] ?? ''}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* League ladder preview — current, next, one above */}
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {[currentIdx, currentIdx + 1, currentIdx + 2].map((idx, i) => {
-          const l = LEAGUES[idx];
-          if (!l) {
+        {/* Progress to next league */}
+        <div style={{ marginTop: 12 }}>
+          <div
+            className="font-mono tabular"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 9,
+              color: 'var(--b-ink-60)',
+              marginBottom: 4,
+              letterSpacing: '0.04em',
+            }}
+          >
+            <span>{weeklyXP.toLocaleString()} weekly XP</span>
+            {next ? (
+              <span>{toNext.toLocaleString()} to <b style={{ color: next.color }}>{next.name}</b></span>
+            ) : (
+              <span style={{ color: '#ec4899', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                Max tier
+              </span>
+            )}
+          </div>
+          <div style={{ height: 2, background: 'var(--b-rule)' }}>
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.min(100, Math.max(2, segmentProgress))}%`,
+                background: current.color,
+                transition: 'width 700ms',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Ladder preview */}
+        <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+          {[currentIdx, currentIdx + 1, currentIdx + 2].map((idx, i) => {
+            const l = LEAGUES[idx];
+            if (!l) {
+              return (
+                <div
+                  key={i}
+                  style={{
+                    padding: '10px',
+                    textAlign: 'center',
+                    border: '1px dashed var(--b-rule)',
+                    opacity: 0.55,
+                  }}
+                >
+                  <p
+                    className="font-body"
+                    style={{ fontSize: 10, color: 'var(--b-ink-40)', fontStyle: 'italic' }}
+                  >
+                    — top —
+                  </p>
+                </div>
+              );
+            }
+            const isCurrent = i === 0;
             return (
-              <div key={i} className="rounded-xl p-3 text-center bg-[#0d0d15] border border-dashed border-[#1e1e30] opacity-60">
-                <p className="text-[10px] text-slate-600">— top —</p>
+              <div
+                key={l.id}
+                style={{
+                  padding: '10px',
+                  textAlign: 'center',
+                  border: isCurrent ? `2px solid ${l.color}` : `1px solid ${l.color}55`,
+                }}
+              >
+                <div
+                  className="font-display tabular"
+                  style={{
+                    fontSize: 18,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    color: l.color,
+                  }}
+                >
+                  {NUMERALS[idx] ?? ''}
+                </div>
+                <div
+                  className="font-display"
+                  style={{ fontSize: 11, fontStyle: 'italic', fontWeight: 500, color: l.color, marginTop: 2 }}
+                >
+                  {l.name}
+                </div>
+                <div
+                  className="font-mono tabular"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 2 }}
+                >
+                  {l.minWeeklyXP.toLocaleString()}+ XP
+                </div>
               </div>
             );
-          }
-          const isCurrent = i === 0;
-          return (
-            <div
-              key={l.id}
-              className={cn(
-                'rounded-xl p-3 text-center border flex flex-col items-center gap-1.5',
-                isCurrent && 'ring-1 ring-orange-500/40',
-              )}
-              style={{
-                background: `linear-gradient(145deg, ${l.color}14, #0b0b14 70%)`,
-                borderColor: `${l.color}35`,
-              }}
-            >
-              <LeagueCrest color={l.color} tier={l.id} size={32} />
-              <p className="text-[11px] font-heading font-bold leading-tight" style={{ color: l.color }}>
-                {l.name}
-              </p>
-              <p className="text-[9px] font-mono text-slate-500">
-                {l.minWeeklyXP.toLocaleString()}+ XP
-              </p>
-            </div>
-          );
-        })}
+          })}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
