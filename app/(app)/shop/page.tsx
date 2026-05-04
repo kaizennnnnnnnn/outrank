@@ -367,50 +367,113 @@ export default function ShopPage() {
   }, [tabItems, activeRarityFilter]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white font-heading">Shop</h1>
-          <p className="text-sm text-slate-500">Spend fragments on cosmetics, boosts, and utilities.</p>
+    <div className="dir-b max-w-2xl mx-auto" style={{ color: 'var(--b-ink)' }}>
+      {/* Editorial header */}
+      <div style={{ paddingBottom: 12 }}>
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+          The Atelier
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/inventory">
-            <span className="text-xs text-orange-400 hover:underline">Inventory &rarr;</span>
-          </Link>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400">
-              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-            </svg>
-            <span className="font-mono text-sm font-bold text-orange-400">{fragments}</span>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, fontStyle: 'italic', margin: '2px 0 4px' }}
+          >
+            Cosmetics
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+            <Link
+              href="/inventory"
+              className="font-body"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                textDecoration: 'none',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              INVENTORY →
+            </Link>
+            <span
+              className="font-mono tabular"
+              style={{ fontSize: 14, color: 'var(--b-ink)', fontWeight: 700 }}
+            >
+              ◆ {fragments.toLocaleString()}
+            </span>
           </div>
         </div>
+        <p
+          className="font-body"
+          style={{ fontSize: 12, color: 'var(--b-ink-60)', marginTop: 4 }}
+        >
+          Spend fragments on cosmetics, boosts, and utilities.
+        </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none sm:grid sm:grid-cols-6">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => {
-              setTab(t.id);
-              setRarityFilter(defaultRarityFor[t.id]);
-            }}
-            className={cn(
-              'flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all whitespace-nowrap shrink-0',
-              tab === t.id
-                ? 'bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_6px_20px_-10px_rgba(239,68,68,0.7)]'
-                : 'bg-[#10101a] border border-[#1e1e30] text-slate-400 hover:text-white'
-            )}
-          >
-            {t.icon}
-            <span>{t.label}</span>
-          </button>
-        ))}
+      {/* Tabs — editorial: hairline-bracketed row, italic display labels */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 0,
+          overflowX: 'auto',
+          borderTop: '1px solid var(--b-ink)',
+          borderBottom: '1px solid var(--b-rule)',
+        }}
+        className="no-scrollbar"
+      >
+        {TABS.map((t, i) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => {
+                setTab(t.id);
+                setRarityFilter(defaultRarityFor[t.id]);
+              }}
+              style={{
+                flex: 1,
+                minWidth: 90,
+                padding: '10px 8px',
+                borderLeft: i ? '1px solid var(--b-rule)' : 'none',
+                background: 'transparent',
+                border: 'none',
+                borderTop: 'none',
+                borderRight: 'none',
+                borderLeftWidth: i ? 1 : 0,
+                borderLeftStyle: 'solid',
+                borderLeftColor: 'var(--b-rule)',
+                borderBottom: active ? '2px solid var(--b-accent)' : '2px solid transparent',
+                marginBottom: -1,
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                className="font-display"
+                style={{
+                  fontSize: 13,
+                  fontStyle: active ? 'italic' : 'normal',
+                  fontWeight: 500,
+                  color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {t.label}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Rarity filter chips — reduces scrolling drastically when lots of colors */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      {/* Rarity filter chips */}
+      <div
+        className="no-scrollbar"
+        style={{
+          display: 'flex',
+          gap: 6,
+          overflowX: 'auto',
+          padding: '12px 0',
+        }}
+      >
         {(['all', 'mythic', 'legendary', 'epic', 'rare', 'common'] as const).map((r) => {
           const active = activeRarityFilter === r;
           const count = counts[r];
@@ -420,26 +483,37 @@ export default function ShopPage() {
             <button
               key={r}
               onClick={() => setRarityFilter(r)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] whitespace-nowrap shrink-0 transition-all border',
-                active
-                  ? 'text-white'
-                  : 'text-slate-500 hover:text-white border-[#1e1e30] bg-[#0b0b14]',
-                r === 'mythic' && active && 'animate-shop-mythic-border',
-                r === 'legendary' && active && 'animate-shop-legendary-border',
-              )}
-              style={active && accent ? {
-                background: `linear-gradient(135deg, ${accent.border}30, ${accent.border}12 70%)`,
-                borderColor: accent.border,
-                color: accent.text,
-                textShadow: `0 0 8px ${accent.border}`,
-              } : active ? {
-                background: 'linear-gradient(135deg, rgba(249,115,22,0.3), rgba(220,38,38,0.15) 70%)',
-                borderColor: '#f97316',
-              } : undefined}
+              className="font-body"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '5px 12px',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                border: '1px solid ' + (active
+                  ? (accent ? accent.border : 'var(--b-ink)')
+                  : 'var(--b-rule)'),
+                background: active
+                  ? (accent ? `${accent.border}1f` : 'var(--b-ink)')
+                  : 'transparent',
+                color: active
+                  ? (accent ? accent.text : 'var(--b-paper)')
+                  : 'var(--b-ink-60)',
+                cursor: 'pointer',
+              }}
             >
               <span>{r === 'all' ? 'All' : rarityLabels[r]}</span>
-              <span className="font-mono text-[10px] opacity-70">{count}</span>
+              <span
+                className="font-mono tabular"
+                style={{ fontSize: 9, opacity: 0.7 }}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
