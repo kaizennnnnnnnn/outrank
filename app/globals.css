@@ -21,14 +21,16 @@
 }
 
 /* ─── Direction B — Editorial Mono design tokens ──────────────────────
-   Magazine / periodical aesthetic, dark variant. The "paper" is the
-   existing app dark background; "ink" is a warm off-white that reads
-   as printed type. Hairline rules + tinted ink levels approximate a
-   newspaper's grayscale type hierarchy. Accent color stays the
-   existing red so the brand doesn't shift.
+   Magazine / periodical aesthetic. Default theme is dark (paper =
+   existing app background, ink = warm off-white). Light theme swaps
+   to cream paper + dark ink via [data-theme='light'] on <html>,
+   driven by store/themeStore.ts. Hairline rules + tinted ink levels
+   approximate a newspaper's grayscale type hierarchy in either
+   direction. Accent color stays the existing red so the brand
+   doesn't shift across themes.
 
-   Usage from React: just style with `var(--b-ink)` etc. Editorial
-   screens add `.dir-b` to their root for global font defaults. */
+   Editorial screens add `.dir-b` to their root for global font
+   defaults; the theme attribute on <html> handles the color swap. */
 :root {
   --b-paper:   #0d0d15;
   --b-paper-2: #14141d;
@@ -40,6 +42,21 @@
   --b-accent:  #dc2626;
   --b-accent-2:#f97316;
   --accent-1:  var(--b-accent);
+}
+
+/* Light variant — cream paper + dark ink. Activated by setting
+   `data-theme="light"` on <html>. Only editorial pages (those using
+   var(--b-paper) etc) flip; legacy premium pages keep their hardcoded
+   #0d0d15 dark backgrounds until they're converted screen-by-screen. */
+html[data-theme='light'] {
+  --b-paper:   #f4f1ea;
+  --b-paper-2: #ece8df;
+  --b-ink:     #14130f;
+  --b-ink-60:  rgba(20, 19, 15, 0.58);
+  --b-ink-40:  rgba(20, 19, 15, 0.34);
+  --b-ink-15:  rgba(20, 19, 15, 0.15);
+  --b-rule:    rgba(20, 19, 15, 0.12);
+  /* Accent stays branded — same red on either paper */
 }
 
 /* Editorial typography helpers */

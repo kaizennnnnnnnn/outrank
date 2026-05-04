@@ -11,7 +11,9 @@ import { uploadAvatar } from '@/lib/storage';
 import { sanitize, sanitizeBio } from '@/lib/security';
 import { logout } from '@/lib/auth';
 import { useUIStore } from '@/store/uiStore';
+import { useThemeStore, type EditorialTheme } from '@/store/themeStore';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { user, firebaseUser } = useAuth();
@@ -114,6 +116,9 @@ export default function SettingsPage() {
       <section className="glass-card rounded-2xl p-4">
         <p className="text-xs text-slate-500">Orb colors and upgrades are available in the <a href="/shop" className="text-orange-400 underline">Shop</a>.</p>
       </section>
+
+      {/* Theme — editorial dark vs light cream paper */}
+      <ThemeSection />
 
       {/* Push Notifications */}
       <section className="glass-card rounded-2xl p-6 space-y-4">
@@ -316,5 +321,82 @@ export default function SettingsPage() {
         variant="danger"
       />
     </div>
+  );
+}
+
+// ─── Theme picker ────────────────────────────────────────────────────
+//
+// Editorial Direction B has two color skins: dark (default — same as
+// the existing app background) and light (cream paper, dark ink). Only
+// pages converted to editorial respect the toggle; legacy premium
+// pages still render in their hardcoded dark colors until they're
+// migrated screen-by-screen.
+
+function ThemeSection() {
+  const theme = useThemeStore((s) => s.theme);
+  const setTheme = useThemeStore((s) => s.setTheme);
+
+  const options: { key: EditorialTheme; label: string; sub: string; preview: { paper: string; ink: string } }[] = [
+    {
+      key: 'dark',
+      label: 'Dark',
+      sub: 'Near-black paper, warm cream ink.',
+      preview: { paper: '#0d0d15', ink: '#f5f1ea' },
+    },
+    {
+      key: 'light',
+      label: 'Light',
+      sub: 'Cream paper, dark ink — like a printed periodical.',
+      preview: { paper: '#f4f1ea', ink: '#14130f' },
+    },
+  ];
+
+  return (
+    <section className="glass-card rounded-2xl p-6 space-y-4">
+      <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Theme</h2>
+      <p className="text-xs text-slate-500 -mt-2">
+        Switches the editorial pages between dark and light cream paper. Pages still
+        being migrated stay in dark.
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        {options.map((opt) => {
+          const active = theme === opt.key;
+          return (
+            <button
+              key={opt.key}
+              onClick={() => setTheme(opt.key)}
+              className={cn(
+                'rounded-2xl border-2 p-3 text-left transition-all',
+                active
+                  ? 'border-orange-400 shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]'
+                  : 'border-white/10 hover:border-white/20',
+              )}
+            >
+              {/* Tiny preview tile */}
+              <div
+                className="rounded-xl border h-16 flex items-center px-3 gap-2 mb-2.5"
+                style={{
+                  background: opt.preview.paper,
+                  borderColor: 'rgba(255,255,255,0.05)',
+                }}
+              >
+                <span
+                  className="block w-2.5 h-2.5 rounded-full"
+                  style={{ background: '#dc2626' }}
+                />
+                <span
+                  className="font-display text-sm font-semibold"
+                  style={{ color: opt.preview.ink, fontStyle: 'italic' }}
+                >
+                  Outrank
+                </span>
+              </div>
+              <div className="font-bold text-white text-[14px]">{opt.label}</div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{opt.sub}</p>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }

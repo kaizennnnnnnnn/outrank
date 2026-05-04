@@ -8,11 +8,13 @@ import { LevelUpOverlay } from '@/components/ui/LevelUpOverlay';
 import { BadgeUnlockOverlay } from '@/components/ui/BadgeUnlockOverlay';
 import { PushNotificationHandler } from '@/components/notifications/PushNotificationHandler';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { ThemeBoot } from '@/components/editorial/ThemeBoot';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <AuthGuard>
       <EmailVerifyGuard>
+        <ThemeBoot />
         {children}
         <ToastContainer />
         <LevelUpOverlay />
