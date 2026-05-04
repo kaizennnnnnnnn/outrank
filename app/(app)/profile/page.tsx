@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { useFriends } from '@/hooks/useFriends';
@@ -176,7 +177,7 @@ export default function ProfilePage() {
             <StatRow label="Streak (longest)" value={`${longestStreak} d`} />
             <StatRow label="Habits logged"    value={totalLogs.toLocaleString()} />
             <StatRow label="Duels won"        value={String(duelWins)} />
-            <StatRow label="Friends"          value={String(friendCount)} />
+            <StatRow label="Friends"          value={String(friendCount)} href="/friends" />
             <StatRow label="Badges earned"    value={`${ownedBadges} / 40`} last />
           </div>
 
@@ -257,21 +258,16 @@ function StatRow({
   value,
   accent,
   last,
+  href,
 }: {
   label:   string;
   value:   string;
   accent?: boolean;
   last?:   boolean;
+  href?:   string;
 }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '10px 0',
-        borderBottom: last ? 'none' : '1px solid var(--b-rule)',
-      }}
-    >
+  const inner = (
+    <>
       <span
         style={{
           fontSize: 11,
@@ -290,10 +286,21 @@ function StatRow({
           color: accent ? 'var(--b-accent)' : 'var(--b-ink)',
         }}
       >
-        {value}
+        {value}{href && <span style={{ marginLeft: 6, color: 'var(--b-ink-40)', fontWeight: 400 }}>→</span>}
       </span>
-    </div>
+    </>
   );
+  const sx = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '10px 0',
+    borderBottom: last ? 'none' : '1px solid var(--b-rule)',
+    color: 'inherit',
+    textDecoration: 'none',
+  } as const;
+  return href
+    ? <Link href={href} style={sx}>{inner}</Link>
+    : <div style={sx}>{inner}</div>;
 }
 
 function SectionLabel({ left }: { left: string }) {
