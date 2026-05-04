@@ -176,15 +176,12 @@ export async function logHabit(params: LogHabitParams) {
   if (newStreak === 30) totalXP += XP_STREAK_30;
   if (newStreak === 100) totalXP += XP_STREAK_100;
 
-  // 3b. Apply Orb Aura XP multiplier
+  // 3b. Orb tier no longer grants automatic XP buffs — the orb is
+  //     visual-only at max tier; all power comes from loot pulls.
+  //     Orb energy still ticks up so the awakening visual fills.
   try {
     const userSnap2 = await getDoc(doc(db, `users/${userId}`));
     const ud = userSnap2.data();
-    const orbTier = ud?.orbTier || 1;
-    const auraMultipliers: Record<number, number> = { 1: 1.0, 2: 1.05, 3: 1.10, 4: 1.15, 5: 1.20 };
-    totalXP = Math.round(totalXP * (auraMultipliers[orbTier] || 1.0));
-
-    // 3c. Add Orb Energy (+15 per log)
     const currentEnergy = ud?.orbEnergy ?? 50;
     const newEnergy = Math.min(100, currentEnergy + 15);
     await updateDoc(doc(db, `users/${userId}`), { orbEnergy: newEnergy });
@@ -215,17 +212,20 @@ export async function logHabit(params: LogHabitParams) {
   let bonusFragments = 0;
   let evolutionChargeEarned = false;
   try {
+    // Pillars-only check: side habits give XP + a small fragment drip
+    // (handled below) but they don't gate the daily completion bonus.
+    // The bonus fires when all FIVE pillars are logged today.
     const allHabitsSnap = await getDocs(query(collection(db, `habits/${userId}/userHabits`)));
-    const allHabits = allHabitsSnap.docs;
-    if (allHabits.length > 0) {
+    const pillarHabits = allHabitsSnap.docs.filter(h => isPillarSlug(h.id));
+    if (pillarHabits.length > 0) {
       const todayStr = new Date().toDateString();
-      const allLoggedToday = allHabits.every(h => {
+      const allPillarsLoggedToday = pillarHabits.every(h => {
         const d = h.data();
         // include this-very-log: current habit just got lastLogDate=Timestamp.now
         if (h.id === habitSlug) return true;
         return d.lastLogDate?.toDate?.()?.toDateString?.() === todayStr;
       });
-      if (allLoggedToday) {
+      if (allPillarsLoggedToday) {
         const ud = (await getDoc(userRef)).data();
         const lastBonus = ud?.lastDailyBonusDate as { toDate?: () => Date } | undefined;
         const lastBonusStr = lastBonus?.toDate?.()?.toDateString?.();
@@ -238,6 +238,14 @@ export async function logHabit(params: LogHabitParams) {
       }
     }
   } catch { /* non-fatal */ }
+
+  // Side habits drip a small fragment payout per log so they feel
+  // rewarding without overpowering the pillar economy. Pillars don't
+  // get this — their fragments come from the daily bonus + recap
+  // publish + orb loot pulls.
+  const SIDE_HABIT_FRAGMENT_DRIP = 5;
+  const isPillar = isPillarSlug(habitSlug);
+  const sideHabitFragments = isPillar ? 0 : SIDE_HABIT_FRAGMENT_DRIP;
 
   const finalXP = totalXP + bonusXP;
 
@@ -259,9 +267,11 @@ export async function logHabit(params: LogHabitParams) {
     seasonPassXP: increment(finalXP),
     lastActiveAt: Timestamp.now(),
     awakening: newAwakening,
+    ...(sideHabitFragments > 0 ? { fragments: increment(sideHabitFragments) } : {}),
     ...(dailyBonusEarned
       ? {
-          fragments: increment(bonusFragments),
+          // Daily bonus fragments stack on top of any side-habit drip
+          fragments: increment(bonusFragments + sideHabitFragments),
           orbEvolutionCharges: increment(1),
           lastDailyBonusDate: Timestamp.now(),
         }

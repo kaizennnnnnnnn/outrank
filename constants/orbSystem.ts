@@ -2,7 +2,16 @@
 // OUTRANK ORB SYSTEM — The Core Progression Engine
 // ============================================
 
-// --- ORB POWERS (unlocked per tier) ---
+// --- ORB POWERS / AURAS — DEPRECATED ---
+// The orb is now fully evolved (max tier) for every user as a visual
+// state only. There are no automatic XP buffs, bonus slots, or per-
+// tier powers anymore. All power comes from loot pulls on the orb
+// command center (lib/orbLoot.ts).
+//
+// These types + getters are kept as no-op stubs so any caller still
+// referencing them (mostly OrbHistory.tsx display code, gated on
+// truthy / xpMultiplier > 1) silently renders nothing.
+
 export interface OrbPower {
   id: string;
   name: string;
@@ -10,37 +19,32 @@ export interface OrbPower {
   tier: number;
 }
 
-export const ORB_POWERS: OrbPower[] = [
-  { id: 'spark_shield', name: 'Spark Shield', description: '1 free streak freeze per week', tier: 1 },
-  { id: 'insight', name: 'Insight', description: 'See any friend\'s habit completion for today', tier: 2 },
-  { id: 'double_burn', name: 'Double Burn', description: 'Once per day, log a habit for 2x XP', tier: 3 },
-  { id: 'rebirth', name: 'Rebirth', description: 'Restore a broken streak once per month', tier: 4 },
-  { id: 'gravity', name: 'Gravity', description: 'Your logs give +2 bonus XP to friends who log the same habit within 24h', tier: 5 },
-];
+export const ORB_POWERS: OrbPower[] = [];
 
-export function getOrbPower(tier: number): OrbPower | null {
-  return ORB_POWERS.find(p => p.tier === tier) || null;
+export function getOrbPower(_tier: number): OrbPower | null {
+  return null;
 }
 
-// --- ORB AURA (passive XP buffs) ---
 export interface OrbAura {
   tier: number;
   name: string;
-  xpMultiplier: number; // 1.0 = no buff, 1.1 = +10%
+  xpMultiplier: number;
   bonusSlots: number;
   description: string;
 }
 
-export const ORB_AURAS: OrbAura[] = [
-  { tier: 1, name: 'None', xpMultiplier: 1.0, bonusSlots: 0, description: 'No aura yet' },
-  { tier: 2, name: 'Warm Aura', xpMultiplier: 1.05, bonusSlots: 0, description: '+5% XP on all logs' },
-  { tier: 3, name: 'Burning Aura', xpMultiplier: 1.10, bonusSlots: 0, description: '+10% XP + streak freeze refills 2x/week' },
-  { tier: 4, name: 'Radiant Aura', xpMultiplier: 1.15, bonusSlots: 1, description: '+15% XP + 1 bonus habit slot' },
-  { tier: 5, name: 'Cosmic Aura', xpMultiplier: 1.20, bonusSlots: 2, description: '+20% XP + 2 bonus habit slots + name glows on leaderboards' },
-];
+const NO_AURA: OrbAura = {
+  tier: 0,
+  name: 'None',
+  xpMultiplier: 1.0,
+  bonusSlots: 0,
+  description: 'Orb power comes from evolution loot, not tier.',
+};
 
-export function getOrbAura(tier: number): OrbAura {
-  return ORB_AURAS.find(a => a.tier === tier) || ORB_AURAS[0];
+export const ORB_AURAS: OrbAura[] = [NO_AURA];
+
+export function getOrbAura(_tier: number): OrbAura {
+  return NO_AURA;
 }
 
 // --- ORB ENERGY (daily fill/drain) ---

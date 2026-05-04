@@ -9,6 +9,8 @@ import { AwakeningBar } from '@/components/profile/AwakeningBar';
 import { OrbHistory } from '@/components/profile/OrbHistory';
 import { OrbNickname } from '@/components/profile/OrbNickname';
 import { cn } from '@/lib/utils';
+import { rollOrbLoot, lootColors, type OrbLoot } from '@/lib/orbLoot';
+import { useUIStore } from '@/store/uiStore';
 
 /**
  * Orb command center. Everything related to evolving / ascending /
@@ -27,6 +29,8 @@ export default function OrbPage() {
   const [localCharges, setLocalCharges] = useState(evolveCharges);
   const [localAwakening, setLocalAwakening] = useState(storedAwakening);
   const [showOrbHistory, setShowOrbHistory] = useState(false);
+  const [lootReveal, setLootReveal] = useState<OrbLoot | null>(null);
+  const addToast = useUIStore((s) => s.addToast);
 
   useEffect(() => { setLocalTier(realTier); }, [realTier]);
   useEffect(() => { setLocalCharges(evolveCharges); }, [evolveCharges]);
@@ -49,24 +53,41 @@ export default function OrbPage() {
   // which is why "Evolve once, lose two charges" was happening
   // (server went 3→2 via increment(-1), snapshot set local to 2,
   // then manual `c - 1` dragged it down to 1).
+  // Evolve no longer bumps orbTier — the orb is permanently at max.
+  // Instead it spends a charge for one weighted roll on the loot
+  // table (lib/orbLoot.ts). Common drops give fragments or XP, rare
+  // adds awakening, epic and legendary can grant cosmetics. The
+  // result modal renders from `lootReveal` state.
   const handleEvolve = async () => {
-    if (localTier >= 10 || localCharges <= 0) return;
-    const newTier = localTier + 1;
-    const bonusFrags = 25 + Math.floor(localAwakening * 0.5); // 25..75
-    const bonusXP    = 20 + Math.floor(localAwakening * 0.5); // 20..70
+    if (localCharges <= 0) return;
+    const ownedCosmetics = (userAny as unknown as { ownedCosmetics?: string[] } | null)?.ownedCosmetics ?? [];
+    const loot = rollOrbLoot(ownedCosmetics);
     try {
       const { updateDocument } = await import('@/lib/firestore');
-      const { increment } = await import('firebase/firestore');
-      await updateDocument('users', user.uid, {
-        orbTier: newTier,
+      const { increment, arrayUnion } = await import('firebase/firestore');
+      const updates: Record<string, unknown> = {
         orbEvolutionCharges: increment(-1),
-        fragments: increment(bonusFrags),
-        totalXP: increment(bonusXP),
-        weeklyXP: increment(bonusXP),
-        monthlyXP: increment(bonusXP),
-        seasonPassXP: increment(bonusXP),
-      });
-    } catch { /* silent */ }
+      };
+      if (loot.fragments) updates.fragments = increment(loot.fragments);
+      if (loot.xp) {
+        updates.totalXP      = increment(loot.xp);
+        updates.weeklyXP     = increment(loot.xp);
+        updates.monthlyXP    = increment(loot.xp);
+        updates.seasonPassXP = increment(loot.xp);
+      }
+      if (loot.awakening) {
+        // awakening is read-modify-write because increment can overshoot 100
+        const next = Math.min(100, localAwakening + loot.awakening);
+        updates.awakening = next;
+      }
+      if (loot.cosmeticId) {
+        updates.ownedCosmetics = arrayUnion(loot.cosmeticId);
+      }
+      await updateDocument('users', user.uid, updates);
+      setLootReveal(loot);
+    } catch {
+      addToast({ type: 'error', message: 'Evolution failed — try again' });
+    }
   };
 
   const handleAscend = async () => {
@@ -199,6 +220,9 @@ export default function OrbPage() {
 
       <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
 
+      {/* Loot reveal — fires after a successful evolve */}
+      <OrbLootReveal loot={lootReveal} onClose={() => setLootReveal(null)} />
+
       {/* Nickname + mood */}
       <OrbNickname user={user} />
 
@@ -216,6 +240,85 @@ export default function OrbPage() {
         >
           Back to Profile
         </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─── Loot reveal modal ──────────────────────────────────────────────
+//
+// Tap-to-dismiss. Color-codes the rarity using the chestLoot palette.
+// Shows the loot label + flavor + payload (fragments/XP/awakening/
+// cosmetic). Pure cosmetic — the write already landed before this
+// renders.
+
+function OrbLootReveal({
+  loot,
+  onClose,
+}: {
+  loot: OrbLoot | null;
+  onClose: () => void;
+}) {
+  if (!loot) return null;
+  const c = lootColors(loot.rarity);
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm rounded-3xl border-2 p-6 text-center"
+        style={{
+          borderColor: c.color,
+          background: `radial-gradient(ellipse 100% 80% at 50% 0%, ${c.glow}, transparent 70%), linear-gradient(165deg, #10101a 0%, #0b0b14 100%)`,
+          boxShadow: `0 0 60px -8px ${c.glow}`,
+        }}
+      >
+        <p
+          className="text-[10px] uppercase tracking-[0.35em] font-bold"
+          style={{ color: c.color, textShadow: `0 0 12px ${c.glow}` }}
+        >
+          {c.name}
+        </p>
+        <h3 className="font-heading font-bold text-2xl text-white mt-2 leading-tight">
+          {loot.label}
+        </h3>
+        <p className="text-[13px] text-slate-300/85 mt-2 leading-relaxed">
+          {loot.detail}
+        </p>
+
+        {/* Payload chips */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+          {!!loot.fragments && (
+            <span className="text-[11px] font-mono tabular-nums px-2.5 py-1 rounded-full bg-orange-500/15 border border-orange-500/40 text-orange-200">
+              +{loot.fragments} fragments
+            </span>
+          )}
+          {!!loot.xp && (
+            <span className="text-[11px] font-mono tabular-nums px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-200">
+              +{loot.xp} XP
+            </span>
+          )}
+          {!!loot.awakening && (
+            <span className="text-[11px] font-mono tabular-nums px-2.5 py-1 rounded-full bg-violet-500/15 border border-violet-500/40 text-violet-200">
+              +{loot.awakening} awakening
+            </span>
+          )}
+          {!!loot.cosmeticId && (
+            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-pink-500/15 border border-pink-500/40 text-pink-200">
+              Cosmetic unlocked
+            </span>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="mt-6 w-full py-3 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all hover:brightness-110"
+          style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+        >
+          Claim
+        </button>
       </div>
     </div>
   );
