@@ -326,6 +326,89 @@ export default function DashboardPage() {
             <BArrowRightGlyph size={18} style={{ color: 'var(--b-ink-60)' }} />
           </Link>
 
+          {/* THE TOWN — discreet directory strip linking to /town */}
+          <Link
+            href="/town"
+            style={{
+              display: 'block',
+              marginTop: 18,
+              padding: '8px 0',
+              borderBottom: '1px solid var(--b-rule)',
+              textDecoration: 'none',
+              color: 'inherit',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                borderBottom: '1px solid var(--b-rule)',
+                paddingBottom: 4,
+                marginBottom: 6,
+              }}
+            >
+              <span className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+                The Town
+              </span>
+              <span className="font-body" style={{ fontSize: 9, color: 'var(--b-ink-40)', letterSpacing: '0.08em' }}>
+                VISIT →
+              </span>
+            </div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(7, 1fr)',
+                gap: 0,
+                fontFamily: 'var(--font-inter)',
+              }}
+            >
+              {[
+                { l: 'Market',    badge: '14' },
+                { l: 'Quests',    badge: '02' },
+                { l: 'Seasonal',  badge: '—', dim: true },
+                { l: 'Travelers', badge: '⌛' },
+                { l: 'Stable',    badge: '12' },
+                { l: 'Inn',       badge: '·' },
+                { l: 'Atelier',   badge: '◆', accent: true },
+              ].map((c, i) => (
+                <div
+                  key={c.l}
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    padding: '6px 0',
+                    borderLeft: i ? '1px solid var(--b-rule)' : 'none',
+                    opacity: c.dim ? 0.45 : 1,
+                  }}
+                >
+                  <div
+                    className="font-mono tabular"
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: c.accent ? 'var(--b-accent)' : 'var(--b-ink)',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {c.badge}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 8,
+                      marginTop: 4,
+                      color: 'var(--b-ink-60)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                    }}
+                  >
+                    {c.l}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Link>
+
           {/* Today's habits — five pillar rows, numbered */}
           <section style={{ marginTop: 22 }}>
             <div
