@@ -2,136 +2,244 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar } from '@/components/ui/Avatar';
-import { Logo } from '@/components/ui/Logo';
-import { HomeIcon, TargetIcon, TrophyIcon, SwordsIcon, LeagueIcon, UsersIcon, FeedIcon, BellIcon, SettingsIcon } from '@/components/ui/Icons';
-import { FoodIcon } from '@/components/ui/CategoryIcons';
-
-// Small SVG orb glyph for the sidebar "My Orb" entry — avoids importing the
-// full MiniOrb (which reads user state) into a static nav list.
-function OrbSidebarIcon() {
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <defs>
-        <radialGradient id="orbSidebarGrad" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="#fde68a" />
-          <stop offset="35%" stopColor="#f97316" />
-          <stop offset="80%" stopColor="#b91c1c" />
-          <stop offset="100%" stopColor="#450a0a" />
-        </radialGradient>
-      </defs>
-      <circle cx="12" cy="12" r="8" fill="url(#orbSidebarGrad)" />
-      <ellipse cx="9.5" cy="9" rx="2.2" ry="1.3" fill="rgba(255,255,255,0.55)" />
-    </svg>
-  );
-}
+import { useNotifications } from '@/hooks/useNotifications';
+import { BBellGlyph } from '@/components/editorial/BGlyphs';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
-import { ReactNode } from 'react';
 
-const navItems: { href: string; label: string; icon: ReactNode }[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: <HomeIcon /> },
-  { href: '/orb', label: 'My Orb', icon: <OrbSidebarIcon /> },
-  { href: '/habits', label: 'Habits', icon: <TargetIcon /> },
-  { href: '/diet', label: 'Diet', icon: <FoodIcon size={20} /> },
-  { href: '/leaderboard', label: 'Leaderboard', icon: <TrophyIcon /> },
-  { href: '/compete', label: 'Compete', icon: <SwordsIcon /> },
-  { href: '/leagues', label: 'Leagues', icon: <LeagueIcon /> },
-  { href: '/friends', label: 'Friends', icon: <UsersIcon /> },
-  { href: '/pacts', label: 'Pacts', icon: <SwordsIcon /> },
-  { href: '/friends-league', label: 'Friends League', icon: <TrophyIcon /> },
-  { href: '/feed', label: 'Feed', icon: <FeedIcon /> },
-  { href: '/groups', label: 'Groups', icon: <UsersIcon /> },
-  { href: '/battle-pass', label: 'Battle Pass', icon: <TrophyIcon /> },
-  { href: '/orb-leaderboard', label: 'Orb Rankings', icon: <TrophyIcon /> },
-  { href: '/shop', label: 'Shop', icon: <LeagueIcon /> },
-  { href: '/inventory', label: 'Inventory', icon: <TargetIcon /> },
-  { href: '/achievements', label: 'Achievements', icon: <TrophyIcon /> },
+/**
+ * Sidebar — desktop-only navigation rail.
+ *
+ * Editorial Direction B v2 conversion. The legacy 17-item sidebar
+ * collapsed into a periodical's table of contents:
+ *   - Brand nameplate at top in spread caps
+ *   - Five primary tabs (mirrors EditorialTabBar so the desktop
+ *     nav matches the mobile one)
+ *   - Secondary destinations group (Town / Diet / Schedule /
+ *     Notifications / Settings) under a subtle hairline section
+ *   - User strip at bottom: avatar + username italic + level
+ *
+ * Active route gets serif italic + accent red dot, same vocabulary
+ * as the bottom tab bar. Hover state is just an ink color shift —
+ * no colored backgrounds, no animated active-indicator, no chrome.
+ */
+
+interface NavLink {
+  href:  string;
+  label: string;
+}
+
+const PRIMARY: NavLink[] = [
+  { href: '/dashboard', label: 'Home' },
+  { href: '/compete',   label: 'Compete' },
+  { href: '/orb',       label: 'Orb' },
+  { href: '/feed',      label: 'Feed' },
+  { href: '/profile',   label: 'You' },
 ];
 
-const bottomItems: { href: string; label: string; icon: ReactNode }[] = [
-  { href: '/notifications', label: 'Notifications', icon: <BellIcon /> },
-  { href: '/settings', label: 'Settings', icon: <SettingsIcon /> },
+const SECONDARY: NavLink[] = [
+  { href: '/town',      label: 'The Town' },
+  { href: '/diet',      label: 'The Plate' },
+  { href: '/habits',    label: 'Roster' },
+  { href: '/friends',   label: 'Friends' },
+  { href: '/settings',  label: 'Settings' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const level = user ? getLevelForXP(user.totalXP) : null;
   const xpProgress = user ? getXPProgress(user.totalXP) : null;
 
   return (
-    <aside className="hidden lg:flex flex-col w-[240px] h-screen fixed left-0 top-0 bg-[#0d0d15] border-r border-[#1e1e30] z-40">
-      {/* Logo */}
-      <div className="px-6 py-5 border-b border-[#1e1e30]">
-        <Link href="/dashboard">
-          <Logo size="sm" />
+    <aside
+      className="hidden lg:flex flex-col w-[240px] h-screen fixed left-0 top-0 z-40"
+      style={{
+        background: 'var(--b-paper)',
+        borderRight: '1px solid var(--b-rule)',
+      }}
+    >
+      {/* Brand nameplate */}
+      <div
+        style={{
+          padding: '20px 22px 16px',
+          borderBottom: '1px solid var(--b-ink)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+        }}
+      >
+        <Link
+          href="/dashboard"
+          className="spread"
+          style={{ fontSize: 11, color: 'var(--b-ink)', textDecoration: 'none' }}
+        >
+          OUTRANK
+        </Link>
+        <Link
+          href="/notifications"
+          aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
+          style={{
+            position: 'relative',
+            color: 'var(--b-ink-60)',
+            display: 'inline-flex',
+            alignItems: 'center',
+          }}
+        >
+          <BBellGlyph size={14} />
+          {unreadCount > 0 && (
+            <span
+              className="font-mono tabular"
+              style={{
+                position: 'absolute',
+                top: -4,
+                right: -8,
+                background: 'var(--b-accent)',
+                color: '#ffffff',
+                borderRadius: 999,
+                fontSize: 9,
+                fontWeight: 700,
+                padding: '0 4px',
+                minWidth: 14,
+                height: 14,
+                lineHeight: '14px',
+                textAlign: 'center',
+              }}
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </Link>
       </div>
 
-      {/* Nav Items */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-          return (
-            <Link key={item.href} href={item.href}>
-              <div
-                className={cn(
-                  'relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
-                  isActive
-                    ? 'text-white bg-red-600/10'
-                    : 'text-slate-400 hover:text-white hover:bg-[#1e1e30]'
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="sidebar-active"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-red-500"
-                    transition={{ type: 'spring', duration: 0.3 }}
+      {/* Primary nav */}
+      <nav
+        style={{
+          flex: 1,
+          padding: '16px 22px 8px',
+          overflowY: 'auto',
+        }}
+      >
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+          {PRIMARY.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <li key={item.href} style={{ position: 'relative', marginBottom: 4 }}>
+                <Link
+                  href={item.href}
+                  className="font-display"
+                  style={{
+                    display: 'block',
+                    padding: '6px 0',
+                    fontSize: 18,
+                    fontStyle: active ? 'italic' : 'normal',
+                    fontWeight: active ? 600 : 400,
+                    color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {item.label}
+                </Link>
+                {active && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: -10,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 4,
+                      height: 4,
+                      borderRadius: '50%',
+                      background: 'var(--b-accent)',
+                    }}
                   />
                 )}
-                <span className={cn(isActive && 'text-orange-400')}>{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
-            </Link>
-          );
-        })}
+              </li>
+            );
+          })}
+        </ul>
+
+        {/* Secondary group */}
+        <div
+          className="spread"
+          style={{
+            fontSize: 9,
+            color: 'var(--b-ink-40)',
+            marginTop: 24,
+            marginBottom: 8,
+            paddingTop: 12,
+            borderTop: '1px solid var(--b-rule)',
+          }}
+        >
+          More
+        </div>
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+          {SECONDARY.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="font-body"
+                  style={{
+                    display: 'block',
+                    padding: '6px 0',
+                    fontSize: 13,
+                    fontWeight: active ? 600 : 400,
+                    color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
 
-      {/* Bottom Items */}
-      <div className="px-3 py-2 space-y-1 border-t border-[#1e1e30]">
-        {bottomItems.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.href} href={item.href}>
-              <div
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
-                  isActive
-                    ? 'text-white bg-red-600/10'
-                    : 'text-slate-400 hover:text-white hover:bg-[#1e1e30]'
-                )}
-              >
-                <span className={cn(isActive && 'text-orange-400')}>{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* User Profile */}
+      {/* User strip */}
       {user && (
-        <Link href="/profile">
-          <div className="px-3 py-4 border-t border-[#1e1e30] flex items-center gap-3 hover:bg-[#1e1e30] transition-colors">
-            <Avatar src={user.avatarUrl} alt={user.username} size="md" level={xpProgress?.percentage} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user.username}</p>
-              <p className="text-xs text-orange-400">
-                Lv.{level?.level} {level?.title}
-              </p>
+        <Link
+          href="/profile"
+          style={{
+            padding: '14px 22px',
+            borderTop: '1px solid var(--b-rule)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
+        >
+          <Avatar src={user.avatarUrl} alt={user.username} size="md" level={xpProgress?.percentage} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              className="font-display"
+              style={{
+                fontSize: 14,
+                fontWeight: 500,
+                fontStyle: 'italic',
+                color: 'var(--b-ink)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {user.username}
+            </div>
+            <div
+              className="font-body"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Lv. {level?.level} · {level?.title}
             </div>
           </div>
         </Link>
