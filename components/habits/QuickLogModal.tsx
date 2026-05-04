@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ProofUploader } from './ProofUploader';
 import { UserHabit } from '@/types/habit';
@@ -11,7 +10,6 @@ import { uploadProofImage } from '@/lib/storage';
 import { logHabit } from '@/lib/logHabit';
 import { validateLogValue, sanitizeNote } from '@/lib/security';
 import { getGoalConfig } from '@/constants/categories';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useUIStore } from '@/store/uiStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
@@ -19,6 +17,21 @@ import { haptic } from '@/lib/haptics';
 import { ParticleBurst } from '@/components/effects/ParticleBurst';
 import { getRecapDropPoint } from '@/components/recap/RecapLogFlight';
 import { SleepTimeEntry } from './SleepTimeEntry';
+import { BCheckGlyph, BCameraGlyph, BFlameGlyph } from '@/components/editorial/BGlyphs';
+
+/**
+ * Quick log — editorial Direction B v2 conversion. Same flow as
+ * before (value stepper / sleep time picker / proof + note / submit
+ * → logHabit) but typeset like a periodical's clipping form.
+ *
+ * No emoji (📸 ✓ ⚠️ replaced with BCameraGlyph / BCheckGlyph /
+ * accent text). Reward preview is a hairline-bracketed strip rather
+ * than a gradient card. Daily-quest "perfect day" framing preserved
+ * with accent color when this log will close out the day.
+ *
+ * Modal still uses the legacy <Modal> wrapper so transitions /
+ * dismiss-on-backdrop / accessibility behavior is unchanged.
+ */
 
 interface QuickLogModalProps {
   isOpen: boolean;
@@ -43,9 +56,6 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
 
   const config = habit ? getGoalConfig(habit.categorySlug) : null;
 
-  // Daily-completion preview: will this log earn the all-habits-done bonus?
-  // Bonus pays out once per calendar day, when this log fills the last slot
-  // and the user hasn't already received today's bonus.
   const todayStr = new Date().toDateString();
   const loggedTodayCount = allHabits.filter((h) => {
     if (h.categorySlug === habit?.categorySlug) return true;
@@ -85,7 +95,6 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
         proofUrl = await uploadProofImage(userId, tempLogId, proofFile);
       }
 
-      // Use the full logHabit function that handles XP, streaks, leaderboards
       const result = await logHabit({
         userId,
         habitSlug: habit.categorySlug,
@@ -109,11 +118,6 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
       setTimeout(() => {
         setShowXP(false);
         onClose();
-        // Fly the logged habit into today's record. Fired as the modal
-        // closes so the destination panel is actually visible behind
-        // the flight. Source is viewport center; destination is the
-        // RecapDraftPanel via [data-recap-drop], or bottom-center as a
-        // fallback if the user is logging from a non-dashboard page.
         if (typeof window !== 'undefined') {
           const dest = getRecapDropPoint();
           triggerRecapFlight({
@@ -147,7 +151,6 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
     }
   };
 
-  // Set initial value only when a different habit is opened
   const [lastHabitSlug, setLastHabitSlug] = useState('');
   if (habit && habit.categorySlug !== lastHabitSlug) {
     setLastHabitSlug(habit.categorySlug);
@@ -160,248 +163,377 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
 
   return (
     <>
-    <ParticleBurst trigger={burst} color="#f97316" count={60} />
-    <AnimatePresence>
-      {levelUpAt && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          onAnimationComplete={() => setTimeout(() => setLevelUpAt(null), 1500)}
-          className="fixed inset-0 z-[260] flex items-center justify-center pointer-events-none"
-        >
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">Level Up</p>
-            <p className="font-heading text-6xl font-bold bg-gradient-to-r from-red-500 via-orange-400 to-yellow-300 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(249,115,22,0.6)]">
-              {levelUpAt}
-            </p>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-    <Modal isOpen={isOpen} onClose={onClose} title={`Log ${habit?.categoryName || ''}`}>
-      {habit && config && (
-        <div className="space-y-5 relative">
-          {/* XP Animation Overlay */}
-          <AnimatePresence>
-            {showXP && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.5, y: -50 }}
-                transition={{ duration: 0.8 }}
-                className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
-              >
-                <div className="text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.3, 1] }}
-                    className="flex justify-center mb-2"
-                  >
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-orange-400"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  </motion.div>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="font-heading text-2xl font-bold text-orange-400"
-                  >
-                    +{xpAmount} XP
-                  </motion.p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Icon */}
-          <div className="flex items-center justify-center">
-            <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
-          </div>
-
-          {/* Value entry — sleep gets bed-time / wake-up pickers
-              instead of the +/- stepper because that's how people
-              actually think about a night of sleep. The computed
-              hours feed the standard `value` state so the rest of
-              the log flow (XP, leaderboards, recap) is unchanged. */}
-          {habit.categorySlug === 'sleep' ? (
-            <SleepTimeEntry onChange={setValue} />
-          ) : (
-            <div className="flex items-center justify-center gap-6">
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setValue(Math.max(config.min, value - config.step))}
-                className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
-              >
-                -
-              </motion.button>
-              <div className="text-center min-w-[80px]">
-                <span className="font-mono text-5xl font-bold text-white">{value.toLocaleString()}</span>
-                <p className="text-xs text-slate-500 mt-1">{config.dailyLabel}</p>
+      <ParticleBurst trigger={burst} color="#dc2626" count={60} />
+      <AnimatePresence>
+        {levelUpAt && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            onAnimationComplete={() => setTimeout(() => setLevelUpAt(null), 1500)}
+            className="fixed inset-0 z-[260] flex items-center justify-center pointer-events-none"
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div className="spread" style={{ fontSize: 11, color: 'var(--b-accent)', marginBottom: 4 }}>
+                Level Up
               </div>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setValue(Math.min(config.max, value + config.step))}
-                className="w-14 h-14 rounded-2xl bg-[#18182a] border border-[#2d2d45] text-white text-2xl flex items-center justify-center hover:bg-[#1e1e30] transition-colors"
+              <div
+                className="font-display tabular"
+                style={{
+                  fontSize: 72,
+                  fontWeight: 500,
+                  fontStyle: 'italic',
+                  color: 'var(--b-ink)',
+                  textShadow: '0 0 30px var(--b-accent)',
+                }}
               >
-                +
-              </motion.button>
+                {levelUpAt}
+              </div>
             </div>
-          )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Goal progress indicator */}
-          {habit.goal > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500">Goal: {habit.goal} {config.dailyLabel}</span>
-                {value >= habit.goal ? (
-                  <span className="text-emerald-400 font-medium">Goal met — Full XP (+{proofFile ? 15 : 10})</span>
+      <Modal isOpen={isOpen} onClose={onClose} title={habit?.categoryName ? `Log ${habit.categoryName}` : ''}>
+        {habit && config && (
+          <div className="dir-b" style={{ position: 'relative', color: 'var(--b-ink)' }}>
+            {/* XP overlay (mid-flight celebration) */}
+            <AnimatePresence>
+              {showXP && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.5, y: -50 }}
+                  transition={{ duration: 0.8 }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <div style={{ textAlign: 'center' }}>
+                    <div className="spread" style={{ fontSize: 10, color: 'var(--b-accent)' }}>
+                      Logged
+                    </div>
+                    <div
+                      className="font-display tabular"
+                      style={{
+                        fontSize: 48,
+                        fontWeight: 500,
+                        fontStyle: 'italic',
+                        color: 'var(--b-ink)',
+                        marginTop: 4,
+                      }}
+                    >
+                      +{xpAmount} XP
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Header strip */}
+            <div
+              style={{
+                borderTop: '1px solid var(--b-rule)',
+                borderBottom: '1px solid var(--b-rule)',
+                padding: '8px 0',
+                marginBottom: 18,
+              }}
+            >
+              <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+                The Clipping
+              </div>
+              <div
+                className="font-display"
+                style={{
+                  fontSize: 22,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  color: 'var(--b-ink)',
+                  marginTop: 2,
+                }}
+              >
+                {habit.categoryName}
+              </div>
+            </div>
+
+            {/* Value entry */}
+            {habit.categorySlug === 'sleep' ? (
+              <SleepTimeEntry onChange={setValue} />
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 16,
+                }}
+              >
+                <button
+                  onClick={() => setValue(Math.max(config.min, value - config.step))}
+                  className="font-display"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    border: '1px solid var(--b-ink)',
+                    background: 'transparent',
+                    color: 'var(--b-ink)',
+                    fontSize: 22,
+                    cursor: 'pointer',
+                  }}
+                >
+                  −
+                </button>
+                <div style={{ textAlign: 'center', minWidth: 96 }}>
+                  <div
+                    className="font-display tabular"
+                    style={{ fontSize: 56, fontWeight: 500, color: 'var(--b-ink)', lineHeight: 1 }}
+                  >
+                    {value.toLocaleString()}
+                  </div>
+                  <div
+                    className="spread"
+                    style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 4 }}
+                  >
+                    {config.dailyLabel}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setValue(Math.min(config.max, value + config.step))}
+                  className="font-display"
+                  style={{
+                    width: 48,
+                    height: 48,
+                    border: '1px solid var(--b-ink)',
+                    background: 'transparent',
+                    color: 'var(--b-ink)',
+                    fontSize: 22,
+                    cursor: 'pointer',
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            )}
+
+            {/* Goal progress */}
+            {habit.goal > 0 && (
+              <div style={{ marginTop: 18 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: 11,
+                    fontFamily: 'var(--font-inter)',
+                  }}
+                >
+                  <span style={{ color: 'var(--b-ink-60)' }}>
+                    Goal: {habit.goal} {config.dailyLabel}
+                  </span>
+                  {value >= habit.goal ? (
+                    <span style={{ color: 'var(--b-accent)', fontWeight: 600 }}>
+                      Goal met · +{proofFile ? 15 : 10} XP
+                    </span>
+                  ) : (
+                    <span style={{ color: 'var(--b-ink-60)' }}>
+                      {Math.round((value / habit.goal) * 100)}% ·{' '}
+                      {Math.max(1, Math.round((value / habit.goal) * (proofFile ? 15 : 10)))} XP
+                    </span>
+                  )}
+                </div>
+                <div
+                  style={{
+                    width: '100%',
+                    height: 2,
+                    background: 'var(--b-rule)',
+                    marginTop: 6,
+                    position: 'relative',
+                  }}
+                >
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: `${Math.min((value / habit.goal) * 100, 100)}%`,
+                      background: value >= habit.goal ? 'var(--b-accent)' : 'var(--b-ink)',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Proof upload */}
+            <div
+              style={{
+                marginTop: 18,
+                padding: '10px 0',
+                borderTop: '1px solid var(--b-rule)',
+                borderBottom: '1px solid var(--b-rule)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 8,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    color: 'var(--b-ink)',
+                  }}
+                >
+                  <BCameraGlyph size={14} />
+                  <span
+                    className="spread"
+                    style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                  >
+                    Add proof
+                  </span>
+                </div>
+                {proofFile ? (
+                  <span
+                    className="font-mono"
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--b-accent)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <BCheckGlyph size={11} /> VERIFIED · +5 XP
+                  </span>
                 ) : (
-                  <span className="text-orange-400">
-                    {Math.round((value / habit.goal) * 100)}% of goal — {Math.max(1, Math.round((value / habit.goal) * (proofFile ? 15 : 10)))} XP
+                  <span
+                    className="font-mono"
+                    style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+                  >
+                    +5 XP
                   </span>
                 )}
               </div>
-              <div className="w-full h-2 bg-[#18182a] rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min((value / habit.goal) * 100, 100)}%`,
-                    background: value >= habit.goal
-                      ? 'linear-gradient(to right, #10b981, #34d399)'
-                      : 'linear-gradient(to right, #f97316, #fb923c)',
-                  }}
-                />
-              </div>
+              <ProofUploader file={proofFile} onFileChange={setProofFile} />
             </div>
-          )}
 
-          {/* Proof Upload — PROMINENT */}
-          <div className="rounded-xl border border-[#1e1e30] bg-[#0c0c16] p-3">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm">📸</span>
-                <span className="text-xs font-medium text-white">Add proof photo</span>
-              </div>
-              {proofFile ? (
-                <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
-                  ✓ Verified (+5 bonus XP)
-                </span>
-              ) : (
-                <span className="text-xs text-slate-600">+5 bonus XP</span>
-              )}
-            </div>
-            <ProofUploader file={proofFile} onFileChange={setProofFile} />
-          </div>
-
-          {/* Note */}
-          <Input
-            placeholder="Add a note (optional)"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={280}
-          />
-
-          {/* Reward preview — always shown, upgrades when this log will cap the day */}
-          <div
-            className={`rounded-xl border p-3 transition-colors ${
-              willCompleteAll
-                ? 'border-pink-500/40 bg-gradient-to-br from-pink-500/10 via-fuchsia-500/5 to-orange-500/10'
-                : 'border-[#1e1e30] bg-[#0c0c16]'
-            }`}
-          >
-            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-2 ${willCompleteAll ? 'text-pink-300' : 'text-slate-400'}`}>
-              {willCompleteAll ? 'Daily quest complete!' : 'You will receive'}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <RewardChip
-                icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>}
-                color="#f97316"
-                label={`+${xpAmount} XP`}
-                detail={value >= (habit.goal || 1) ? 'Goal met' : `${Math.round((value / (habit.goal || 1)) * 100)}% of goal`}
+            {/* Note */}
+            <div style={{ marginTop: 12 }}>
+              <Input
+                placeholder="Add a note (optional)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                maxLength={280}
               />
-              {proofFile && (
-                <RewardChip
-                  icon={<span>✓</span>}
-                  color="#10b981"
-                  label="Verified"
-                  detail="+5 bonus XP applied"
-                />
+            </div>
+
+            {/* Reward preview */}
+            <div
+              style={{
+                marginTop: 16,
+                padding: '10px 0',
+                borderTop: willCompleteAll ? '2px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderBottom: '1px solid var(--b-rule)',
+              }}
+            >
+              <div className="spread" style={{ fontSize: 9, color: willCompleteAll ? 'var(--b-accent)' : 'var(--b-ink-60)' }}>
+                {willCompleteAll ? 'Daily quest complete' : 'You will receive'}
+              </div>
+              <div
+                className="font-mono tabular"
+                style={{ fontSize: 14, color: 'var(--b-ink)', marginTop: 4, fontWeight: 600 }}
+              >
+                +{xpAmount} XP
+                {proofFile && <span style={{ color: 'var(--b-ink-60)', fontWeight: 400, marginLeft: 8 }}>· verified</span>}
+                {willCompleteAll && (
+                  <span
+                    className="font-mono"
+                    style={{
+                      color: 'var(--b-accent)',
+                      fontWeight: 700,
+                      marginLeft: 8,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <BFlameGlyph size={12} /> +1 evolution
+                  </span>
+                )}
+              </div>
+              {!willCompleteAll && allHabits.length > 0 && !bonusAlreadyClaimedToday && (
+                <p
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 4 }}
+                >
+                  {remainingAfter === 1
+                    ? 'One more habit to fill today — unlocks an orb evolution charge.'
+                    : `${remainingAfter - 1} habits left to unlock the orb evolution charge.`}
+                </p>
               )}
-              {!proofFile && !willCompleteAll && (
-                <RewardChip
-                  icon={<span>📸</span>}
-                  color="#64748b"
-                  label="No proof"
-                  detail="Add one for +5 XP"
-                  dim
-                />
-              )}
-              {willCompleteAll && (
-                <RewardChip
-                  icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z" /></svg>}
-                  color="#ec4899"
-                  label="+1 Evolution"
-                  detail="Orb charge — perfect day"
-                />
+              {bonusAlreadyClaimedToday && (
+                <p
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 4 }}
+                >
+                  Daily quest already claimed — come back tomorrow.
+                </p>
               )}
             </div>
-            {!willCompleteAll && allHabits.length > 0 && !bonusAlreadyClaimedToday && (
-              <p className="text-[10px] text-slate-500 mt-2 text-center">
-                {remainingAfter === 1
-                  ? 'One more habit to fill today — unlocks an orb evolution charge.'
-                  : `${remainingAfter - 1} habits left to unlock the orb evolution charge.`}
-              </p>
-            )}
-            {bonusAlreadyClaimedToday && (
-              <p className="text-[10px] text-emerald-400 mt-2 text-center">
-                Daily quest already claimed — come back tomorrow for another evolution charge.
+
+            {/* Submit */}
+            <button
+              onClick={handleLog}
+              disabled={logging || showXP}
+              className="font-body"
+              style={{
+                width: '100%',
+                height: 50,
+                marginTop: 16,
+                border: '1px solid var(--b-ink)',
+                background: logging || showXP ? 'var(--b-paper-2)' : 'var(--b-ink)',
+                color: logging || showXP ? 'var(--b-ink-40)' : 'var(--b-paper)',
+                fontWeight: 700,
+                fontSize: 13,
+                letterSpacing: '0.06em',
+                cursor: logging || showXP ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {logging
+                ? 'LOGGING…'
+                : willCompleteAll
+                ? `LOG +${xpAmount} XP · CLAIM DAILY QUEST →`
+                : proofFile
+                ? `LOG +${xpAmount} XP · VERIFIED →`
+                : `LOG +${xpAmount} XP →`}
+            </button>
+
+            {!proofFile && (
+              <p
+                className="font-body"
+                style={{
+                  textAlign: 'center',
+                  fontSize: 10,
+                  color: 'var(--b-ink-40)',
+                  marginTop: 6,
+                }}
+              >
+                Logs without proof show as unverified on leaderboards.
               </p>
             )}
           </div>
-
-          {/* Submit */}
-          <Button
-            className="w-full text-lg py-3"
-            onClick={handleLog}
-            loading={logging}
-            disabled={showXP}
-          >
-            {willCompleteAll
-              ? `Log +${xpAmount} XP · Claim daily quest`
-              : proofFile ? `Log +${xpAmount} XP ✓ Verified` : `Log +${xpAmount} XP`}
-          </Button>
-
-          {!proofFile && (
-            <p className="text-center text-[10px] text-slate-600">
-              Logs without proof show ⚠️ on leaderboards
-            </p>
-          )}
-        </div>
-      )}
-    </Modal>
+        )}
+      </Modal>
     </>
-  );
-}
-
-function RewardChip({ icon, color, label, detail, dim }: {
-  icon: React.ReactNode;
-  color: string;
-  label: string;
-  detail: string;
-  dim?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-lg p-2 border flex flex-col gap-0.5 ${dim ? 'opacity-60' : ''}`}
-      style={{
-        background: `linear-gradient(145deg, ${color}18, #0b0b14 80%)`,
-        borderColor: `${color}35`,
-      }}
-    >
-      <div className="flex items-center gap-1.5">
-        <span style={{ color }}>{icon}</span>
-        <span className="text-[11px] font-bold" style={{ color }}>{label}</span>
-      </div>
-      <p className="text-[9px] text-slate-500 leading-tight">{detail}</p>
-    </div>
   );
 }
