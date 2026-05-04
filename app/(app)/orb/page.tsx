@@ -10,6 +10,7 @@ import { OrbHistory } from '@/components/profile/OrbHistory';
 import { OrbNickname } from '@/components/profile/OrbNickname';
 import { cn } from '@/lib/utils';
 import { rollOrbLoot, lootColors, type OrbLoot } from '@/lib/orbLoot';
+import { MAX_ORB_TIER } from '@/constants/orbTiers';
 import { useUIStore } from '@/store/uiStore';
 
 /**
@@ -53,11 +54,12 @@ export default function OrbPage() {
   // which is why "Evolve once, lose two charges" was happening
   // (server went 3→2 via increment(-1), snapshot set local to 2,
   // then manual `c - 1` dragged it down to 1).
-  // Evolve no longer bumps orbTier — the orb is permanently at max.
-  // Instead it spends a charge for one weighted roll on the loot
-  // table (lib/orbLoot.ts). Common drops give fragments or XP, rare
-  // adds awakening, epic and legendary can grant cosmetics. The
-  // result modal renders from `lootReveal` state.
+  // Evolve climbs the 1→10 tier ladder AND rolls a loot drop on the
+  // weighted rarity table (lib/orbLoot.ts). The orb is rendered at
+  // the max-tier visual regardless of where the user is on the
+  // ladder — there's no visual difference between tiers; the only
+  // thing that "feels" tier-up is the loot. Tier 10 caps the climb;
+  // Ascend resets to 1 with prestige rewards.
   const handleEvolve = async () => {
     if (localCharges <= 0) return;
     const ownedCosmetics = (userAny as unknown as { ownedCosmetics?: string[] } | null)?.ownedCosmetics ?? [];
@@ -68,6 +70,7 @@ export default function OrbPage() {
       const updates: Record<string, unknown> = {
         orbEvolutionCharges: increment(-1),
       };
+      if (localTier < 10) updates.orbTier = localTier + 1;
       if (loot.fragments) updates.fragments = increment(loot.fragments);
       if (loot.xp) {
         updates.totalXP      = increment(loot.xp);
@@ -155,11 +158,14 @@ export default function OrbPage() {
         </p>
       </div>
 
-      {/* Interactive Soul Orb — all three ritual actions live here */}
+      {/* Interactive Soul Orb — all three ritual actions live here.
+          The visual is pinned to MAX_ORB_TIER regardless of the
+          user's actual orbTier; there's no visual difference between
+          tiers anymore. Tier-up only "feels" through the loot drop. */}
       <div onClick={() => setShowOrbHistory(true)} className="cursor-pointer">
         <SoulOrb
           intensity={localAwakening}
-          tier={localTier}
+          tier={MAX_ORB_TIER}
           size={300}
           onEvolve={localCharges > 0 ? handleEvolve : undefined}
           onAscend={handleAscend}

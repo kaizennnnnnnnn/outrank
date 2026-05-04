@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { LevelBadge } from '@/components/profile/LevelBadge';
 import { XPProgressBar } from '@/components/profile/XPProgressBar';
 import { SoulOrb } from '@/components/profile/SoulOrb';
+import { MAX_ORB_TIER } from '@/constants/orbTiers';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { ActivityHeatmap } from '@/components/profile/ActivityHeatmap';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
@@ -61,11 +62,13 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Soul Orb — passive visualization, no interactions possible */}
+      {/* Soul Orb — passive visualization, no interactions possible.
+          Visual is pinned to MAX_ORB_TIER; tier is invisible to the
+          user (the underlying ladder still climbs 1→10 for loot). */}
       <div className="flex justify-center">
         <SoulOrb
           size={280}
-          tier={orbTier}
+          tier={MAX_ORB_TIER}
           intensity={orbIntensity}
           interactive={false}
           baseColorId={(user as unknown as Record<string, string>).orbBaseColor}

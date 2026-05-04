@@ -11,6 +11,7 @@ import { DailyChallenge } from '@/components/habits/DailyChallenge';
 import { QuickLogModal } from '@/components/habits/QuickLogModal';
 import { HabitCard } from '@/components/habits/HabitCard';
 import { SoulOrb } from '@/components/profile/SoulOrb';
+import { MAX_ORB_TIER } from '@/constants/orbTiers';
 import { StreakFire } from '@/components/habits/StreakFire';
 import { getLeague } from '@/constants/seasons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
@@ -156,7 +157,7 @@ export default function DashboardPage() {
                   <SoulOrb intensity={Math.min(Math.round(
                     Math.min(user.totalXP / 500, 40) + Math.min(habits.reduce((s, h) => s + h.currentStreak, 0) / 10, 30) +
                     Math.min(habits.reduce((s, h) => s + h.totalLogs, 0) / 20, 20) + Math.min(level.level / 10, 10)
-                  ), 100)} tier={(user as unknown as Record<string, number>).orbTier || 1} size={88} hideLabel
+                  ), 100)} tier={MAX_ORB_TIER} size={88} hideLabel
                     baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
                     pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
                     ringColorId={(user as unknown as Record<string, string>).orbRingColor}
