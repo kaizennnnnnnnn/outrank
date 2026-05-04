@@ -109,18 +109,31 @@ export default function OrbPage() {
     }
   };
 
+  // Ascend is unlimited — every cycle (climb to tier 10, ascend to
+  // reset) awards another fragment payout. The cosmetic frame +
+  // name effect grant once (arrayUnion is idempotent), so subsequent
+  // ascensions just stack fragments + the orbAscensions counter.
+  // Fragment payout scales with each cycle so the 5th ascension
+  // feels meaningfully different from the 1st.
   const handleAscend = async () => {
     if (!user) return;
+    const ascensions = ((user as unknown as { orbAscensions?: number }).orbAscensions ?? 0) + 1;
+    const fragmentReward = 500 + (ascensions - 1) * 250; // 500, 750, 1000, 1250, ...
     try {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment, arrayUnion } = await import('firebase/firestore');
       await updateDocument('users', user.uid, {
         orbTier: 1,
         orbAscensions: increment(1),
-        fragments: increment(500),
+        fragments: increment(fragmentReward),
         ownedCosmetics: arrayUnion('frame_ascension', 'name_ascendant'),
       });
-      addToast({ type: 'success', message: 'Ascended. The cycle begins again.' });
+      addToast({
+        type: 'success',
+        message: ascensions === 1
+          ? `First ascension. +${fragmentReward} fragments + Ascension wreath unlocked.`
+          : `Ascension ${ascensions}. +${fragmentReward} fragments. The cycle begins again.`,
+      });
     } catch {
       addToast({ type: 'error', message: 'Ascension failed' });
     }
@@ -230,6 +243,10 @@ export default function OrbPage() {
               label="Charges available"
               value={String(localCharges).padStart(2, '0')}
               accent={localCharges > 0}
+            />
+            <SpecRow
+              label="Ascensions"
+              value={String((user as unknown as { orbAscensions?: number }).orbAscensions ?? 0).padStart(2, '0')}
               last
             />
           </div>
@@ -322,56 +339,74 @@ export default function OrbPage() {
             )}
           </p>
 
-          {/* Ascend — only at tier 10. Subtle, separated. */}
-          {localTier >= MAX_ORB_TIER && (
-            <div
-              style={{
-                marginTop: 22,
-                paddingTop: 14,
-                borderTop: '1px solid var(--b-rule)',
-                textAlign: 'center',
-              }}
-            >
+          {/* Ascend — only at tier 10. Unlimited cycles; each ascension
+              scales the fragment payout (500, 750, 1000, ...). */}
+          {localTier >= MAX_ORB_TIER && (() => {
+            const ascensions = (user as unknown as { orbAscensions?: number }).orbAscensions ?? 0;
+            const nextReward = 500 + ascensions * 250;
+            return (
               <div
-                className="spread"
-                style={{ fontSize: 9, color: 'var(--b-accent)', marginBottom: 6 }}
+                style={{
+                  marginTop: 22,
+                  paddingTop: 14,
+                  borderTop: '1px solid var(--b-rule)',
+                  textAlign: 'center',
+                }}
               >
-                Ladder complete
+                <div
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-accent)', marginBottom: 6 }}
+                >
+                  {ascensions === 0 ? 'Ladder complete' : `${ordinal(ascensions + 1)} ascension`}
+                </div>
+                <p
+                  className="font-body"
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--b-ink-60)',
+                    marginBottom: 10,
+                    lineHeight: 1.5,
+                    maxWidth: 320,
+                    marginInline: 'auto',
+                  }}
+                >
+                  Ascending resets the ladder to tier I — your level, cosmetics, and
+                  fragments stay. Each cycle awards more than the last.
+                </p>
+                <button
+                  onClick={handleAscend}
+                  className="font-body"
+                  style={{
+                    height: 40,
+                    padding: '0 24px',
+                    border: '1px solid var(--b-accent)',
+                    background: 'transparent',
+                    color: 'var(--b-accent)',
+                    fontWeight: 700,
+                    fontSize: 11,
+                    letterSpacing: '0.12em',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-inter)',
+                  }}
+                >
+                  ASCEND · +{nextReward} ◆
+                </button>
+                {ascensions > 0 && (
+                  <p
+                    className="font-body"
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--b-ink-40)',
+                      marginTop: 8,
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    You&apos;ve ascended {ascensions} time{ascensions === 1 ? '' : 's'} already.
+                  </p>
+                )}
               </div>
-              <p
-                className="font-body"
-                style={{
-                  fontSize: 11,
-                  color: 'var(--b-ink-60)',
-                  marginBottom: 10,
-                  lineHeight: 1.5,
-                  maxWidth: 320,
-                  marginInline: 'auto',
-                }}
-              >
-                Ascend to start the ladder over. Keeps your level + cosmetics, awards
-                500 fragments + the Ascension wreath frame.
-              </p>
-              <button
-                onClick={handleAscend}
-                className="font-body"
-                style={{
-                  height: 40,
-                  padding: '0 24px',
-                  border: '1px solid var(--b-accent)',
-                  background: 'transparent',
-                  color: 'var(--b-accent)',
-                  fontWeight: 700,
-                  fontSize: 11,
-                  letterSpacing: '0.12em',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-inter)',
-                }}
-              >
-                ASCEND
-              </button>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Nickname + view details link */}
           <div style={{ marginTop: 22 }}>
@@ -596,6 +631,13 @@ function OrbLootReveal({
       </div>
     </div>
   );
+}
+
+// Ordinal number formatter — 1 → "1st", 2 → "2nd", 13 → "13th", etc.
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 // Suppress unused-import warning — ORB_TIERS is referenced via getOrbTier

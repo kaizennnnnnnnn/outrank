@@ -25,6 +25,12 @@ import {
   BSunGlyph,
   BFlameGlyph,
   BPlusGlyph,
+  BCoinGlyph,
+  BPaletteGlyph,
+  BMusicGlyph,
+  BCameraGlyph,
+  BCaloriesGlyph,
+  BCompassGlyph,
 } from '@/components/editorial/BGlyphs';
 import { collection, query, where, getDocs, Timestamp as FsTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -50,22 +56,36 @@ import { db } from '@/lib/firebase';
 type GlyphCmp = React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>;
 
 const SLUG_GLYPH: Record<string, GlyphCmp> = {
+  // Body
   gym: BGymGlyph, yoga: BGymGlyph, stretch: BGymGlyph,
-  running: BRunGlyph, swimming: BRunGlyph, cycling: BRunGlyph, outside: BRunGlyph,
+  running: BRunGlyph, swimming: BRunGlyph, cycling: BRunGlyph,
+  outside: BCompassGlyph,
   'cold-shower': BShowerGlyph, skincare: BShowerGlyph,
+  steps: BStepsGlyph,
+  // Mind
   books: BBookGlyph, pages: BBookGlyph, language: BBookGlyph, courses: BBookGlyph,
   podcasts: BBookGlyph, vocabulary: BBookGlyph, flashcards: BBookGlyph, chess: BBookGlyph,
   meditation: BMeditationGlyph, journaling: BMeditationGlyph, gratitude: BMeditationGlyph,
+  // Focus
   'deep-work': BFocusGlyph, 'screen-time': BFocusGlyph, 'no-social': BFocusGlyph,
   projects: BFocusGlyph, networking: BFocusGlyph, outreach: BFocusGlyph, clients: BFocusGlyph,
+  // Health
   water: BWaterGlyph,
   sleep: BSleepGlyph, supplements: BSleepGlyph, 'no-caffeine': BSleepGlyph,
   'alcohol-free': BSleepGlyph, 'junk-free': BSleepGlyph,
-  steps: BStepsGlyph,
-  coding: BCodeGlyph, commits: BCodeGlyph, designs: BCodeGlyph, drawings: BCodeGlyph,
-  photos: BCodeGlyph, music: BCodeGlyph, videos: BCodeGlyph, writing: BCodeGlyph,
-  guitar: BCodeGlyph,
+  calories: BCaloriesGlyph,
+  // Career / Code
+  coding: BCodeGlyph, commits: BCodeGlyph, writing: BCodeGlyph,
+  // Creativity
+  designs: BPaletteGlyph, drawings: BPaletteGlyph,
+  photos: BCameraGlyph, videos: BCameraGlyph,
+  music: BMusicGlyph, guitar: BMusicGlyph,
+  // Lifestyle
   'early-wake': BSunGlyph, 'meal-prep': BSunGlyph,
+  // Finance
+  savings: BCoinGlyph, 'no-impulse': BCoinGlyph, expenses: BCoinGlyph,
+  'side-income': BCoinGlyph, investments: BCoinGlyph, 'save-money': BCoinGlyph,
+  'no-spend': BCoinGlyph, invest: BCoinGlyph, 'budget-review': BCoinGlyph,
 };
 
 function glyphFor(slug: string): GlyphCmp {

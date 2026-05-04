@@ -249,3 +249,122 @@ export function BArrowRightGlyph(p: GlyphProps) {
     </g>
   ));
 }
+
+// ─── Finance / Creative / Misc ──────────────────────────────────────
+
+export function BCoinGlyph(p: GlyphProps) {
+  // Stacked coins — used for finance categories (savings, investments,
+  // expenses, no-spend, side-income, etc.)
+  return svg(p, (
+    <g>
+      <ellipse cx="12" cy="6"  rx="7" ry="2.4" />
+      <ellipse cx="12" cy="6"  rx="3" ry="1" />
+      <path d="M5 6v5c0 1.4 3.1 2.4 7 2.4s7-1 7-2.4V6" />
+      <path d="M5 11v5c0 1.4 3.1 2.4 7 2.4s7-1 7-2.4v-5" />
+    </g>
+  ));
+}
+
+export function BPaletteGlyph(p: GlyphProps) {
+  // Painter's palette w/ thumb hole + pigment dots — for designs +
+  // drawings. Lighter weight than BCode.
+  return svg(p, (
+    <g>
+      <path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5S13 18 13 17a2 2 0 0 1 2-2h2a4 4 0 0 0 4-4 9 9 0 0 0-9-8z" />
+      <circle cx="8.5" cy="9" r="0.8" fill="currentColor" />
+      <circle cx="12"  cy="6.5" r="0.8" fill="currentColor" />
+      <circle cx="15.5" cy="9" r="0.8" fill="currentColor" />
+      <circle cx="7"  cy="13" r="0.8" fill="currentColor" />
+    </g>
+  ));
+}
+
+export function BMusicGlyph(p: GlyphProps) {
+  // Eighth note — for music + guitar.
+  return svg(p, (
+    <g>
+      <path d="M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+      <path d="M9 18V5l11-3v13" />
+      <path d="M20 15a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z" />
+    </g>
+  ));
+}
+
+export function BCameraGlyph(p: GlyphProps) {
+  // Camera body — for photos + videos.
+  return svg(p, (
+    <g>
+      <path d="M3 8h4l2-3h6l2 3h4v11H3z" />
+      <circle cx="12" cy="13" r="4" />
+      <circle cx="17" cy="9.5" r="0.6" fill="currentColor" />
+    </g>
+  ));
+}
+
+export function BCalendarGlyph(p: GlyphProps) {
+  // Calendar with a marker — for scheduling.
+  return svg(p, (
+    <g>
+      <rect x="4" y="5" width="16" height="16" rx="1" />
+      <path d="M4 10h16" />
+      <path d="M9 3v4" />
+      <path d="M15 3v4" />
+      <path d="M8 14h2" />
+      <path d="M14 14h2" />
+      <path d="M8 18h2" />
+    </g>
+  ));
+}
+
+export function BInventoryGlyph(p: GlyphProps) {
+  // Chest with a banded lid — for inventory / time-travelers.
+  return svg(p, (
+    <g>
+      <rect x="3" y="9" width="18" height="11" rx="1" />
+      <path d="M3 13h18" />
+      <path d="M10 13v3h4v-3" />
+      <path d="M5 9c0-2.5 3-4 7-4s7 1.5 7 4" />
+    </g>
+  ));
+}
+
+export function BCaloriesGlyph(p: GlyphProps) {
+  // Flame inside a circular gauge — for calories.
+  return svg(p, (
+    <g>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7c0 3-2.5 3-2.5 6a2.5 2.5 0 0 0 5 0c0-1-.5-2-.5-3 0 1.5-1 2-2 2.5 0-2 0-3.5 0-5.5z" />
+    </g>
+  ));
+}
+
+export function BBellGlyph(p: GlyphProps) {
+  // Notification bell — used in Masthead.
+  return svg(p, (
+    <g>
+      <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </g>
+  ));
+}
+
+export function BCompassGlyph(p: GlyphProps) {
+  // Compass — for outside / outdoor habits.
+  return svg(p, (
+    <g>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M16 8l-2.5 5.5L8 16l2.5-5.5L16 8z" />
+    </g>
+  ));
+}
+
+export function BWingsGlyph(p: GlyphProps) {
+  // Wings — for ascension flair.
+  return svg(p, (
+    <g>
+      <path d="M12 7v12" />
+      <path d="M12 9c-3-2-6-3-9-3 0 2 2 6 9 7" />
+      <path d="M12 9c3-2 6-3 9-3 0 2-2 6-9 7" />
+    </g>
+  ));
+}
