@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SoulOrb } from '@/components/profile/SoulOrb';
-import { Button } from '@/components/ui/Button';
 import { haptic } from '@/lib/haptics';
 import { ParticleBurst } from '@/components/effects/ParticleBurst';
 import { Competition, CompetitionParticipant } from '@/types/competition';
 import { getDuelRewards } from '@/lib/duelRewards';
+import { BTrophyGlyph, BCoinGlyph } from '@/components/editorial/BGlyphs';
 
 interface OrbSkin {
   tier?: number;
@@ -109,29 +109,50 @@ export function DuelResultModal({
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="relative w-full max-w-lg rounded-2xl border border-[#1e1e30] bg-gradient-to-b from-[#12121c] to-[#07070c] p-6 overflow-hidden"
+            className="dir-b relative w-full max-w-lg p-6 overflow-hidden"
+            style={{
+              background: 'var(--b-paper)',
+              border: '1px solid var(--b-rule)',
+              color: 'var(--b-ink)',
+            }}
           >
             <ParticleBurst trigger={burst} color={color} count={100} />
 
             {/* Title / Subtitle */}
             <div className="text-center mb-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+              <div
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+              >
                 Duel Ended
-              </p>
+              </div>
               <h2
-                className="font-heading text-4xl font-bold mt-1"
+                className="font-display"
                 style={{
-                  color: '#fff',
-                  background: phase === 'reveal' || phase === 'claimed'
-                    ? `linear-gradient(90deg, ${color}, #ffffff, ${color})`
-                    : undefined,
-                  WebkitBackgroundClip: phase === 'reveal' || phase === 'claimed' ? 'text' : undefined,
-                  WebkitTextFillColor: phase === 'reveal' || phase === 'claimed' ? 'transparent' : undefined,
+                  fontSize: 38,
+                  fontWeight: 500,
+                  fontStyle: 'italic',
+                  marginTop: 4,
+                  color: phase === 'reveal' || phase === 'claimed'
+                    ? (won ? 'var(--b-accent)' : tie ? 'var(--b-ink)' : 'var(--b-ink-60)')
+                    : 'var(--b-ink)',
+                  letterSpacing: '-0.01em',
                 }}
               >
-                {phase === 'intro' ? '...' : title}
+                {phase === 'intro' ? '…' : title}
               </h2>
-              <p className="text-xs text-slate-500 mt-1">{competition.title}</p>
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--b-ink-60)',
+                  marginTop: 4,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                {competition.title}
+              </p>
             </div>
 
             {/* Orb arena — layered warm ambient glow so canvas edges blend
@@ -321,43 +342,100 @@ export function DuelResultModal({
               </motion.div>
             </div>
 
-            {/* Prizes */}
+            {/* Prizes — editorial hairline-bracketed strip */}
             {(phase === 'reveal' || phase === 'claimed') && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="grid grid-cols-2 gap-2 mb-4"
+                style={{
+                  borderTop: '1px solid var(--b-ink)',
+                  borderBottom: '1px solid var(--b-ink)',
+                  padding: '12px 0',
+                  marginBottom: 16,
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                }}
               >
-                <Prize
-                  icon={<BoltIcon />}
-                  value={`+${xp}`}
-                  label="XP"
-                  color="#f97316"
-                />
-                <Prize
-                  icon={<FragmentIcon />}
-                  value={`+${fragments}`}
-                  label="Fragments"
-                  color="#fbbf24"
-                />
+                <Prize icon={<BTrophyGlyph size={16} />} value={`+${xp}`} label="XP" />
+                <Prize icon={<BCoinGlyph size={16} />} value={`+${fragments}`} label="Fragments" right />
               </motion.div>
             )}
 
             {/* Actions */}
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: 8 }}>
               {phase === 'reveal' ? (
-                <Button className="flex-1" onClick={handleClaim} loading={claiming}>
-                  {won ? 'Claim Victory' : tie ? 'Accept Draw' : 'Accept Defeat'}
-                </Button>
+                <button
+                  onClick={handleClaim}
+                  disabled={claiming}
+                  className="font-body"
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    border: '1px solid var(--b-ink)',
+                    background: 'var(--b-ink)',
+                    color: 'var(--b-paper)',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.08em',
+                    cursor: claiming ? 'not-allowed' : 'pointer',
+                    opacity: claiming ? 0.7 : 1,
+                  }}
+                >
+                  {claiming ? 'CLAIMING…' : won ? 'CLAIM VICTORY →' : tie ? 'ACCEPT DRAW' : 'ACCEPT DEFEAT'}
+                </button>
               ) : phase === 'claimed' ? (
-                <Button className="flex-1" variant="secondary" disabled>Claimed</Button>
+                <button
+                  className="font-body"
+                  disabled
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    border: '1px solid var(--b-rule)',
+                    background: 'var(--b-paper-2)',
+                    color: 'var(--b-ink-40)',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  CLAIMED
+                </button>
               ) : (
-                <Button className="flex-1" variant="secondary" disabled>
-                  <span className="animate-pulse">Resolving...</span>
-                </Button>
+                <button
+                  className="font-body"
+                  disabled
+                  style={{
+                    flex: 1,
+                    height: 46,
+                    border: '1px solid var(--b-rule)',
+                    background: 'var(--b-paper-2)',
+                    color: 'var(--b-ink-40)',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  <span className="animate-pulse">RESOLVING…</span>
+                </button>
               )}
-              <Button variant="ghost" onClick={onClose}>Close</Button>
+              <button
+                onClick={onClose}
+                className="font-body"
+                style={{
+                  height: 46,
+                  padding: '0 16px',
+                  border: '1px solid var(--b-rule)',
+                  background: 'transparent',
+                  color: 'var(--b-ink-60)',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  letterSpacing: '0.08em',
+                  cursor: 'pointer',
+                }}
+              >
+                CLOSE
+              </button>
             </div>
           </motion.div>
         </motion.div>
@@ -400,23 +478,32 @@ function MoteStream({ from, to, color }: { from: 'left' | 'right'; to: 'left' | 
   );
 }
 
-function Prize({ icon, value, label, color }: { icon: React.ReactNode; value: string; label: string; color: string }) {
+function Prize({ icon, value, label, right }: { icon: React.ReactNode; value: string; label: string; right?: boolean }) {
   return (
     <div
-      className="rounded-xl px-3 py-2 flex items-center gap-2"
       style={{
-        background: `linear-gradient(145deg, ${color}18, #0b0b14 60%)`,
-        border: `1px solid ${color}33`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: right ? '0 0 0 12px' : '0 12px 0 0',
+        borderLeft: right ? '1px solid var(--b-rule)' : 'none',
       }}
     >
-      <div style={{ color }}>{icon}</div>
+      <div style={{ color: 'var(--b-accent)' }}>{icon}</div>
       <div>
-        <p className="font-mono text-lg font-bold text-white leading-none">{value}</p>
-        <p className="text-[10px] text-slate-500 mt-0.5">{label}</p>
+        <div
+          className="font-display tabular"
+          style={{ fontSize: 22, fontWeight: 500, color: 'var(--b-ink)', lineHeight: 1 }}
+        >
+          {value}
+        </div>
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 3 }}
+        >
+          {label}
+        </div>
       </div>
     </div>
   );
 }
-
-function BoltIcon() { return <svg width={18} height={18} viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>; }
-function FragmentIcon() { return <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" /></svg>; }
