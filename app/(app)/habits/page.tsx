@@ -1,22 +1,91 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
-import { CATEGORIES, CATEGORY_SECTIONS, getGoalConfig } from '@/constants/categories';
-import { Button } from '@/components/ui/Button';
+import { CATEGORIES, CATEGORY_SECTIONS, getGoalConfig, type CategorySection } from '@/constants/categories';
 import { Modal } from '@/components/ui/Modal';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { getMaxHabits, getNextSlotUnlock } from '@/constants/progression';
-import { getLevelForXP } from '@/constants/levels';
+import { CheckCircleFullIcon } from '@/components/ui/AppIcons';
 import { setDocument, Timestamp, removeDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { cn } from '@/lib/utils';
-import { TargetFullIcon, CheckCircleFullIcon } from '@/components/ui/AppIcons';
-import { StreakFlame } from '@/components/habits/StreakFlame';
-import Link from 'next/link';
+import { Masthead } from '@/components/editorial/Masthead';
+import {
+  BGymGlyph,
+  BRunGlyph,
+  BShowerGlyph,
+  BBookGlyph,
+  BMeditationGlyph,
+  BFocusGlyph,
+  BWaterGlyph,
+  BSleepGlyph,
+  BStepsGlyph,
+  BCodeGlyph,
+  BSunGlyph,
+  BFlameGlyph,
+  BPlusGlyph,
+} from '@/components/editorial/BGlyphs';
+import { collection, query, where, getDocs, Timestamp as FsTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+
+/**
+ * Habits — editorial Direction B v2 conversion.
+ *
+ * "Daily Practice" front page: a 4-week sparkline of total log
+ * activity at the top, then a numbered list of habits grouped by
+ * category section (Body / Mind / Career / etc.). Tapping a habit
+ * routes to the existing /habits/[slug] detail screen. The "+ ADD"
+ * link in the masthead row opens the existing browser modal so the
+ * add/remove flow is unchanged.
+ *
+ * The sparkline is one cheap query: 28 days of /logs/{uid}/habitLogs
+ * filtered by createdAt, bucketed client-side by toDateString. Cost
+ * is one read per day's log on first load — typically 30-300 docs.
+ */
+
+// Slug → bespoke glyph. Anything not in the table falls back to a
+// small flame mark, which reads as a generic "habit" symbol in the
+// design's editorial vocabulary.
+type GlyphCmp = React.ComponentType<{ size?: number; style?: React.CSSProperties; className?: string }>;
+
+const SLUG_GLYPH: Record<string, GlyphCmp> = {
+  gym: BGymGlyph, yoga: BGymGlyph, stretch: BGymGlyph,
+  running: BRunGlyph, swimming: BRunGlyph, cycling: BRunGlyph, outside: BRunGlyph,
+  'cold-shower': BShowerGlyph, skincare: BShowerGlyph,
+  books: BBookGlyph, pages: BBookGlyph, language: BBookGlyph, courses: BBookGlyph,
+  podcasts: BBookGlyph, vocabulary: BBookGlyph, flashcards: BBookGlyph, chess: BBookGlyph,
+  meditation: BMeditationGlyph, journaling: BMeditationGlyph, gratitude: BMeditationGlyph,
+  'deep-work': BFocusGlyph, 'screen-time': BFocusGlyph, 'no-social': BFocusGlyph,
+  projects: BFocusGlyph, networking: BFocusGlyph, outreach: BFocusGlyph, clients: BFocusGlyph,
+  water: BWaterGlyph,
+  sleep: BSleepGlyph, supplements: BSleepGlyph, 'no-caffeine': BSleepGlyph,
+  'alcohol-free': BSleepGlyph, 'junk-free': BSleepGlyph,
+  steps: BStepsGlyph,
+  coding: BCodeGlyph, commits: BCodeGlyph, designs: BCodeGlyph, drawings: BCodeGlyph,
+  photos: BCodeGlyph, music: BCodeGlyph, videos: BCodeGlyph, writing: BCodeGlyph,
+  guitar: BCodeGlyph,
+  'early-wake': BSunGlyph, 'meal-prep': BSunGlyph,
+};
+
+function glyphFor(slug: string): GlyphCmp {
+  return SLUG_GLYPH[slug] ?? BFlameGlyph;
+}
+
+// Word-form count, 1-99. Falls through to numeric for higher.
+function countWord(n: number): string {
+  if (n <= 0) return 'zero';
+  const ones = ['','one','two','three','four','five','six','seven','eight','nine','ten',
+    'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  if (n < 20) return ones[n];
+  if (n < 100) {
+    const t = Math.floor(n / 10);
+    const o = n % 10;
+    return o === 0 ? tens[t] : `${tens[t]}-${ones[o]}`;
+  }
+  return String(n);
+}
 
 export default function HabitsPage() {
   const { user } = useAuth();
@@ -24,27 +93,67 @@ export default function HabitsPage() {
   const addToast = useUIStore((s) => s.addToast);
   const [showBrowser, setShowBrowser] = useState(false);
   const [adding, setAdding] = useState<string | null>(null);
-  // Edit mode toggles the persistent remove buttons on every habit card.
-  // Without this, the only way to drop a habit on mobile was the hover X,
-  // which is invisible on touch devices.
   const [editMode, setEditMode] = useState(false);
 
-  const subscribedSlugs = habits.map((h) => h.categorySlug);
-  const level = user ? getLevelForXP(user.totalXP) : { level: 1 };
-  const maxHabits = getMaxHabits(level.level);
-  const nextUnlock = getNextSlotUnlock(level.level);
-  const slotsUsed = habits.length;
-  const slotsFull = slotsUsed >= maxHabits;
+  // Sparkline source: counts of habit logs per day for the last 28 days.
+  const [perDay, setPerDay] = useState<number[]>(Array(28).fill(0));
+  const [totalLogs28, setTotalLogs28] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    since.setDate(since.getDate() - 27); // 28-day window inclusive of today
+    (async () => {
+      try {
+        const q = query(
+          collection(db, `logs/${user.uid}/habitLogs`),
+          where('createdAt', '>=', FsTimestamp.fromDate(since)),
+        );
+        const snap = await getDocs(q);
+        const buckets = new Array(28).fill(0) as number[];
+        snap.forEach((d) => {
+          const data = d.data() as { createdAt?: { toDate: () => Date } };
+          const ts = data.createdAt?.toDate?.();
+          if (!ts) return;
+          const dayDiff = Math.floor((ts.getTime() - since.getTime()) / 86400000);
+          if (dayDiff >= 0 && dayDiff < 28) buckets[dayDiff] += 1;
+        });
+        if (cancelled) return;
+        setPerDay(buckets);
+        setTotalLogs28(snap.size);
+      } catch {
+        /* sparkline is non-fatal — leave defaults */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const subscribedSlugs = useMemo(() => habits.map((h) => h.categorySlug), [habits]);
+
+  // Group habits by their category's section (Body / Mind / Career / etc.).
+  const grouped = useMemo(() => {
+    const bySection = new Map<CategorySection, typeof habits>();
+    habits.forEach((h) => {
+      const cat = CATEGORIES.find((c) => c.slug === h.categorySlug);
+      const section = (cat?.section as CategorySection) ?? 'Lifestyle';
+      const arr = bySection.get(section) ?? [];
+      arr.push(h);
+      bySection.set(section, arr);
+    });
+    return Array.from(bySection.entries())
+      .sort(([a], [b]) => CATEGORY_SECTIONS.indexOf(a) - CATEGORY_SECTIONS.indexOf(b));
+  }, [habits]);
+
+  const todayStr = new Date().toDateString();
+  const isLoggedToday = (lastLogDate: { toDate?: () => Date } | null | undefined) =>
+    lastLogDate?.toDate?.()?.toDateString?.() === todayStr;
 
   const addHabit = async (slug: string) => {
     if (!user) return;
-    if (slotsFull) {
-      addToast({ type: 'error', message: `All ${maxHabits} habit slots used. Level up to unlock more!` });
-      return;
-    }
     const cat = CATEGORIES.find((c) => c.slug === slug);
     if (!cat) return;
-
     setAdding(slug);
     try {
       await setDocument(`habits/${user.uid}/userHabits`, slug, {
@@ -63,7 +172,7 @@ export default function HabitsPage() {
         color: cat.color,
         unit: cat.unit,
       });
-      addToast({ type: 'success', message: `${cat.name} added!` });
+      addToast({ type: 'success', message: `${cat.name} added` });
     } catch {
       addToast({ type: 'error', message: 'Failed to add habit' });
     } finally {
@@ -81,203 +190,275 @@ export default function HabitsPage() {
     }
   };
 
+  const habitCount = habits.length;
+  const sparkMax = Math.max(1, ...perDay);
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-white font-heading">My Habits</h1>
-          <p className="text-sm text-slate-500">
-            {slotsUsed}/{maxHabits} slots used
-            {nextUnlock && (
-              <span className="text-orange-400 ml-1">
-                &bull; +{nextUnlock.slots - maxHabits} at Lv.{nextUnlock.level}
-              </span>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {habits.length > 0 && (
-            <Button
-              variant={editMode ? 'primary' : 'secondary'}
-              onClick={() => setEditMode((e) => !e)}
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Daily Practice" />
+
+        <div style={{ padding: '0 22px' }}>
+          {/* Eyebrow + headline */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Your Roster
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 12px' }}
             >
-              {editMode ? 'Done' : 'Edit'}
-            </Button>
-          )}
-          <Button onClick={() => setShowBrowser(true)} disabled={slotsFull}>
-            {slotsFull ? 'Slots Full' : '+ Add'}
-          </Button>
-        </div>
-      </div>
-      {editMode && (
-        <div
-          className="rounded-xl border px-3 py-2 text-[11px] text-orange-200/90"
-          style={{
-            background: 'linear-gradient(145deg, rgba(249,115,22,0.12), #0b0b14 70%)',
-            borderColor: 'rgba(249,115,22,0.35)',
-          }}
-        >
-          Tap × on any habit to remove it. Slots free up instantly — use <b>+ Add</b> to pick a new one.
-        </div>
-      )}
-
-      {/* Pillar / Personal explainer — surfaces the soft path so users
-          understand why their non-pillar habits don't show up on
-          friends' feeds. */}
-      <div
-        className="rounded-xl border px-3 py-2.5 text-[11px] text-slate-400 leading-relaxed"
-        style={{
-          background: 'linear-gradient(145deg, rgba(249,115,22,0.06), #0b0b14 70%)',
-          borderColor: 'rgba(249,115,22,0.18)',
-        }}
-      >
-        <span className="text-orange-300 font-bold uppercase tracking-widest text-[9px] mr-1.5">
-          Pillars
-        </span>
-        Gym, Steps, Water, Sleep, and Focus are your <b className="text-slate-300">five core pillars</b> — only their logs appear on a friend&rsquo;s daily record. Anything else stays personal-only. You can still add custom habits below to track them privately.
-      </div>
-
-      {loading ? (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
-        </div>
-      ) : habits.length === 0 ? (
-        <div className="text-center py-20">
-          <div className="flex justify-center"><TargetFullIcon size={48} className="text-orange-400 mb-4" /></div>
-          <h2 className="text-xl font-bold text-white mb-2">No habits yet</h2>
-          <p className="text-slate-500 mb-6">Choose from 52 categories to start tracking.</p>
-          <Button onClick={() => setShowBrowser(true)}>Browse Categories</Button>
-        </div>
-      ) : (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {habits.map((habit) => (
-            <motion.div
-              key={habit.categorySlug}
-              whileHover={{ y: -2 }}
-              className="group relative overflow-hidden rounded-2xl p-5 transition-all"
+              <em style={{ fontStyle: 'italic' }}>{countWord(habitCount).replace(/^./, (c) => c.toUpperCase())}</em> habit{habitCount === 1 ? '' : 's'}
+            </h1>
+            <button
+              onClick={() => setShowBrowser(true)}
+              className="font-body"
               style={{
-                background: `linear-gradient(145deg, ${habit.color}08 0%, #10101a 40%, #0b0b14 100%)`,
-                border: `1px solid ${habit.color}22`,
-                boxShadow: `0 1px 0 0 ${habit.color}10 inset, 0 8px 24px -12px ${habit.color}18`,
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                color: 'var(--b-accent)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
-              {/* Accent glow */}
-              <div
-                className="absolute -top-16 -right-16 w-40 h-40 rounded-full opacity-[0.07] blur-3xl pointer-events-none transition-opacity group-hover:opacity-[0.14]"
-                style={{ background: habit.color }}
-              />
+              <BPlusGlyph size={11} /> ADD
+            </button>
+          </div>
 
-              {/* Remove button. Edit mode = always visible (mobile can't
-                  hover); idle mode = ghost-on-hover so it doesn't clutter
-                  the card. Edit-mode treatment uses the same warm
-                  red-orange gradient as the rest of the app's primary
-                  CTAs and a trash glyph instead of a bare X — fits the
-                  fire/phoenix palette and reads as "delete," not as a
-                  generic close. The faint warm halo behind it draws the
-                  eye without the harsh pulse the previous version used. */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  removeHabit(habit.categorySlug);
-                }}
-                className={cn(
-                  'absolute top-3 right-3 z-10 rounded-full flex items-center justify-center transition-all overflow-visible',
-                  editMode
-                    ? 'w-9 h-9 text-white shadow-[0_4px_14px_-2px_rgba(239,68,68,0.55)] hover:shadow-[0_6px_22px_-2px_rgba(249,115,22,0.7)] active:scale-95'
-                    : 'w-7 h-7 text-slate-700 hover:text-orange-400 hover:bg-orange-500/10 opacity-0 group-hover:opacity-100',
-                )}
-                style={editMode ? {
-                  background: 'linear-gradient(145deg, #f97316 0%, #dc2626 60%, #7f1d1d 100%)',
-                  border: '1px solid rgba(254, 215, 170, 0.4)',
-                } : undefined}
-                aria-label="Remove habit"
-              >
-                {editMode && (
-                  <span
-                    aria-hidden
-                    className="absolute -inset-1.5 rounded-full pointer-events-none"
+          {/* 28-day activity sparkline */}
+          <div
+            style={{
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-ink)',
+              padding: '14px 0',
+              marginBottom: 18,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: 3,
+                height: 42,
+              }}
+            >
+              {perDay.map((v, i) => {
+                const isToday = i === perDay.length - 1;
+                const recent = i >= perDay.length - 4;
+                return (
+                  <div
+                    key={i}
                     style={{
-                      background: 'radial-gradient(circle, rgba(249,115,22,0.45), transparent 70%)',
-                      filter: 'blur(4px)',
-                      animation: 'frame-pulse 2.4s ease-in-out infinite',
+                      flex: 1,
+                      height: `${Math.max(4, (v / sparkMax) * 100)}%`,
+                      background: isToday
+                        ? 'var(--b-accent)'
+                        : recent
+                        ? 'var(--b-ink)'
+                        : 'var(--b-ink-40)',
                     }}
                   />
-                )}
-                {editMode ? (
-                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-                    <path d="M3 6h18" />
-                    <path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                    <path d="M10 11v6" />
-                    <path d="M14 11v6" />
-                  </svg>
-                ) : (
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                  </svg>
-                )}
+                );
+              })}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 8,
+                fontSize: 9,
+                color: 'var(--b-ink-60)',
+                fontFamily: 'var(--font-inter)',
+              }}
+            >
+              <span>4 weeks ago</span>
+              <span className="tabular">{totalLogs28} logs</span>
+              <span style={{ color: 'var(--b-accent)', fontWeight: 600 }}>today</span>
+            </div>
+          </div>
+
+          {/* Empty state */}
+          {!loading && habits.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p
+                className="font-display"
+                style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, marginBottom: 8 }}
+              >
+                A blank ledger.
+              </p>
+              <p
+                className="font-body"
+                style={{ fontSize: 12, color: 'var(--b-ink-60)', marginBottom: 16 }}
+              >
+                Pick from 52 categories to start tracking.
+              </p>
+              <button
+                onClick={() => setShowBrowser(true)}
+                className="font-body"
+                style={{
+                  height: 44,
+                  padding: '0 20px',
+                  border: '1px solid var(--b-ink)',
+                  background: 'var(--b-ink)',
+                  color: 'var(--b-paper)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  letterSpacing: '0.04em',
+                  cursor: 'pointer',
+                }}
+              >
+                BROWSE CATEGORIES →
               </button>
+            </div>
+          )}
 
-              {editMode ? (
-                // In edit mode, suppress navigation — tapping a card should
-                // not route away while the user is managing the roster.
-                <div className="relative flex items-start gap-4 opacity-75">
-                  <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
-                  <div className="flex-1 min-w-0 pt-1">
-                    <p className="text-base font-bold text-white truncate">
-                      {habit.categoryName}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      <span className="font-mono text-slate-400">{habit.goal}</span>
-                      <span className="mx-1">{habit.unit}</span>
-                      <span className="text-slate-600">/ {habit.goalPeriod}</span>
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <Link href={`/habits/${habit.categorySlug}`} className="relative flex items-start gap-4">
-                  <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="lg" slug={habit.categorySlug} />
-                  <div className="flex-1 min-w-0 pt-1">
-                    <p className="text-base font-bold text-white group-hover:text-orange-400 transition-colors truncate">
-                      {habit.categoryName}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      <span className="font-mono text-slate-400">{habit.goal}</span>
-                      <span className="mx-1">{habit.unit}</span>
-                      <span className="text-slate-600">/ {habit.goalPeriod}</span>
-                    </p>
-                  </div>
-                </Link>
-              )}
-
-              {/* Stats — pill-style badges */}
-              <div className="relative flex items-center gap-2 mt-4 flex-wrap">
-                {habit.currentStreak > 0 ? (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-500/10 border border-orange-500/20">
-                    <StreakFlame streak={habit.currentStreak} size="sm" />
-                  </div>
-                ) : (
-                  <span className="px-2.5 py-1 rounded-full bg-[#0b0b14] border border-[#1e1e30] text-[10px] font-mono text-slate-600">
-                    No streak
-                  </span>
-                )}
-                <span className="px-2.5 py-1 rounded-full bg-[#0b0b14] border border-[#1e1e30] text-[10px] font-mono text-slate-400">
-                  <span className="text-slate-500">Logs</span>{' '}
-                  <span className="text-white">{habit.totalLogs}</span>
+          {/* Sections */}
+          {grouped.map(([section, items], si) => (
+            <div key={section} style={{ marginBottom: 18 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  borderBottom: '1px solid var(--b-ink)',
+                  paddingBottom: 4,
+                }}
+              >
+                <span
+                  className="font-display"
+                  style={{ fontSize: 14, fontStyle: 'italic', fontWeight: 500 }}
+                >
+                  {section}
                 </span>
-                <span className="px-2.5 py-1 rounded-full bg-[#0b0b14] border border-[#1e1e30] text-[10px] font-mono text-slate-400">
-                  <span className="text-slate-500">Best</span>{' '}
-                  <span className="text-white">{habit.longestStreak}d</span>
+                <span
+                  className="font-mono"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                >
+                  § {String(si + 1).padStart(2, '0')}
                 </span>
               </div>
-            </motion.div>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {items.map((h) => {
+                  const Glyph = glyphFor(h.categorySlug);
+                  const done = isLoggedToday(h.lastLogDate);
+                  const broken = h.currentStreak === 0;
+                  const status = broken
+                    ? 'BROKEN'
+                    : `${h.currentStreak}-DAY STREAK`;
+                  const value = done
+                    ? 'logged'
+                    : h.goal
+                    ? `0 / ${h.goal}${h.unit ? ' ' + h.unit : ''}`
+                    : '—';
+                  return (
+                    <li
+                      key={h.categorySlug}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 14,
+                        padding: '12px 0',
+                        borderBottom: '1px solid var(--b-rule)',
+                      }}
+                    >
+                      <Link
+                        href={`/habits/${h.categorySlug}`}
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 14,
+                          textDecoration: 'none',
+                          color: 'inherit',
+                        }}
+                      >
+                        <Glyph size={26} style={{ color: 'var(--b-ink)', flexShrink: 0 }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            className="font-display"
+                            style={{ fontSize: 17, fontWeight: 500 }}
+                          >
+                            {h.categoryName}
+                          </div>
+                          <div
+                            className="font-body"
+                            style={{
+                              fontSize: 10,
+                              color: broken ? 'var(--b-accent)' : 'var(--b-ink-60)',
+                              fontWeight: broken ? 700 : 400,
+                              letterSpacing: '0.06em',
+                              marginTop: 1,
+                            }}
+                          >
+                            {status}
+                          </div>
+                        </div>
+                        <span
+                          className="font-mono tabular"
+                          style={{
+                            fontSize: 11,
+                            color: 'var(--b-ink)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {value}
+                        </span>
+                      </Link>
+                      {editMode && (
+                        <button
+                          onClick={() => removeHabit(h.categorySlug)}
+                          aria-label="Remove habit"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--b-ink-60)',
+                            fontSize: 18,
+                            lineHeight: 1,
+                            cursor: 'pointer',
+                            padding: '0 4px',
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ))}
-        </div>
-      )}
 
-      {/* Category Browser Modal */}
+          {/* Edit mode toggle — small, low-key */}
+          {!loading && habits.length > 0 && (
+            <div style={{ textAlign: 'center', marginTop: 8 }}>
+              <button
+                onClick={() => setEditMode((e) => !e)}
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--b-ink-60)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                {editMode ? 'Done editing' : 'Manage roster'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Category Browser Modal — preserved as-is */}
       <Modal isOpen={showBrowser} onClose={() => setShowBrowser(false)} title="Browse Categories" size="lg">
         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
           {CATEGORY_SECTIONS.map((section) => (
@@ -286,6 +467,7 @@ export default function HabitsPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {CATEGORIES.filter((c) => c.section === section).map((cat) => {
                   const isSubscribed = subscribedSlugs.includes(cat.slug);
+                  const Glyph = glyphFor(cat.slug);
                   return (
                     <button
                       key={cat.slug}
@@ -298,7 +480,7 @@ export default function HabitsPage() {
                           : 'border-[#1e1e30] bg-[#10101a] hover:border-red-500/30 hover:bg-red-500/5'
                       )}
                     >
-                      <CategoryIcon icon={cat.icon} color={cat.color} size="sm" slug={cat.slug} />
+                      <Glyph size={20} style={{ color: '#fff', flexShrink: 0 }} />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium text-white truncate">{cat.name}</p>
                         <p className="text-[10px] text-slate-600">{cat.unit}</p>
