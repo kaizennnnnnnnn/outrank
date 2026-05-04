@@ -8,8 +8,8 @@ import { CompetitionTimer } from '@/components/competition/CompetitionTimer';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
 import { Competition } from '@/types/competition';
-import { SearchIcon } from '@/components/ui/AppIcons';
 import Link from 'next/link';
+import { Masthead } from '@/components/editorial/Masthead';
 
 export default function DuelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -18,21 +18,31 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <Skeleton className="h-64 rounded-2xl" />
-        <Skeleton className="h-32 rounded-2xl" />
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto" style={{ padding: '24px 22px' }}>
+          <Skeleton className="h-64" />
+          <div style={{ marginTop: 14 }}>
+            <Skeleton className="h-32" />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!competition) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-20">
-        <SearchIcon size={48} className="text-slate-600" />
-        <h1 className="text-xl font-bold text-white mt-4">Duel not found</h1>
-        <Link href="/compete">
-          <Button variant="secondary" className="mt-4">Back to Compete</Button>
-        </Link>
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto" style={{ padding: '60px 22px', textAlign: 'center' }}>
+          <p
+            className="font-display"
+            style={{ fontSize: 28, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+          >
+            Duel not found.
+          </p>
+          <Link href="/compete">
+            <Button variant="secondary" className="mt-4">Back to Compete</Button>
+          </Link>
+        </div>
       </div>
     );
   }
@@ -42,8 +52,15 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
 
   if (!me || !opponent) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-20">
-        <p className="text-slate-500">You are not part of this duel.</p>
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto" style={{ padding: '60px 22px', textAlign: 'center' }}>
+          <p
+            className="font-body"
+            style={{ fontSize: 14, color: 'var(--b-ink-60)', fontStyle: 'italic' }}
+          >
+            You are not part of this duel.
+          </p>
+        </div>
       </div>
     );
   }
@@ -52,53 +69,115 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
   const gap = Math.abs(me.score - opponent.score);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <Link href="/compete" className="text-sm text-slate-500 hover:text-white">
-          ← Back
-        </Link>
-        {competition.endDate && (
-          <CompetitionTimer endDate={competition.endDate} />
-        )}
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="The Duel" />
 
-      {/* VS Screen */}
-      <DuelVsScreen
-        player1={me}
-        player2={opponent}
-        title={competition.title}
-      />
+        <div style={{ padding: '0 22px' }}>
+          {/* Top bar: back + timer */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginBottom: 14,
+            }}
+          >
+            <Link
+              href="/compete"
+              className="font-body"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                textDecoration: 'none',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+              }}
+            >
+              ← Back
+            </Link>
+            {competition.endDate && (
+              <CompetitionTimer endDate={competition.endDate} />
+            )}
+          </div>
 
-      {/* Status */}
-      <div className="glass-card rounded-2xl p-6 text-center">
-        {competition.status === 'active' ? (
-          <>
-            <p className="text-sm text-slate-400 mb-2">
-              {isWinning ? "You're in the lead!" : gap === 0 ? "It's a tie!" : "You're behind!"}
-            </p>
-            <p className="font-heading text-3xl font-bold text-white">
-              {isWinning ? `+${gap}` : gap === 0 ? 'TIED' : `-${gap}`}
-            </p>
-            <p className="text-xs text-slate-600 mt-2">
-              Log your {competition.categorySlug} habits to increase your score!
-            </p>
-          </>
-        ) : competition.status === 'completed' ? (
-          <>
-            <p className="text-sm text-slate-400 mb-2">Duel Complete!</p>
-            <p className="font-heading text-3xl font-bold">
-              {isWinning ? (
-                <span className="text-emerald-400">You Won!</span>
-              ) : gap === 0 ? (
-                <span className="text-yellow-400">Draw! 🤝</span>
-              ) : (
-                <span className="text-red-400">You Lost 😤</span>
-              )}
-            </p>
-          </>
-        ) : (
-          <p className="text-sm text-yellow-400">Waiting for opponent to accept...</p>
-        )}
+          {/* VS Screen */}
+          <DuelVsScreen
+            player1={me}
+            player2={opponent}
+            title={competition.title}
+          />
+
+          {/* Status */}
+          <div
+            style={{
+              marginTop: 18,
+              padding: '20px 14px',
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-rule)',
+              textAlign: 'center',
+            }}
+          >
+            {competition.status === 'active' ? (
+              <>
+                <div
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                >
+                  {isWinning ? 'In the Lead' : gap === 0 ? 'Tied' : 'Behind'}
+                </div>
+                <div
+                  className="font-display tabular"
+                  style={{
+                    fontSize: 38,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    lineHeight: 1,
+                    marginTop: 4,
+                    color: isWinning ? '#34d399' : gap === 0 ? '#fbbf24' : '#ef4444',
+                  }}
+                >
+                  {isWinning ? `+${gap}` : gap === 0 ? 'TIED' : `−${gap}`}
+                </div>
+                <p
+                  className="font-body"
+                  style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 10, fontStyle: 'italic' }}
+                >
+                  Log your {competition.categorySlug} habits to increase your score.
+                </p>
+              </>
+            ) : competition.status === 'completed' ? (
+              <>
+                <div
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                >
+                  Duel Complete
+                </div>
+                <div
+                  className="font-display"
+                  style={{ fontSize: 30, fontStyle: 'italic', fontWeight: 500, marginTop: 4, lineHeight: 1 }}
+                >
+                  {isWinning ? (
+                    <span style={{ color: '#34d399' }}>You won.</span>
+                  ) : gap === 0 ? (
+                    <span style={{ color: '#fbbf24' }}>Draw.</span>
+                  ) : (
+                    <span style={{ color: '#ef4444' }}>You lost.</span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p
+                className="font-body"
+                style={{ fontSize: 13, color: '#fbbf24', fontStyle: 'italic' }}
+              >
+                Waiting for opponent to accept…
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

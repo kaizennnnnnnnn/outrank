@@ -8,17 +8,15 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Avatar } from '@/components/ui/Avatar';
 import { updateDocument } from '@/lib/firestore';
 import { uploadAvatar } from '@/lib/storage';
-import { sanitize, sanitizeBio } from '@/lib/security';
+import { sanitizeBio } from '@/lib/security';
 import { logout } from '@/lib/auth';
 import { useUIStore } from '@/store/uiStore';
 import { useThemeStore, type EditorialTheme } from '@/store/themeStore';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { Masthead } from '@/components/editorial/Masthead';
 
 export default function SettingsPage() {
-  const { user, firebaseUser } = useAuth();
+  const { user } = useAuth();
   const addToast = useUIStore((s) => s.addToast);
-  const router = useRouter();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [bio, setBio] = useState(user?.bio || '');
@@ -65,248 +63,273 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     await logout();
-    // Full page reload clears all in-memory state (Zustand, listeners, cache)
     window.location.href = '/auth/login';
   };
 
+  const notifKeys = [
+    { key: 'streakReminder',     label: 'Streak reminders',  desc: 'Get reminded when your streak is at risk' },
+    { key: 'friendActivity',     label: 'Friend records',    desc: 'When friends publish a daily record' },
+    { key: 'pactUpdates',        label: 'Pacts',             desc: 'Invites, breaks, completions, freeze warnings' },
+    { key: 'leagueUpdates',      label: 'Friends League',    desc: 'Weekly settlement results every Monday' },
+    { key: 'pillarReminders',    label: 'Pillar reminders',  desc: 'Water sips during the day, wind-down before bed' },
+    { key: 'duelUpdates',        label: 'Duels',             desc: 'Challenge and result notifications' },
+    { key: 'weeklyRecap',        label: 'Weekly recap',      desc: 'Sunday morning performance summary' },
+    { key: 'leaderboardChanges', label: 'Leaderboard',       desc: 'When someone overtakes you' },
+  ] as const;
+
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <h1 className="text-2xl font-bold text-white font-heading">Settings</h1>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="The Imprint" />
 
-      {/* Profile */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Profile</h2>
-
-        <div className="flex items-center gap-4">
-          <Avatar src={user.avatarUrl} alt={user.username} size="lg" />
-          <div>
-            <Button variant="secondary" size="sm" loading={uploading} onClick={() => fileInputRef.current?.click()}>
-              Change Avatar
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            The Imprint
           </div>
-        </div>
+          <h1
+            className="font-display"
+            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+          >
+            <em style={{ fontStyle: 'italic' }}>Settings</em>
+          </h1>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            Tune the publication to your taste.
+          </p>
 
-        <Input label="Username" value={user.username} disabled />
-        <Input label="Email" value={user.email} disabled />
-
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">Bio</label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            maxLength={160}
-            rows={3}
-            className="w-full rounded-xl bg-[#10101a] border border-[#1e1e30] px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
-            placeholder="Tell others about yourself..."
-          />
-          <p className="text-xs text-slate-600 mt-1">{bio.length}/160</p>
-        </div>
-
-        <Button onClick={handleSave} loading={saving}>Save Changes</Button>
-      </section>
-
-      {/* Orb Colors — now in Shop */}
-      <section className="glass-card rounded-2xl p-4">
-        <p className="text-xs text-slate-500">Orb colors and upgrades are available in the <a href="/shop" className="text-orange-400 underline">Shop</a>.</p>
-      </section>
-
-      {/* Theme — editorial dark vs light cream paper */}
-      <ThemeSection />
-
-      {/* Push Notifications */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Push Notifications</h2>
-        <p className="text-xs text-slate-500">
-          {typeof window !== 'undefined' && 'Notification' in window
-            ? `Status: ${Notification.permission === 'granted' ? 'Enabled' : Notification.permission === 'denied' ? 'Blocked — enable in browser settings' : 'Not set up'}`
-            : 'Not supported on this device'}
-        </p>
-        <Button
-          variant="primary"
-          size="sm"
-          className="w-full"
-          onClick={async () => {
-            try {
-              const { requestNotificationPermission } = await import('@/lib/pushNotifications');
-              const result = await requestNotificationPermission(user.uid);
-              if (result) {
-                addToast({ type: 'success', message: 'Notifications enabled! You will now receive push alerts.' });
-              } else {
-                addToast({ type: 'error', message: 'Permission denied. Check your browser notification settings.' });
-              }
-            } catch {
-              addToast({ type: 'error', message: 'Failed to enable notifications.' });
-            }
-          }}
-        >
-          Enable Push Notifications
-        </Button>
-        <p className="text-[10px] text-slate-600">On mobile, add Outrank to your Home Screen for best experience. If blocked, go to your browser settings to re-enable.</p>
-      </section>
-
-      {/* Connected Accounts */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Connected Accounts</h2>
-        <p className="text-xs text-slate-600">Connect services to auto-track habits with verified data.</p>
-
-        {/* GitHub */}
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#0c0c16] border border-[#1e1e30]">
-          <span className="text-2xl">⌨️</span>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">GitHub</p>
-            <p className="text-xs text-slate-500">Auto-track commits and coding activity</p>
-          </div>
-          {user.integrations?.github ? (
-            <span className="text-xs text-emerald-400 font-medium flex items-center gap-1">✓ Connected</span>
-          ) : (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                window.location.href = `/api/auth/github?userId=${user.uid}`;
-              }}
-            >
-              Connect
-            </Button>
-          )}
-        </div>
-
-        {/* Google Fit */}
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#0c0c16] border border-[#1e1e30]">
-          <span className="text-2xl">❤️</span>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-white">Google Fit</p>
-            <p className="text-xs text-slate-500">Auto-track steps, calories, sleep</p>
-          </div>
-          {user.integrations?.google_fit ? (
-            <span className="text-xs text-emerald-400 font-medium flex items-center gap-1">✓ Connected</span>
-          ) : (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => {
-                window.location.href = `/api/auth/google-fit?userId=${user.uid}`;
-              }}
-            >
-              Connect
-            </Button>
-          )}
-        </div>
-
-        <p className="text-[10px] text-slate-600">
-          Connected services auto-log with ✓ verified status and +5 bonus XP per log.
-        </p>
-      </section>
-
-      {/* Notifications */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Notifications</h2>
-        {([
-          { key: 'streakReminder', label: 'Streak reminders', desc: 'Get reminded when your streak is at risk' },
-          { key: 'friendActivity', label: 'Friend records', desc: 'When friends publish a daily record' },
-          { key: 'pactUpdates', label: 'Pacts', desc: 'Invites, breaks, completions, freeze warnings' },
-          { key: 'leagueUpdates', label: 'Friends League', desc: 'Weekly settlement results every Monday' },
-          { key: 'pillarReminders', label: 'Pillar reminders', desc: 'Water sips during the day, wind-down before bed' },
-          { key: 'duelUpdates', label: 'Duels', desc: 'Challenge and result notifications' },
-          { key: 'weeklyRecap', label: 'Weekly recap', desc: 'Sunday morning performance summary' },
-          { key: 'leaderboardChanges', label: 'Leaderboard changes', desc: 'When someone overtakes you' },
-        ] as const).map((item) => (
-          <div key={item.key} className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-white">{item.label}</p>
-              <p className="text-xs text-slate-500">{item.desc}</p>
+          {/* Profile */}
+          <Section title="Profile" eyebrow="Identity">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <Avatar src={user.avatarUrl} alt={user.username} size="lg" />
+              <Button variant="secondary" size="sm" loading={uploading} onClick={() => fileInputRef.current?.click()}>
+                Change avatar
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
             </div>
-            <button
-              onClick={async () => {
-                const current = user.settings?.notifications?.[item.key] ?? true;
-                await updateDocument('users', user.uid, {
-                  [`settings.notifications.${item.key}`]: !current,
-                });
-                addToast({ type: 'info', message: `${item.label} ${current ? 'disabled' : 'enabled'}` });
-              }}
-              className={`w-12 h-6 rounded-full transition-colors ${
-                (user.settings?.notifications?.[item.key] ?? true) ? 'bg-red-600' : 'bg-[#18182a]'
-              }`}
+
+            <div style={{ marginTop: 14 }}>
+              <Input label="Username" value={user.username} disabled />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <Input label="Email" value={user.email} disabled />
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <label
+                className="font-body"
+                style={{ display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 6 }}
+              >
+                Bio
+              </label>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                maxLength={160}
+                rows={3}
+                className="w-full font-body"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--b-ink)',
+                  padding: '8px 10px',
+                  fontSize: 13,
+                  color: 'var(--b-ink)',
+                  resize: 'none',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                }}
+                placeholder="Tell others about yourself..."
+              />
+              <p
+                className="font-mono tabular"
+                style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 4 }}
+              >
+                {bio.length}/160
+              </p>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <Button onClick={handleSave} loading={saving}>Save changes</Button>
+            </div>
+          </Section>
+
+          {/* Theme */}
+          <ThemeSection />
+
+          {/* Cosmetics shortcut */}
+          <Section title="Cosmetics" eyebrow="Wardrobe">
+            <p
+              className="font-body"
+              style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
             >
-              <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                (user.settings?.notifications?.[item.key] ?? true) ? 'translate-x-6' : 'translate-x-0.5'
-              }`} />
-            </button>
-          </div>
-        ))}
-      </section>
+              Orb colors, frames, and name effects live in <a href="/shop" style={{ color: 'var(--b-accent)', textDecoration: 'none', fontWeight: 600 }}>The Atelier →</a>
+            </p>
+          </Section>
 
-      {/* Privacy */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Privacy</h2>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-white">Public Profile</p>
-            <p className="text-xs text-slate-500">Anyone can view your profile</p>
-          </div>
-          <button
-            onClick={async () => {
-              await updateDocument('users', user.uid, { isPublic: !user.isPublic });
-              addToast({ type: 'info', message: user.isPublic ? 'Profile set to private' : 'Profile set to public' });
-            }}
-            className={`w-12 h-6 rounded-full transition-colors ${user.isPublic ? 'bg-red-600' : 'bg-[#18182a]'}`}
-          >
-            <div className={`w-5 h-5 rounded-full bg-white transition-transform ${user.isPublic ? 'translate-x-6' : 'translate-x-0.5'}`} />
-          </button>
+          {/* Push notifications setup */}
+          <Section title="Push" eyebrow="Mobile alerts">
+            <p
+              className="font-body"
+              style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+            >
+              {typeof window !== 'undefined' && 'Notification' in window
+                ? `Status: ${Notification.permission === 'granted' ? 'Enabled' : Notification.permission === 'denied' ? 'Blocked — enable in browser settings' : 'Not set up'}`
+                : 'Not supported on this device'}
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full"
+              style={{ marginTop: 10 }}
+              onClick={async () => {
+                try {
+                  const { requestNotificationPermission } = await import('@/lib/pushNotifications');
+                  const result = await requestNotificationPermission(user.uid);
+                  if (result) {
+                    addToast({ type: 'success', message: 'Notifications enabled!' });
+                  } else {
+                    addToast({ type: 'error', message: 'Permission denied. Check browser settings.' });
+                  }
+                } catch {
+                  addToast({ type: 'error', message: 'Failed to enable notifications.' });
+                }
+              }}
+            >
+              Enable push notifications
+            </Button>
+            <p
+              className="font-body"
+              style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 6, lineHeight: 1.5 }}
+            >
+              On mobile, add Outrank to your Home Screen for best experience.
+            </p>
+          </Section>
+
+          {/* Connected accounts */}
+          <Section title="Integrations" eyebrow="Auto-tracking">
+            <ServiceRow
+              name="GitHub"
+              desc="Auto-track commits and coding activity"
+              connected={!!user.integrations?.github}
+              onConnect={() => { window.location.href = `/api/auth/github?userId=${user.uid}`; }}
+            />
+            <ServiceRow
+              name="Google Fit"
+              desc="Auto-track steps, calories, sleep"
+              connected={!!user.integrations?.google_fit}
+              onConnect={() => { window.location.href = `/api/auth/google-fit?userId=${user.uid}`; }}
+            />
+            <p
+              className="font-body"
+              style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 8, lineHeight: 1.5, fontStyle: 'italic' }}
+            >
+              Connected services auto-log with verified status and +5 bonus XP per log.
+            </p>
+          </Section>
+
+          {/* Notifications */}
+          <Section title="Notifications" eyebrow="What we can send">
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {notifKeys.map((item) => {
+                const enabled = user.settings?.notifications?.[item.key] ?? true;
+                return (
+                  <li
+                    key={item.key}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 0',
+                      borderBottom: '1px solid var(--b-rule)',
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        className="font-display"
+                        style={{ fontSize: 13, fontStyle: 'italic', fontWeight: 500 }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        className="font-body"
+                        style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 1, lineHeight: 1.4 }}
+                      >
+                        {item.desc}
+                      </div>
+                    </div>
+                    <Toggle
+                      enabled={enabled}
+                      onClick={async () => {
+                        await updateDocument('users', user.uid, {
+                          [`settings.notifications.${item.key}`]: !enabled,
+                        });
+                        addToast({ type: 'info', message: `${item.label} ${enabled ? 'disabled' : 'enabled'}` });
+                      }}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </Section>
+
+          {/* Privacy */}
+          <Section title="Privacy" eyebrow="Visibility">
+            <ToggleRow
+              label="Public profile"
+              desc="Anyone can view your profile"
+              enabled={!!user.isPublic}
+              onClick={async () => {
+                await updateDocument('users', user.uid, { isPublic: !user.isPublic });
+                addToast({ type: 'info', message: user.isPublic ? 'Profile set to private' : 'Profile set to public' });
+              }}
+            />
+            <ToggleRow
+              label="Show on leaderboards"
+              desc="Appear in public rankings"
+              enabled={user.settings?.privacy?.showOnLeaderboards ?? true}
+              onClick={async () => {
+                const current = user.settings?.privacy?.showOnLeaderboards ?? true;
+                await updateDocument('users', user.uid, {
+                  'settings.privacy.showOnLeaderboards': !current,
+                });
+                addToast({ type: 'info', message: current ? 'Hidden from leaderboards' : 'Visible on leaderboards' });
+              }}
+            />
+          </Section>
+
+          {/* Data */}
+          <Section title="Data" eyebrow="Export">
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => addToast({ type: 'info', message: 'Data export is being prepared. Check your email.' })}
+            >
+              Export my data (JSON)
+            </Button>
+          </Section>
+
+          {/* Account */}
+          <Section title="Account" eyebrow="Endgame">
+            <Button variant="secondary" onClick={handleLogout} className="w-full">
+              Sign out
+            </Button>
+            <div style={{ marginTop: 8 }}>
+              <Button variant="danger" onClick={() => setShowDeleteConfirm(true)} className="w-full">
+                Delete account
+              </Button>
+            </div>
+          </Section>
         </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-white">Show on Leaderboards</p>
-            <p className="text-xs text-slate-500">Appear in public rankings</p>
-          </div>
-          <button
-            onClick={async () => {
-              const current = user.settings?.privacy?.showOnLeaderboards ?? true;
-              await updateDocument('users', user.uid, {
-                'settings.privacy.showOnLeaderboards': !current,
-              });
-              addToast({ type: 'info', message: current ? 'Hidden from leaderboards' : 'Visible on leaderboards' });
-            }}
-            className={`w-12 h-6 rounded-full transition-colors ${
-              (user.settings?.privacy?.showOnLeaderboards ?? true) ? 'bg-red-600' : 'bg-[#18182a]'
-            }`}
-          >
-            <div className={`w-5 h-5 rounded-full bg-white transition-transform ${
-              (user.settings?.privacy?.showOnLeaderboards ?? true) ? 'translate-x-6' : 'translate-x-0.5'
-            }`} />
-          </button>
-        </div>
-      </section>
-
-      {/* Data */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Data</h2>
-        <Button
-          variant="secondary"
-          className="w-full"
-          onClick={() => addToast({ type: 'info', message: 'Data export is being prepared. Check your email.' })}
-        >
-          Export My Data (JSON)
-        </Button>
-      </section>
-
-      {/* Account Actions */}
-      <section className="glass-card rounded-2xl p-6 space-y-4">
-        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Account</h2>
-        <Button variant="secondary" onClick={handleLogout} className="w-full">
-          Sign Out
-        </Button>
-        <Button variant="danger" onClick={() => setShowDeleteConfirm(true)} className="w-full">
-          Delete Account
-        </Button>
-      </section>
+      </div>
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}
@@ -324,13 +347,136 @@ export default function SettingsPage() {
   );
 }
 
-// ─── Theme picker ────────────────────────────────────────────────────
-//
-// Editorial Direction B has two color skins: dark (default — same as
-// the existing app background) and light (cream paper, dark ink). Only
-// pages converted to editorial respect the toggle; legacy premium
-// pages still render in their hardcoded dark colors until they're
-// migrated screen-by-screen.
+function Section({ title, eyebrow, children }: { title: string; eyebrow?: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginTop: 24 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+          {title}
+        </div>
+        {eyebrow && (
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            {eyebrow}
+          </div>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Toggle({ enabled, onClick }: { enabled: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={enabled}
+      style={{
+        width: 40,
+        height: 22,
+        background: enabled ? 'var(--b-accent)' : 'transparent',
+        border: '1px solid var(--b-ink)',
+        cursor: 'pointer',
+        position: 'relative',
+        flexShrink: 0,
+        padding: 0,
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          top: 2,
+          left: enabled ? 20 : 2,
+          width: 16,
+          height: 16,
+          background: enabled ? 'var(--b-paper)' : 'var(--b-ink)',
+          transition: 'left 180ms',
+        }}
+      />
+    </button>
+  );
+}
+
+function ToggleRow({ label, desc, enabled, onClick }: { label: string; desc: string; enabled: boolean; onClick: () => void }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 0',
+        borderBottom: '1px solid var(--b-rule)',
+        gap: 12,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div
+          className="font-display"
+          style={{ fontSize: 13, fontStyle: 'italic', fontWeight: 500 }}
+        >
+          {label}
+        </div>
+        <div
+          className="font-body"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 1, lineHeight: 1.4 }}
+        >
+          {desc}
+        </div>
+      </div>
+      <Toggle enabled={enabled} onClick={onClick} />
+    </div>
+  );
+}
+
+function ServiceRow({ name, desc, connected, onConnect }: { name: string; desc: string; connected: boolean; onConnect: () => void }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '10px 12px',
+        border: '1px solid var(--b-rule)',
+        marginBottom: 8,
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          className="font-display"
+          style={{ fontSize: 14, fontStyle: 'italic', fontWeight: 500 }}
+        >
+          {name}
+        </div>
+        <div
+          className="font-body"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 1, lineHeight: 1.4 }}
+        >
+          {desc}
+        </div>
+      </div>
+      {connected ? (
+        <span
+          className="spread"
+          style={{ fontSize: 9, color: '#34d399', padding: '2px 8px', border: '1px solid #34d39980' }}
+        >
+          Connected
+        </span>
+      ) : (
+        <Button size="sm" variant="secondary" onClick={onConnect}>
+          Connect
+        </Button>
+      )}
+    </div>
+  );
+}
 
 function ThemeSection() {
   const theme = useThemeStore((s) => s.theme);
@@ -352,51 +498,78 @@ function ThemeSection() {
   ];
 
   return (
-    <section className="glass-card rounded-2xl p-6 space-y-4">
-      <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Theme</h2>
-      <p className="text-xs text-slate-500 -mt-2">
-        Switches the editorial pages between dark and light cream paper. Pages still
-        being migrated stay in dark.
+    <Section title="Theme" eyebrow="Paper & ink">
+      <p
+        className="font-body"
+        style={{ fontSize: 11, color: 'var(--b-ink-60)', marginBottom: 12, lineHeight: 1.5 }}
+      >
+        Switches the editorial pages between dark and light cream paper.
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
         {options.map((opt) => {
           const active = theme === opt.key;
           return (
             <button
               key={opt.key}
               onClick={() => setTheme(opt.key)}
-              className={cn(
-                'rounded-2xl border-2 p-3 text-left transition-all',
-                active
-                  ? 'border-orange-400 shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]'
-                  : 'border-white/10 hover:border-white/20',
-              )}
+              style={{
+                padding: 12,
+                textAlign: 'left',
+                background: 'transparent',
+                border: active ? '2px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                cursor: 'pointer',
+                color: 'var(--b-ink)',
+              }}
             >
-              {/* Tiny preview tile */}
               <div
-                className="rounded-xl border h-16 flex items-center px-3 gap-2 mb-2.5"
                 style={{
+                  height: 56,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 10px',
+                  gap: 8,
+                  marginBottom: 8,
                   background: opt.preview.paper,
-                  borderColor: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(0,0,0,0.05)',
                 }}
               >
                 <span
-                  className="block w-2.5 h-2.5 rounded-full"
-                  style={{ background: '#dc2626' }}
+                  style={{
+                    display: 'block',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#dc2626',
+                  }}
                 />
                 <span
-                  className="font-display text-sm font-semibold"
-                  style={{ color: opt.preview.ink, fontStyle: 'italic' }}
+                  className="font-display"
+                  style={{
+                    fontSize: 14,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    color: opt.preview.ink,
+                  }}
                 >
                   Outrank
                 </span>
               </div>
-              <div className="font-bold text-white text-[14px]">{opt.label}</div>
-              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{opt.sub}</p>
+              <div
+                className="font-display"
+                style={{ fontSize: 14, fontStyle: 'italic', fontWeight: 500 }}
+              >
+                {opt.label}
+              </div>
+              <p
+                className="font-body"
+                style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2, lineHeight: 1.4 }}
+              >
+                {opt.sub}
+              </p>
             </button>
           );
         })}
       </div>
-    </section>
+    </Section>
   );
 }

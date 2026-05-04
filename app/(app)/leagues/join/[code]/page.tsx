@@ -7,9 +7,7 @@ import { getCollection, setDocument, updateDocument, where, Timestamp } from '@/
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useUIStore } from '@/store/uiStore';
-import { FlagIcon, SearchIcon } from '@/components/ui/AppIcons';
 import { League } from '@/types/league';
-import { FieldValue } from 'firebase/firestore';
 
 export default function JoinLeaguePage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = use(params);
@@ -64,36 +62,82 @@ export default function JoinLeaguePage({ params }: { params: Promise<{ code: str
 
   if (loading) {
     return (
-      <div className="max-w-md mx-auto text-center py-20">
-        <Skeleton className="h-48 rounded-2xl" />
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-md mx-auto" style={{ padding: '60px 22px' }}>
+          <Skeleton className="h-48" />
+        </div>
       </div>
     );
   }
 
   if (!league) {
     return (
-      <div className="max-w-md mx-auto text-center py-20">
-        <SearchIcon size={48} className="text-slate-600" />
-        <h1 className="text-xl font-bold text-white mt-4">Invalid invite code</h1>
-        <p className="text-sm text-slate-500 mt-2">This league doesn&apos;t exist or the code has expired.</p>
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-md mx-auto" style={{ padding: '60px 22px', textAlign: 'center' }}>
+          <p
+            className="font-display"
+            style={{ fontSize: 28, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+          >
+            Invalid invite code.
+          </p>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            This league doesn&rsquo;t exist or the code has expired.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto text-center py-20">
-      <div className="glass-card rounded-2xl p-8 space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-red-600/20 flex items-center justify-center mx-auto">
-          <FlagIcon size={32} className="text-red-400" />
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-md mx-auto" style={{ padding: '60px 22px' }}>
+        <div
+          style={{
+            padding: '24px',
+            border: '1px solid var(--b-ink)',
+            borderTop: '3px solid var(--b-accent)',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-accent)', marginBottom: 6 }}
+          >
+            Invitation
+          </div>
+          <h1
+            className="font-display"
+            style={{ fontSize: 32, fontStyle: 'italic', fontWeight: 500, lineHeight: 1, marginBottom: 4 }}
+          >
+            {league.name}
+          </h1>
+          <p
+            className="font-body tabular"
+            style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+          >
+            {league.memberCount} member{league.memberCount === 1 ? '' : 's'}
+          </p>
+          {league.description && (
+            <p
+              className="font-body"
+              style={{
+                fontSize: 12,
+                color: 'var(--b-ink-60)',
+                marginTop: 14,
+                lineHeight: 1.5,
+                fontStyle: 'italic',
+              }}
+            >
+              {league.description}
+            </p>
+          )}
+          <Button className="w-full" style={{ marginTop: 18 }} onClick={handleJoin} loading={joining}>
+            Join League
+          </Button>
         </div>
-        <h1 className="text-xl font-bold text-white font-heading">{league.name}</h1>
-        <p className="text-sm text-slate-500">{league.memberCount} members</p>
-        {league.description && (
-          <p className="text-sm text-slate-400">{league.description}</p>
-        )}
-        <Button className="w-full" onClick={handleJoin} loading={joining}>
-          Join League
-        </Button>
       </div>
     </div>
   );

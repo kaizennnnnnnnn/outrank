@@ -4,7 +4,6 @@ import { use, useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getDocument, getCollection, setDocument, where, Timestamp } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
-import { Avatar } from '@/components/ui/Avatar';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { ProfileHighlights } from '@/components/profile/ProfileHighlights';
@@ -13,12 +12,12 @@ import { XPProgressBar } from '@/components/profile/XPProgressBar';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { ProfileRecapCalendar } from '@/components/profile/ProfileRecapCalendar';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
-import { StatCard } from '@/components/profile/StatCard';
 import { SoulOrb } from '@/components/profile/SoulOrb';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { UserProfile } from '@/types/user';
-import { BoltFullIcon, UsersFullIcon, FireIcon, ChartBarIcon, SearchIcon, SwordsCrossIcon } from '@/components/ui/AppIcons';
+import { SwordsCrossIcon } from '@/components/ui/AppIcons';
 import { CreateDuelModal } from '@/components/competition/CreateDuelModal';
+import { Masthead } from '@/components/editorial/Masthead';
 
 type FriendshipStatus = 'none' | 'pending_sent' | 'pending_received' | 'accepted';
 
@@ -55,7 +54,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
     fetchProfile();
   }, [username]);
 
-  // Check friendship status between current user and profile user
   useEffect(() => {
     if (!currentUser || !profile || currentUser.uid === profile.uid) return;
     async function checkFriendship() {
@@ -81,7 +79,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
     checkFriendship();
   }, [currentUser, profile]);
 
-  // Count actual accepted friends (friendCount on the doc is not reliably updated)
   useEffect(() => {
     if (!profile) return;
     async function count() {
@@ -124,10 +121,12 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <Skeleton className="h-64 rounded-2xl" />
-        <div className="grid grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto pb-32" style={{ padding: '0 22px' }}>
+          <Skeleton className="h-64 mt-6" />
+          <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-16" />)}
+          </div>
         </div>
       </div>
     );
@@ -135,9 +134,21 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
 
   if (!profile) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-20">
-        <SearchIcon size={48} className="text-slate-600 mx-auto" />
-        <h1 className="text-xl font-bold text-white mt-4">User not found</h1>
+      <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+        <div className="max-w-2xl mx-auto pb-32" style={{ padding: '60px 22px', textAlign: 'center' }}>
+          <p
+            className="font-display"
+            style={{ fontSize: 28, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+          >
+            User not found.
+          </p>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+          >
+            That username doesn&rsquo;t belong to anyone here.
+          </p>
+        </div>
       </div>
     );
   }
@@ -150,90 +161,127 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
   const friendCountDisplay = actualFriendCount ?? profile.friendCount ?? 0;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Soul Orb */}
-      <div className="flex justify-center">
-        <SoulOrb
-          intensity={80}
-          tier={orbTier}
-          size={220}
-          baseColorId={orbBaseColor}
-          pulseColorId={orbPulseColor}
-          ringColorId={orbRingColor}
-        />
-      </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section={`@${profile.username}`} />
 
-      {/* Profile Header */}
-      <div className="glass-card rounded-2xl p-6 text-center">
-        <div className="flex justify-center mb-2">
-          <FramedAvatar
-            src={profile.avatarUrl}
-            alt={profile.username}
-            size="xl"
-            frameId={(profile as unknown as Record<string, string>).equippedFrame}
-          />
-        </div>
-        <h1>
-          <NamePlate
-            name={profile.username}
-            effectId={(profile as unknown as Record<string, string>).equippedNameEffect}
-            size="xl"
-          />
-        </h1>
-        <div className="flex items-center justify-center gap-2 mt-1">
-          <span className="text-xs text-slate-500">Lv.{profile.level}</span>
-          <TitleDisplay totalXP={profile.totalXP} />
-        </div>
-        {profile.bio && <p className="text-sm text-slate-400 mt-2">{profile.bio}</p>}
+        <div style={{ padding: '0 22px' }}>
+          {/* Orb portrait */}
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 14px' }}>
+            <SoulOrb
+              intensity={80}
+              tier={orbTier}
+              size={200}
+              baseColorId={orbBaseColor}
+              pulseColorId={orbPulseColor}
+              ringColorId={orbRingColor}
+              interactive={false}
+            />
+          </div>
 
-        <div className="mt-4 max-w-xs mx-auto">
-          <XPProgressBar totalXP={profile.totalXP} />
-        </div>
-
-        <ProfileHighlights user={profile} />
-
-        {!isOwnProfile && (
-          <div className="flex justify-center gap-3 mt-4">
-            {friendStatus === 'accepted' && (
-              <>
-                <Button size="sm" variant="secondary" disabled>
-                  <UsersFullIcon size={12} /> Friends
-                </Button>
-                <Button size="sm" onClick={() => setDuelOpen(true)}>
-                  <SwordsCrossIcon size={12} /> Challenge
-                </Button>
-              </>
+          {/* Identity block */}
+          <div style={{ textAlign: 'center', paddingBottom: 14, borderBottom: '1px solid var(--b-ink)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+              <FramedAvatar
+                src={profile.avatarUrl}
+                alt={profile.username}
+                size="xl"
+                frameId={(profile as unknown as Record<string, string>).equippedFrame}
+              />
+            </div>
+            <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+              The Profile
+            </div>
+            <h1
+              className="font-display"
+              style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, margin: '4px 0' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>
+                <NamePlate
+                  name={profile.username}
+                  effectId={(profile as unknown as Record<string, string>).equippedNameEffect}
+                  size="xl"
+                />
+              </em>
+            </h1>
+            <div
+              className="font-body tabular"
+              style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 4 }}
+            >
+              Lv.{profile.level} · <TitleDisplay totalXP={profile.totalXP} size="sm" />
+            </div>
+            {profile.bio && (
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 12,
+                  color: 'var(--b-ink-60)',
+                  marginTop: 8,
+                  fontStyle: 'italic',
+                  maxWidth: 360,
+                  marginInline: 'auto',
+                  lineHeight: 1.5,
+                }}
+              >
+                {profile.bio}
+              </p>
             )}
-            {friendStatus === 'pending_sent' && (
-              <Button size="sm" variant="secondary" disabled>Request Sent</Button>
-            )}
-            {friendStatus === 'pending_received' && (
-              <Button size="sm" variant="secondary" disabled>Request Received</Button>
-            )}
-            {friendStatus === 'none' && (
-              <Button size="sm" onClick={sendFriendRequest} loading={sending}>
-                Add Friend
-              </Button>
+
+            <div style={{ marginTop: 12, maxWidth: 320, marginInline: 'auto' }}>
+              <XPProgressBar totalXP={profile.totalXP} />
+            </div>
+
+            <ProfileHighlights user={profile} />
+
+            {!isOwnProfile && (
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14 }}>
+                {friendStatus === 'accepted' && (
+                  <>
+                    <Button size="sm" variant="secondary" disabled>
+                      Friends
+                    </Button>
+                    <Button size="sm" onClick={() => setDuelOpen(true)}>
+                      <SwordsCrossIcon size={12} /> Challenge
+                    </Button>
+                  </>
+                )}
+                {friendStatus === 'pending_sent' && (
+                  <Button size="sm" variant="secondary" disabled>Request sent</Button>
+                )}
+                {friendStatus === 'pending_received' && (
+                  <Button size="sm" variant="secondary" disabled>Request received</Button>
+                )}
+                {friendStatus === 'none' && (
+                  <Button size="sm" onClick={sendFriendRequest} loading={sending}>
+                    Add friend
+                  </Button>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatCard icon={<BoltFullIcon size={24} className="text-orange-400" />} value={profile.totalXP.toLocaleString()} label="Total XP" />
-        <StatCard icon={<UsersFullIcon size={24} className="text-red-400" />} value={friendCountDisplay.toString()} label="Friends" />
-        <StatCard icon={<FireIcon size={24} className="text-orange-400" />} value={`${profile.weeklyXP || 0}`} label="Weekly XP" />
-        <StatCard icon={<ChartBarIcon size={24} className="text-red-400" />} value={`${profile.monthlyXP || 0}`} label="Monthly XP" />
-      </div>
+          {/* Stat strip */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              borderBottom: '1px solid var(--b-rule)',
+            }}
+          >
+            <StatCell label="Total XP" value={profile.totalXP.toLocaleString()} accent="#f97316" />
+            <StatCell label="Friends" value={String(friendCountDisplay)} accent="#ef4444" border />
+            <StatCell label="Weekly" value={String(profile.weeklyXP || 0)} accent="#fbbf24" border />
+            <StatCell label="Monthly" value={String(profile.monthlyXP || 0)} accent="#60a5fa" border />
+          </div>
 
-      {/* Daily Records — published recaps the friend can browse */}
-      <ProfileRecapCalendar uid={profile.uid} isOwner={false} />
+          {/* Records section */}
+          <SectionHeader label="Daily Records" eyebrow="Recap" />
+          <ProfileRecapCalendar uid={profile.uid} isOwner={false} />
 
-      {/* Badges */}
-      <div className="glass-card rounded-2xl p-4">
-        <h2 className="text-sm font-bold text-white mb-3">Badges</h2>
-        <BadgeGrid userId={profile.uid} />
+          {/* Badges */}
+          <SectionHeader label="Badges" eyebrow="Earned" />
+          <BadgeGrid userId={profile.uid} compact />
+        </div>
       </div>
 
       {duelOpen && (
@@ -244,6 +292,65 @@ export default function PublicProfilePage({ params }: { params: Promise<{ userna
           opponentUsername={profile.username}
           opponentAvatar={profile.avatarUrl || ''}
         />
+      )}
+    </div>
+  );
+}
+
+function StatCell({ label, value, accent, border }: { label: string; value: string; accent: string; border?: boolean }) {
+  return (
+    <div
+      style={{
+        padding: '10px 0',
+        textAlign: 'center',
+        borderLeft: border ? '1px solid var(--b-rule)' : 'none',
+      }}
+    >
+      <div
+        className="font-display tabular"
+        style={{ fontSize: 18, fontWeight: 500, lineHeight: 1, color: accent }}
+      >
+        {value}
+      </div>
+      <div
+        className="font-body"
+        style={{
+          fontSize: 8,
+          color: 'var(--b-ink-60)',
+          marginTop: 4,
+          textTransform: 'uppercase',
+          letterSpacing: '0.14em',
+        }}
+      >
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ label, eyebrow }: { label: string; eyebrow?: string }) {
+  return (
+    <div
+      style={{
+        marginTop: 24,
+        paddingTop: 12,
+        borderTop: '1px solid var(--b-ink)',
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+      }}
+    >
+      <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+        {label}
+      </div>
+      {eyebrow && (
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          {eyebrow}
+        </div>
       )}
     </div>
   );

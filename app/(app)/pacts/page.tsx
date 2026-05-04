@@ -1,119 +1,114 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useUserPacts } from '@/hooks/usePacts';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { PactCard } from '@/components/pacts/PactCard';
 import { PactInvitePill } from '@/components/pacts/PactInvitePill';
 import { PactCreateModal } from '@/components/pacts/PactCreateModal';
-import { ActivityIcon } from '@/components/ui/AppIcons';
+import { Masthead } from '@/components/editorial/Masthead';
 
 export default function PactsPage() {
   const { incoming, outgoing, active, resolved, loading } = useUserPacts();
   const [showCreate, setShowCreate] = useState(false);
+  const isEmpty = !loading && incoming.length + outgoing.length + active.length + resolved.length === 0;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Hero */}
-      <div
-        className="relative overflow-hidden rounded-2xl border p-5"
-        style={{
-          background:
-            'radial-gradient(ellipse 100% 80% at 100% 0%, rgba(249,115,22,0.18), transparent 55%),' +
-            'radial-gradient(ellipse 80% 60% at 0% 100%, rgba(168,85,247,0.10), transparent 60%),' +
-            'linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(249,115,22,0.25)',
-          boxShadow: '0 0 30px -14px rgba(249,115,22,0.4), inset 0 1px 0 rgba(249,115,22,0.08)',
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">
-              Friends-first
-            </p>
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-1 leading-none">
-              Pacts
-            </h1>
-            <p className="text-[12px] text-slate-400 mt-1.5 leading-relaxed max-w-md">
-              Two of you commit to the same pillar for 7, 14, or 30 days. Both win the pot —
-              or both lose it. Loss aversion is the whole point.
-            </p>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="Pacts" />
+
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Friends-first
           </div>
-          <Button onClick={() => setShowCreate(true)}>+ New pact</Button>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>Pacts</em>
+            </h1>
+            <Button size="sm" onClick={() => setShowCreate(true)}>+ New pact</Button>
+          </div>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 420, lineHeight: 1.5 }}
+          >
+            Two of you commit to the same pillar for 7, 14, or 30 days. Both win the pot —
+            or both lose it. Loss aversion is the whole point.
+          </p>
+
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+              <Skeleton className="h-24" />
+              <Skeleton className="h-32" />
+            </div>
+          ) : isEmpty ? (
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p
+                className="font-display"
+                style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
+              >
+                No pacts yet.
+              </p>
+              <p
+                className="font-body"
+                style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 320, marginInline: 'auto', lineHeight: 1.5 }}
+              >
+                Find a friend who&rsquo;s serious about a pillar. Both win or both lose — that&rsquo;s the deal.
+              </p>
+              <Button style={{ marginTop: 16 }} onClick={() => setShowCreate(true)}>Create your first pact</Button>
+            </div>
+          ) : (
+            <>
+              {incoming.length > 0 && (
+                <Section label="Incoming Invites" count={incoming.length} accent="#f97316">
+                  {incoming.map((p) => (
+                    <div key={p.id} style={{ marginBottom: 8 }}>
+                      <PactInvitePill pact={p} />
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              {active.length > 0 && (
+                <Section label="Active" count={active.length} accent="#22c55e">
+                  {active.map((p) => (
+                    <div key={p.id} style={{ marginBottom: 12 }}>
+                      <PactCard pact={p} />
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              {outgoing.length > 0 && (
+                <Section label="Awaiting Response" count={outgoing.length} accent="var(--b-ink-60)">
+                  {outgoing.map((p) => (
+                    <div key={p.id} style={{ marginBottom: 8 }}>
+                      <PactInvitePill pact={p} outgoing />
+                    </div>
+                  ))}
+                </Section>
+              )}
+
+              {resolved.length > 0 && (
+                <Section label="History" count={resolved.length} accent="#a855f7">
+                  <div style={{ opacity: 0.85 }}>
+                    {resolved.map((p) => (
+                      <div key={p.id} style={{ marginBottom: 12 }}>
+                        <PactCard pact={p} />
+                      </div>
+                    ))}
+                  </div>
+                </Section>
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-32 rounded-2xl" />
-        </div>
-      ) : (
-        <>
-          {/* Incoming invites — first because they need the user's response */}
-          {incoming.length > 0 && (
-            <Section
-              label="Incoming invites"
-              count={incoming.length}
-              accent="#f97316"
-            >
-              <div className="space-y-2">
-                {incoming.map((p) => (
-                  <PactInvitePill key={p.id} pact={p} />
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Active */}
-          {active.length > 0 && (
-            <Section label="Active" count={active.length} accent="#22c55e">
-              <div className="space-y-3">
-                {active.map((p) => (
-                  <PactCard key={p.id} pact={p} />
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Outgoing — smaller, just so the user knows what they sent */}
-          {outgoing.length > 0 && (
-            <Section label="Awaiting response" count={outgoing.length} accent="#64748b">
-              <div className="space-y-2">
-                {outgoing.map((p) => (
-                  <PactInvitePill key={p.id} pact={p} outgoing />
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* History */}
-          {resolved.length > 0 && (
-            <Section label="History" count={resolved.length} accent="#a855f7">
-              <div className="space-y-2 opacity-90">
-                {resolved.map((p) => (
-                  <PactCard key={p.id} pact={p} />
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Empty state */}
-          {incoming.length + outgoing.length + active.length + resolved.length === 0 && (
-            <EmptyState
-              icon={<ActivityIcon size={40} className="text-orange-400" />}
-              title="No pacts yet"
-              description="Find a friend who's serious about a pillar. Both win or both lose — that's the deal."
-              action={
-                <Button onClick={() => setShowCreate(true)}>Create your first pact</Button>
-              }
-            />
-          )}
-        </>
-      )}
 
       <PactCreateModal isOpen={showCreate} onClose={() => setShowCreate(false)} />
     </div>
@@ -132,21 +127,31 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <span
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ background: accent, boxShadow: `0 0 6px ${accent}` }}
-        />
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>
+    <section style={{ marginTop: 24 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
+      >
+        <div
+          className="font-display"
+          style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, color: accent }}
+        >
           {label}
-        </p>
-        <span className="text-[10px] font-mono text-slate-500 ml-1">· {count}</span>
+        </div>
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+        >
+          § {String(count).padStart(2, '0')}
+        </div>
       </div>
       {children}
-    </motion.section>
+    </section>
   );
 }
