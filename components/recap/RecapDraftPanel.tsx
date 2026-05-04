@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
 import { useTodaysDraft, useYesterdaysRecap } from '@/hooks/useRecap';
 import { countPillarsLogged, getPublishReward } from '@/constants/publishReward';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,17 +10,25 @@ import { useUIStore } from '@/store/uiStore';
 import { publishRecap, canEdit, canPublishYesterday } from '@/lib/recap';
 import { Recap } from '@/types/recap';
 import { formatRelativeTime } from '@/lib/utils';
+import { BFlameGlyph, BCheckGlyph } from '@/components/editorial/BGlyphs';
 
 /**
- * The "submit my day" widget on the dashboard. Three states:
- *   1. No draft yet — encouragement: "Log your first habit to start today's record."
- *   2. Draft in progress — preview of today + big "Submit Today's Record" button.
- *   3. Already published — published-state pill, link to detail, edit-window
- *      countdown.
+ * Today's Record — editorial Direction B v2 conversion.
  *
- * Above all that: if yesterday's draft is still unpublished and inside the
- * retro window, render a one-tap "Publish yesterday's record" banner.
+ * Three states preserved from the legacy panel:
+ *   1. Empty draft (no logs yet)
+ *   2. Draft in progress (logs exist, not yet published)
+ *   3. Already published (visible to friends)
+ *
+ * Above all states: if yesterday's recap is still unpublished and
+ * inside the retro window, render a one-tap retro banner.
+ *
+ * No emoji — gift + flame replaced with BCheck and BFlame glyphs.
+ * No gradients — typography + hairline rules carry the hierarchy.
+ * panelPulse re-trigger preserved (the dashboard recap-flight lands
+ * here and the glow flash fires keyed on panelPulse.id).
  */
+
 export function RecapDraftPanel() {
   const { user } = useAuth();
   const { recap: today, loading: todayLoading } = useTodaysDraft();
@@ -36,9 +43,6 @@ export function RecapDraftPanel() {
     if (!user) return;
     setPublishing(true);
     try {
-      // Compute the reward client-side to surface in the toast — same
-      // table the server uses inside publishRecap so the values match
-      // what gets persisted.
       const pillars = countPillarsLogged(recap.entries);
       const reward = getPublishReward(pillars);
       await publishRecap(user.uid, recap.localDate);
@@ -57,24 +61,21 @@ export function RecapDraftPanel() {
   const showRetro = canPublishYesterday(yesterday);
 
   return (
-    <div className="relative space-y-3" data-recap-drop>
-      {/* Border-glow flash when a flight lands here. Keyed on the pulse
-          id so a fresh log retriggers the animation; pointer-events-none
-          and absolute so it never blocks input. */}
+    <div className="relative" data-recap-drop>
+      {/* Border-glow flash when a recap-flight lands here. Same
+          mechanic as before; the visual is just thinner. */}
       <AnimatePresence>
         {panelPulse && (
           <motion.div
             key={panelPulse.id}
-            className="absolute inset-0 rounded-2xl pointer-events-none"
+            className="absolute inset-0 pointer-events-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: [0, 1, 0] }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.85, times: [0, 0.25, 1], ease: 'easeOut' }}
             style={{
               boxShadow:
-                `0 0 0 2px ${panelPulse.color}66,` +
-                `0 0 28px 4px ${panelPulse.color}88,` +
-                `inset 0 0 32px ${panelPulse.color}33`,
+                `0 0 0 1px ${panelPulse.color}99, 0 0 22px 2px ${panelPulse.color}66`,
             }}
           />
         )}
@@ -99,24 +100,43 @@ export function RecapDraftPanel() {
   );
 }
 
+// ─── Empty draft ─────────────────────────────────────────────────────
+
 function EmptyDraft() {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-4 text-center"
       style={{
-        background: 'linear-gradient(160deg, rgba(16,16,26,0.6), rgba(11,11,20,0.4))',
-        border: '1px dashed rgba(249,115,22,0.18)',
+        borderTop: '1px solid var(--b-rule)',
+        borderBottom: '1px solid var(--b-rule)',
+        padding: '14px 0',
       }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400/70">
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
         Today&rsquo;s Record
+      </div>
+      <p
+        className="font-display"
+        style={{
+          fontSize: 18,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          margin: '4px 0 6px',
+          color: 'var(--b-ink)',
+        }}
+      >
+        A blank ledger.
       </p>
-      <p className="text-sm text-slate-400 mt-1.5">
+      <p
+        className="font-body"
+        style={{ fontSize: 12, color: 'var(--b-ink-60)', lineHeight: 1.5, margin: 0 }}
+      >
         Log a habit to start today&rsquo;s record. Submit when you&rsquo;re done — friends only see your day, not every log.
       </p>
     </div>
   );
 }
+
+// ─── Draft state ─────────────────────────────────────────────────────
 
 function DraftState({
   recap,
@@ -128,141 +148,194 @@ function DraftState({
   publishing: boolean;
 }) {
   const proofThumbs = recap.entries.filter((e) => !!e.proofImageUrl).slice(0, 4);
+  const pillars = countPillarsLogged(recap.entries);
+  const upcoming = pillars > 0 ? getPublishReward(pillars) : null;
+  const fullPayout = getPublishReward(5);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl border"
+    <div
       style={{
-        background:
-          'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(249,115,22,0.12), transparent 55%),' +
-          'linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-        borderColor: 'rgba(249,115,22,0.22)',
-        boxShadow: '0 0 28px -16px rgba(249,115,22,0.4), inset 0 1px 0 rgba(249,115,22,0.08)',
+        borderTop: '2px solid var(--b-ink)',
+        borderBottom: '1px solid var(--b-ink)',
+        padding: '14px 0',
       }}
     >
-      <div className="p-4">
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+        }}
+      >
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
+          Today&rsquo;s Record
+        </div>
+        <div
+          className="font-mono"
+          style={{
+            fontSize: 9,
+            color: 'var(--b-ink-40)',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Draft · Private
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 8 }}>
+        <span
+          className="font-display tabular"
+          style={{ fontSize: 42, fontWeight: 500, lineHeight: 1, color: 'var(--b-ink)' }}
+        >
+          +{recap.totalXP}
+        </span>
+        <span
+          className="font-mono"
+          style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+        >
+          XP · {recap.logCount} log{recap.logCount === 1 ? '' : 's'}
+          {recap.proofCount > 0 && ` · ${recap.proofCount} photo${recap.proofCount === 1 ? '' : 's'}`}
+        </span>
+      </div>
+
+      {/* Category chips — minimal, inline */}
+      {recap.entries.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+          {recap.entries.slice(0, 4).map((e) => (
             <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
-              Today&rsquo;s Record
-            </p>
-          </div>
-          <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-slate-500 border border-slate-700 bg-[#0b0b14] px-1.5 py-0.5 rounded">
-            Draft · private
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 mb-3">
-          <div className="font-heading text-3xl font-bold leading-none">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">
-              +{recap.totalXP}
-            </span>
-            <span className="text-slate-500 text-sm font-mono ml-1.5">XP</span>
-          </div>
-          <span className="text-[11px] font-mono text-slate-500">
-            {recap.logCount} log{recap.logCount === 1 ? '' : 's'}
-            {recap.proofCount > 0 && ` · ${recap.proofCount} photo${recap.proofCount === 1 ? '' : 's'}`}
-          </span>
-        </div>
-
-        {/* Category chips — first ~4 */}
-        {recap.entries.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap mb-4">
-            {recap.entries.slice(0, 4).map((e) => (
-              <span
-                key={e.logId}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-mono"
-                style={{
-                  background: `${e.categoryColor}12`,
-                  border: `1px solid ${e.categoryColor}28`,
-                }}
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: e.categoryColor, boxShadow: `0 0 4px ${e.categoryColor}` }}
-                />
-                <span style={{ color: e.categoryColor }} className="font-bold">{e.categoryName}</span>
-                <span className="text-slate-500">
-                  {e.value}{e.unit}
-                </span>
-              </span>
-            ))}
-            {recap.entries.length > 4 && (
-              <span className="text-[10px] font-mono text-slate-500">
-                +{recap.entries.length - 4} more
-              </span>
-            )}
-          </div>
-        )}
-
-        {proofThumbs.length > 0 && (
-          <div className="flex items-center gap-1.5 mb-4">
-            {proofThumbs.map((e) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={e.logId}
-                src={e.proofImageUrl}
-                alt=""
-                className="w-12 h-12 rounded-lg object-cover border border-[#1e1e30]"
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Tiered publish-reward preview — scales by distinct pillars
-            logged. Updates live as the draft fills. */}
-        {(() => {
-          const pillars = countPillarsLogged(recap.entries);
-          const upcoming = getPublishReward(pillars);
-          if (pillars === 0) return null;
-          return (
-            <div
-              className="mb-3 rounded-xl px-3 py-2 flex items-center gap-3"
+              key={e.logId}
+              className="font-body tabular"
               style={{
-                background: 'linear-gradient(90deg, rgba(34,197,94,0.10), rgba(11,11,20,0.5))',
-                border: '1px solid rgba(34,197,94,0.25)',
+                fontSize: 10,
+                padding: '3px 8px',
+                border: '1px solid var(--b-rule)',
+                color: 'var(--b-ink)',
+                letterSpacing: '0.04em',
               }}
             >
-              <span className="text-base">🎁</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold text-emerald-300">
-                  Publish reward: +{upcoming.xp} XP · +{upcoming.fragments} frags
-                </p>
-                <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-                  {pillars}/5 pillars · {pillars < 5 ? `log ${5 - pillars} more for +${getPublishReward(5).xp - upcoming.xp} more` : 'full payout'}
-                </p>
-              </div>
-            </div>
-          );
-        })()}
+              <span
+                className="font-display"
+                style={{ fontStyle: 'italic', fontWeight: 500, color: e.categoryColor }}
+              >
+                {e.categoryName}
+              </span>
+              {' '}
+              <span style={{ color: 'var(--b-ink-60)' }}>{e.value}{e.unit}</span>
+            </span>
+          ))}
+          {recap.entries.length > 4 && (
+            <span className="font-mono" style={{ fontSize: 10, color: 'var(--b-ink-40)' }}>
+              +{recap.entries.length - 4} more
+            </span>
+          )}
+        </div>
+      )}
 
-        <Button
-          className="w-full"
-          onClick={onPublish}
-          loading={publishing}
-          disabled={recap.logCount === 0}
+      {proofThumbs.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+          {proofThumbs.map((e) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={e.logId}
+              src={e.proofImageUrl}
+              alt=""
+              style={{
+                width: 44,
+                height: 44,
+                objectFit: 'cover',
+                border: '1px solid var(--b-rule)',
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {upcoming && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: '8px 0',
+            borderTop: '1px solid var(--b-rule)',
+            borderBottom: '1px solid var(--b-rule)',
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: 8,
+          }}
         >
-          Submit Today&rsquo;s Record
-        </Button>
-        <p className="text-[10px] text-slate-500 text-center mt-2">
-          Friends will see one curated post — not every log.
-        </p>
-      </div>
-    </motion.div>
+          <div>
+            <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
+              Publish reward
+            </div>
+            <div
+              className="font-mono tabular"
+              style={{ fontSize: 12, color: 'var(--b-ink)', marginTop: 2 }}
+            >
+              +{upcoming.xp} XP · +{upcoming.fragments} frags
+            </div>
+          </div>
+          <div
+            className="font-body"
+            style={{
+              fontSize: 10,
+              color: 'var(--b-ink-60)',
+              textAlign: 'right',
+              maxWidth: 160,
+            }}
+          >
+            {pillars}/5 pillars{' '}
+            {pillars < 5 && (
+              <>
+                ·{' '}
+                <span style={{ color: 'var(--b-ink)' }}>
+                  log {5 - pillars} more for +{fullPayout.xp - upcoming.xp} XP
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={onPublish}
+        disabled={publishing || recap.logCount === 0}
+        className="font-body"
+        style={{
+          width: '100%',
+          marginTop: 12,
+          height: 46,
+          border: '1px solid var(--b-ink)',
+          background: recap.logCount === 0 || publishing ? 'var(--b-paper-2)' : 'var(--b-ink)',
+          color: recap.logCount === 0 || publishing ? 'var(--b-ink-40)' : 'var(--b-paper)',
+          fontWeight: 700,
+          fontSize: 12,
+          letterSpacing: '0.08em',
+          cursor: recap.logCount === 0 || publishing ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {publishing ? 'PUBLISHING…' : "SUBMIT TODAY'S RECORD →"}
+      </button>
+      <p
+        className="font-body"
+        style={{
+          fontSize: 10,
+          color: 'var(--b-ink-40)',
+          textAlign: 'center',
+          marginTop: 6,
+          letterSpacing: '0.04em',
+        }}
+      >
+        Friends will see one curated post — not every log.
+      </p>
+    </div>
   );
 }
 
+// ─── Published state ─────────────────────────────────────────────────
+
 function PublishedState({ recap }: { recap: Recap }) {
   const { user } = useAuth();
-  // State initializer so Date.now() is touched once at mount, satisfying
-  // the React purity rule. The countdown is coarse (whole hours) and
-  // doesn't need to tick — re-mounts on dashboard re-entry refresh it.
   const [editView] = useState(() => {
     const ed = canEdit(recap);
     const hoursLeft = recap.publishedAt
@@ -273,94 +346,138 @@ function PublishedState({ recap }: { recap: Recap }) {
   const editable = editView.editable;
   const editHoursLeft = editView.editHoursLeft;
 
-  // Recap streak — reads from user doc via the field-fishing pattern
-  // since UserProfile doesn't formally list these fields.
   const userAny = user as unknown as Record<string, number> | null;
   const recapStreak = userAny?.recapStreak || 0;
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl p-4"
       style={{
-        background:
-          'radial-gradient(ellipse 80% 70% at 100% 0%, rgba(34,197,94,0.10), transparent 55%),' +
-          'linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-        border: '1px solid rgba(34,197,94,0.18)',
+        borderTop: '1px solid var(--b-ink)',
+        borderBottom: '1px solid var(--b-ink)',
+        padding: '14px 0',
       }}
     >
-      <div className="flex items-center justify-between gap-2 mb-2">
-        <div className="flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: '0 0 6px #22c55e' }} />
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-400">
-            Published
-          </p>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+        }}
+      >
+        <div
+          className="spread"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 9,
+            color: 'var(--b-accent)',
+          }}
+        >
+          <BCheckGlyph size={12} />
+          Published
           {recap.publishedAt && (
-            <span className="text-[10px] font-mono text-slate-500">
+            <span
+              className="font-mono"
+              style={{
+                color: 'var(--b-ink-40)',
+                fontSize: 9,
+                marginLeft: 4,
+                letterSpacing: 'normal',
+                textTransform: 'none',
+                fontWeight: 400,
+              }}
+            >
               · {formatRelativeTime(recap.publishedAt.toDate())}
             </span>
           )}
         </div>
         {editable && editHoursLeft > 0 && (
-          <span className="text-[10px] font-mono text-slate-500">
-            Editable for {editHoursLeft}h
+          <span
+            className="font-mono"
+            style={{ fontSize: 9, color: 'var(--b-ink-40)', letterSpacing: '0.06em' }}
+          >
+            EDITABLE FOR {editHoursLeft}H
           </span>
         )}
       </div>
 
-      <p className="text-sm text-slate-300 mb-3">
+      <p
+        className="font-body"
+        style={{ fontSize: 13, color: 'var(--b-ink)', margin: '8px 0' }}
+      >
         {recap.logCount} log{recap.logCount === 1 ? '' : 's'} · +{recap.totalXP} XP · visible to friends
       </p>
 
       {recap.publishReward && (recap.publishReward.xp > 0 || recap.publishReward.fragments > 0) && (
         <div
-          className="mb-3 rounded-xl px-3 py-2 flex items-center gap-3"
           style={{
-            background: 'linear-gradient(90deg, rgba(34,197,94,0.12), rgba(11,11,20,0.5))',
-            border: '1px solid rgba(34,197,94,0.3)',
+            padding: '8px 0',
+            borderTop: '1px solid var(--b-rule)',
+            borderBottom: '1px solid var(--b-rule)',
+            marginBottom: 10,
           }}
         >
-          <span className="text-base">🎁</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold text-emerald-300">
-              Publish reward · +{recap.publishReward.xp} XP · +{recap.publishReward.fragments} frags
-            </p>
-            <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-              {recap.publishReward.pillarsLogged}/5 pillars submitted
-            </p>
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
+            Publish reward
+          </div>
+          <div
+            className="font-mono tabular"
+            style={{ fontSize: 12, color: 'var(--b-ink)', marginTop: 2 }}
+          >
+            +{recap.publishReward.xp} XP · +{recap.publishReward.fragments} frags
+          </div>
+          <div className="font-body" style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}>
+            {recap.publishReward.pillarsLogged}/5 pillars submitted
           </div>
         </div>
       )}
 
       {recapStreak > 1 && (
         <div
-          className="mb-3 rounded-xl px-3 py-2 flex items-center gap-2"
           style={{
-            background: 'linear-gradient(90deg, rgba(249,115,22,0.10), rgba(11,11,20,0.5))',
-            border: '1px solid rgba(249,115,22,0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 0',
+            marginBottom: 10,
           }}
         >
-          <span className="text-base">🔥</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold text-orange-300">
-              {recapStreak}-day publishing streak
-            </p>
-            <p className="text-[10px] font-mono text-slate-500">
-              Don&rsquo;t miss tomorrow.
-            </p>
+          <BFlameGlyph size={14} style={{ color: 'var(--b-accent)' }} />
+          <div className="font-body" style={{ fontSize: 11, color: 'var(--b-ink)' }}>
+            <em className="font-display" style={{ fontStyle: 'italic', fontWeight: 500 }}>
+              {recapStreak}-day
+            </em>{' '}
+            publishing streak — don&rsquo;t miss tomorrow.
           </div>
         </div>
       )}
 
-      <div className="flex items-center gap-2">
-        <Link href={`/recap/${recap.userId}/${recap.localDate}`} className="flex-1">
-          <Button variant="secondary" size="sm" className="w-full">
-            View record
-          </Button>
-        </Link>
-      </div>
+      <Link
+        href={`/recap/${recap.userId}/${recap.localDate}`}
+        className="font-body"
+        style={{
+          display: 'block',
+          width: '100%',
+          height: 40,
+          border: '1px solid var(--b-ink)',
+          background: 'transparent',
+          color: 'var(--b-ink)',
+          fontWeight: 700,
+          fontSize: 12,
+          letterSpacing: '0.08em',
+          textAlign: 'center',
+          lineHeight: '40px',
+          textDecoration: 'none',
+        }}
+      >
+        VIEW RECORD →
+      </Link>
     </div>
   );
 }
+
+// ─── Yesterday retro banner ─────────────────────────────────────────
 
 function YesterdayRetroBanner({
   recap,
@@ -372,28 +489,46 @@ function YesterdayRetroBanner({
   publishing: boolean;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl p-3.5"
+    <div
       style={{
-        background: 'linear-gradient(90deg, rgba(245,158,11,0.10) 0%, transparent 80%)',
-        borderLeft: '2px solid #f59e0b',
+        marginBottom: 12,
+        padding: '10px 0 10px 12px',
+        borderLeft: '2px solid var(--b-accent)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
       }}
     >
-      <div className="flex items-center gap-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">
-            Yesterday&rsquo;s record is unpublished
-          </p>
-          <p className="text-[12px] text-slate-400 mt-0.5">
-            {recap.logCount} log{recap.logCount === 1 ? '' : 's'} · +{recap.totalXP} XP · publish before midnight to count
-          </p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
+          Yesterday&rsquo;s record is unpublished
         </div>
-        <Button size="sm" variant="secondary" onClick={onPublish} loading={publishing}>
-          Publish
-        </Button>
+        <p
+          className="font-body"
+          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 2, lineHeight: 1.5 }}
+        >
+          {recap.logCount} log{recap.logCount === 1 ? '' : 's'} · +{recap.totalXP} XP — publish before midnight to count.
+        </p>
       </div>
-    </motion.div>
+      <button
+        onClick={onPublish}
+        disabled={publishing}
+        className="font-body"
+        style={{
+          height: 32,
+          padding: '0 12px',
+          border: '1px solid var(--b-ink)',
+          background: 'transparent',
+          color: 'var(--b-ink)',
+          fontWeight: 700,
+          fontSize: 10,
+          letterSpacing: '0.08em',
+          cursor: publishing ? 'not-allowed' : 'pointer',
+          opacity: publishing ? 0.5 : 1,
+        }}
+      >
+        {publishing ? '…' : 'PUBLISH'}
+      </button>
+    </div>
   );
 }
