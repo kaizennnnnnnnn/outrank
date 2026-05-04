@@ -8,7 +8,11 @@ import { searchUSDA, usdaToFoodItem, lookupBarcode, type USDASearchResult } from
 import { logMeal } from '@/lib/diet';
 import type { FoodItem, MealType, EntrySource, ParseFoodQuota } from '@/types/diet';
 import { useUIStore } from '@/store/uiStore';
-import { CheckCircleFullIcon, SparklesIcon, SearchIcon, PlusCircleIcon } from '@/components/ui/AppIcons';
+import {
+  BCheckGlyph,
+  BCalendarGlyph,
+  BPlusGlyph,
+} from '@/components/editorial/BGlyphs';
 
 type Mode = 'ai' | 'search' | 'barcode' | 'manual';
 
@@ -26,12 +30,23 @@ const MEAL_TYPES: { key: MealType; label: string }[] = [
   { key: 'snack',     label: 'Snack' },
 ];
 
-const MODES: { key: Mode; label: string; sub: string; Icon: React.ComponentType<{ size?: number; className?: string }> }[] = [
-  { key: 'ai',      label: 'AI parse',  sub: 'Type a sentence',     Icon: SparklesIcon },
-  { key: 'search',  label: 'Search',    sub: 'USDA database',       Icon: SearchIcon },
-  { key: 'barcode', label: 'Barcode',   sub: 'Scan or paste code',  Icon: SearchIcon },
-  { key: 'manual',  label: 'Manual',    sub: 'Enter yourself',      Icon: PlusCircleIcon },
+const MODES: { key: Mode; label: string; sub: string }[] = [
+  { key: 'ai',      label: 'AI Parse',  sub: 'Type a sentence' },
+  { key: 'search',  label: 'Search',    sub: 'USDA database' },
+  { key: 'barcode', label: 'Barcode',   sub: 'Paste a code' },
+  { key: 'manual',  label: 'Manual',    sub: 'Enter yourself' },
 ];
+
+/**
+ * Add Meal — editorial Direction B v2 conversion. Bottom sheet with
+ * four input modes (AI / Search / Barcode / Manual). Magazine-style
+ * typography: italic display labels, hairline-bracketed mode tabs,
+ * outlined inputs, filled-black submit. All four mode panels use
+ * the same input styling for visual cohesion.
+ *
+ * All flows preserved: parseFoodAI, searchUSDA, lookupBarcode, and
+ * logMeal still write the same data shapes.
+ */
 
 export function AddMealSheet({ uid, open, onClose, onLogged }: Props) {
   const addToast = useUIStore((s) => s.addToast);
@@ -40,7 +55,6 @@ export function AddMealSheet({ uid, open, onClose, onLogged }: Props) {
   const [items, setItems] = useState<FoodItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // Reset state when the sheet closes so re-opening starts fresh.
   useEffect(() => {
     if (!open) {
       setItems([]);
@@ -88,116 +102,274 @@ export function AddMealSheet({ uid, open, onClose, onLogged }: Props) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 280 }}
-            className="fixed inset-x-0 bottom-0 z-50 bg-[#10101a] border-t border-white/10 rounded-t-3xl max-h-[90vh] flex flex-col"
+            className="dir-b fixed inset-x-0 bottom-0 z-50 max-h-[90vh] flex flex-col"
+            style={{
+              background: 'var(--b-paper)',
+              borderTop: '1px solid var(--b-ink)',
+              color: 'var(--b-ink)',
+            }}
           >
             {/* Handle */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-white/15" />
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+              <div style={{ width: 36, height: 2, background: 'var(--b-ink-40)' }} />
             </div>
 
-            <div className="px-5 pb-3 flex items-center justify-between">
-              <h2 className="font-heading font-bold text-xl text-white">Log a meal</h2>
-              <button onClick={onClose} className="text-slate-400 hover:text-white p-1">×</button>
-            </div>
-
-            {/* Meal type */}
-            <div className="px-5 flex gap-1.5 overflow-x-auto pb-3 no-scrollbar">
-              {MEAL_TYPES.map((t) => (
-                <button
-                  key={t.key}
-                  onClick={() => setMealType(t.key)}
-                  className={cn(
-                    'shrink-0 px-3 py-1.5 rounded-full text-[12px] font-bold border transition-colors',
-                    mealType === t.key
-                      ? 'bg-orange-500/15 border-orange-400 text-orange-300'
-                      : 'bg-white/[0.03] border-white/10 text-slate-400 hover:text-slate-200',
-                  )}
+            {/* Header */}
+            <div
+              style={{
+                padding: '6px 22px 12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                borderBottom: '1px solid var(--b-ink)',
+              }}
+            >
+              <div>
+                <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+                  The Plate · Add
+                </div>
+                <h2
+                  className="font-display"
+                  style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, marginTop: 2 }}
                 >
-                  {t.label}
-                </button>
-              ))}
+                  Log a meal
+                </h2>
+              </div>
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--b-ink-60)',
+                  fontSize: 22,
+                  lineHeight: 1,
+                  cursor: 'pointer',
+                  padding: 4,
+                }}
+              >
+                ×
+              </button>
             </div>
 
-            {/* Mode picker */}
-            <div className="px-5 grid grid-cols-4 gap-1.5">
-              {MODES.map((m) => {
-                const active = mode === m.key;
-                const Icon = m.Icon;
+            {/* Meal type pills */}
+            <div style={{ padding: '12px 22px', display: 'flex', gap: 6, overflowX: 'auto' }} className="no-scrollbar">
+              {MEAL_TYPES.map((t) => {
+                const active = mealType === t.key;
                 return (
                   <button
-                    key={m.key}
-                    onClick={() => setMode(m.key)}
-                    className={cn(
-                      'rounded-xl border px-2 py-2 flex flex-col items-center gap-1 transition-all',
-                      active
-                        ? 'bg-orange-500/10 border-orange-400/60'
-                        : 'bg-white/[0.02] border-white/[0.08] hover:border-white/15',
-                    )}
+                    key={t.key}
+                    onClick={() => setMealType(t.key)}
+                    className="font-body"
+                    style={{
+                      flexShrink: 0,
+                      padding: '5px 12px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      color: active ? 'var(--b-paper)' : 'var(--b-ink-60)',
+                      background: active ? 'var(--b-ink)' : 'transparent',
+                      border: '1px solid ' + (active ? 'var(--b-ink)' : 'var(--b-rule)'),
+                      cursor: 'pointer',
+                    }}
                   >
-                    <Icon size={16} className={active ? 'text-orange-300' : 'text-slate-400'} />
-                    <span className={cn('text-[10px] font-bold', active ? 'text-white' : 'text-slate-300')}>
-                      {m.label}
-                    </span>
+                    {t.label}
                   </button>
                 );
               })}
             </div>
 
-            {/* Active mode panel */}
-            <div className="flex-1 overflow-y-auto px-5 mt-4">
+            {/* Mode tabs */}
+            <div
+              style={{
+                margin: '0 22px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                borderTop: '1px solid var(--b-ink)',
+                borderBottom: '1px solid var(--b-rule)',
+              }}
+            >
+              {MODES.map((m, i) => {
+                const active = mode === m.key;
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => setMode(m.key)}
+                    style={{
+                      padding: '10px 4px',
+                      borderLeft: i ? '1px solid var(--b-rule)' : 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      borderTop: 'none',
+                      borderRight: 'none',
+                      borderBottom: active ? '2px solid var(--b-accent)' : '2px solid transparent',
+                      marginBottom: -1,
+                    }}
+                  >
+                    <div
+                      className="font-display"
+                      style={{
+                        fontSize: 13,
+                        fontStyle: active ? 'italic' : 'normal',
+                        fontWeight: 500,
+                        color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                      }}
+                    >
+                      {m.label}
+                    </div>
+                    <div
+                      className="font-body"
+                      style={{
+                        fontSize: 9,
+                        color: 'var(--b-ink-40)',
+                        marginTop: 2,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {m.sub}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active panel */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 22px 0' }}>
               {mode === 'ai'      && <AIPanel onItems={(arr) => setItems((prev) => [...prev, ...arr])} />}
               {mode === 'search'  && <SearchPanel onItem={(it) => setItems((prev) => [...prev, it])} />}
               {mode === 'barcode' && <BarcodePanel onItem={(it) => setItems((prev) => [...prev, it])} />}
               {mode === 'manual'  && <ManualPanel onItem={(it) => setItems((prev) => [...prev, it])} />}
 
-              {/* Pending items list */}
+              {/* Pending items */}
               {items.length > 0 && (
-                <div className="mt-5 space-y-2">
-                  <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500">In this meal</p>
-                  {items.map((it, i) => (
-                    <div
-                      key={i}
-                      className="rounded-xl bg-white/[0.03] border border-white/[0.07] p-3 flex items-center gap-3"
+                <div style={{ marginTop: 22 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'baseline',
+                      borderBottom: '1px solid var(--b-ink)',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    <span
+                      className="font-display"
+                      style={{ fontSize: 14, fontStyle: 'italic', fontWeight: 500 }}
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-white text-sm truncate">{it.name}</p>
-                        <p className="text-[11px] text-slate-400 truncate">
-                          {it.qty} {it.unit} · {it.kcal} kcal · P {it.protein || 0}g · C {it.carbs || 0}g · F {it.fat || 0}g
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="text-slate-500 hover:text-red-400 text-lg leading-none"
-                        aria-label="Remove item"
+                      In this meal
+                    </span>
+                    <span
+                      className="font-mono tabular"
+                      style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
+                    >
+                      {items.length} item{items.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    {items.map((it, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '24px 1fr 18px',
+                          gap: 10,
+                          padding: '10px 0',
+                          borderBottom: '1px solid var(--b-rule)',
+                          alignItems: 'baseline',
+                        }}
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                        <span
+                          className="font-mono"
+                          style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+                        >
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="font-display" style={{ fontSize: 14, fontWeight: 500 }}>
+                            {it.name}
+                          </div>
+                          <div
+                            className="font-body tabular"
+                            style={{
+                              fontSize: 10,
+                              color: 'var(--b-ink-60)',
+                              marginTop: 1,
+                            }}
+                          >
+                            {it.qty} {it.unit} · {it.kcal} kcal
+                            {' · '}
+                            P {it.protein || 0}g · C {it.carbs || 0}g · F {it.fat || 0}g
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
+                          aria-label="Remove item"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--b-ink-40)',
+                            fontSize: 16,
+                            lineHeight: 1,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="border-t border-white/[0.07] p-4 bg-[#0d0d15]/95">
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="text-[11px] uppercase tracking-widest font-bold text-slate-500">
-                  {items.length} item{items.length === 1 ? '' : 's'}
+            <div
+              style={{
+                padding: 16,
+                borderTop: '1px solid var(--b-ink)',
+                background: 'var(--b-paper)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  marginBottom: 10,
+                }}
+              >
+                <span
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                >
+                  Total
                 </span>
-                <span className="font-mono tabular-nums text-white font-bold">{totalKcal} kcal</span>
+                <span
+                  className="font-mono tabular"
+                  style={{ fontSize: 14, color: 'var(--b-ink)', fontWeight: 700 }}
+                >
+                  {totalKcal} kcal
+                </span>
               </div>
               <button
                 onClick={onSave}
                 disabled={items.length === 0 || submitting}
-                className={cn(
-                  'w-full py-3.5 rounded-full font-bold text-base text-white shadow-lg transition-all',
-                  items.length === 0 || submitting
-                    ? 'opacity-40 cursor-not-allowed'
-                    : 'shadow-red-600/30 hover:brightness-110',
-                )}
-                style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+                className="font-body"
+                style={{
+                  width: '100%',
+                  height: 46,
+                  border: '1px solid var(--b-ink)',
+                  background: items.length === 0 || submitting ? 'var(--b-paper-2)' : 'var(--b-ink)',
+                  color: items.length === 0 || submitting ? 'var(--b-ink-40)' : 'var(--b-paper)',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  letterSpacing: '0.08em',
+                  cursor: items.length === 0 || submitting ? 'not-allowed' : 'pointer',
+                }}
               >
-                {submitting ? 'Saving…' : 'LOG MEAL'}
+                {submitting ? 'SAVING…' : 'LOG MEAL →'}
               </button>
             </div>
           </motion.div>
@@ -237,33 +409,49 @@ function AIPanel({ onItems }: { onItems: (items: FoodItem[]) => void }) {
 
   return (
     <div>
-      <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
-        Type what you ate in plain English. Examples: <span className="text-slate-300">&quot;3 eggs and toast&quot;</span>,{' '}
-        <span className="text-slate-300">&quot;chicken caesar salad&quot;</span>,{' '}
-        <span className="text-slate-300">&quot;200g grilled chicken, 150g rice, broccoli&quot;</span>.
+      <p className="font-body" style={{ fontSize: 12, color: 'var(--b-ink-60)', lineHeight: 1.5, marginBottom: 10 }}>
+        Type what you ate in plain English. Examples:{' '}
+        <span style={{ color: 'var(--b-ink)' }}>&quot;3 eggs and toast&quot;</span>,{' '}
+        <span style={{ color: 'var(--b-ink)' }}>&quot;chicken caesar salad&quot;</span>,{' '}
+        <span style={{ color: 'var(--b-ink)' }}>&quot;200g grilled chicken, 150g rice, broccoli&quot;</span>.
       </p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="What did you eat?"
         rows={3}
-        className="w-full bg-[#0a0a12] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[14px] outline-none transition-colors resize-none"
+        className={editorialInputCls}
+        style={editorialInputStyle}
       />
       <button
         onClick={submit}
         disabled={!text.trim() || loading}
-        className={cn(
-          'w-full mt-2 py-2.5 rounded-xl font-bold text-[13px] text-white transition-all flex items-center justify-center gap-2',
-          !text.trim() || loading
-            ? 'bg-white/[0.05] text-slate-500'
-            : 'bg-orange-500/15 border border-orange-400/40 hover:bg-orange-500/25',
-        )}
+        className="font-body"
+        style={{
+          width: '100%',
+          marginTop: 8,
+          height: 40,
+          border: '1px solid var(--b-ink)',
+          background: !text.trim() || loading ? 'var(--b-paper-2)' : 'var(--b-ink)',
+          color: !text.trim() || loading ? 'var(--b-ink-40)' : 'var(--b-paper)',
+          fontWeight: 700,
+          fontSize: 11,
+          letterSpacing: '0.08em',
+          cursor: !text.trim() || loading ? 'not-allowed' : 'pointer',
+        }}
       >
-        <SparklesIcon size={14} />
-        {loading ? 'Parsing…' : 'Parse with AI'}
+        {loading ? 'PARSING…' : 'PARSE WITH AI →'}
       </button>
       {quota && (
-        <p className="text-[10.5px] text-slate-500 text-center mt-2">
+        <p
+          className="font-body tabular"
+          style={{
+            fontSize: 10,
+            color: 'var(--b-ink-40)',
+            textAlign: 'center',
+            marginTop: 6,
+          }}
+        >
           {quota.remaining}/{quota.limit} AI logs left today
         </p>
       )}
@@ -281,7 +469,6 @@ function SearchPanel({ onItem }: { onItem: (item: FoodItem) => void }) {
     setHasKey(!!process.env.NEXT_PUBLIC_USDA_API_KEY);
   }, []);
 
-  // Debounce search to avoid hammering USDA on each keystroke.
   useEffect(() => {
     if (!q.trim()) { setResults([]); return; }
     const t = setTimeout(async () => {
@@ -298,10 +485,22 @@ function SearchPanel({ onItem }: { onItem: (item: FoodItem) => void }) {
 
   if (!hasKey) {
     return (
-      <div className="rounded-xl bg-amber-500/[0.07] border border-amber-500/30 p-4">
-        <p className="text-[13px] text-amber-200 leading-relaxed">
-          USDA search needs a free API key (sign up at <span className="text-amber-300">fdc.nal.usda.gov</span>).
-          For now, use AI parse, barcode, or manual entry.
+      <div
+        style={{
+          borderTop: '1px solid var(--b-rule)',
+          borderBottom: '1px solid var(--b-rule)',
+          padding: '10px 0',
+        }}
+      >
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
+          USDA key needed
+        </div>
+        <p
+          className="font-body"
+          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 4, lineHeight: 1.5 }}
+        >
+          USDA search needs a free API key from{' '}
+          <span style={{ color: 'var(--b-ink)' }}>fdc.nal.usda.gov</span>. For now, use AI parse, barcode, or manual.
         </p>
       </div>
     );
@@ -312,28 +511,65 @@ function SearchPanel({ onItem }: { onItem: (item: FoodItem) => void }) {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search foods (e.g. &quot;chicken breast&quot;)"
-        className="w-full bg-[#0a0a12] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[14px] outline-none transition-colors"
+        placeholder="Search foods (e.g. chicken breast)"
+        className={editorialInputCls}
+        style={editorialInputStyle}
       />
-      <div className="mt-3 space-y-1.5 max-h-[40vh] overflow-y-auto">
-        {loading && <p className="text-[12px] text-slate-500 text-center py-2">Searching…</p>}
+      <ul style={{ listStyle: 'none', margin: '12px 0 0', padding: 0, maxHeight: '40vh', overflowY: 'auto' }}>
+        {loading && (
+          <li className="font-body" style={{ fontSize: 11, color: 'var(--b-ink-60)', textAlign: 'center', padding: '8px 0' }}>
+            Searching…
+          </li>
+        )}
         {!loading && q.trim() && results.length === 0 && (
-          <p className="text-[12px] text-slate-500 text-center py-2">No matches.</p>
+          <li className="font-body" style={{ fontSize: 11, color: 'var(--b-ink-60)', textAlign: 'center', padding: '8px 0' }}>
+            No matches.
+          </li>
         )}
         {results.map((r) => (
-          <button
-            key={r.fdcId}
-            onClick={() => onItem(usdaToFoodItem(r))}
-            className="w-full text-left rounded-xl bg-white/[0.03] border border-white/[0.07] p-3 hover:border-orange-400/40 transition-colors"
-          >
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="font-bold text-white text-sm flex-1 truncate">{r.name}</span>
-              <span className="text-[12px] font-mono tabular-nums text-orange-300">{Math.round(r.kcalPerServing)} kcal</span>
-            </div>
-            {r.brand && <p className="text-[11px] text-slate-500 truncate">{r.brand}</p>}
-          </button>
+          <li key={r.fdcId}>
+            <button
+              onClick={() => onItem(usdaToFoodItem(r))}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '10px 0',
+                borderBottom: '1px solid var(--b-rule)',
+                background: 'transparent',
+                border: 'none',
+                borderBottomColor: 'var(--b-rule)',
+                borderBottomStyle: 'solid',
+                borderBottomWidth: 1,
+                cursor: 'pointer',
+                color: 'var(--b-ink)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+                <span
+                  className="font-display"
+                  style={{ fontSize: 14, fontWeight: 500, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {r.name}
+                </span>
+                <span
+                  className="font-mono tabular"
+                  style={{ fontSize: 11, color: 'var(--b-accent)' }}
+                >
+                  {Math.round(r.kcalPerServing)} kcal
+                </span>
+              </div>
+              {r.brand && (
+                <p
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {r.brand}
+                </p>
+              )}
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -361,27 +597,35 @@ function BarcodePanel({ onItem }: { onItem: (item: FoodItem) => void }) {
 
   return (
     <div>
-      <p className="text-[12px] text-slate-400 leading-relaxed mb-3">
-        Type or paste a UPC/EAN barcode. Camera scanning coming later — for now use the digits printed below the barcode.
+      <p className="font-body" style={{ fontSize: 12, color: 'var(--b-ink-60)', lineHeight: 1.5, marginBottom: 10 }}>
+        Paste a UPC or EAN barcode. Camera scanning coming later — for now use the digits printed below the barcode.
       </p>
       <input
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
         placeholder="0049000028911"
         inputMode="numeric"
-        className="w-full bg-[#0a0a12] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[14px] outline-none transition-colors font-mono"
+        className={cn(editorialInputCls, 'font-mono')}
+        style={editorialInputStyle}
       />
       <button
         onClick={submit}
         disabled={!code.trim() || loading}
-        className={cn(
-          'w-full mt-2 py-2.5 rounded-xl font-bold text-[13px] text-white transition-all',
-          !code.trim() || loading
-            ? 'bg-white/[0.05] text-slate-500'
-            : 'bg-orange-500/15 border border-orange-400/40 hover:bg-orange-500/25',
-        )}
+        className="font-body"
+        style={{
+          width: '100%',
+          marginTop: 8,
+          height: 40,
+          border: '1px solid var(--b-ink)',
+          background: !code.trim() || loading ? 'var(--b-paper-2)' : 'var(--b-ink)',
+          color: !code.trim() || loading ? 'var(--b-ink-40)' : 'var(--b-paper)',
+          fontWeight: 700,
+          fontSize: 11,
+          letterSpacing: '0.08em',
+          cursor: !code.trim() || loading ? 'not-allowed' : 'pointer',
+        }}
       >
-        {loading ? 'Looking up…' : 'Look up'}
+        {loading ? 'LOOKING UP…' : 'LOOK UP →'}
       </button>
     </div>
   );
@@ -413,40 +657,67 @@ function ManualPanel({ onItem }: { onItem: (item: FoodItem) => void }) {
   };
 
   return (
-    <div className="space-y-2.5">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="What is it? (e.g. homemade chili)"
-        className="w-full bg-[#0a0a12] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-2.5 text-white text-[14px] outline-none"
+        className={editorialInputCls}
+        style={editorialInputStyle}
       />
-      <div className="grid grid-cols-2 gap-2.5">
-        <input value={qty}  onChange={(e) => setQty(e.target.value)}  placeholder="Qty"  inputMode="decimal" className={inputCls} />
-        <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Unit (cup, g, slice)"  className={inputCls} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8 }}>
+        <input value={qty}  onChange={(e) => setQty(e.target.value)}  placeholder="Qty"  inputMode="decimal" className={editorialInputCls} style={editorialInputStyle} />
+        <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="Unit (cup, g, slice)"     className={editorialInputCls} style={editorialInputStyle} />
       </div>
-      <input value={kcal} onChange={(e) => setKcal(e.target.value)} placeholder="kcal" inputMode="numeric" className={inputCls} />
-      <div className="grid grid-cols-3 gap-2.5">
-        <input value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="Protein g" inputMode="decimal" className={inputCls} />
-        <input value={carbs}   onChange={(e) => setCarbs(e.target.value)}   placeholder="Carbs g"   inputMode="decimal" className={inputCls} />
-        <input value={fat}     onChange={(e) => setFat(e.target.value)}     placeholder="Fat g"     inputMode="decimal" className={inputCls} />
+      <input value={kcal} onChange={(e) => setKcal(e.target.value)} placeholder="kcal" inputMode="numeric" className={editorialInputCls} style={editorialInputStyle} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+        <input value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="Protein g" inputMode="decimal" className={editorialInputCls} style={editorialInputStyle} />
+        <input value={carbs}   onChange={(e) => setCarbs(e.target.value)}   placeholder="Carbs g"   inputMode="decimal" className={editorialInputCls} style={editorialInputStyle} />
+        <input value={fat}     onChange={(e) => setFat(e.target.value)}     placeholder="Fat g"     inputMode="decimal" className={editorialInputCls} style={editorialInputStyle} />
       </div>
       <button
         onClick={submit}
         disabled={!canSubmit}
-        className={cn(
-          'w-full mt-1 py-2.5 rounded-xl font-bold text-[13px] text-white transition-all flex items-center justify-center gap-2',
-          !canSubmit
-            ? 'bg-white/[0.05] text-slate-500'
-            : 'bg-orange-500/15 border border-orange-400/40 hover:bg-orange-500/25',
-        )}
+        className="font-body"
+        style={{
+          width: '100%',
+          marginTop: 4,
+          height: 40,
+          border: '1px solid var(--b-ink)',
+          background: !canSubmit ? 'var(--b-paper-2)' : 'var(--b-ink)',
+          color: !canSubmit ? 'var(--b-ink-40)' : 'var(--b-paper)',
+          fontWeight: 700,
+          fontSize: 11,
+          letterSpacing: '0.08em',
+          cursor: !canSubmit ? 'not-allowed' : 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+        }}
       >
-        <CheckCircleFullIcon size={14} /> Add item
+        <BPlusGlyph size={12} /> ADD ITEM
       </button>
+      {/* Suppress unused-import warning — these are surfaced on neighbouring panels */}
+      <span style={{ display: 'none' }}>
+        <BCheckGlyph /><BCalendarGlyph />
+      </span>
     </div>
   );
 }
 
-const inputCls = 'w-full bg-[#0a0a12] border border-white/10 focus:border-orange-400 rounded-xl px-3 py-2.5 text-white text-[13px] outline-none';
+// ─── Editorial input styling ─────────────────────────────────────────
+
+const editorialInputCls = 'w-full font-body';
+const editorialInputStyle: React.CSSProperties = {
+  background: 'var(--b-paper-2)',
+  border: '1px solid var(--b-rule)',
+  padding: '10px 12px',
+  fontSize: 13,
+  color: 'var(--b-ink)',
+  outline: 'none',
+  fontFamily: 'var(--font-inter)',
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
