@@ -2,13 +2,13 @@
 
 import { Sidebar } from '@/components/layout/Sidebar';
 import { TopBar } from '@/components/layout/TopBar';
-import { MobileNav } from '@/components/layout/MobileNav';
+import { EditorialTabBar } from '@/components/editorial/EditorialTabBar';
 import { DailyLoginChest } from '@/components/progression/DailyLoginChest';
 import { RecapLogFlight } from '@/components/recap/RecapLogFlight';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#0d0d15]">
+    <div className="min-h-screen bg-[var(--b-paper)]">
       <Sidebar />
       <div className="lg:ml-[240px] overflow-x-hidden">
         <TopBar />
@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      <MobileNav />
+      <EditorialTabBar />
       <DailyLoginChest />
       <RecapLogFlight />
     </div>
