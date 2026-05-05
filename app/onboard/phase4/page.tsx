@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { WizardShell } from '@/components/onboarding/WizardShell';
 import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
@@ -62,18 +61,18 @@ const renderIcon = (shape: IconShape, active: boolean) => {
     <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
       <defs>
         <linearGradient id={`bg-${safeColor}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor={shape.color} stopOpacity={active ? 0.95 : 0.32} />
-          <stop offset="100%" stopColor={shape.color} stopOpacity={active ? 0.6 : 0.12} />
+          <stop offset="0%"  stopColor={shape.color} stopOpacity={active ? 0.85 : 0.18} />
+          <stop offset="100%" stopColor={shape.color} stopOpacity={active ? 0.5 : 0.06} />
         </linearGradient>
       </defs>
       <rect
-        x="0.5" y="0.5" width="23" height="23" rx="6"
+        x="0.5" y="0.5" width="23" height="23" rx="2"
         fill={`url(#bg-${safeColor})`}
         stroke={shape.color}
-        strokeOpacity={active ? 1 : 0.5}
+        strokeOpacity={active ? 1 : 0.45}
         strokeWidth="1"
       />
-      <g style={{ color: active ? '#0c0c14' : shape.color }}>
+      <g style={{ color: active ? 'var(--b-paper)' : shape.color }}>
         {shape.body}
       </g>
     </svg>
@@ -356,7 +355,10 @@ export default function OnboardPhase4Page() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
+      <div
+        className="dir-b min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--b-paper)' }}
+      >
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -434,20 +436,30 @@ function renderFooter(
     (step === 8) ||
     (step === 9);
 
+  const label =
+    step === 1 ? (draft.struggles?.length ? 'Continue' : 'None of these') : 'Continue';
+
   return (
     <motion.button
       whileTap={{ scale: canProceed ? 0.98 : 1 }}
       onClick={canProceed ? next : undefined}
       disabled={!canProceed}
-      className={cn(
-        'w-full py-4 rounded-full font-bold text-base text-white transition-all shadow-lg',
-        canProceed
-          ? 'shadow-red-600/30 hover:brightness-110'
-          : 'shadow-none opacity-40 cursor-not-allowed',
-      )}
-      style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+      className="font-body"
+      style={{
+        width: '100%',
+        padding: '14px 16px',
+        background: canProceed ? 'var(--b-ink)' : 'transparent',
+        color: canProceed ? 'var(--b-paper)' : 'var(--b-ink-40)',
+        border: '1px solid var(--b-ink)',
+        cursor: canProceed ? 'pointer' : 'not-allowed',
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        opacity: canProceed ? 1 : 0.4,
+      }}
     >
-      {step === 1 ? (draft.struggles?.length ? 'CONTINUE' : 'NONE OF THESE') : 'CONTINUE'}
+      {label} →
     </motion.button>
   );
 }
@@ -485,29 +497,56 @@ function MultiSelectGrid<T extends string>({
     else onChange([...value, key]);
   };
   return (
-    <div className={cn('grid gap-2.5', cols === 2 ? 'grid-cols-2' : 'grid-cols-1')}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: cols === 2 ? 'repeat(2, 1fr)' : '1fr',
+        gap: 8,
+      }}
+    >
       {options.map((opt) => {
         const active = value.includes(opt.key);
         return (
           <button
             key={opt.key}
             onClick={() => toggle(opt.key)}
-            className={cn(
-              'rounded-2xl border-2 px-3 py-3 text-left transition-all flex items-center gap-3 min-h-[56px]',
-              active
-                ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]'
-                : 'bg-[#10101a] border-white/8 hover:border-white/20',
-            )}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 12px',
+              minHeight: 56,
+              background: 'transparent',
+              border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+              borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+              cursor: 'pointer',
+              textAlign: 'left',
+              color: 'var(--b-ink)',
+            }}
           >
             {opt.shape && (
-              <div className="flex-shrink-0">
+              <div style={{ flexShrink: 0 }}>
                 {renderIcon(opt.shape, active)}
               </div>
             )}
-            <span className={cn('flex-1 font-semibold text-[13px] leading-snug', active ? 'text-white' : 'text-slate-200')}>
+            <span
+              className="font-display"
+              style={{
+                flex: 1,
+                fontSize: 13,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                lineHeight: 1.35,
+                color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+              }}
+            >
               {opt.label}
             </span>
-            {active && <CheckCircleFullIcon size={16} className="text-orange-400 flex-shrink-0" />}
+            {active && (
+              <span style={{ color: 'var(--b-accent)', display: 'inline-flex', flexShrink: 0 }}>
+                <CheckCircleFullIcon size={16} />
+              </span>
+            )}
           </button>
         );
       })}
@@ -527,27 +566,50 @@ function CadenceStep({
   return (
     <div className="flex flex-col flex-1">
       <MascotRow message="How often do you think about improving your life?" />
-      <div className="space-y-2.5 mt-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
         {CADENCE_OPTIONS.map((opt) => {
           const active = value === opt.key;
           return (
             <button
               key={opt.key}
               onClick={() => onChange(opt.key)}
-              className={cn(
-                'w-full text-left rounded-2xl border-2 px-5 py-4 transition-all',
-                active
-                  ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]'
-                  : 'bg-[#10101a] border-white/8 hover:border-white/20',
-              )}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '14px 18px',
+                background: 'transparent',
+                border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+                cursor: 'pointer',
+                color: 'var(--b-ink)',
+              }}
             >
-              <div className="flex items-center justify-between">
-                <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span
+                  className="font-display"
+                  style={{
+                    fontSize: 16,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                  }}
+                >
                   {opt.label}
                 </span>
-                {active && <CheckCircleFullIcon size={18} className="text-orange-400" />}
+                {active && (
+                  <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+                    <CheckCircleFullIcon size={18} />
+                  </span>
+                )}
               </div>
-              <p className={cn('text-[13px] mt-1', active ? 'text-orange-200/80' : 'text-slate-500')}>
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 12,
+                  marginTop: 4,
+                  color: active ? 'var(--b-ink-60)' : 'var(--b-ink-40)',
+                }}
+              >
                 {opt.sub}
               </p>
             </button>
@@ -568,13 +630,23 @@ function StrugglesStep({
   return (
     <div className="flex flex-col flex-1">
       <MascotRow message="Do you struggle with any of the following? Pick anything that applies." />
-      <div className="mt-2 space-y-5">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 8 }}>
         <div>
-          <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-orange-400 mb-2.5">Body</p>
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 10 }}
+          >
+            Body
+          </div>
           <MultiSelectGrid options={STRUGGLES_BODY} value={value} onChange={onChange} />
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-orange-400 mb-2.5">Daily life</p>
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 10 }}
+          >
+            Daily life
+          </div>
           <MultiSelectGrid options={STRUGGLES_LIFE} value={value} onChange={onChange} />
         </div>
       </div>
@@ -592,29 +664,55 @@ function EnergyStep({
   return (
     <div className="flex flex-col flex-1">
       <MascotRow message="How are your energy levels usually?" />
-      <div className="space-y-2.5 mt-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
         {ENERGY_OPTIONS.map((opt) => {
           const active = value === opt.key;
           return (
             <button
               key={opt.key}
               onClick={() => onChange(opt.key)}
-              className={cn(
-                'w-full text-left rounded-2xl border-2 px-5 py-4 transition-all flex items-center gap-4',
-                active
-                  ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]'
-                  : 'bg-[#10101a] border-white/8 hover:border-white/20',
-              )}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                background: 'transparent',
+                border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+                cursor: 'pointer',
+                color: 'var(--b-ink)',
+              }}
             >
-              <EnergyBars level={opt.key} />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>
+              <EnergyBars level={opt.key} active={active} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span
+                    className="font-display"
+                    style={{
+                      fontSize: 16,
+                      fontStyle: 'italic',
+                      fontWeight: 500,
+                      color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                    }}
+                  >
                     {opt.label}
                   </span>
-                  {active && <CheckCircleFullIcon size={18} className="text-orange-400" />}
+                  {active && (
+                    <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+                      <CheckCircleFullIcon size={18} />
+                    </span>
+                  )}
                 </div>
-                <p className={cn('text-[13px] mt-0.5', active ? 'text-orange-200/80' : 'text-slate-500')}>
+                <p
+                  className="font-body"
+                  style={{
+                    fontSize: 12,
+                    marginTop: 2,
+                    color: active ? 'var(--b-ink-60)' : 'var(--b-ink-40)',
+                  }}
+                >
                   {opt.sub}
                 </p>
               </div>
@@ -627,22 +725,23 @@ function EnergyStep({
 }
 
 /** Three vertical bars of increasing height visualizing low/medium/high. */
-function EnergyBars({ level }: { level: EnergyLevel }) {
+function EnergyBars({ level, active = false }: { level: EnergyLevel; active?: boolean }) {
   const filled = level === 'low' ? 1 : level === 'medium' ? 2 : 3;
   return (
-    <div className="flex items-end gap-1 h-8 flex-shrink-0">
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 32, flexShrink: 0 }}>
       {[8, 18, 28].map((h, i) => {
         const on = i < filled;
         return (
           <div
             key={i}
-            className={cn(
-              'w-1.5 rounded-sm transition-colors',
-              on
-                ? 'bg-gradient-to-t from-red-500 to-orange-400 shadow-[0_0_6px_rgba(249,115,22,0.55)]'
-                : 'bg-white/[0.08] border border-white/[0.06]',
-            )}
-            style={{ height: h }}
+            style={{
+              width: 6,
+              height: h,
+              background: on
+                ? (active ? 'var(--b-accent)' : 'var(--b-ink)')
+                : 'transparent',
+              border: on ? 'none' : '1px solid var(--b-rule)',
+            }}
           />
         );
       })}
@@ -654,10 +753,36 @@ function ThatsOkayStep() {
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
       <PhoenixMascot size={150} greeting />
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-8 leading-tight">
-        That&apos;s okay.<br/><span className="text-orange-400">We&apos;ve got you.</span>
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 28 }}
+      >
+        It adapts
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 38,
+          fontWeight: 500,
+          fontStyle: 'italic',
+          lineHeight: 1.05,
+          margin: '8px 0 0',
+          maxWidth: 440,
+        }}
+      >
+        That&apos;s okay.{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>We&apos;ve got you.</em>
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 360,
+          lineHeight: 1.6,
+        }}
+      >
         Outrank adapts your training and habits to your body and energy — sensitive joints, low days, and busy stretches all factored in.
       </p>
     </div>
@@ -695,17 +820,67 @@ function InsightCard({ eyebrow, title, body, fix, visual }: InsightCardProps) {
   return (
     <div className="flex flex-col flex-1 justify-center text-center">
       <div className="flex justify-center mb-8">{visual}</div>
-      <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+      >
         {eyebrow}
-      </p>
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-3 leading-tight max-w-md mx-auto">
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 32,
+          fontWeight: 500,
+          fontStyle: 'italic',
+          lineHeight: 1.05,
+          margin: '10px auto 0',
+          maxWidth: 440,
+          color: 'var(--b-ink)',
+        }}
+      >
         {title}
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm mx-auto text-[15px] leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 14,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 380,
+          marginInline: 'auto',
+          lineHeight: 1.6,
+        }}
+      >
         {body}
       </p>
-      <div className="mt-6 mx-auto max-w-sm rounded-2xl bg-orange-500/10 border border-orange-500/30 px-4 py-3">
-        <p className="text-[13px] font-semibold text-orange-200 leading-relaxed">
+      <div
+        style={{
+          marginTop: 22,
+          marginInline: 'auto',
+          maxWidth: 380,
+          padding: '14px 18px',
+          border: '1px solid var(--b-rule)',
+          borderTop: '2px solid var(--b-ink)',
+          textAlign: 'left',
+        }}
+      >
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-accent)', marginBottom: 6 }}
+        >
+          The fix
+        </div>
+        <p
+          className="font-display"
+          style={{
+            fontSize: 13,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            color: 'var(--b-ink)',
+            margin: 0,
+            lineHeight: 1.5,
+          }}
+        >
           {fix}
         </p>
       </div>
@@ -717,7 +892,7 @@ function InsightInvisibleStep() {
   return (
     <InsightCard
       eyebrow="The honest truth"
-      title={<>Progress feels<br/><span className="text-orange-400">invisible</span>.</>}
+      title={<>Progress feels{' '}<em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>invisible</em>.</>}
       body="You train. You sleep. You drink water. You try to focus. But none of it adds up to anything you can see — and effort that doesn't feel like results gets harder to keep doing."
       fix="Outrank tracks the wins your eyes can't see — across every pillar, every day."
       visual={<MirrorVisual />}
@@ -729,7 +904,7 @@ function InsightBlindSpotStep() {
   return (
     <InsightCard
       eyebrow="Working blind"
-      title={<>You can&apos;t fix<br/>what you <span className="text-orange-400">can&apos;t see</span>.</>}
+      title={<>You can&apos;t fix what you{' '}<em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>can&apos;t see</em>.</>}
       body="If you don't know whether sleep, water, focus, steps or strength is the one holding you back, you train and live in circles. Your weakest pillar stays weakest."
       fix="Outrank ranks all 5 pillars side-by-side, so the next move is obvious."
       visual={<BlindSpotVisual />}
@@ -741,7 +916,7 @@ function InsightMotivationStep() {
   return (
     <InsightCard
       eyebrow="Why most people quit"
-      title={<>Motivation<br/><span className="text-orange-400">runs out</span>.</>}
+      title={<>Motivation{' '}<em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>runs out</em>.</>}
       body="Streaks die. Goals get fuzzy. The version of you who started Sunday doesn't always show up next Tuesday."
       fix="Outrank gives you the structure motivation alone can't."
       visual={<MotivationVisual />}
@@ -755,14 +930,42 @@ function PathToBuildingStep() {
       <div className="flex justify-center mb-8">
         <PathVisual />
       </div>
-      <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+      >
         How Outrank works
-      </p>
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-3 leading-tight">
-        The path to<br/>building <span className="text-orange-400">yourself</span>.
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 32,
+          fontWeight: 500,
+          fontStyle: 'italic',
+          lineHeight: 1.05,
+          margin: '10px auto 0',
+          maxWidth: 440,
+          color: 'var(--b-ink)',
+        }}
+      >
+        The path to building{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>yourself</em>.
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm mx-auto text-[15px] leading-relaxed">
-        <span className="text-white font-semibold">5 pillars. 5 ranks.</span> Strength, sleep, hydration, focus and steps each get measured separately, so you always know what to work on next. No more guessing.
+      <p
+        className="font-body"
+        style={{
+          fontSize: 14,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 380,
+          marginInline: 'auto',
+          lineHeight: 1.6,
+        }}
+      >
+        <em style={{ color: 'var(--b-ink)', fontStyle: 'italic', fontWeight: 600 }}>
+          5 pillars. 5 ranks.
+        </em>{' '}
+        Strength, sleep, hydration, focus and steps each get measured separately, so you always know what to work on next. No more guessing.
       </p>
     </div>
   );
@@ -774,14 +977,44 @@ function SeeRealProgressStep() {
       <div className="flex justify-center mb-8">
         <ProgressGraphVisual />
       </div>
-      <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+      >
         Visible transformation
-      </p>
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-3 leading-tight">
-        See <span className="text-orange-400">real</span> progress.
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 32,
+          fontWeight: 500,
+          fontStyle: 'italic',
+          lineHeight: 1.05,
+          margin: '10px auto 0',
+          maxWidth: 440,
+          color: 'var(--b-ink)',
+        }}
+      >
+        See{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>real</em>{' '}
+        progress.
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm mx-auto text-[15px] leading-relaxed">
-        Outrank charts <span className="text-white font-semibold">every pillar</span> — strength, sleep, hydration, focus, steps — so you can watch the version of you that&apos;s actually being built.
+      <p
+        className="font-body"
+        style={{
+          fontSize: 14,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 380,
+          marginInline: 'auto',
+          lineHeight: 1.6,
+        }}
+      >
+        Outrank charts{' '}
+        <em style={{ color: 'var(--b-ink)', fontStyle: 'italic', fontWeight: 600 }}>
+          every pillar
+        </em>{' '}
+        — strength, sleep, hydration, focus, steps — so you can watch the version of you that&apos;s actually being built.
       </p>
     </div>
   );
@@ -988,36 +1221,73 @@ function MirrorVisual() {
     `${toPath(pts)} L ${pts[pts.length - 1][0]} 70 L ${pts[0][0]} 70 Z`;
 
   return (
-    <div className="w-full max-w-sm mx-auto">
-      <div className="space-y-3">
+    <div style={{ width: '100%', maxWidth: 380, margin: '0 auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {/* EFFORT card */}
-        <div className="rounded-2xl bg-orange-500/10 border border-orange-500/30 p-4">
-          <div className="flex items-baseline justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-300">Effort</span>
-            <span className="font-heading text-xl font-bold text-white tabular-nums">47<span className="text-[10px] text-slate-400 ml-1">SESSIONS</span></span>
+        <div
+          style={{
+            border: '1px solid var(--b-rule)',
+            borderLeft: '3px solid var(--b-accent)',
+            padding: 14,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-accent)' }}
+            >
+              Effort
+            </span>
+            <span
+              className="font-display"
+              style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, color: 'var(--b-ink)' }}
+            >
+              47
+              <span
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-40)', marginLeft: 6 }}
+              >
+                Sessions
+              </span>
+            </span>
           </div>
           <svg viewBox="0 0 280 76" className="w-full h-16" preserveAspectRatio="none">
             <defs>
               <linearGradient id="effortFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#fb923c" stopOpacity="0.45" />
-                <stop offset="100%" stopColor="#fb923c" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--b-accent)" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="var(--b-accent)" stopOpacity="0" />
               </linearGradient>
             </defs>
             <path d={toAreaPath(effortPoints)} fill="url(#effortFill)" />
-            <path d={toPath(effortPoints)} stroke="#fb923c" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 6px rgba(251,146,60,0.6))' }} />
-            <circle cx={effortPoints[effortPoints.length - 1][0]} cy={effortPoints[effortPoints.length - 1][1]} r="3.5" fill="#fef3c7" />
+            <path d={toPath(effortPoints)} stroke="var(--b-accent)" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx={effortPoints[effortPoints.length - 1][0]} cy={effortPoints[effortPoints.length - 1][1]} r="3" fill="var(--b-accent)" />
           </svg>
         </div>
 
         {/* RESULTS card — dim, barely moving */}
-        <div className="rounded-2xl bg-white/[0.02] border border-white/[0.08] p-4">
-          <div className="flex items-baseline justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-slate-500">Visible results</span>
-            <span className="font-heading text-xl font-bold text-slate-400 tabular-nums">~0%</span>
+        <div
+          style={{
+            border: '1px solid var(--b-rule)',
+            padding: 14,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-40)' }}
+            >
+              Visible results
+            </span>
+            <span
+              className="font-display"
+              style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, color: 'var(--b-ink-40)' }}
+            >
+              ~0%
+            </span>
           </div>
           <svg viewBox="0 0 280 76" className="w-full h-16" preserveAspectRatio="none">
-            <path d={toPath(resultPoints)} stroke="#475569" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx={resultPoints[resultPoints.length - 1][0]} cy={resultPoints[resultPoints.length - 1][1]} r="3" fill="#64748b" />
+            <path d={toPath(resultPoints)} stroke="var(--b-ink-40)" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx={resultPoints[resultPoints.length - 1][0]} cy={resultPoints[resultPoints.length - 1][1]} r="2.5" fill="var(--b-ink-40)" />
           </svg>
         </div>
       </div>
@@ -1153,12 +1423,11 @@ function BlindSpotVisual() {
               <Icon size={16} />
             </div>
             <div
-              className="px-1.5 py-[1px] rounded font-mono text-[10px] font-bold tracking-wider"
+              className="px-1.5 py-[1px] font-mono text-[10px] font-bold tracking-wider"
               style={{
                 color: p.tone,
-                background: '#10101a',
+                background: 'var(--b-paper)',
                 border: `1px solid ${p.tone}66`,
-                boxShadow: p.weak ? `0 0 8px -2px ${p.tone}` : undefined,
               }}
             >
               {p.rank}

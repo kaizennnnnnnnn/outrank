@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { WizardShell } from '@/components/onboarding/WizardShell';
 import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
@@ -74,6 +73,51 @@ function rankIndexFor(ex: ExerciseDef, value: number): number {
   return idx;
 }
 
+// Shared editorial CTA — filled-ink footer button matching phase3's renderFooter.
+function EditorialCTA({
+  onClick,
+  children,
+  disabled,
+  motionInitial,
+  motionAnimate,
+  motionTransition,
+}: {
+  onClick: () => void;
+  children: React.ReactNode;
+  disabled?: boolean;
+  motionInitial?: Record<string, number>;
+  motionAnimate?: Record<string, number>;
+  motionTransition?: Record<string, number>;
+}) {
+  const enabled = !disabled;
+  return (
+    <motion.button
+      whileTap={{ scale: enabled ? 0.98 : 1 }}
+      onClick={enabled ? onClick : undefined}
+      disabled={!enabled}
+      initial={motionInitial}
+      animate={motionAnimate}
+      transition={motionTransition}
+      className="font-body"
+      style={{
+        width: '100%',
+        padding: '14px 16px',
+        background: enabled ? 'var(--b-ink)' : 'transparent',
+        color: enabled ? 'var(--b-paper)' : 'var(--b-ink-40)',
+        border: '1px solid var(--b-ink)',
+        cursor: enabled ? 'pointer' : 'not-allowed',
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        opacity: enabled ? 1 : 0.4,
+      }}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
 export default function OnboardPhase6Page() {
   const router = useRouter();
   const { draft, update, hydrated } = useOnboardingDraft();
@@ -83,7 +127,6 @@ export default function OnboardPhase6Page() {
 
   const exercise = EXERCISES[exerciseIndex];
   const rankIdx = rankIndexFor(exercise, pickerValue);
-  const rank = RANKS[rankIdx];
 
   // Reset picker default when exercise changes (so user doesn't keep
   // their squat weight when they swipe to push ups)
@@ -115,7 +158,10 @@ export default function OnboardPhase6Page() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
+      <div
+        className="dir-b min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--b-paper)' }}
+      >
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -163,14 +209,9 @@ export default function OnboardPhase6Page() {
       onBack={back}
       showBack
       footer={
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={next}
-          className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all"
-          style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
-        >
-          {step === 0 ? 'CONTINUE' : 'GET MY RANK!'}
-        </motion.button>
+        <EditorialCTA onClick={next}>
+          {step === 0 ? 'Continue →' : 'Get my rank →'}
+        </EditorialCTA>
       }
     >
       <AnimatePresence mode="wait">
@@ -204,10 +245,35 @@ function PlanRecapStep({ name }: { name: string }) {
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
       <PhoenixMascot size={150} greeting />
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-8 leading-tight">
-        Great choice,<br/><span className="text-orange-400">{name}</span>.
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 28 }}
+      >
+        Plan locked
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 38,
+          fontWeight: 500,
+          lineHeight: 1.05,
+          margin: '8px 0 0',
+          maxWidth: 440,
+        }}
+      >
+        Great choice,{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{name}</em>.
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 360,
+          lineHeight: 1.6,
+        }}
+      >
         Plan locked in across all 5 pillars — strength, sleep, hydration, focus, steps. Let&apos;s start by ranking your strength.
       </p>
     </div>
@@ -236,9 +302,25 @@ function BestLiftStep({
   return (
     <div className="flex flex-col flex-1">
       <div className="text-center mt-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">First rank</p>
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-2 leading-tight">
-          What&apos;s your <span className="text-orange-400">best lift</span>?
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          First rank
+        </div>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 28,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.05,
+            marginTop: 8,
+            color: 'var(--b-ink)',
+          }}
+        >
+          What&apos;s your{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>best lift</em>?
         </h2>
       </div>
 
@@ -246,7 +328,15 @@ function BestLiftStep({
       <div className="mt-8 flex items-center justify-center gap-2 select-none">
         <button
           onClick={() => setExerciseIndex(prev)}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-orange-400 hover:bg-white/[0.05] transition-colors flex-shrink-0"
+          className="flex items-center justify-center flex-shrink-0"
+          style={{
+            width: 40,
+            height: 40,
+            color: 'var(--b-accent)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
           aria-label="Previous exercise"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -262,7 +352,15 @@ function BestLiftStep({
 
         <button
           onClick={() => setExerciseIndex(nextI)}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-orange-400 hover:bg-white/[0.05] transition-colors flex-shrink-0"
+          className="flex items-center justify-center flex-shrink-0"
+          style={{
+            width: 40,
+            height: 40,
+            color: 'var(--b-accent)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
           aria-label="Next exercise"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -273,11 +371,14 @@ function BestLiftStep({
 
       {/* Exercise illustration card — large centered */}
       <div className="mt-6 mx-auto w-full max-w-xs">
-        <div className="aspect-[5/3] rounded-2xl bg-gradient-to-br from-[#10101a] to-[#0c0c14] border border-white/[0.08] flex items-center justify-center relative overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-30"
-            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(249,115,22,0.4), transparent 70%)' }}
-          />
+        <div
+          className="aspect-[5/3] flex items-center justify-center relative overflow-hidden"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--b-rule)',
+            borderTop: '2px solid var(--b-ink)',
+          }}
+        >
           <ExerciseIllustration id={exercise.id} />
         </div>
       </div>
@@ -301,11 +402,14 @@ function BestLiftStep({
 function ExerciseChip({ name, active, dim }: { name: string; active?: boolean; dim?: boolean }) {
   return (
     <span
-      className={cn(
-        'whitespace-nowrap font-bold transition-all',
-        active && 'text-white text-xl',
-        dim && 'text-slate-500 text-[13px] opacity-50',
-      )}
+      className="font-display whitespace-nowrap transition-all"
+      style={{
+        fontStyle: 'italic',
+        fontWeight: 500,
+        fontSize: active ? 20 : 13,
+        color: active ? 'var(--b-ink)' : 'var(--b-ink-40)',
+        opacity: dim ? 0.6 : 1,
+      }}
     >
       {name}
     </span>
@@ -316,11 +420,14 @@ function ExerciseChip({ name, active, dim }: { name: string; active?: boolean; d
  * Properly proportional stick figures. Body is one continuous spine
  * line, arms/legs branch from clear shoulder + hip joints. Head ~1/7
  * of body height. Each pose drawn for clarity at small sizes.
+ *
+ * Editorial palette: ink figures on paper, accent for the head.
  */
 function ExerciseIllustration({ id }: { id: ExerciseId }) {
-  const lim = '#fb923c';
-  const dim = '#475569';
-  const plate = '#1e293b';
+  const lim = 'var(--b-ink)';
+  const dim = 'var(--b-ink-40)';
+  const plate = 'var(--b-ink-15)';
+  const accent = 'var(--b-accent)';
   const SW = 4.5;
   const HEAD_R = 6;
 
@@ -337,7 +444,7 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
         {/* Spine — head end (right) to feet end (left), slightly downward */}
         <line x1="50" y1="80" x2="146" y2="68" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="154" cy="62" r={HEAD_R} fill={lim} />
+        <circle cx="154" cy="62" r={HEAD_R} fill={accent} />
         {/* Front arm — perpendicular down from shoulder to floor */}
         <line x1="138" y1="71" x2="138" y2="115" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Back arm — perpendicular down from mid-spine */}
@@ -360,7 +467,7 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
         <line x1="106" y1="44" x2="98" y2="24" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         <line x1="114" y1="44" x2="122" y2="24" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="110" cy="50" r={HEAD_R} fill={lim} />
+        <circle cx="110" cy="50" r={HEAD_R} fill={accent} />
         {/* Spine */}
         <line x1="110" y1="56" x2="110" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Legs hanging */}
@@ -381,7 +488,7 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
         {/* Spine — diagonal up from hips */}
         <line x1="100" y1="118" x2="138" y2="68" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="142" cy="60" r={HEAD_R} fill={lim} />
+        <circle cx="142" cy="60" r={HEAD_R} fill={accent} />
         {/* Arm — crossed behind head */}
         <line x1="138" y1="68" x2="124" y2="50" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         <line x1="124" y1="50" x2="148" y2="50" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
@@ -404,7 +511,7 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
         {/* Body — flat on bench, head end right */}
         <line x1="60" y1="74" x2="140" y2="74" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="148" cy="70" r={HEAD_R} fill={lim} />
+        <circle cx="148" cy="70" r={HEAD_R} fill={accent} />
         {/* Legs hanging off the foot end */}
         <line x1="60" y1="74" x2="48" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Arms pressing barbell up */}
@@ -428,7 +535,7 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
         <ellipse cx="28" cy="42" rx="5" ry="14" fill={plate} stroke={dim} strokeWidth="1" />
         <ellipse cx="192" cy="42" rx="5" ry="14" fill={plate} stroke={dim} strokeWidth="1" />
         {/* Head under bar */}
-        <circle cx="110" cy="36" r={HEAD_R} fill={lim} />
+        <circle cx="110" cy="36" r={HEAD_R} fill={accent} />
         {/* Spine — vertical */}
         <line x1="110" y1="42" x2="110" y2="80" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Arms gripping bar (slight outward angle) */}
@@ -448,7 +555,7 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
     <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
       <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
       {/* Head */}
-      <circle cx="110" cy="40" r={HEAD_R} fill={lim} />
+      <circle cx="110" cy="40" r={HEAD_R} fill={accent} />
       {/* Spine — slight forward lean */}
       <line x1="110" y1="46" x2="110" y2="84" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       {/* Arms — straight down to bar */}
@@ -501,48 +608,35 @@ function RankRevealStep({
       onBack={onBack}
       showBack
       footer={
-        <motion.button
-          whileTap={{ scale: 0.98 }}
+        <EditorialCTA
           onClick={onContinue}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: revealed ? 1 : 0 }}
-          transition={{ delay: 1.4, duration: 0.5 }}
-          className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30"
-          style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+          motionInitial={{ opacity: 0 }}
+          motionAnimate={{ opacity: revealed ? 1 : 0 }}
+          motionTransition={{ delay: 1.4, duration: 0.5 }}
         >
-          CONTINUE
-        </motion.button>
+          Continue →
+        </EditorialCTA>
       }
     >
       <div className="flex flex-col items-center text-center flex-1 justify-center">
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.4 }}
-          className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400"
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
         >
-          {exercise.name} • {value} {exercise.unitKind === 'reps' ? 'reps' : 'kg'}
-        </motion.p>
+          {exercise.name} — {value} {exercise.unitKind === 'reps' ? 'reps' : 'kg'}
+        </motion.div>
 
-        {/* Big rank badge with reveal animation */}
+        {/* Big rank badge with reveal animation — keeps the metallic SVG
+            since the badge itself IS the artwork; only the surrounding
+            chrome (halo blur, neon shadow) is removed for editorial. */}
         <div className="relative mt-6">
-          {/* Halo */}
-          <motion.div
-            className="absolute inset-0 m-auto rounded-full pointer-events-none"
-            initial={{ opacity: 0, scale: 0.4 }}
-            animate={{ opacity: 0.7, scale: 1.3 }}
-            transition={{ delay: 0.3, duration: 1.0, ease: 'easeOut' }}
-            style={{
-              width: 280,
-              height: 280,
-              background: `radial-gradient(circle, ${rank.color}aa, transparent 65%)`,
-              filter: 'blur(32px)',
-            }}
-          />
           {/* Sparkle rays */}
           <motion.svg
             initial={{ opacity: 0, rotate: -30, scale: 0.6 }}
-            animate={{ opacity: revealed ? 0.8 : 0, rotate: 0, scale: 1 }}
+            animate={{ opacity: revealed ? 0.5 : 0, rotate: 0, scale: 1 }}
             transition={{ delay: 0.5, duration: 0.9, ease: 'easeOut' }}
             width="300"
             height="300"
@@ -556,10 +650,10 @@ function RankRevealStep({
                 y1="50"
                 x2="50"
                 y2="2"
-                stroke={rank.color}
-                strokeWidth="1.5"
+                stroke="var(--b-ink-40)"
+                strokeWidth="0.8"
                 strokeLinecap="round"
-                opacity="0.6"
+                opacity="0.5"
                 transform={`rotate(${angle} 50 50)`}
               />
             ))}
@@ -580,16 +674,48 @@ function RankRevealStep({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9, duration: 0.5 }}
         >
-          <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-6 leading-tight">
-            <span style={{ color: rank.color }}>{rank.name}</span>
+          <h2
+            className="font-display"
+            style={{
+              fontSize: 38,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1.05,
+              marginTop: 24,
+              color: 'var(--b-ink)',
+            }}
+          >
+            <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{rank.name}</em>
           </h2>
-          <p className="text-slate-300/85 mt-3 text-base">
+          <p
+            className="font-body"
+            style={{
+              fontSize: 13,
+              color: 'var(--b-ink-60)',
+              marginTop: 12,
+              lineHeight: 1.6,
+            }}
+          >
             You&apos;re in the top{' '}
-            <span className="font-bold text-white">{(100 - rank.percentile).toFixed(rank.percentile >= 99 ? 1 : 0)}%</span>{' '}
+            <span style={{ color: 'var(--b-ink)', fontWeight: 700 }}>
+              {(100 - rank.percentile).toFixed(rank.percentile >= 99 ? 1 : 0)}%
+            </span>{' '}
             of {exercise.name.toLowerCase()} lifters worldwide.
           </p>
-          <p className="text-[11px] text-slate-500 mt-3 max-w-xs mx-auto">
-            That&apos;s your <span className="text-orange-400 font-semibold">Strength rank</span>. Sleep, hydration, focus and steps each get their own.
+          <p
+            className="font-body"
+            style={{
+              fontSize: 11,
+              color: 'var(--b-ink-40)',
+              marginTop: 12,
+              maxWidth: 320,
+              marginInline: 'auto',
+              fontStyle: 'italic',
+              lineHeight: 1.5,
+            }}
+          >
+            That&apos;s your{' '}
+            <em style={{ color: 'var(--b-accent)', fontWeight: 600 }}>Strength rank</em>. Sleep, hydration, focus and steps each get their own.
           </p>
         </motion.div>
       </div>
@@ -616,9 +742,9 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
         </linearGradient>
         {/* Inner facet — concave look with lighter mid */}
         <linearGradient id={`${id}-inner`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#0c0c14" />
+          <stop offset="0%"   stopColor="#14130f" />
           <stop offset="50%"  stopColor={rank.dark} stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#0c0c14" />
+          <stop offset="100%" stopColor="#14130f" />
         </linearGradient>
         {/* Inner gem — radial */}
         <radialGradient id={`${id}-gem`} cx="40%" cy="35%" r="70%">
@@ -626,7 +752,7 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
           <stop offset="15%"  stopColor={rank.light} />
           <stop offset="50%"  stopColor={rank.color} />
           <stop offset="85%"  stopColor={rank.dark} />
-          <stop offset="100%" stopColor="#0c0c14" />
+          <stop offset="100%" stopColor="#14130f" />
         </radialGradient>
         {/* Top facet specular */}
         <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0.6" y2="1">
@@ -647,15 +773,7 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
           <stop offset="25%"  stopColor={rank.color} />
           <stop offset="100%" stopColor={rank.dark} />
         </linearGradient>
-        {/* Backdrop halo glow (filter-based) */}
-        <filter id={`${id}-blur`}>
-          <feGaussianBlur stdDeviation="3" />
-        </filter>
       </defs>
-
-      {/* Soft backdrop halo glow */}
-      <circle cx="130" cy="130" r="90" fill={rank.color} opacity="0.18" filter={`url(#${id}-blur)`} />
-      <circle cx="130" cy="130" r="60" fill={rank.light} opacity="0.1" filter={`url(#${id}-blur)`} />
 
       {/* Decorative star sparkles around the badge */}
       {[
@@ -669,8 +787,8 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
         </g>
       ))}
 
-      {/* Wing flourishes — bigger, layered feathers */}
-      <g style={{ filter: `drop-shadow(0 4px 12px ${rank.color}aa)` }}>
+      {/* Wing flourishes — bigger, layered feathers (no neon glow shadow) */}
+      <g>
         {/* Left wing — primary feather */}
         <path
           d="M 12 132 Q 30 96 80 110 Q 64 126 88 142 Q 56 144 26 140 Q 14 136 12 132 Z"
@@ -685,7 +803,7 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
         <path d="M 20 138 L 14 134 L 26 142 Z" fill={rank.color} />
         <path d="M 26 146 L 22 144 L 30 148 Z" fill={rank.color} opacity="0.85" />
       </g>
-      <g style={{ filter: `drop-shadow(0 4px 12px ${rank.color}aa)` }}>
+      <g>
         {/* Right wing — mirror */}
         <path
           d="M 248 132 Q 230 96 180 110 Q 196 126 172 142 Q 204 144 234 140 Q 246 136 248 132 Z"
@@ -699,8 +817,8 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
         <path d="M 234 146 L 238 144 L 230 148 Z" fill={rank.color} opacity="0.85" />
       </g>
 
-      {/* Hex badge — premium multi-layer */}
-      <g style={{ filter: `drop-shadow(0 10px 32px ${rank.color}cc)` }}>
+      {/* Hex badge — premium multi-layer (no drop-shadow) */}
+      <g>
         {/* Outer hex face — metallic gradient */}
         <path
           d="M 130 56 L 184 88 L 184 164 L 130 196 L 76 164 L 76 88 Z"
@@ -759,7 +877,6 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
           fontWeight="bold"
           fontFamily="ui-monospace,monospace"
           fill={rank.dark}
-          style={{ filter: 'drop-shadow(0 1px 1px rgba(255,255,255,0.4))' }}
         >
           {rank.name[0]}
         </text>
@@ -785,7 +902,7 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
 
       {/* Crown — top tiers */}
       {hasCrown && (
-        <g style={{ filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.7))' }}>
+        <g>
           {/* Base band */}
           <rect x="100" y="42" width="60" height="9" rx="1.5" fill="#fbbf24" stroke="#7c2d12" strokeWidth="0.7" />
           <line x1="100" y1="44" x2="160" y2="44" stroke="#fef3c7" strokeWidth="0.6" opacity="0.8" />
@@ -804,8 +921,8 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
         </g>
       )}
 
-      {/* Banner ribbon — bigger */}
-      <g style={{ filter: `drop-shadow(0 5px 10px ${rank.color}aa)` }}>
+      {/* Banner ribbon — bigger (no neon shadow) */}
+      <g>
         <path
           d="M 80 202 L 180 202 L 174 232 L 130 222 L 86 232 Z"
           fill={`url(#${id}-banner)`}
@@ -827,7 +944,6 @@ function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
           fontFamily="ui-monospace,monospace"
           fill="#ffffff"
           letterSpacing="3"
-          style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.6))' }}
         >
           {rank.name.toUpperCase()}
         </text>
@@ -864,33 +980,44 @@ function ProjectedRankStep({
       totalSteps={TOTAL_STEPS}
       onBack={onBack}
       showBack
-      footer={
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={onContinue}
-          className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30"
-          style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
-        >
-          CONTINUE
-        </motion.button>
-      }
+      footer={<EditorialCTA onClick={onContinue}>Continue →</EditorialCTA>}
     >
       <div className="flex flex-col flex-1 justify-center text-center px-1">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">Projected progress</p>
-        <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-2 leading-tight">
-          You can reach<br/>
-          <span style={{ color: target.color }}>{target.name}</span>
-          <br/>
-          by <span className="text-white">{etaStr}</span>.
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          Projected progress
+        </div>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 32,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.05,
+            marginTop: 8,
+            color: 'var(--b-ink)',
+          }}
+        >
+          You can reach{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{target.name}</em>
+          {' '}by{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-ink)' }}>{etaStr}</em>.
         </h2>
 
         {/* Current → target visual */}
         <div className="mt-10 flex items-center justify-center gap-2">
           <div className="flex flex-col items-center">
-            <div className="opacity-60">
+            <div style={{ opacity: 0.5 }}>
               <RankBadgeMini rank={current} size={84} />
             </div>
-            <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-2">Now</span>
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 8 }}
+            >
+              Now
+            </div>
           </div>
 
           {/* Arrow with progress dots */}
@@ -899,9 +1026,11 @@ function ProjectedRankStep({
               {[0, 1, 2, 3].map((i) => (
                 <span
                   key={i}
-                  className="block w-2 h-2 rounded-full"
+                  className="block"
                   style={{
-                    background: target.color,
+                    width: 6,
+                    height: 1,
+                    background: 'var(--b-ink)',
                     opacity: 0.3 + i * 0.2,
                   }}
                 />
@@ -913,18 +1042,31 @@ function ProjectedRankStep({
             <motion.div
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ filter: `drop-shadow(0 0 14px ${target.color}aa)` }}
             >
               <RankBadgeMini rank={target} size={100} />
             </motion.div>
-            <span className="text-[9px] uppercase tracking-widest font-bold mt-2" style={{ color: target.color }}>
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-accent)', marginTop: 8 }}
+            >
               Goal
-            </span>
+            </div>
           </div>
         </div>
 
-        <p className="text-slate-300/85 mt-10 max-w-sm mx-auto text-[15px] leading-relaxed">
-          You have <span className="text-orange-400 font-semibold">amazing potential</span>. Every pillar — strength, sleep, water, focus, steps — climbs the same way. Show up, rank up.
+        <p
+          className="font-body"
+          style={{
+            fontSize: 13,
+            color: 'var(--b-ink-60)',
+            marginTop: 32,
+            maxWidth: 360,
+            marginInline: 'auto',
+            lineHeight: 1.6,
+          }}
+        >
+          You have{' '}
+          <em style={{ color: 'var(--b-accent)', fontWeight: 600, fontStyle: 'italic' }}>amazing potential</em>. Every pillar — strength, sleep, water, focus, steps — climbs the same way. Show up, rank up.
         </p>
       </div>
     </WizardShell>
@@ -936,16 +1078,16 @@ function RankBadgeMini({ rank, size }: { rank: typeof RANKS[number]; size: numbe
     <svg width={size} height={size * 1.1} viewBox="0 0 100 110" fill="none">
       <defs>
         <linearGradient id={`rbm-${rank.name}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor="#fef3c7" />
+          <stop offset="0%"  stopColor={rank.light} />
           <stop offset="25%" stopColor={rank.color} />
-          <stop offset="100%" stopColor="#0c0c14" />
+          <stop offset="100%" stopColor={rank.dark} />
         </linearGradient>
       </defs>
-      <g style={{ filter: `drop-shadow(0 3px 12px ${rank.color}99)` }}>
+      <g>
         <path
           d="M 50 12 L 80 32 L 80 78 L 50 98 L 20 78 L 20 32 Z"
           fill={`url(#rbm-${rank.name})`}
-          stroke={rank.color}
+          stroke={rank.dark}
           strokeWidth="1.5"
           strokeLinejoin="round"
         />
@@ -994,29 +1136,51 @@ function ActiveLiftersGlobeStep({
       totalSteps={TOTAL_STEPS}
       onBack={onBack}
       showBack
-      footer={
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={onContinue}
-          className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30"
-          style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
-        >
-          CONTINUE
-        </motion.button>
-      }
+      footer={<EditorialCTA onClick={onContinue}>Continue →</EditorialCTA>}
     >
       <div className="flex flex-col items-center text-center flex-1 justify-center">
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white leading-tight max-w-sm">
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          Live worldwide
+        </div>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 28,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.1,
+            marginTop: 8,
+            maxWidth: 420,
+            color: 'var(--b-ink)',
+          }}
+        >
           There are{' '}
-          <span
-            className="text-orange-400 font-mono tabular-nums inline-block text-center"
-            style={{ minWidth: '4.5em' }}
+          <em
+            className="font-mono tabular-nums inline-block text-center"
+            style={{
+              minWidth: '4.5em',
+              color: 'var(--b-accent)',
+              fontStyle: 'normal',
+              fontWeight: 600,
+            }}
           >
             {count.toLocaleString()}
-          </span>{' '}
+          </em>{' '}
           people climbing their ranks right now.
         </h2>
-        <p className="text-slate-300/85 mt-3 max-w-sm text-[15px] leading-relaxed">
+        <p
+          className="font-body"
+          style={{
+            fontSize: 13,
+            color: 'var(--b-ink-60)',
+            marginTop: 12,
+            maxWidth: 360,
+            lineHeight: 1.6,
+          }}
+        >
           Lifting, sleeping better, drinking water, taking steps — all over the world.
         </p>
 
@@ -1038,6 +1202,9 @@ function ActiveLiftersGlobeStep({
  * Active-user dots travel WITH the continents (they represent real
  * locations) and twinkle via SVG <animate>. They're clipped to the
  * globe circle so they only show on the visible hemisphere.
+ *
+ * Editorial palette: ink linework on paper. Continents are filled
+ * with a flat ink tint, dots are accent red — flat, no neon glow.
  */
 
 // Continent silhouettes — much higher detail this round. Each path
@@ -1177,32 +1344,6 @@ const GLOBE_DOTS: [number, number, number][] = [
 const Globe = React.memo(function Globe() {
   return (
     <div className="relative w-[320px] h-[320px] mx-auto">
-      {/* Dense star field */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320" fill="none">
-        {[
-          [12, 24, 1.0], [38, 14, 0.7], [78, 22, 0.9], [122, 8, 1.0], [168, 14, 0.8],
-          [218, 22, 1.0], [256, 32, 0.7], [284, 56, 0.9], [302, 80, 0.6],
-          [12, 86, 0.6], [310, 116, 0.8], [8, 160, 0.9], [310, 200, 0.7],
-          [22, 250, 0.8], [38, 286, 1.0], [80, 304, 0.7], [128, 312, 0.6],
-          [184, 308, 0.9], [240, 296, 0.8], [276, 270, 0.7], [304, 234, 0.6],
-          [156, 12, 0.5], [206, 14, 0.6], [60, 18, 0.55], [100, 16, 0.5],
-          [50, 280, 0.55], [250, 264, 0.6], [180, 290, 0.5], [220, 290, 0.6],
-        ].map(([x, y, r], i) => (
-          <circle key={i} cx={x} cy={y} r={r} fill="#ffffff" opacity={0.5 + (i % 3) * 0.15} />
-        ))}
-      </svg>
-
-      {/* Outer atmospheric halo */}
-      <div
-        className="absolute inset-0 m-auto rounded-full pointer-events-none"
-        style={{
-          width: 300,
-          height: 300,
-          background: 'radial-gradient(circle, rgba(99,102,241,0.45) 0%, rgba(56,189,248,0.2) 35%, transparent 70%)',
-          filter: 'blur(22px)',
-        }}
-      />
-
       <svg
         viewBox="0 0 280 280"
         fill="none"
@@ -1213,41 +1354,10 @@ const Globe = React.memo(function Globe() {
           <clipPath id="globeClip">
             <circle cx="140" cy="140" r="128" />
           </clipPath>
-          {/* Ocean — deep purple-navy, BRIGHT upper-left lit hemisphere
-              fading to NEAR-BLACK lower-right shadow. Strong terminator
-              for the 3D sphere read. */}
-          <radialGradient id="globeOcean" cx="30%" cy="26%" r="85%">
-            <stop offset="0%"   stopColor="#5854a3" />
-            <stop offset="20%"  stopColor="#393373" />
-            <stop offset="50%"  stopColor="#1a1542" />
-            <stop offset="80%"  stopColor="#080620" />
-            <stop offset="100%" stopColor="#000000" />
-          </radialGradient>
-          {/* Continent fill — soft slate-purple, bright on lit hemisphere */}
-          <radialGradient id="globeLand" cx="30%" cy="26%" r="85%">
-            <stop offset="0%"   stopColor="#a5a8d4" />
-            <stop offset="35%"  stopColor="#7c7fb0" />
-            <stop offset="70%"  stopColor="#4a4d7c" />
-            <stop offset="100%" stopColor="#2a2c50" />
-          </radialGradient>
-          {/* Sphere shadow — heavy at lower-right */}
-          <radialGradient id="globeShadow" cx="30%" cy="26%" r="80%">
-            <stop offset="0%"   stopColor="#000000" stopOpacity="0" />
-            <stop offset="55%"  stopColor="#000000" stopOpacity="0" />
-            <stop offset="100%" stopColor="#000000" stopOpacity="0.65" />
-          </radialGradient>
-          {/* Highlight — subtle bright sheen at upper-left */}
-          <radialGradient id="globeHighlight" cx="28%" cy="22%" r="35%">
-            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-          </radialGradient>
-          <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
-            <feGaussianBlur stdDeviation="1.4" />
-          </filter>
         </defs>
 
-        {/* Ocean base sphere */}
-        <circle cx="140" cy="140" r="128" fill="url(#globeOcean)" />
+        {/* Paper sphere — flat fill, hairline outline */}
+        <circle cx="140" cy="140" r="128" fill="var(--b-paper)" stroke="var(--b-ink)" strokeWidth="1" />
 
         {/* Continents + dots, drifting */}
         <g clipPath="url(#globeClip)">
@@ -1259,19 +1369,16 @@ const Globe = React.memo(function Globe() {
                     <path
                       key={i}
                       d={d}
-                      fill="url(#globeLand)"
-                      stroke="#3a3c64"
-                      strokeWidth="0.35"
+                      fill="var(--b-ink-15)"
+                      stroke="var(--b-ink)"
+                      strokeWidth="0.4"
                     />
                   ))}
-                  {/* Bigger, more clustered cyan dots */}
+                  {/* Accent activity dots — flat, no glow */}
                   {GLOBE_DOTS.map(([x, y, delay], i) => (
                     <g key={i}>
-                      <circle cx={x} cy={y} r="3.5" fill="#67e8f9" opacity="0.45" filter="url(#dotGlow)">
-                        <animate attributeName="opacity" values="0.25; 0.65; 0.25" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
-                      </circle>
-                      <circle cx={x} cy={y} r="1.4" fill="#cffafe">
-                        <animate attributeName="opacity" values="0.7; 1; 0.7" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
+                      <circle cx={x} cy={y} r="2" fill="var(--b-accent)" opacity="0.9">
+                        <animate attributeName="opacity" values="0.4; 1; 0.4" dur="2.4s" begin={`${delay}s`} repeatCount="indefinite" />
                       </circle>
                     </g>
                   ))}
@@ -1280,7 +1387,7 @@ const Globe = React.memo(function Globe() {
             </g>
           </g>
 
-          {/* Lat/long grid — very subtle */}
+          {/* Lat/long grid — hairline ink */}
           {[60, 90, 140, 190, 220].map((y) => {
             const r = Math.sqrt(Math.max(0, 128 * 128 - (y - 140) * (y - 140)));
             return r > 0 ? (
@@ -1290,10 +1397,10 @@ const Globe = React.memo(function Globe() {
                 cy={y}
                 rx={r}
                 ry={r * 0.18}
-                stroke="#a5b4fc"
+                stroke="var(--b-ink)"
                 strokeWidth="0.4"
                 fill="none"
-                opacity="0.14"
+                opacity="0.18"
               />
             ) : null;
           })}
@@ -1307,23 +1414,17 @@ const Globe = React.memo(function Globe() {
                 cy="140"
                 rx={rx}
                 ry={128}
-                stroke="#a5b4fc"
+                stroke="var(--b-ink)"
                 strokeWidth="0.4"
                 fill="none"
-                opacity="0.12"
+                opacity="0.16"
               />
             );
           })}
-
-          {/* Sphere shadow — drives the 3D depth feel */}
-          <circle cx="140" cy="140" r="128" fill="url(#globeShadow)" />
-          {/* Highlight sheen */}
-          <circle cx="140" cy="140" r="128" fill="url(#globeHighlight)" />
         </g>
 
-        {/* Rim glow */}
-        <circle cx="140" cy="140" r="128" fill="none" stroke="#67e8f9" strokeWidth="1" opacity="0.6" />
-        <circle cx="140" cy="140" r="131" fill="none" stroke="#a5b4fc" strokeWidth="1.5" opacity="0.3" />
+        {/* Crisp ink rim */}
+        <circle cx="140" cy="140" r="128" fill="none" stroke="var(--b-ink)" strokeWidth="1" />
       </svg>
     </div>
   );

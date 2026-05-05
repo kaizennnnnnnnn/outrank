@@ -76,7 +76,10 @@ export default function OnboardPhase2Page() {
   // draft loads.
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
+      <div
+        className="dir-b min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--b-paper)' }}
+      >
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -216,29 +219,42 @@ function NameStep({ value, onChange }: { value: string; onChange: (v: string) =>
     <div className="flex flex-col flex-1">
       <MascotRow message="What should we call you?" />
 
-      <h2 className="font-heading text-2xl font-bold text-white mt-2 mb-3">
-        What&apos;s your name?
-      </h2>
-      <div className="relative">
-        <input
-          type="text"
-          autoFocus
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Your name"
-          maxLength={32}
-          className="w-full bg-[#10101a] border-2 border-orange-400/60 focus:border-orange-400 rounded-2xl px-12 py-4 text-white text-lg font-medium outline-none transition-colors"
-        />
-        <svg
-          width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round"
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-        >
-          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-        </svg>
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 6 }}>
+        Your name
       </div>
-      <p className="text-[12px] text-slate-500 mt-3">You can change your name later in your profile.</p>
+      <h2
+        className="font-display"
+        style={{ fontSize: 28, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.05, margin: '4px 0 12px' }}
+      >
+        What should we call you?
+      </h2>
+      <input
+        type="text"
+        autoFocus
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Your name"
+        maxLength={32}
+        className="font-display"
+        style={{
+          width: '100%',
+          background: 'transparent',
+          border: 'none',
+          borderBottom: '1.5px solid var(--b-ink)',
+          padding: '10px 2px',
+          fontSize: 22,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          color: 'var(--b-ink)',
+          outline: 'none',
+        }}
+      />
+      <p
+        className="font-body"
+        style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 10, fontStyle: 'italic' }}
+      >
+        You can change your name later in your profile.
+      </p>
     </div>
   );
 }
@@ -256,12 +272,12 @@ function LevelBars({ filled }: { filled: 0 | 1 | 2 | 3 | 4 }) {
         return (
           <div
             key={i}
-            className={cn(
-              'w-[5px] h-7 rounded-sm transition-colors',
-              on
-                ? 'bg-gradient-to-t from-red-500 to-orange-400 shadow-[0_0_6px_rgba(249,115,22,0.55)]'
-                : 'bg-white/[0.08] border border-white/[0.06]',
-            )}
+            style={{
+              width: 5,
+              height: 28,
+              background: on ? 'var(--b-accent)' : 'transparent',
+              border: on ? 'none' : '1px solid var(--b-rule)',
+            }}
           />
         );
       })}
@@ -290,40 +306,79 @@ function ExperienceStep({
       <MascotRow
         message={
           <>
-            Nice to meet you, <span className="text-orange-400 font-semibold">{name}</span>. How experienced are you with working out?
+            Nice to meet you,{' '}
+            <em style={{ color: 'var(--b-accent)', fontStyle: 'italic', fontWeight: 600 }}>{name}</em>.
+            How experienced are you with working out?
           </>
         }
       />
-      <div className="space-y-2.5 mt-2">
+      <ul
+        style={{
+          listStyle: 'none',
+          margin: '12px 0 0',
+          padding: 0,
+          borderTop: '1px solid var(--b-ink)',
+        }}
+      >
         {EXPERIENCE_OPTIONS.map((opt, i) => {
           const active = value === opt.key;
           return (
-            <button
-              key={opt.key}
-              onClick={() => onChange(opt.key)}
-              className={cn(
-                'w-full text-left rounded-2xl border-2 px-4 py-3.5 transition-all flex items-center gap-4',
-                active
-                  ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_24px_-8px_rgba(249,115,22,0.5)]'
-                  : 'bg-[#10101a] border-white/8 hover:border-white/20',
-              )}
-            >
-              <LevelBars filled={EXPERIENCE_BARS[i]} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>
-                    {opt.label}
-                  </span>
-                  {active && <CheckCircleFullIcon size={18} className="text-orange-400 flex-shrink-0" />}
+            <li key={opt.key}>
+              <button
+                onClick={() => onChange(opt.key)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  padding: '14px 6px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid var(--b-rule)',
+                  borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+                  paddingLeft: active ? 8 : 6,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  color: 'var(--b-ink)',
+                }}
+              >
+                <LevelBars filled={EXPERIENCE_BARS[i]} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span
+                      className="font-display"
+                      style={{
+                        fontSize: 16,
+                        fontStyle: 'italic',
+                        fontWeight: 500,
+                        color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                      }}
+                    >
+                      {opt.label}
+                    </span>
+                    {active && (
+                      <span style={{ color: 'var(--b-accent)', display: 'inline-flex', flexShrink: 0 }}>
+                        <CheckCircleFullIcon size={16} />
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className="font-body"
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--b-ink-60)',
+                      marginTop: 2,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {opt.desc}
+                  </p>
                 </div>
-                <p className={cn('text-[13px] mt-0.5', active ? 'text-orange-200/80' : 'text-slate-500')}>
-                  {opt.desc}
-                </p>
-              </div>
-            </button>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -338,21 +393,48 @@ function PlanBuiltStep({ level }: { level: ExperienceLevel }) {
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
       <div
-        className="w-32 h-32 rounded-full flex items-center justify-center relative"
         style={{
-          background: 'radial-gradient(circle, rgba(249,115,22,0.25), transparent 70%)',
+          width: 80,
+          height: 80,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px solid var(--b-ink)',
         }}
       >
-        <div className="absolute inset-0 rounded-full border-2 border-orange-400/30 animate-ping" />
-        <SparklesIcon size={56} className="text-orange-400 relative z-10" />
+        <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+          <SparklesIcon size={40} />
+        </span>
       </div>
-      <p className="text-[11px] uppercase tracking-[0.3em] text-orange-400 font-bold mt-8">
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-accent)', marginTop: 24 }}
+      >
         {labels[level]}
-      </p>
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-3 leading-tight max-w-md">
-        Your plan is built<br/>around your <span className="text-orange-400">experience</span>.
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 38,
+          fontWeight: 500,
+          lineHeight: 1.05,
+          margin: '8px 0 0',
+          maxWidth: 440,
+        }}
+      >
+        Your plan is built around your{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>experience</em>.
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 360,
+          lineHeight: 1.6,
+        }}
+      >
         Outrank tunes the difficulty, the targets, and the pace based on what you tell us.
         No copy-paste programs.
       </p>
@@ -368,25 +450,52 @@ function GoalsStep({ value, onChange }: { value: GoalKey[]; onChange: (v: GoalKe
   return (
     <div className="flex flex-col flex-1">
       <MascotRow message="What's your goal here? Pick everything that fits." />
-      <div className="grid grid-cols-2 gap-2.5 mt-3">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 8,
+          marginTop: 14,
+        }}
+      >
         {GOAL_OPTIONS.map((opt) => {
           const active = value.includes(opt.key);
           return (
             <button
               key={opt.key}
               onClick={() => toggle(opt.key)}
-              className={cn(
-                'rounded-2xl border-2 px-3 py-3.5 text-left transition-all flex flex-col gap-2 min-h-[80px]',
-                active
-                  ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_24px_-8px_rgba(249,115,22,0.5)]'
-                  : 'bg-[#10101a] border-white/8 hover:border-white/20',
-              )}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+                minHeight: 80,
+                padding: '12px 10px',
+                background: 'transparent',
+                border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+                cursor: 'pointer',
+                textAlign: 'left',
+                color: 'var(--b-ink)',
+              }}
             >
-              <div className="flex items-center justify-between">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>{opt.icon}</span>
-                {active && <CheckCircleFullIcon size={16} className="text-orange-400" />}
+                {active && (
+                  <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+                    <CheckCircleFullIcon size={14} />
+                  </span>
+                )}
               </div>
-              <span className={cn('font-semibold text-[13px] leading-tight', active ? 'text-white' : 'text-slate-200')}>
+              <span
+                className="font-display"
+                style={{
+                  fontSize: 13,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                  color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                }}
+              >
                 {opt.label}
               </span>
             </button>
@@ -401,48 +510,101 @@ function RightPlaceStep() {
   return (
     <div className="flex flex-col flex-1 justify-center">
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/30 mb-6">
-          <CheckCircleFullIcon size={14} className="text-orange-400" />
-          <span className="text-[11px] font-bold uppercase tracking-widest text-orange-300">
-            You&apos;re in the right place
-          </span>
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-accent)', marginBottom: 14 }}
+        >
+          You&rsquo;re in the right place
         </div>
-        <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight max-w-md mx-auto">
-          Real change<br/>starts <span className="text-orange-400">here</span>.
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 38,
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: 0,
+            maxWidth: 440,
+            marginInline: 'auto',
+          }}
+        >
+          Real change starts{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>here</em>.
         </h2>
-        <p className="text-slate-300/85 mt-4 max-w-sm mx-auto text-base leading-relaxed">
+        <p
+          className="font-body"
+          style={{
+            fontSize: 13,
+            color: 'var(--b-ink-60)',
+            marginTop: 14,
+            maxWidth: 360,
+            marginInline: 'auto',
+            lineHeight: 1.6,
+          }}
+        >
           Outrank rebuilds the habits that change your life — slowly, then all at once.
         </p>
       </div>
 
-      {/* Testimonial card */}
-      <div className="mt-10 mx-auto max-w-md">
-        <div className="rounded-2xl bg-[#10101a] border border-white/10 p-5">
-          <div className="flex items-center gap-3 mb-3">
-            {/* Real-looking testimonial portrait — randomuser.me serves
-                free photo-realistic stock avatars commonly used in
-                pre-launch product testimonials. eslint-disable next/img
-                is fine here since this is an external CDN URL outside
-                next/image's optimization scope. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="https://randomuser.me/api/portraits/men/32.jpg"
-              alt="Marcus R."
-              className="w-11 h-11 rounded-full object-cover ring-2 ring-orange-400/40"
-            />
-            <div>
-              <p className="font-bold text-white text-sm">Marcus R.</p>
-              <p className="text-[11px] text-slate-500">Member since Jan 2026</p>
+      {/* Testimonial — editorial blockquote */}
+      <div
+        style={{
+          marginTop: 32,
+          marginInline: 'auto',
+          maxWidth: 460,
+          width: '100%',
+          padding: '18px 20px',
+          border: '1px solid var(--b-rule)',
+          borderTop: '2px solid var(--b-ink)',
+        }}
+      >
+        <p
+          className="font-display"
+          style={{
+            fontSize: 16,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.45,
+            color: 'var(--b-ink)',
+            margin: 0,
+          }}
+        >
+          &ldquo;I&rsquo;ve tried every habit app. This is the first one that actually stuck.
+          The competition with my friends is what does it.&rdquo;
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://randomuser.me/api/portraits/men/32.jpg"
+            alt="Marcus R."
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '1px solid var(--b-rule)',
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <div
+              className="font-display"
+              style={{ fontSize: 12, fontStyle: 'italic', fontWeight: 500 }}
+            >
+              Marcus R.
             </div>
-            <div className="ml-auto flex gap-0.5 text-yellow-400">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              ))}
+            <div
+              className="font-mono"
+              style={{ fontSize: 9, color: 'var(--b-ink-40)', letterSpacing: '0.08em', textTransform: 'uppercase' }}
+            >
+              Member since Jan 2026
             </div>
           </div>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            &ldquo;I&apos;ve tried every habit app. This is the first one that actually stuck. The competition with my friends is what does it.&rdquo;
-          </p>
+          <div style={{ display: 'flex', gap: 1, color: 'var(--b-accent)' }}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <svg key={i} width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -596,20 +758,41 @@ function SummaryCorruptionStep({
           transition: 'opacity 0.1s linear',
         }}
       >
-        {/* Summary card */}
+        {/* Summary card — editorial blockquote */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl bg-[#10101a]/90 border border-white/10 px-5 py-4 max-w-sm text-center mb-8"
+          style={{
+            background: 'var(--b-paper)',
+            border: '1px solid var(--b-ink)',
+            borderTop: '2px solid var(--b-ink)',
+            padding: '16px 20px',
+            maxWidth: 380,
+            textAlign: 'center',
+            marginBottom: 32,
+          }}
         >
-          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
+          >
             I will use Outrank to
-          </p>
-          <p className="text-white font-medium text-base leading-relaxed">
+          </div>
+          <p
+            className="font-display"
+            style={{
+              fontSize: 18,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1.4,
+              margin: 0,
+              color: 'var(--b-ink)',
+            }}
+          >
             {summary.join(' & ')}
             {summary.length > 0 && goals.length > 0 ? ', and ' : ''}
             {goals.length > 0 && (
-              <span className="text-orange-400">{joinWithAnd(goals)}</span>
+              <span style={{ color: 'var(--b-accent)' }}>{joinWithAnd(goals)}</span>
             )}
             {summary.length === 0 && goals.length === 0 && 'change my life.'}.
           </p>
@@ -672,7 +855,10 @@ function SummaryCorruptionStep({
               />
             </svg>
           </button>
-          <p className="mt-4 text-[11px] uppercase tracking-[0.3em] font-bold text-slate-400">
+          <p
+            className="spread"
+            style={{ marginTop: 14, fontSize: 9, color: 'var(--b-ink-60)' }}
+          >
             {progress < 0.05 ? 'Hold to awaken' : progress < 1 ? 'Keep holding…' : 'Awakening'}
           </p>
         </div>
@@ -750,35 +936,36 @@ function WelcomeStep({ name, onContinue }: { name: string; onContinue: () => voi
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
-      {/* Aurora */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div
-          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[560px] h-[560px] rounded-full opacity-60 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.45), transparent 65%)' }}
-        />
-      </div>
-
+    <div
+      className="dir-b min-h-screen flex flex-col relative"
+      style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}
+    >
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 text-center">
-        {/* Phoenix splash entrance — uses the existing keyframe shared
-            with the brand splash screen for visual continuity. */}
         <div className="animate-splash-phoenix-in">
           <PhoenixMascot size={180} />
+        </div>
+
+        <div
+          className="spread"
+          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 32 }}
+        >
+          Welcome
         </div>
 
         <motion.h1
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.7 }}
-          className="font-heading text-4xl sm:text-5xl font-bold text-white mt-8 leading-tight"
+          className="font-display"
+          style={{
+            fontSize: 56,
+            fontWeight: 500,
+            lineHeight: 1,
+            margin: '6px 0 0',
+            color: 'var(--b-ink)',
+          }}
         >
-          Welcome to{' '}
-          <span
-            className="text-transparent bg-clip-text"
-            style={{ backgroundImage: 'linear-gradient(90deg, #fb923c, #ef4444, #fb923c)' }}
-          >
-            Outrank
-          </span>
+          to <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>Outrank</em>.
         </motion.h1>
 
         <AnimatePresence>
@@ -788,9 +975,16 @@ function WelcomeStep({ name, onContinue }: { name: string; onContinue: () => voi
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-slate-300/90 mt-3 text-lg"
+              className="font-body"
+              style={{
+                fontSize: 14,
+                color: 'var(--b-ink-60)',
+                marginTop: 14,
+                fontStyle: 'italic',
+              }}
             >
-              Glad you&apos;re here, <span className="text-orange-400 font-semibold">{name}</span>.
+              Glad you&rsquo;re here,{' '}
+              <em style={{ color: 'var(--b-accent)', fontWeight: 600 }}>{name}</em>.
             </motion.p>
           )}
         </AnimatePresence>
@@ -802,14 +996,31 @@ function WelcomeStep({ name, onContinue }: { name: string; onContinue: () => voi
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative px-6 pb-10 max-w-md w-full mx-auto"
+            style={{
+              position: 'relative',
+              padding: '12px 22px 32px',
+              maxWidth: 480,
+              width: '100%',
+              margin: '0 auto',
+            }}
           >
             <button
               onClick={onContinue}
-              className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all"
-              style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+              className="font-body"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                background: 'var(--b-ink)',
+                color: 'var(--b-paper)',
+                border: '1px solid var(--b-ink)',
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
             >
-              CONTINUE
+              Continue →
             </button>
           </motion.div>
         )}

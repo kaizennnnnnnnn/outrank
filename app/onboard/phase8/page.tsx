@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { WizardShell } from '@/components/onboarding/WizardShell';
 import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
@@ -42,7 +41,10 @@ export default function OnboardPhase8Page() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
+      <div
+        className="dir-b min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--b-paper)' }}
+      >
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -201,35 +203,78 @@ function SetupLoaderStep({ onDone }: { onDone: () => void }) {
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
       <PhoenixMascot size={130} />
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-6 leading-tight">
-        Setting everything<br/><span className="text-orange-400">up for you</span>.
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 24 }}
+      >
+        Setup in progress
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 28,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          lineHeight: 1.05,
+          margin: '8px 0 0',
+          maxWidth: 440,
+        }}
+      >
+        Setting everything{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>up for you</em>.
       </h2>
-      <p className="text-slate-300/85 mt-3 max-w-sm text-[14px] leading-relaxed">
-        Building your profile across <span className="text-orange-400 font-semibold">all 5 pillars</span> — strength, sleep, water, focus, steps.
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-ink-60)',
+          marginTop: 12,
+          maxWidth: 360,
+          lineHeight: 1.6,
+        }}
+      >
+        Building your profile across{' '}
+        <em style={{ color: 'var(--b-accent)', fontStyle: 'italic', fontWeight: 600 }}>all 5 pillars</em> — strength, sleep, water, focus, steps.
       </p>
 
       <div className="mt-9 w-full max-w-sm">
         {/* The single continuous bar */}
         <div className="flex items-baseline justify-between mb-2">
-          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-orange-300/80">
+          <span
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+          >
             {activeSub.label}
           </span>
-          <span className="text-[13px] font-mono tabular-nums font-bold text-white">
+          <span
+            style={{
+              fontFamily: 'var(--font-mono, ui-monospace)',
+              fontSize: 13,
+              fontWeight: 700,
+              color: 'var(--b-ink)',
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
             {displayPct}%
           </span>
         </div>
-        <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden relative border border-white/[0.04]">
+        <div
+          style={{
+            height: 6,
+            background: 'var(--b-paper)',
+            border: '1px solid var(--b-rule)',
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
           <div
-            className="h-full rounded-full relative overflow-hidden"
             style={{
               width: `${pct}%`,
-              background: 'linear-gradient(90deg, #dc2626, #f97316, #fb923c)',
-              boxShadow: '0 0 12px -2px rgba(249,115,22,0.7)',
+              height: '100%',
+              background: 'var(--b-ink)',
+              transition: 'width 0.05s linear',
             }}
-          >
-            {/* Animated shimmer streak that runs across the filled portion */}
-            <div className="absolute inset-0 animate-loader-shimmer pointer-events-none" />
-          </div>
+          />
         </div>
 
         {/* 3 macro task lines — checkmarks pop as bar crosses thresholds */}
@@ -240,24 +285,44 @@ function SetupLoaderStep({ onDone }: { onDone: () => void }) {
             return (
               <div key={t.label} className="flex items-center gap-2.5">
                 {isDone ? (
-                  <CheckCircleFullIcon size={17} className="text-orange-400" />
+                  <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+                    <CheckCircleFullIcon size={17} />
+                  </span>
                 ) : (
                   <div
-                    className={cn(
-                      'w-[17px] h-[17px] rounded-full border-2 flex items-center justify-center',
-                      isActive ? 'border-orange-400' : 'border-white/15',
-                    )}
+                    style={{
+                      width: 17,
+                      height: 17,
+                      borderRadius: '50%',
+                      border: isActive ? '2px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                   >
                     {isActive && (
-                      <span className="block w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                      <span
+                        className="animate-pulse"
+                        style={{
+                          display: 'block',
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          background: 'var(--b-accent)',
+                        }}
+                      />
                     )}
                   </div>
                 )}
                 <span
-                  className={cn(
-                    'text-[13px] font-bold transition-colors',
-                    isDone ? 'text-white/70' : isActive ? 'text-white' : 'text-slate-500',
-                  )}
+                  className="font-display"
+                  style={{
+                    fontSize: 13,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    color: isDone ? 'var(--b-ink-60)' : isActive ? 'var(--b-ink)' : 'var(--b-ink-40)',
+                    transition: 'color 0.2s',
+                  }}
                 >
                   {t.label}
                 </span>
@@ -292,15 +357,14 @@ function RankingExplainerStep({
     name: string;
     sub: string;
     rank: string;
-    tone: string;
     Icon: IconCmp;
     weak?: boolean;
   }[] = [
-    { key: 'strength',  name: 'Strength',  sub: 'Lifts, push-ups, gym time',     rank: ranks.strength,  tone: '#ef4444', Icon: GymIcon   as IconCmp, weak: isWeak('strength') },
-    { key: 'sleep',     name: 'Sleep',     sub: 'Hours, consistency, recovery',  rank: ranks.sleep,     tone: '#a78bfa', Icon: SleepIcon as IconCmp, weak: isWeak('sleep') },
-    { key: 'hydration', name: 'Hydration', sub: 'Water vs body weight goal',     rank: ranks.hydration, tone: '#3b82f6', Icon: WaterIcon as IconCmp, weak: isWeak('hydration') },
-    { key: 'focus',     name: 'Focus',     sub: 'Deep work, less screen time',   rank: ranks.focus,     tone: '#f59e0b', Icon: ScreenIcon as IconCmp, weak: isWeak('focus') },
-    { key: 'steps',     name: 'Steps',     sub: 'Daily movement, NEAT activity', rank: ranks.steps,     tone: '#22c55e', Icon: StepsIcon as IconCmp, weak: isWeak('steps') },
+    { key: 'strength',  name: 'Strength',  sub: 'Lifts, push-ups, gym time',     rank: ranks.strength,  Icon: GymIcon   as IconCmp, weak: isWeak('strength') },
+    { key: 'sleep',     name: 'Sleep',     sub: 'Hours, consistency, recovery',  rank: ranks.sleep,     Icon: SleepIcon as IconCmp, weak: isWeak('sleep') },
+    { key: 'hydration', name: 'Hydration', sub: 'Water vs body weight goal',     rank: ranks.hydration, Icon: WaterIcon as IconCmp, weak: isWeak('hydration') },
+    { key: 'focus',     name: 'Focus',     sub: 'Deep work, less screen time',   rank: ranks.focus,     Icon: ScreenIcon as IconCmp, weak: isWeak('focus') },
+    { key: 'steps',     name: 'Steps',     sub: 'Daily movement, NEAT activity', rank: ranks.steps,     Icon: StepsIcon as IconCmp, weak: isWeak('steps') },
   ];
 
   // Overall: average the 5 pillars on the same 8-tier ladder, then
@@ -326,66 +390,138 @@ function RankingExplainerStep({
 
   return (
     <div className="flex flex-col flex-1 text-center">
-      <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">How Outrank works</p>
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-2.5 leading-tight">
-        Every pillar has<br/>its own <span className="text-orange-400">rank</span>.
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+      >
+        How Outrank works
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 28,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          lineHeight: 1.05,
+          margin: '8px 0 0',
+          maxWidth: 440,
+          marginInline: 'auto',
+        }}
+      >
+        Every pillar has its own{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>rank</em>.
       </h2>
-      <p className="text-slate-300/85 mt-3 max-w-sm mx-auto text-[13px] leading-relaxed">
-        Strength is just one of <span className="text-white font-semibold">5 pillars</span>. Sleep, water, focus and steps each get measured separately — your weakest one is what holds you back most.
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-ink-60)',
+          marginTop: 12,
+          maxWidth: 360,
+          marginInline: 'auto',
+          lineHeight: 1.6,
+        }}
+      >
+        Strength is just one of{' '}
+        <em style={{ color: 'var(--b-ink)', fontWeight: 600, fontStyle: 'italic' }}>5 pillars</em>. Sleep, water, focus and steps each get measured separately — your weakest one is what holds you back most.
       </p>
 
       {/* Ranked pillar stack — all 5 with icons */}
-      <div className="mt-6 mx-auto max-w-sm w-full space-y-2">
+      <div className="mt-6 mx-auto max-w-sm w-full" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {PILLARS.map((p, i) => {
           const visible = i < revealed;
           const Icon = p.Icon;
           return (
             <div
               key={p.name}
-              className={cn(
-                'rounded-xl border p-3 flex items-center gap-3 transition-all duration-500',
-                visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-4',
-                p.weak
-                  ? 'bg-red-500/[0.07] border-red-500/30 shadow-[0_0_24px_-12px_rgba(239,68,68,0.55)]'
-                  : 'bg-white/[0.025] border-white/[0.07]',
-              )}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: 12,
+                background: 'transparent',
+                border: p.weak ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderLeft: p.weak ? '3px solid var(--b-accent)' : '3px solid transparent',
+                opacity: visible ? 1 : 0,
+                transform: visible ? 'translateX(0)' : 'translateX(16px)',
+                transition: 'opacity 0.5s, transform 0.5s',
+              }}
             >
-              {/* Tone-colored icon tile */}
+              {/* Icon tile — hairline frame */}
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 relative overflow-hidden"
                 style={{
-                  background: `linear-gradient(135deg, ${p.tone}33, ${p.tone}11)`,
-                  border: `1px solid ${p.tone}40`,
+                  width: 44,
+                  height: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  border: '1px solid var(--b-rule)',
+                  color: p.weak ? 'var(--b-accent)' : 'var(--b-ink-60)',
                 }}
               >
-                <div
-                  className="absolute inset-0 opacity-40"
-                  style={{ background: `radial-gradient(circle at 30% 25%, ${p.tone}66, transparent 65%)` }}
-                />
-                <Icon size={24} className="relative" />
+                <Icon size={24} />
               </div>
 
-              <div className="flex-1 min-w-0 text-left">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-heading font-bold text-[15px] text-white">{p.name}</span>
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span
+                    className="font-display"
+                    style={{
+                      fontSize: 15,
+                      fontStyle: 'italic',
+                      fontWeight: 500,
+                      color: 'var(--b-ink)',
+                    }}
+                  >
+                    {p.name}
+                  </span>
                   {p.weak && (
-                    <span className="text-[8.5px] font-bold uppercase tracking-widest text-red-300 bg-red-500/15 border border-red-500/30 px-1.5 py-[1px] rounded">
+                    <span
+                      className="spread"
+                      style={{
+                        fontSize: 8,
+                        color: 'var(--b-accent)',
+                        border: '1px solid var(--b-accent)',
+                        padding: '1px 5px',
+                      }}
+                    >
                       Weak
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-slate-400 mt-0.5 truncate">{p.sub}</p>
+                <p
+                  className="font-body"
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--b-ink-60)',
+                    marginTop: 2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {p.sub}
+                </p>
               </div>
 
-              {/* Rank badge */}
+              {/* Rank badge — typographic, no glow */}
               <div
-                className="w-12 h-11 rounded-lg flex items-center justify-center shrink-0 font-heading font-black tabular-nums"
+                className="font-display"
                 style={{
-                  color: p.tone,
-                  background: `linear-gradient(180deg, ${p.tone}1f, ${p.tone}08)`,
-                  border: `1.4px solid ${p.tone}55`,
-                  textShadow: `0 0 14px ${p.tone}66`,
-                  fontSize: p.rank.length > 1 ? '17px' : '20px',
+                  width: 48,
+                  height: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontStyle: 'italic',
+                  fontWeight: 700,
+                  fontVariantNumeric: 'tabular-nums',
+                  color: p.weak ? 'var(--b-accent)' : 'var(--b-ink)',
+                  border: '1px solid var(--b-rule)',
+                  borderTop: '2px solid var(--b-ink)',
+                  fontSize: p.rank.length > 1 ? 17 : 20,
                 }}
               >
                 {p.rank}
@@ -396,29 +532,89 @@ function RankingExplainerStep({
       </div>
 
       {/* Average rank synthesis */}
-      <div className="mt-4 mx-auto max-w-sm w-full rounded-xl bg-gradient-to-r from-orange-500/[0.08] to-red-500/[0.08] border border-orange-500/25 px-4 py-3 flex items-center gap-3">
-        <FireIcon size={20} className="text-orange-400 shrink-0" />
-        <div className="flex-1 text-left">
-          <p className="text-[11px] uppercase tracking-widest font-bold text-orange-300">Overall rank</p>
-          <p className="text-[12px] text-slate-300 leading-snug">Average across all 5. Climb the weakest to lift it.</p>
+      <div
+        className="mt-4 mx-auto max-w-sm w-full"
+        style={{
+          padding: '12px 16px',
+          border: '1px solid var(--b-rule)',
+          borderTop: '2px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        <span style={{ color: 'var(--b-accent)', display: 'inline-flex', flexShrink: 0 }}>
+          <FireIcon size={20} />
+        </span>
+        <div style={{ flex: 1, textAlign: 'left' }}>
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+          >
+            Overall rank
+          </div>
+          <p
+            className="font-body"
+            style={{
+              fontSize: 12,
+              color: 'var(--b-ink-60)',
+              lineHeight: 1.4,
+              marginTop: 2,
+            }}
+          >
+            Average across all 5. Climb the weakest to lift it.
+          </p>
         </div>
-        <div className="font-heading font-black text-2xl text-orange-400 tabular-nums" style={{ textShadow: '0 0 16px rgba(251,146,60,0.55)' }}>
+        <div
+          className="font-display"
+          style={{
+            fontSize: 24,
+            fontStyle: 'italic',
+            fontWeight: 700,
+            color: 'var(--b-accent)',
+            fontVariantNumeric: 'tabular-nums',
+          }}
+        >
           {overall}
         </div>
       </div>
 
-      <p className="text-slate-400 mt-4 max-w-sm mx-auto text-[11.5px] leading-relaxed">
-        <BoltFullIcon size={11} className="inline-block text-orange-400 mr-1 -mt-[1px]" />
-        Every check-in updates the right pillar. <span className="text-orange-400 font-semibold">Find the weakest. Climb it.</span>
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11.5,
+          color: 'var(--b-ink-60)',
+          marginTop: 16,
+          maxWidth: 360,
+          marginInline: 'auto',
+          lineHeight: 1.6,
+        }}
+      >
+        <span style={{ color: 'var(--b-accent)', display: 'inline-flex', verticalAlign: 'middle', marginRight: 4 }}>
+          <BoltFullIcon size={11} />
+        </span>
+        Every check-in updates the right pillar.{' '}
+        <em style={{ color: 'var(--b-accent)', fontWeight: 600, fontStyle: 'italic' }}>Find the weakest. Climb it.</em>
       </p>
 
       <div className="mt-auto pt-5">
         <button
           onClick={onContinue}
-          className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all hover:brightness-110"
-          style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+          className="font-body"
+          style={{
+            width: '100%',
+            padding: '14px 16px',
+            background: 'var(--b-ink)',
+            color: 'var(--b-paper)',
+            border: '1px solid var(--b-ink)',
+            cursor: 'pointer',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+          }}
         >
-          MAKES SENSE
+          Makes sense →
         </button>
       </div>
     </div>
@@ -545,14 +741,43 @@ function SignupStep({
     }
   };
 
+  const canSubmit = !loading && !!email && password.length >= 8;
+
   return (
     <div className="flex flex-col flex-1">
       <div className="text-center mt-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">Last step</p>
-        <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-2 leading-tight">
-          A bigger you is<br/><span className="text-orange-400">closer than you think</span>.
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          Last step
+        </div>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 28,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: '8px 0 0',
+            maxWidth: 440,
+            marginInline: 'auto',
+          }}
+        >
+          A bigger you is{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>closer than you think</em>.
         </h2>
-        <p className="text-slate-300/85 mt-3 max-w-sm mx-auto text-[13px] leading-relaxed">
+        <p
+          className="font-body"
+          style={{
+            fontSize: 13,
+            color: 'var(--b-ink-60)',
+            marginTop: 12,
+            maxWidth: 360,
+            marginInline: 'auto',
+            lineHeight: 1.6,
+          }}
+        >
           Save your profile so you don&apos;t lose all the answers.
         </p>
       </div>
@@ -574,12 +799,22 @@ function SignupStep({
           Continue with Google
         </Button>
 
-        <div className="relative my-2">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/8" />
+        <div style={{ position: 'relative', margin: '8px 0' }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: '100%', borderTop: '1px solid var(--b-rule)' }} />
           </div>
-          <div className="relative flex justify-center text-[11px]">
-            <span className="bg-[#0d0d15] px-3 text-slate-500 uppercase tracking-widest font-bold">Or with email</span>
+          <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+            <span
+              className="spread"
+              style={{
+                background: 'var(--b-paper)',
+                padding: '0 12px',
+                fontSize: 9,
+                color: 'var(--b-ink-60)',
+              }}
+            >
+              Or with email
+            </span>
           </div>
         </div>
 
@@ -590,7 +825,16 @@ function SignupStep({
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             autoComplete="email"
-            className="w-full bg-[#10101a] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[15px] outline-none transition-colors"
+            className="font-body"
+            style={{
+              width: '100%',
+              background: 'transparent',
+              border: '1px solid var(--b-rule)',
+              padding: '12px 16px',
+              color: 'var(--b-ink)',
+              fontSize: 15,
+              outline: 'none',
+            }}
           />
           <input
             type="password"
@@ -598,27 +842,60 @@ function SignupStep({
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Create a password (8+ chars)"
             autoComplete="new-password"
-            className="w-full bg-[#10101a] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[15px] outline-none transition-colors"
+            className="font-body"
+            style={{
+              width: '100%',
+              background: 'transparent',
+              border: '1px solid var(--b-rule)',
+              padding: '12px 16px',
+              color: 'var(--b-ink)',
+              fontSize: 15,
+              outline: 'none',
+            }}
           />
           <button
             onClick={handleEmailSignup}
-            disabled={loading || !email || password.length < 8}
-            className={cn(
-              'w-full py-3.5 rounded-xl font-bold text-[15px] text-white transition-all shadow-lg',
-              loading || !email || password.length < 8
-                ? 'opacity-40 cursor-not-allowed'
-                : 'shadow-red-600/30 hover:brightness-110',
-            )}
-            style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+            disabled={!canSubmit}
+            className="font-body"
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              background: canSubmit ? 'var(--b-ink)' : 'transparent',
+              color: canSubmit ? 'var(--b-paper)' : 'var(--b-ink-40)',
+              border: '1px solid var(--b-ink)',
+              cursor: canSubmit ? 'pointer' : 'not-allowed',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              opacity: canSubmit ? 1 : 0.4,
+            }}
           >
-            {loading ? 'Creating profile…' : 'Create account'}
+            {loading ? 'Creating profile…' : 'Create account →'}
           </button>
         </div>
 
-        <p className="text-[11px] text-slate-500 text-center mt-4 leading-relaxed">
+        <p
+          className="font-body"
+          style={{
+            fontSize: 11,
+            color: 'var(--b-ink-60)',
+            textAlign: 'center',
+            marginTop: 16,
+            lineHeight: 1.6,
+          }}
+        >
           By signing up you agree to our terms and privacy policy.<br/>
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-orange-400 hover:underline font-semibold">
+          <Link
+            href="/auth/login"
+            style={{
+              color: 'var(--b-accent)',
+              fontWeight: 600,
+              fontStyle: 'italic',
+              textDecoration: 'underline',
+            }}
+          >
             Sign in
           </Link>
         </p>
@@ -643,69 +920,111 @@ function WelcomeFinalStep({ name, onContinue }: { name: string; onContinue: () =
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
-      {/* Aurora */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div
-          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[560px] h-[560px] rounded-full opacity-60 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.45), transparent 65%)' }}
-        />
-        <div
-          className="absolute -bottom-40 left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full opacity-50 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(251,146,60,0.35), transparent 70%)' }}
-        />
-      </div>
-
+    <div
+      className="dir-b min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}
+    >
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 text-center">
-        {/* Sparkle accents */}
+        {/* Subtle accent flourishes — quiet, not aurora */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="absolute top-1/4 left-1/4"
+          style={{ color: 'var(--b-accent)', opacity: 0.7 }}
         >
-          <SparklesIcon size={28} className="text-orange-400 opacity-70" />
+          <SparklesIcon size={28} />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
           className="absolute top-1/3 right-1/4"
+          style={{ color: 'var(--b-ink-60)', opacity: 0.7 }}
         >
-          <TrophyIconFull size={24} className="text-yellow-400 opacity-70" />
+          <TrophyIconFull size={24} />
         </motion.div>
 
         <div className="animate-splash-phoenix-in">
           <PhoenixMascot size={180} />
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.55 }}
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 28 }}
+        >
+          Welcome
+        </motion.div>
+
         <motion.h1
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.6 }}
-          className="font-heading text-4xl sm:text-5xl font-bold text-white mt-8 leading-tight"
+          className="font-display"
+          style={{
+            fontSize: 38,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: '8px 0 0',
+            maxWidth: 440,
+            color: 'var(--b-ink)',
+          }}
         >
           Welcome to{' '}
-          <span
-            className="text-transparent bg-clip-text"
-            style={{ backgroundImage: 'linear-gradient(90deg, #fb923c, #ef4444, #fb923c)' }}
-          >
-            Outrank
-          </span>
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>Outrank</em>
         </motion.h1>
 
         <AnimatePresence>
           {showName && (
-            <motion.p
-              key="name"
+            <motion.div
+              key="quote"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-slate-200 mt-4 text-lg"
+              style={{
+                marginTop: 24,
+                maxWidth: 380,
+                width: '100%',
+                padding: '18px 20px 16px',
+                background: 'var(--b-paper)',
+                borderTop: '2px solid var(--b-ink)',
+                borderLeft: '1px solid var(--b-rule)',
+                borderRight: '1px solid var(--b-rule)',
+                borderBottom: '1px solid var(--b-rule)',
+                textAlign: 'left',
+              }}
             >
-              Your profile is ready,{' '}
-              <span className="text-orange-400 font-semibold">{name}</span>.
-            </motion.p>
+              <p
+                className="font-display"
+                style={{
+                  fontSize: 16,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  color: 'var(--b-ink)',
+                  lineHeight: 1.4,
+                  margin: 0,
+                }}
+              >
+                Your profile is ready,{' '}
+                <em style={{ color: 'var(--b-accent)', fontWeight: 600, fontStyle: 'italic' }}>{name}</em>.
+              </p>
+              <p
+                className="spread"
+                style={{
+                  fontSize: 9,
+                  color: 'var(--b-ink-60)',
+                  marginTop: 10,
+                  paddingTop: 8,
+                  borderTop: '1px solid var(--b-rule)',
+                }}
+              >
+                — Your first day awaits
+              </p>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -716,7 +1035,14 @@ function WelcomeFinalStep({ name, onContinue }: { name: string; onContinue: () =
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-slate-400 mt-2 text-[14px] max-w-sm leading-relaxed"
+              className="font-body"
+              style={{
+                fontSize: 13,
+                color: 'var(--b-ink-60)',
+                marginTop: 14,
+                maxWidth: 360,
+                lineHeight: 1.6,
+              }}
             >
               Time to log your first day and watch your orb come to life.
             </motion.p>
@@ -734,10 +1060,21 @@ function WelcomeFinalStep({ name, onContinue }: { name: string; onContinue: () =
           >
             <button
               onClick={onContinue}
-              className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all hover:brightness-110"
-              style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+              className="font-body"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                background: 'var(--b-ink)',
+                color: 'var(--b-paper)',
+                border: '1px solid var(--b-ink)',
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
             >
-              ENTER OUTRANK
+              Enter Outrank →
             </button>
           </motion.div>
         )}

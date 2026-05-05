@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { defaultUnits } from '@/lib/onboardingDraft';
 import { WizardShell } from '@/components/onboarding/WizardShell';
@@ -31,13 +30,13 @@ import { CheckCircleFullIcon, SparklesIcon } from '@/components/ui/AppIcons';
 const TOTAL_STEPS = 7;
 
 const HEAR_OPTIONS: { key: HearAboutKey; label: string; logo: React.ReactNode }[] = [
-  { key: 'tiktok',    label: 'TikTok',    logo: <span className="text-base font-bold">TT</span> },
-  { key: 'instagram', label: 'Instagram', logo: <span className="text-base font-bold">IG</span> },
-  { key: 'youtube',   label: 'YouTube',   logo: <span className="text-base font-bold">YT</span> },
-  { key: 'reddit',    label: 'Reddit',    logo: <span className="text-base font-bold">RD</span> },
-  { key: 'friend',    label: 'A friend',  logo: <SparklesIcon size={20} className="text-orange-300" /> },
-  { key: 'app_store', label: 'App store', logo: <span className="text-base font-bold">★</span> },
-  { key: 'other',     label: 'Other',     logo: <span className="text-base font-bold">…</span> },
+  { key: 'tiktok',    label: 'TikTok',    logo: <span style={{ fontSize: 14, fontWeight: 700 }}>TT</span> },
+  { key: 'instagram', label: 'Instagram', logo: <span style={{ fontSize: 14, fontWeight: 700 }}>IG</span> },
+  { key: 'youtube',   label: 'YouTube',   logo: <span style={{ fontSize: 14, fontWeight: 700 }}>YT</span> },
+  { key: 'reddit',    label: 'Reddit',    logo: <span style={{ fontSize: 14, fontWeight: 700 }}>RD</span> },
+  { key: 'friend',    label: 'A friend',  logo: <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}><SparklesIcon size={18} /></span> },
+  { key: 'app_store', label: 'App store', logo: <span style={{ fontSize: 14, fontWeight: 700 }}>★</span> },
+  { key: 'other',     label: 'Other',     logo: <span style={{ fontSize: 14, fontWeight: 700 }}>…</span> },
 ];
 
 export default function OnboardPhase3Page() {
@@ -56,7 +55,10 @@ export default function OnboardPhase3Page() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
+      <div
+        className="dir-b min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--b-paper)' }}
+      >
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -140,15 +142,22 @@ function renderFooter(
       whileTap={{ scale: canProceed ? 0.98 : 1 }}
       onClick={canProceed ? next : undefined}
       disabled={!canProceed}
-      className={cn(
-        'w-full py-4 rounded-full font-bold text-base text-white transition-all shadow-lg',
-        canProceed
-          ? 'shadow-red-600/30 hover:brightness-110'
-          : 'shadow-none opacity-40 cursor-not-allowed',
-      )}
-      style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+      className="font-body"
+      style={{
+        width: '100%',
+        padding: '14px 16px',
+        background: canProceed ? 'var(--b-ink)' : 'transparent',
+        color: canProceed ? 'var(--b-paper)' : 'var(--b-ink-40)',
+        border: '1px solid var(--b-ink)',
+        cursor: canProceed ? 'pointer' : 'not-allowed',
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        opacity: canProceed ? 1 : 0.4,
+      }}
     >
-      {step === 6 ? "LET'S CONTINUE" : 'CONTINUE'}
+      {step === 6 ? "Let's continue" : 'Continue'} →
     </motion.button>
   );
 }
@@ -176,19 +185,32 @@ function UnitToggle<U extends string>({
   onChange: (v: U) => void;
 }) {
   return (
-    <div className="inline-flex p-1 rounded-full bg-[#10101a] border border-white/8">
-      {options.map((opt) => {
+    <div
+      style={{
+        display: 'inline-flex',
+        border: '1px solid var(--b-ink)',
+        background: 'var(--b-paper)',
+      }}
+    >
+      {options.map((opt, i) => {
         const active = value === opt.value;
         return (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
-            className={cn(
-              'px-5 py-1.5 rounded-full text-sm font-bold transition-all',
-              active
-                ? 'bg-orange-500 text-white shadow-[0_0_18px_-4px_rgba(249,115,22,0.7)]'
-                : 'text-slate-400 hover:text-slate-200',
-            )}
+            className="font-body"
+            style={{
+              padding: '8px 22px',
+              background: active ? 'var(--b-ink)' : 'transparent',
+              color: active ? 'var(--b-paper)' : 'var(--b-ink-60)',
+              border: 'none',
+              borderLeft: i > 0 ? '1px solid var(--b-ink)' : 'none',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+            }}
           >
             {opt.label}
           </button>
@@ -210,34 +232,63 @@ function HearAboutStep({
   return (
     <div className="flex flex-col flex-1">
       <MascotRow message="Last quick question — how did you hear about us?" />
-      <div className="grid grid-cols-2 gap-2.5 mt-2">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 8,
+          marginTop: 8,
+        }}
+      >
         {HEAR_OPTIONS.map((opt) => {
           const active = value === opt.key;
           return (
             <button
               key={opt.key}
               onClick={() => onChange(opt.key)}
-              className={cn(
-                'rounded-2xl border-2 px-3 py-3.5 transition-all flex items-center gap-3',
-                active
-                  ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_24px_-8px_rgba(249,115,22,0.5)]'
-                  : 'bg-[#10101a] border-white/8 hover:border-white/20',
-              )}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '14px 12px',
+                background: 'transparent',
+                border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+                cursor: 'pointer',
+                textAlign: 'left',
+                color: 'var(--b-ink)',
+              }}
             >
               <div
-                className={cn(
-                  'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                  active
-                    ? 'bg-orange-500/20 text-orange-200'
-                    : 'bg-white/[0.04] text-slate-300',
-                )}
+                style={{
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  border: '1px solid var(--b-rule)',
+                  color: active ? 'var(--b-accent)' : 'var(--b-ink-60)',
+                }}
               >
                 {opt.logo}
               </div>
-              <span className={cn('font-semibold text-[14px]', active ? 'text-white' : 'text-slate-200')}>
+              <span
+                className="font-display"
+                style={{
+                  fontSize: 14,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                }}
+              >
                 {opt.label}
               </span>
-              {active && <CheckCircleFullIcon size={16} className="ml-auto text-orange-400" />}
+              {active && (
+                <span style={{ color: 'var(--b-accent)', display: 'inline-flex', marginLeft: 'auto' }}>
+                  <CheckCircleFullIcon size={16} />
+                </span>
+              )}
             </button>
           );
         })}
@@ -250,10 +301,35 @@ function BasicInfoIntroStep() {
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
       <PhoenixMascot size={150} />
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-8 leading-tight">
-        Alright, let&apos;s get some<br/><span className="text-orange-400">basic info</span> down.
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 28 }}
+      >
+        Quick intake
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 38,
+          fontWeight: 500,
+          lineHeight: 1.05,
+          margin: '8px 0 0',
+          maxWidth: 440,
+        }}
+      >
+        Alright, let&apos;s get some{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>basic info</em> down.
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 360,
+          lineHeight: 1.6,
+        }}
+      >
         Body stats stay private. We use them only to dial in your training and habit targets.
       </p>
     </div>
@@ -270,8 +346,20 @@ function SexStep({
   return (
     <div className="flex flex-col flex-1">
       <MascotRow message="Which option fits you best?" />
-      <p className="text-[12px] text-slate-500 mt-1 mb-4">Used for accurate calorie + training math.</p>
-      <div className="grid grid-cols-2 gap-3 mt-2">
+      <p
+        className="font-body"
+        style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 4, marginBottom: 16, fontStyle: 'italic' }}
+      >
+        Used for accurate calorie + training math.
+      </p>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 12,
+          marginTop: 8,
+        }}
+      >
         {([
           {
             key: 'male' as const,
@@ -301,15 +389,30 @@ function SexStep({
             <button
               key={opt.key}
               onClick={() => onChange(opt.key)}
-              className={cn(
-                'aspect-[3/4] rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-3',
-                active
-                  ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_24px_-8px_rgba(249,115,22,0.5)] text-orange-200'
-                  : 'bg-[#10101a] border-white/8 hover:border-white/20 text-slate-300',
-              )}
+              style={{
+                aspectRatio: '3 / 4',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 14,
+                background: 'transparent',
+                border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+                cursor: 'pointer',
+                color: active ? 'var(--b-accent)' : 'var(--b-ink-60)',
+              }}
             >
-              <div className={cn(active ? 'text-orange-300' : 'text-slate-400')}>{opt.icon}</div>
-              <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>
+              {opt.icon}
+              <span
+                className="font-display"
+                style={{
+                  fontSize: 16,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                }}
+              >
                 {opt.label}
               </span>
             </button>
@@ -428,9 +531,45 @@ function WeightStep({
         />
       </div>
 
-      <div className="mt-10 mx-auto max-w-sm rounded-2xl bg-white/[0.03] border border-white/[0.06] p-4 text-center">
-        <p className="text-[13px] font-bold text-white">Your information is private.</p>
-        <p className="text-[12px] text-slate-500 mt-1.5 leading-relaxed">
+      <div
+        style={{
+          marginTop: 36,
+          marginInline: 'auto',
+          maxWidth: 360,
+          width: '100%',
+          padding: '14px 18px',
+          border: '1px solid var(--b-rule)',
+          borderTop: '2px solid var(--b-ink)',
+          textAlign: 'center',
+        }}
+      >
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 6 }}
+        >
+          Private
+        </div>
+        <p
+          className="font-display"
+          style={{
+            fontSize: 14,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            color: 'var(--b-ink)',
+            margin: 0,
+          }}
+        >
+          Your information is private.
+        </p>
+        <p
+          className="font-body"
+          style={{
+            fontSize: 11,
+            color: 'var(--b-ink-60)',
+            marginTop: 6,
+            lineHeight: 1.5,
+          }}
+        >
           Bodyweight is essential for accurate training and recovery targets.
         </p>
       </div>
@@ -463,7 +602,18 @@ function AgeStep({
         />
       </div>
 
-      <p className="text-[12px] text-slate-500 mt-10 text-center max-w-sm mx-auto">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink-60)',
+          marginTop: 40,
+          textAlign: 'center',
+          maxWidth: 360,
+          marginInline: 'auto',
+          fontStyle: 'italic',
+        }}
+      >
         We use age to set realistic training stress and recovery targets.
       </p>
     </div>
@@ -474,12 +624,37 @@ function JourneyAboutYouStep({ name }: { name: string }) {
   return (
     <div className="flex flex-col items-center text-center flex-1 justify-center">
       <PhoenixMascot size={160} greeting />
-      <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white mt-8 leading-tight">
-        This journey is<br/><span className="text-orange-400">all about you</span>.
+      <div
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-accent)', marginTop: 28 }}
+      >
+        For you
+      </div>
+      <h2
+        className="font-display"
+        style={{
+          fontSize: 38,
+          fontWeight: 500,
+          lineHeight: 1.05,
+          margin: '8px 0 0',
+          maxWidth: 440,
+        }}
+      >
+        This journey is{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>all about you</em>.
       </h2>
-      <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-ink-60)',
+          marginTop: 14,
+          maxWidth: 360,
+          lineHeight: 1.6,
+        }}
+      >
         Let&apos;s make sure you&apos;re truly part of it,{' '}
-        <span className="text-orange-400 font-semibold">{name}</span>.
+        <em style={{ color: 'var(--b-accent)', fontWeight: 600, fontStyle: 'italic' }}>{name}</em>.
       </p>
     </div>
   );

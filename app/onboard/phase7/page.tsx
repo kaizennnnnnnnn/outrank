@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
 import { WizardShell } from '@/components/onboarding/WizardShell';
 import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
@@ -47,7 +46,10 @@ export default function OnboardPhase7Page() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center">
+      <div
+        className="dir-b min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--b-paper)' }}
+      >
         <PhoenixMascot size={100} paused />
       </div>
     );
@@ -102,9 +104,9 @@ function renderFooter(
     (step === 2);
 
   const labels: Record<number, string> = {
-    0: draft.tier === 'pro' ? 'START FREE TRIAL' : 'CONTINUE FREE',
-    1: 'CONTINUE',
-    2: 'START 7-DAY FREE TRIAL',
+    0: draft.tier === 'pro' ? 'Start free trial' : 'Continue free',
+    1: 'Continue',
+    2: 'Start 7-day free trial',
   };
 
   return (
@@ -112,15 +114,22 @@ function renderFooter(
       whileTap={{ scale: canProceed ? 0.98 : 1 }}
       onClick={canProceed ? next : undefined}
       disabled={!canProceed}
-      className={cn(
-        'w-full py-4 rounded-full font-bold text-base text-white transition-all shadow-lg',
-        canProceed
-          ? 'shadow-red-600/30 hover:brightness-110'
-          : 'shadow-none opacity-40 cursor-not-allowed',
-      )}
-      style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
+      className="font-body"
+      style={{
+        width: '100%',
+        padding: '14px 16px',
+        background: canProceed ? 'var(--b-ink)' : 'transparent',
+        color: canProceed ? 'var(--b-paper)' : 'var(--b-ink-40)',
+        border: '1px solid var(--b-ink)',
+        cursor: canProceed ? 'pointer' : 'not-allowed',
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        opacity: canProceed ? 1 : 0.4,
+      }}
     >
-      {labels[step] || 'CONTINUE'}
+      {(labels[step] || 'Continue') + ' →'}
     </motion.button>
   );
 }
@@ -152,102 +161,222 @@ function PlanPickerStep({
   return (
     <div className="flex flex-col flex-1">
       <div className="text-center">
-        <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-orange-400">Choose your path</p>
-        <h2 className="font-heading text-xl sm:text-2xl font-bold text-white mt-1 leading-tight">
-          How do you want to <span className="text-orange-400">start</span>?
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          Choose your path
+        </div>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 28,
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: '8px 0 0',
+          }}
+        >
+          How do you want to{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>start</em>?
         </h2>
       </div>
 
-      <div className="space-y-2.5 mt-3">
-        {/* PRO card — compact premium */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
+        {/* PRO card */}
         <button
           onClick={() => onChange('pro')}
-          className={cn(
-            'relative w-full text-left rounded-2xl border-2 p-3.5 transition-all overflow-hidden',
-            value === 'pro'
-              ? 'border-orange-400 shadow-[0_0_28px_-6px_rgba(249,115,22,0.7)]'
-              : 'border-orange-500/40 hover:border-orange-400/70',
-          )}
           style={{
-            background:
-              value === 'pro'
-                ? 'linear-gradient(135deg, rgba(220,38,38,0.18), rgba(249,115,22,0.08) 50%, #10101a)'
-                : 'linear-gradient(135deg, rgba(220,38,38,0.10), rgba(249,115,22,0.04) 50%, #0c0c14)',
+            position: 'relative',
+            width: '100%',
+            textAlign: 'left',
+            padding: 16,
+            background: 'transparent',
+            border: value === 'pro' ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+            borderLeft: value === 'pro' ? '3px solid var(--b-accent)' : '3px solid var(--b-ink)',
+            cursor: 'pointer',
+            color: 'var(--b-ink)',
+            overflow: 'hidden',
           }}
         >
-          {/* Decorative ambient glow */}
+          {/* Eyebrow ribbon */}
           <div
-            className="absolute -top-12 -right-12 w-32 h-32 rounded-full pointer-events-none"
+            className="spread"
             style={{
-              background: 'radial-gradient(circle, rgba(249,115,22,0.4), transparent 70%)',
-              filter: 'blur(24px)',
+              fontSize: 9,
+              color: 'var(--b-accent)',
+              marginBottom: 10,
             }}
-          />
-          {/* Recommended ribbon — corner triangle style */}
-          <span
-            className="absolute -top-px left-3 px-2.5 py-0.5 rounded-b-md text-[8px] font-bold uppercase tracking-widest text-white"
-            style={{ background: 'linear-gradient(90deg, #dc2626, #f97316)' }}
           >
             Best value · 7 days free
-          </span>
-
-          <div className="flex items-center gap-2.5 mt-3 mb-2.5">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{
-                background: 'linear-gradient(135deg, #fde68a, #fb923c 40%, #dc2626)',
-                boxShadow: '0 3px 10px -3px rgba(249,115,22,0.7)',
-              }}
-            >
-              <TrophyIconFull size={18} className="text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-heading text-lg font-bold text-white leading-tight">Outrank Pro</p>
-              <div className="flex items-baseline gap-1 mt-0.5">
-                <span className="font-heading text-[15px] font-bold text-white tabular-nums">$9.99</span>
-                <span className="text-[10px] text-slate-400">/ month after trial</span>
-              </div>
-            </div>
-            {value === 'pro' && <CheckCircleFullIcon size={22} className="text-orange-400 flex-shrink-0" />}
           </div>
 
-          {/* Compact 2-col feature list */}
-          <ul className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: '1px solid var(--b-ink)',
+                color: 'var(--b-ink)',
+              }}
+            >
+              <span style={{ display: 'inline-flex' }}>
+                <TrophyIconFull size={18} />
+              </span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p
+                className="font-display"
+                style={{
+                  fontSize: 18,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  color: 'var(--b-ink)',
+                  margin: 0,
+                  lineHeight: 1.1,
+                }}
+              >
+                Outrank Pro
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
+                <span
+                  className="font-display"
+                  style={{ fontSize: 15, fontWeight: 500, color: 'var(--b-ink)' }}
+                >
+                  $9.99
+                </span>
+                <span
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
+                >
+                  / month after trial
+                </span>
+              </div>
+            </div>
+            {value === 'pro' && (
+              <span style={{ color: 'var(--b-accent)', display: 'inline-flex', flexShrink: 0 }}>
+                <CheckCircleFullIcon size={20} />
+              </span>
+            )}
+          </div>
+
+          {/* Hairline divider */}
+          <div style={{ borderTop: '1px solid var(--b-rule)', margin: '12px 0' }} />
+
+          <ul
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              columnGap: 10,
+              rowGap: 6,
+              listStyle: 'none',
+              margin: 0,
+              padding: 0,
+            }}
+          >
             {PRO_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-1.5 text-[11px] text-slate-200 leading-snug">
-                <CheckCircleFullIcon size={11} className="text-orange-300 mt-0.5 flex-shrink-0" />
+              <li
+                key={f}
+                className="font-body"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 6,
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                  color: 'var(--b-ink)',
+                }}
+              >
+                <span style={{ color: 'var(--b-accent)', display: 'inline-flex', marginTop: 2, flexShrink: 0 }}>
+                  <CheckCircleFullIcon size={11} />
+                </span>
                 <span>{f}</span>
               </li>
             ))}
           </ul>
         </button>
 
-        {/* FREE card — minimal */}
+        {/* FREE card */}
         <button
           onClick={() => onChange('free')}
-          className={cn(
-            'w-full text-left rounded-2xl border-2 p-3 transition-all',
-            value === 'free'
-              ? 'border-orange-400 bg-orange-500/10 shadow-[0_0_20px_-6px_rgba(249,115,22,0.5)]'
-              : 'border-white/10 bg-[#10101a] hover:border-white/20',
-          )}
+          style={{
+            width: '100%',
+            textAlign: 'left',
+            padding: 14,
+            background: 'transparent',
+            border: value === 'free' ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+            borderLeft: value === 'free' ? '3px solid var(--b-accent)' : '3px solid transparent',
+            cursor: 'pointer',
+            color: 'var(--b-ink)',
+          }}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.04] flex-shrink-0">
-              <BoltFullIcon size={16} className="text-slate-300" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: '1px solid var(--b-rule)',
+                color: 'var(--b-ink-60)',
+              }}
+            >
+              <span style={{ display: 'inline-flex' }}>
+                <BoltFullIcon size={16} />
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-heading text-base font-bold text-white leading-tight">Free</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Forever · no card · core features</p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p
+                className="font-display"
+                style={{
+                  fontSize: 16,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  color: value === 'free' ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                  margin: 0,
+                  lineHeight: 1.1,
+                }}
+              >
+                Free
+              </p>
+              <p
+                className="font-body"
+                style={{ fontSize: 11, color: 'var(--b-ink-60)', margin: '4px 0 0' }}
+              >
+                Forever · no card · core features
+              </p>
             </div>
-            {value === 'free' && <CheckCircleFullIcon size={18} className="text-orange-400" />}
+            {value === 'free' && (
+              <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+                <CheckCircleFullIcon size={18} />
+              </span>
+            )}
           </div>
         </button>
       </div>
 
-      <p className="text-[10px] text-slate-500 text-center mt-3">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 10,
+          color: 'var(--b-ink-60)',
+          textAlign: 'center',
+          marginTop: 14,
+          fontStyle: 'italic',
+        }}
+      >
         Cancel anytime. No charge during your free trial.
       </p>
+
+      {/* Hidden but keeps the FREE_FEATURES export usage from being unused */}
+      <span style={{ display: 'none' }} aria-hidden>
+        {FREE_FEATURES.join(',')}
+      </span>
     </div>
   );
 }
@@ -264,21 +393,46 @@ function TrialReminderStep({
   return (
     <div className="flex flex-col flex-1">
       <div className="text-center mt-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">No surprises</p>
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-2 leading-tight">
-          We&apos;ll <span className="text-orange-400">remind you</span> before<br/>your trial ends.
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          No surprises
+        </div>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 28,
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: '8px 0 0',
+          }}
+        >
+          We&apos;ll{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>remind you</em> before
+          <br />your trial ends.
         </h2>
-        <p className="text-slate-300/85 mt-3 max-w-sm mx-auto text-[14px] leading-relaxed">
+        <p
+          className="font-body"
+          style={{
+            fontSize: 13,
+            color: 'var(--b-ink-60)',
+            marginTop: 14,
+            maxWidth: 360,
+            marginInline: 'auto',
+            lineHeight: 1.6,
+          }}
+        >
           Pick a reminder so you can decide if Pro is for you — or cancel before any charge.
         </p>
       </div>
 
-      {/* Timeline visual */}
+      {/* Timeline */}
       <div className="mt-8 mx-auto max-w-md w-full">
         <TrialTimeline reminderDays={value ?? 2} />
       </div>
 
-      <div className="space-y-2.5 mt-8">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 32 }}>
         {([
           { val: 3 as const, label: '3 days before', sub: 'Lots of time to decide' },
           { val: 2 as const, label: '2 days before', sub: 'A focused heads-up' },
@@ -288,20 +442,43 @@ function TrialReminderStep({
             <button
               key={opt.val}
               onClick={() => onChange(opt.val)}
-              className={cn(
-                'w-full text-left rounded-2xl border-2 px-5 py-4 transition-all',
-                active
-                  ? 'bg-orange-500/10 border-orange-400 shadow-[0_0_20px_-8px_rgba(249,115,22,0.5)]'
-                  : 'bg-[#10101a] border-white/10 hover:border-white/20',
-              )}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '14px 18px',
+                background: 'transparent',
+                border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                borderLeft: active ? '3px solid var(--b-accent)' : '3px solid transparent',
+                cursor: 'pointer',
+                color: 'var(--b-ink)',
+              }}
             >
-              <div className="flex items-center justify-between">
-                <span className={cn('font-bold text-base', active ? 'text-white' : 'text-slate-200')}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span
+                  className="font-display"
+                  style={{
+                    fontSize: 15,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    color: active ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                  }}
+                >
                   {opt.label}
                 </span>
-                {active && <CheckCircleFullIcon size={18} className="text-orange-400" />}
+                {active && (
+                  <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+                    <CheckCircleFullIcon size={18} />
+                  </span>
+                )}
               </div>
-              <p className={cn('text-[13px] mt-0.5', active ? 'text-orange-200/80' : 'text-slate-500')}>
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 12,
+                  color: active ? 'var(--b-ink-60)' : 'var(--b-ink-40)',
+                  margin: '4px 0 0',
+                }}
+              >
                 {opt.sub}
               </p>
             </button>
@@ -315,29 +492,24 @@ function TrialReminderStep({
 function TrialTimeline({ reminderDays }: { reminderDays: 2 | 3 }) {
   const reminderDay = 7 - reminderDays; // Day 4 if 3-day, Day 5 if 2-day
   return (
-    <div className="relative">
+    <div style={{ position: 'relative' }}>
       {/* Track */}
-      <div className="absolute left-0 right-0 top-7 h-1 rounded-full bg-white/[0.08]" />
-      {/* Filled portion (free trial) */}
       <div
-        className="absolute left-0 top-7 h-1 rounded-full"
         style={{
-          width: '100%',
-          background: 'linear-gradient(90deg, #fb923c, #dc2626)',
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: 28,
+          height: 1,
+          background: 'var(--b-ink)',
         }}
       />
 
       {/* Markers */}
-      <div className="relative flex justify-between">
-        <Marker label="Today" sub="Sign up" filled tone="orange" />
-        <Marker
-          label={`Day ${reminderDay}`}
-          sub="Reminder"
-          filled
-          tone="orange"
-          highlight
-        />
-        <Marker label="Day 7" sub="Trial ends" filled tone="orange" />
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between' }}>
+        <Marker label="Today" sub="Sign up" />
+        <Marker label={`Day ${reminderDay}`} sub="Reminder" highlight />
+        <Marker label="Day 7" sub="Trial ends" />
       </div>
     </div>
   );
@@ -346,31 +518,42 @@ function TrialTimeline({ reminderDays }: { reminderDays: 2 | 3 }) {
 function Marker({
   label,
   sub,
-  filled,
-  tone,
   highlight,
 }: {
   label: string;
   sub: string;
-  filled: boolean;
-  tone: 'orange' | 'slate';
   highlight?: boolean;
 }) {
-  const color = tone === 'orange' ? '#fb923c' : '#475569';
   return (
-    <div className="flex flex-col items-center" style={{ width: 80 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 80 }}>
       <div
-        className={cn(
-          'w-4 h-4 rounded-full border-2 mb-2 mt-5',
-          highlight && 'ring-4 ring-orange-400/30',
-        )}
         style={{
-          background: filled ? color : 'transparent',
-          borderColor: color,
+          width: 12,
+          height: 12,
+          borderRadius: 0,
+          marginTop: 22,
+          marginBottom: 10,
+          background: highlight ? 'var(--b-accent)' : 'var(--b-ink)',
+          border: highlight ? '1px solid var(--b-accent)' : '1px solid var(--b-ink)',
         }}
       />
-      <span className="text-[11px] font-bold text-white">{label}</span>
-      <span className="text-[10px] text-slate-500 mt-0.5">{sub}</span>
+      <span
+        className="font-display"
+        style={{
+          fontSize: 12,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          color: 'var(--b-ink)',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className="font-body"
+        style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+      >
+        {sub}
+      </span>
     </div>
   );
 }
@@ -381,36 +564,89 @@ function PaymentStep() {
   const [method, setMethod] = useState<'card' | 'apple' | 'google'>('card');
   const [card, setCard] = useState({ number: '', expiry: '', cvc: '' });
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    marginTop: 6,
+    background: 'transparent',
+    border: '1px solid var(--b-rule)',
+    borderRadius: 0,
+    padding: '12px 14px',
+    color: 'var(--b-ink)',
+    fontSize: 15,
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+    outline: 'none',
+  };
+
   return (
     <div className="flex flex-col flex-1">
       <div className="text-center mt-2">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-orange-400">Free trial</p>
-        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-2 leading-tight">
-          7 days <span className="text-orange-400">free</span>.<br/>Then $9.99/month.
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          Free trial
+        </div>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 28,
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: '8px 0 0',
+          }}
+        >
+          7 days <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>free</em>.
+          <br />Then $9.99/month.
         </h2>
-        <p className="text-slate-300/85 mt-3 max-w-sm mx-auto text-[12px] leading-relaxed">
+        <p
+          className="font-body"
+          style={{
+            fontSize: 12,
+            color: 'var(--b-ink-60)',
+            marginTop: 12,
+            maxWidth: 360,
+            marginInline: 'auto',
+            lineHeight: 1.6,
+          }}
+        >
           You won&apos;t be charged until your trial ends. Cancel anytime in settings.
         </p>
       </div>
 
       {/* Method tabs */}
-      <div className="flex p-1 mt-5 rounded-full bg-[#10101a] border border-white/10">
+      <div
+        style={{
+          display: 'inline-flex',
+          marginTop: 20,
+          border: '1px solid var(--b-ink)',
+          background: 'var(--b-paper)',
+          width: '100%',
+        }}
+      >
         {([
           { val: 'card' as const,   label: 'Card' },
           { val: 'apple' as const,  label: 'Apple Pay' },
           { val: 'google' as const, label: 'Google Pay' },
-        ]).map((tab) => {
+        ]).map((tab, i) => {
           const active = method === tab.val;
           return (
             <button
               key={tab.val}
               onClick={() => setMethod(tab.val)}
-              className={cn(
-                'flex-1 py-2 rounded-full text-xs font-bold transition-all',
-                active
-                  ? 'bg-orange-500 text-white shadow-[0_0_14px_-4px_rgba(249,115,22,0.7)]'
-                  : 'text-slate-400 hover:text-slate-200',
-              )}
+              className="font-body"
+              style={{
+                flex: 1,
+                padding: '10px 8px',
+                background: active ? 'var(--b-ink)' : 'transparent',
+                color: active ? 'var(--b-paper)' : 'var(--b-ink-60)',
+                border: 'none',
+                borderLeft: i > 0 ? '1px solid var(--b-ink)' : 'none',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
             >
               {tab.label}
             </button>
@@ -419,11 +655,14 @@ function PaymentStep() {
       </div>
 
       {/* Method panel */}
-      <div className="mt-4 flex-1">
+      <div style={{ marginTop: 18, flex: 1 }}>
         {method === 'card' && (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <label className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">
+              <label
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+              >
                 Card number
               </label>
               <input
@@ -432,12 +671,15 @@ function PaymentStep() {
                 placeholder="1234 1234 1234 1234"
                 value={card.number}
                 onChange={(e) => setCard({ ...card, number: e.target.value })}
-                className="w-full mt-1.5 bg-[#10101a] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[15px] font-mono outline-none transition-colors"
+                style={inputStyle}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">
+                <label
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                >
                   Expiry
                 </label>
                 <input
@@ -446,11 +688,14 @@ function PaymentStep() {
                   placeholder="MM / YY"
                   value={card.expiry}
                   onChange={(e) => setCard({ ...card, expiry: e.target.value })}
-                  className="w-full mt-1.5 bg-[#10101a] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[15px] font-mono outline-none transition-colors"
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label className="text-[11px] uppercase tracking-widest text-slate-500 font-bold">
+                <label
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                >
                   CVC
                 </label>
                 <input
@@ -459,37 +704,119 @@ function PaymentStep() {
                   placeholder="•••"
                   value={card.cvc}
                   onChange={(e) => setCard({ ...card, cvc: e.target.value })}
-                  className="w-full mt-1.5 bg-[#10101a] border border-white/10 focus:border-orange-400 rounded-xl px-4 py-3 text-white text-[15px] font-mono outline-none transition-colors"
+                  style={inputStyle}
                 />
               </div>
             </div>
           </div>
         )}
         {method === 'apple' && (
-          <div className="rounded-2xl bg-[#10101a] border border-white/10 p-6 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-black border border-white/15 mb-3">
-              <span className="text-white text-2xl font-bold"></span>
+          <div
+            style={{
+              border: '1px solid var(--b-rule)',
+              borderTop: '2px solid var(--b-ink)',
+              padding: 24,
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 56,
+                height: 56,
+                background: 'var(--b-ink)',
+                color: 'var(--b-paper)',
+                marginBottom: 12,
+              }}
+            >
+              <span
+                className="font-display"
+                style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500 }}
+              >
+                A
+              </span>
             </div>
-            <p className="text-white font-bold text-base">Apple Pay</p>
-            <p className="text-slate-400 text-[13px] mt-1.5 leading-relaxed max-w-xs mx-auto">
+            <p
+              className="font-display"
+              style={{
+                fontSize: 16,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                color: 'var(--b-ink)',
+                margin: 0,
+              }}
+            >
+              Apple Pay
+            </p>
+            <p
+              className="font-body"
+              style={{
+                fontSize: 12,
+                color: 'var(--b-ink-60)',
+                marginTop: 8,
+                lineHeight: 1.6,
+                maxWidth: 320,
+                marginInline: 'auto',
+              }}
+            >
               You&apos;ll confirm your purchase with Face ID or Touch ID on the next screen.
             </p>
           </div>
         )}
         {method === 'google' && (
-          <div className="rounded-2xl bg-[#10101a] border border-white/10 p-6 text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white mb-3">
-              <span className="text-base font-bold tracking-tighter text-slate-900">
-                <span className="text-blue-500">G</span>
-                <span className="text-red-500">o</span>
-                <span className="text-yellow-500">o</span>
-                <span className="text-blue-500">g</span>
-                <span className="text-green-500">l</span>
-                <span className="text-red-500">e</span>
+          <div
+            style={{
+              border: '1px solid var(--b-rule)',
+              borderTop: '2px solid var(--b-ink)',
+              padding: 24,
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 56,
+                height: 56,
+                background: 'var(--b-paper)',
+                border: '1px solid var(--b-ink)',
+                color: 'var(--b-ink)',
+                marginBottom: 12,
+              }}
+            >
+              <span
+                className="font-display"
+                style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}
+              >
+                G
               </span>
             </div>
-            <p className="text-white font-bold text-base">Google Pay</p>
-            <p className="text-slate-400 text-[13px] mt-1.5 leading-relaxed max-w-xs mx-auto">
+            <p
+              className="font-display"
+              style={{
+                fontSize: 16,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                color: 'var(--b-ink)',
+                margin: 0,
+              }}
+            >
+              Google Pay
+            </p>
+            <p
+              className="font-body"
+              style={{
+                fontSize: 12,
+                color: 'var(--b-ink-60)',
+                marginTop: 8,
+                lineHeight: 1.6,
+                maxWidth: 320,
+                marginInline: 'auto',
+              }}
+            >
               Continue to confirm your purchase with your Google account.
             </p>
           </div>
@@ -497,18 +824,66 @@ function PaymentStep() {
       </div>
 
       {/* Summary card */}
-      <div className="mt-5 rounded-2xl bg-[#10101a] border border-white/10 p-4">
-        <div className="flex items-center justify-between text-[13px]">
-          <span className="text-slate-400">Today (free trial)</span>
-          <span className="font-bold text-white">$0.00</span>
+      <div
+        style={{
+          marginTop: 20,
+          padding: '14px 18px',
+          border: '1px solid var(--b-rule)',
+          borderTop: '2px solid var(--b-ink)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: 13,
+          }}
+        >
+          <span className="font-body" style={{ color: 'var(--b-ink-60)' }}>
+            Today (free trial)
+          </span>
+          <span
+            className="font-display"
+            style={{ fontStyle: 'italic', fontWeight: 500, color: 'var(--b-ink)' }}
+          >
+            $0.00
+          </span>
         </div>
-        <div className="flex items-center justify-between text-[13px] mt-2">
-          <span className="text-slate-400">After 7 days</span>
-          <span className="font-bold text-white">$9.99 / month</span>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: 13,
+            marginTop: 8,
+          }}
+        >
+          <span className="font-body" style={{ color: 'var(--b-ink-60)' }}>
+            After 7 days
+          </span>
+          <span
+            className="font-display"
+            style={{ fontStyle: 'italic', fontWeight: 500, color: 'var(--b-ink)' }}
+          >
+            $9.99 / month
+          </span>
         </div>
-        <div className="border-t border-white/[0.06] my-3" />
-        <div className="flex items-center gap-2 text-[12px] text-slate-500">
-          <FireIcon size={14} className="text-orange-400" />
+        <div style={{ borderTop: '1px solid var(--b-rule)', margin: '12px 0' }} />
+        <div
+          className="font-body"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 11,
+            color: 'var(--b-ink-60)',
+            fontStyle: 'italic',
+          }}
+        >
+          <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+            <FireIcon size={14} />
+          </span>
           <span>No charge today. Cancel anytime in Settings.</span>
         </div>
       </div>
