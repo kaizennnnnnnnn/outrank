@@ -113,21 +113,36 @@ export default function ProfilePage() {
             >
               <em style={{ fontStyle: 'italic' }}>{user.username}</em>
             </h1>
-            <Link
-              href="/settings"
-              className="font-body"
-              style={{
-                fontSize: 10,
-                color: 'var(--b-accent)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                textDecoration: 'none',
-                flexShrink: 0,
-              }}
-            >
-              Settings →
-            </Link>
+            <div style={{ display: 'flex', gap: 14, flexShrink: 0 }}>
+              <Link
+                href="/habits"
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  color: 'var(--b-accent)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Roster →
+              </Link>
+              <Link
+                href="/settings"
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  color: 'var(--b-accent)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                }}
+              >
+                Settings →
+              </Link>
+            </div>
           </div>
           <div
             className="font-body"

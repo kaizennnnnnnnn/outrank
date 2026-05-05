@@ -426,12 +426,28 @@ export default function DashboardPage() {
               >
                 Today&rsquo;s habits
               </span>
-              <span
-                className="font-body tabular"
-                style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
-              >
-                {String(pillarsLoggedToday).padStart(2, '0')} / {String(PILLARS.length).padStart(2, '0')}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                <span
+                  className="font-body tabular"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
+                >
+                  {String(pillarsLoggedToday).padStart(2, '0')} / {String(PILLARS.length).padStart(2, '0')}
+                </span>
+                <Link
+                  href="/habits"
+                  className="font-body"
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--b-accent)',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                  }}
+                >
+                  Roster →
+                </Link>
+              </div>
             </div>
 
             {habitsLoading ? (
