@@ -85,16 +85,16 @@ export function PhoenixMascot({
         <defs>
           {/* Body — bright amber to deep red, saturated */}
           <linearGradient id="mascotBody" x1="80" y1="78" x2="80" y2="155">
-            <stop offset="0%" stopColor="#fcd34d" />
-            <stop offset="35%" stopColor="#fb923c" />
+            <stop offset="0%" stopColor="#fca5a5" />
+            <stop offset="35%" stopColor="#ef4444" />
             <stop offset="75%" stopColor="#dc2626" />
             <stop offset="100%" stopColor="#7f1d1d" />
           </linearGradient>
           {/* Chest fluff — lighter cream-amber overlay */}
           <radialGradient id="mascotChest" cx="50%" cy="60%" r="36%">
             <stop offset="0%" stopColor="#fef3c7" stopOpacity="0.95" />
-            <stop offset="60%" stopColor="#fdba74" stopOpacity="0.55" />
-            <stop offset="100%" stopColor="#fdba74" stopOpacity="0" />
+            <stop offset="60%" stopColor="#fca5a5" stopOpacity="0.55" />
+            <stop offset="100%" stopColor="#fca5a5" stopOpacity="0" />
           </radialGradient>
           {/* Body specular — small highlight near top-left */}
           <radialGradient id="mascotBodyShine" cx="38%" cy="22%" r="22%">
@@ -104,17 +104,17 @@ export function PhoenixMascot({
           {/* Head — cream → soft amber */}
           <linearGradient id="mascotHead" x1="80" y1="20" x2="80" y2="84">
             <stop offset="0%" stopColor="#fffbeb" />
-            <stop offset="55%" stopColor="#fde68a" />
-            <stop offset="100%" stopColor="#f97316" />
+            <stop offset="55%" stopColor="#fecaca" />
+            <stop offset="100%" stopColor="#dc2626" />
           </linearGradient>
           {/* Wing feathers — layered amber to red */}
           <linearGradient id="mascotWingTop" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fcd34d" />
-            <stop offset="60%" stopColor="#fb923c" />
+            <stop offset="0%" stopColor="#fca5a5" />
+            <stop offset="60%" stopColor="#ef4444" />
             <stop offset="100%" stopColor="#b91c1c" />
           </linearGradient>
           <linearGradient id="mascotWingMid" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fb923c" />
+            <stop offset="0%" stopColor="#ef4444" />
             <stop offset="100%" stopColor="#991b1b" />
           </linearGradient>
           <linearGradient id="mascotWingTip" x1="0" y1="0" x2="0" y2="1">
@@ -123,19 +123,19 @@ export function PhoenixMascot({
           </linearGradient>
           {/* Tail flames — fan plumes */}
           <linearGradient id="mascotTailOuter" x1="80" y1="100" x2="80" y2="170">
-            <stop offset="0%" stopColor="#fb923c" />
+            <stop offset="0%" stopColor="#ef4444" />
             <stop offset="55%" stopColor="#dc2626" />
             <stop offset="100%" stopColor="#7f1d1d" />
           </linearGradient>
           <linearGradient id="mascotTailInner" x1="80" y1="105" x2="80" y2="160">
             <stop offset="0%" stopColor="#fef3c7" />
-            <stop offset="50%" stopColor="#fb923c" />
+            <stop offset="50%" stopColor="#ef4444" />
             <stop offset="100%" stopColor="#dc2626" />
           </linearGradient>
           {/* Head crest flames */}
           <linearGradient id="mascotCrest" x1="80" y1="0" x2="80" y2="32">
             <stop offset="0%" stopColor="#fef3c7" />
-            <stop offset="50%" stopColor="#fb923c" />
+            <stop offset="50%" stopColor="#ef4444" />
             <stop offset="100%" stopColor="#dc2626" />
           </linearGradient>
         </defs>
@@ -192,10 +192,10 @@ export function PhoenixMascot({
           {/* Side rachis highlights — feather spines */}
           <path d="M80 120 Q 78 144 78 170" stroke="#fef3c7" strokeWidth="0.5" strokeLinecap="round" opacity="0.55" fill="none" />
           {/* Tail tip sparks */}
-          <circle cx="62" cy="166" r="1.1" fill="#fde68a" opacity="0.85" />
-          <circle cx="98" cy="166" r="1.1" fill="#fde68a" opacity="0.85" />
-          <circle cx="46" cy="160" r="0.9" fill="#fcd34d" opacity="0.75" />
-          <circle cx="114" cy="160" r="0.9" fill="#fcd34d" opacity="0.75" />
+          <circle cx="62" cy="166" r="1.1" fill="#fecaca" opacity="0.85" />
+          <circle cx="98" cy="166" r="1.1" fill="#fecaca" opacity="0.85" />
+          <circle cx="46" cy="160" r="0.9" fill="#fca5a5" opacity="0.75" />
+          <circle cx="114" cy="160" r="0.9" fill="#fca5a5" opacity="0.75" />
         </g>
 
         {/* ─── Wings — five layered flight feathers per side ─── */}
@@ -238,10 +238,10 @@ export function PhoenixMascot({
           />
           {/* Rachis spines — feather shafts along each feather */}
           <path d="M52 92 Q 36 100 16 112" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.6" strokeLinecap="round" />
-          <path d="M52 98 Q 30 110 14 126" stroke="#fde68a" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-          <path d="M54 104 Q 34 118 18 136" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.5" strokeLinecap="round" />
-          <path d="M54 110 Q 38 124 28 138" stroke="#fcd34d" strokeWidth="0.45" fill="none" opacity="0.45" strokeLinecap="round" />
-          <path d="M56 116 Q 44 126 36 136" stroke="#fb923c" strokeWidth="0.45" fill="none" opacity="0.4" strokeLinecap="round" />
+          <path d="M52 98 Q 30 110 14 126" stroke="#fecaca" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+          <path d="M54 104 Q 34 118 18 136" stroke="#fca5a5" strokeWidth="0.5" fill="none" opacity="0.5" strokeLinecap="round" />
+          <path d="M54 110 Q 38 124 28 138" stroke="#fca5a5" strokeWidth="0.45" fill="none" opacity="0.45" strokeLinecap="round" />
+          <path d="M56 116 Q 44 126 36 136" stroke="#ef4444" strokeWidth="0.45" fill="none" opacity="0.4" strokeLinecap="round" />
           {/* Bright leading-edge highlight on top feather */}
           <path d="M50 90 Q 38 96 22 108" stroke="#fff7ed" strokeWidth="0.7" fill="none" opacity="0.55" strokeLinecap="round" />
         </g>
@@ -276,10 +276,10 @@ export function PhoenixMascot({
             fill="url(#mascotWingTip)"
           />
           <path d="M108 92 Q 124 100 144 112" stroke="#fef3c7" strokeWidth="0.5" fill="none" opacity="0.6" strokeLinecap="round" />
-          <path d="M108 98 Q 130 110 146 126" stroke="#fde68a" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
-          <path d="M106 104 Q 126 118 142 136" stroke="#fcd34d" strokeWidth="0.5" fill="none" opacity="0.5" strokeLinecap="round" />
-          <path d="M106 110 Q 122 124 132 138" stroke="#fcd34d" strokeWidth="0.45" fill="none" opacity="0.45" strokeLinecap="round" />
-          <path d="M104 116 Q 116 126 124 136" stroke="#fb923c" strokeWidth="0.45" fill="none" opacity="0.4" strokeLinecap="round" />
+          <path d="M108 98 Q 130 110 146 126" stroke="#fecaca" strokeWidth="0.5" fill="none" opacity="0.55" strokeLinecap="round" />
+          <path d="M106 104 Q 126 118 142 136" stroke="#fca5a5" strokeWidth="0.5" fill="none" opacity="0.5" strokeLinecap="round" />
+          <path d="M106 110 Q 122 124 132 138" stroke="#fca5a5" strokeWidth="0.45" fill="none" opacity="0.45" strokeLinecap="round" />
+          <path d="M104 116 Q 116 126 124 136" stroke="#ef4444" strokeWidth="0.45" fill="none" opacity="0.4" strokeLinecap="round" />
           <path d="M110 90 Q 122 96 138 108" stroke="#fff7ed" strokeWidth="0.7" fill="none" opacity="0.55" strokeLinecap="round" />
         </g>
 
@@ -290,9 +290,9 @@ export function PhoenixMascot({
         {/* Body specular */}
         <ellipse cx="80" cy="115" rx="34" ry="38" fill="url(#mascotBodyShine)" />
         {/* Subtle feather hint lines on chest */}
-        <path d="M68 122 Q 70 128 72 134" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
-        <path d="M80 124 Q 80 130 80 136" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
-        <path d="M92 122 Q 90 128 88 134" stroke="#fcd34d" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
+        <path d="M68 122 Q 70 128 72 134" stroke="#fca5a5" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
+        <path d="M80 124 Q 80 130 80 136" stroke="#fca5a5" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
+        <path d="M92 122 Q 90 128 88 134" stroke="#fca5a5" strokeWidth="0.6" strokeLinecap="round" fill="none" opacity="0.45" />
 
         {/* ─── Real bird feet — short legs + 3 splayed toes w/ claws ─── */}
         {/* Left foot */}
@@ -391,7 +391,7 @@ export function PhoenixMascot({
             the hem edge, suggesting fabric thickness */}
         <path
           d="M56 44 Q 80 38.5 104 44"
-          stroke="#fcd34d"
+          stroke="#fca5a5"
           strokeWidth="0.5"
           fill="none"
           opacity="0.5"
@@ -437,19 +437,19 @@ export function PhoenixMascot({
             old ear-tufts; these read as "feathered head," not ears. */}
         <path d="M55 50 Q 52 44 54 38 Q 57 44 58 50 Z" fill="#dc2626" opacity="0.85" />
         <path d="M58 54 Q 55 48 57 42 Q 60 48 61 54 Z" fill="#ef4444" opacity="0.9" />
-        <path d="M61 58 Q 58 52 60 46 Q 63 52 64 58 Z" fill="#fb923c" opacity="0.85" />
+        <path d="M61 58 Q 58 52 60 46 Q 63 52 64 58 Z" fill="#ef4444" opacity="0.85" />
         <path d="M105 50 Q 108 44 106 38 Q 103 44 102 50 Z" fill="#dc2626" opacity="0.85" />
         <path d="M102 54 Q 105 48 103 42 Q 100 48 99 54 Z" fill="#ef4444" opacity="0.9" />
-        <path d="M99 58 Q 102 52 100 46 Q 97 52 96 58 Z" fill="#fb923c" opacity="0.85" />
+        <path d="M99 58 Q 102 52 100 46 Q 97 52 96 58 Z" fill="#ef4444" opacity="0.85" />
 
         {/* Back-of-head feather wisps — sticking up along the upper
             head silhouette to add fullness behind the crest */}
-        <path d="M58 46 Q 54 40 56 34 Q 60 40 62 46 Z" fill="#fb923c" opacity="0.85" />
-        <path d="M62 40 Q 60 32 64 26 Q 66 34 66 40 Z" fill="#fb923c" />
+        <path d="M58 46 Q 54 40 56 34 Q 60 40 62 46 Z" fill="#ef4444" opacity="0.85" />
+        <path d="M62 40 Q 60 32 64 26 Q 66 34 66 40 Z" fill="#ef4444" />
         <path d="M68 36 Q 66 28 70 22 Q 72 30 72 36 Z" fill="url(#mascotCrest)" opacity="0.9" />
         <path d="M88 36 Q 90 28 92 22 Q 94 30 92 36 Z" fill="url(#mascotCrest)" opacity="0.9" />
-        <path d="M94 40 Q 96 32 98 26 Q 100 34 98 40 Z" fill="#fb923c" />
-        <path d="M98 46 Q 102 40 104 34 Q 102 40 102 46 Z" fill="#fb923c" opacity="0.85" />
+        <path d="M94 40 Q 96 32 98 26 Q 100 34 98 40 Z" fill="#ef4444" />
+        <path d="M98 46 Q 102 40 104 34 Q 102 40 102 46 Z" fill="#ef4444" opacity="0.85" />
 
         {/* Head crest — back-row layer + dense fringe + 7-tongue fan */}
         <g
@@ -473,13 +473,13 @@ export function PhoenixMascot({
               the head crown, killing any gap between the bigger tongues. */}
           <path d="M56 42 Q 54 36 56 32 Q 60 36 60 42 Z" fill="#dc2626" opacity="0.8" />
           <path d="M60 42 Q 60 34 64 30 Q 66 36 64 42 Z" fill="#ef4444" />
-          <path d="M64 42 Q 64 32 68 26 Q 70 34 68 42 Z" fill="#fb923c" />
+          <path d="M64 42 Q 64 32 68 26 Q 70 34 68 42 Z" fill="#ef4444" />
           <path d="M68 42 Q 68 30 72 24 Q 74 32 72 42 Z" fill="url(#mascotCrest)" />
           <path d="M72 42 Q 72 28 76 22 Q 78 30 76 42 Z" fill="url(#mascotCrest)" />
           <path d="M76 42 Q 76 26 80 20 Q 82 28 80 42 Z" fill="url(#mascotCrest)" />
           <path d="M80 42 Q 80 26 84 20 Q 84 28 84 42 Z" fill="url(#mascotCrest)" />
           <path d="M84 42 Q 84 28 88 22 Q 88 32 88 42 Z" fill="url(#mascotCrest)" />
-          <path d="M88 42 Q 88 30 92 24 Q 92 34 92 42 Z" fill="#fb923c" />
+          <path d="M88 42 Q 88 30 92 24 Q 92 34 92 42 Z" fill="#ef4444" />
           <path d="M92 42 Q 92 32 96 26 Q 96 36 96 42 Z" fill="#ef4444" />
           <path d="M96 42 Q 96 34 100 30 Q 100 36 100 42 Z" fill="#dc2626" opacity="0.85" />
           <path d="M100 42 Q 100 36 104 32 Q 104 36 104 42 Z" fill="#dc2626" opacity="0.8" />
@@ -540,13 +540,13 @@ export function PhoenixMascot({
             The two eyes share a single keyframe and stay in sync. */}
         <g className="phoenix-eye">
           <ellipse cx="70" cy="62" rx="5" ry="6" fill="#0c0c14" />
-          <ellipse cx="70" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
+          <ellipse cx="70" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#ef4444" strokeWidth="0.5" opacity="0.55" />
           <circle cx="71.6" cy="59.8" r="1.7" fill="#ffffff" />
           <circle cx="68.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
         </g>
         <g className="phoenix-eye">
           <ellipse cx="90" cy="62" rx="5" ry="6" fill="#0c0c14" />
-          <ellipse cx="90" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#fb923c" strokeWidth="0.5" opacity="0.55" />
+          <ellipse cx="90" cy="62" rx="5.6" ry="6.6" fill="none" stroke="#ef4444" strokeWidth="0.5" opacity="0.55" />
           <circle cx="91.6" cy="59.8" r="1.7" fill="#ffffff" />
           <circle cx="88.6" cy="64.2" r="0.9" fill="#ffffff" opacity="0.85" />
         </g>

@@ -6,103 +6,153 @@ import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
 
 /**
  * Cold-open entry for unauthenticated users. Two paths:
- *   1. Get Started → /welcome/intro (4-page carousel, then funnel)
+ *   1. Get Started → /welcome/intro (5-page carousel, then funnel)
  *   2. I have an account → /auth/login
  *
- * No nav, no chrome. The phoenix mascot is the hero. Aurora background
- * matches the marketing landing for visual continuity.
+ * Editorial Direction B v2 — paper-and-ink. The phoenix mascot is the
+ * hero; the rest of the page reads like the cover of a periodical
+ * issue: spread caps brand, italic display headline, body subtitle,
+ * filled-ink CTA pair.
  */
 export default function WelcomePage() {
   return (
-    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
-      {/* Aurora — same red/orange palette as the marketing landing */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div
-          className="absolute -top-40 -left-40 w-[480px] h-[480px] rounded-full opacity-50 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.45), transparent 65%)' }}
-        />
-        <div
-          className="absolute -bottom-40 -right-40 w-[520px] h-[520px] rounded-full opacity-45 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(251,146,60,0.40), transparent 65%)' }}
-        />
-        {/* Subtle grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-            maskImage: 'radial-gradient(ellipse 60% 70% at 50% 50%, #000 30%, transparent 80%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 60% 70% at 50% 50%, #000 30%, transparent 80%)',
-          }}
-        />
+    <div
+      className="dir-b min-h-screen flex flex-col"
+      style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}
+    >
+      {/* Brand nameplate */}
+      <div
+        className="spread"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink)',
+          letterSpacing: '0.32em',
+          padding: '24px 22px 12px',
+          borderBottom: '1px solid var(--b-rule)',
+          textAlign: 'center',
+        }}
+      >
+        OUTRANK
       </div>
 
       {/* Hero */}
-      <div className="relative flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
-        {/* Entry: just a clean fade + small scale. The previous
-            keyframe array was producing a bounce that read as the
-            mascot blinking in and out. The greeting wing-wave on
-            mount handles the "do something cute" part. */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '32px 22px 16px',
+        }}
+      >
         <motion.div
-          initial={{ opacity: 0, scale: 0.88 }}
+          initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
         >
           <PhoenixMascot size={150} greeting />
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 32 }}
+        >
+          Volume One · Issue One
+        </motion.div>
+
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          className="font-heading text-4xl sm:text-5xl font-bold text-white text-center mt-8 leading-tight"
+          transition={{ duration: 0.5, delay: 0.28 }}
+          className="font-display"
+          style={{
+            fontSize: 50,
+            fontWeight: 500,
+            lineHeight: 1,
+            margin: '6px 0 0',
+            textAlign: 'center',
+          }}
         >
           Welcome to{' '}
-          <span
-            className="text-transparent bg-clip-text"
-            style={{
-              backgroundImage: 'linear-gradient(90deg, #fb923c, #ef4444, #fb923c)',
-            }}
-          >
-            Outrank
-          </span>
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>Outrank</em>.
         </motion.h1>
 
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-slate-300/85 text-center mt-4 max-w-sm text-base leading-relaxed"
+          className="font-body"
+          style={{
+            fontSize: 14,
+            color: 'var(--b-ink-60)',
+            textAlign: 'center',
+            marginTop: 14,
+            maxWidth: 360,
+            lineHeight: 1.55,
+            fontStyle: 'italic',
+          }}
         >
-          Build the version of you that doesn&apos;t quit.
+          Build the version of you that doesn&rsquo;t quit.
         </motion.p>
       </div>
 
       {/* CTAs */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.55 }}
-        className="relative px-6 pb-10 space-y-3 max-w-md w-full mx-auto"
+        style={{
+          padding: '14px 22px 32px',
+          maxWidth: 480,
+          width: '100%',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+        }}
       >
-        <Link href="/welcome/intro" className="block">
+        <Link href="/welcome/intro" style={{ display: 'block' }}>
           <motion.button
             whileTap={{ scale: 0.98 }}
-            className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all"
+            className="font-body"
             style={{
-              background: 'linear-gradient(90deg, #dc2626, #f97316)',
+              width: '100%',
+              padding: '14px 16px',
+              background: 'var(--b-ink)',
+              color: 'var(--b-paper)',
+              border: '1px solid var(--b-ink)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
             }}
           >
-            GET STARTED
+            Get started →
           </motion.button>
         </Link>
-        <Link href="/auth/login" className="block">
+        <Link href="/auth/login" style={{ display: 'block' }}>
           <motion.button
             whileTap={{ scale: 0.98 }}
-            className="w-full py-4 rounded-full font-bold text-base text-slate-200 bg-transparent border border-white/15 hover:bg-white/[0.04] transition-colors"
+            className="font-body"
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              background: 'transparent',
+              color: 'var(--b-ink-60)',
+              border: '1px solid var(--b-ink)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}
           >
-            I HAVE AN ACCOUNT
+            I have an account
           </motion.button>
         </Link>
       </motion.div>

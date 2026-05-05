@@ -10,14 +10,8 @@ import { WaterIcon, SleepIcon, ScreenIcon } from '@/components/ui/CategoryIcons'
 import { SoulOrb } from '@/components/profile/SoulOrb';
 import { MAX_ORB_TIER } from '@/constants/orbTiers';
 
-/**
- * Five-page swipeable intro shown after "Get Started." Tells the
- * Outrank pitch in ~40 seconds, then hands off to the funnel proper
- * at /onboard. Pages aren't a full step in the onboarding sense — no
- * answers are captured here — so this isn't part of the wizard shell.
- */
-
 interface IntroPage {
+  eyebrow: string;
   title: ReactNode;
   body: string;
   visual: ReactNode;
@@ -25,77 +19,54 @@ interface IntroPage {
 
 const PAGES: IntroPage[] = [
   {
-    title: <>Build the version of you<br/>that <span className="text-orange-400">doesn&apos;t quit</span>.</>,
+    eyebrow: 'Page One',
+    title: (
+      <>
+        Build the version of you that{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>doesn&rsquo;t quit</em>.
+      </>
+    ),
     body: 'Outrank turns daily habits into a game. Every log earns XP, every streak proves your edge.',
     visual: <PhoenixMascot size={150} />,
   },
   {
-    title: <>Five pillars.<br/><span className="text-orange-400">One streak.</span></>,
+    eyebrow: 'Page Two',
+    title: (
+      <>
+        Five pillars.{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>One streak.</em>
+      </>
+    ),
     body: 'Gym, steps, water, sleep, and phone-free time — your foundation, tracked and visible.',
-    visual: (
-      <div className="grid grid-cols-3 gap-3 w-[260px]">
-        {[
-          { label: 'Gym',    color: '#ef4444', icon: <FireIcon size={28} className="text-red-300" /> },
-          { label: 'Steps',  color: '#22c55e', icon: <BoltFullIcon size={28} className="text-emerald-300" /> },
-          { label: 'Water',  color: '#3b82f6', icon: <WaterIcon  size={28} className="text-blue-300" /> },
-          { label: 'Sleep',  color: '#8b5cf6', icon: <SleepIcon  size={28} className="text-violet-300" /> },
-          { label: 'Focus',  color: '#f59e0b', icon: <ScreenIcon size={28} className="text-amber-300" /> },
-          { label: 'Streak', color: '#fb923c', icon: <FireIcon   size={28}  className="text-orange-300" /> },
-        ].map((p) => (
-          <div
-            key={p.label}
-            className="aspect-square rounded-2xl border flex flex-col items-center justify-center gap-1.5"
-            style={{
-              background: `linear-gradient(135deg, ${p.color}1a, #0c0c14)`,
-              borderColor: `${p.color}40`,
-            }}
-          >
-            <div>{p.icon}</div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">{p.label}</span>
-          </div>
-        ))}
-      </div>
-    ),
+    visual: <PillarsGrid />,
   },
   {
-    title: <>Compete with friends.<br/><span className="text-orange-400">Outrank everyone.</span></>,
+    eyebrow: 'Page Three',
+    title: (
+      <>
+        Compete with friends.{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>Outrank everyone.</em>
+      </>
+    ),
     body: 'Pacts, leagues, duels, and live leaderboards. Your growth has an audience now.',
-    visual: (
-      <div className="relative w-[260px] h-[180px]">
-        {/* Stacked rank badges */}
-        <div
-          className="absolute left-2 top-6 w-20 h-24 rounded-2xl border border-white/10 flex flex-col items-center justify-center gap-2 -rotate-6"
-          style={{ background: 'linear-gradient(135deg, #ef444433, #0c0c14)' }}
-        >
-          <SwordsCrossIcon size={28} className="text-red-400" />
-          <span className="text-[10px] font-bold uppercase text-slate-300">Duels</span>
-        </div>
-        <div
-          className="absolute left-1/2 -translate-x-1/2 top-0 w-24 h-28 rounded-2xl border border-orange-500/40 flex flex-col items-center justify-center gap-2 z-10"
-          style={{ background: 'linear-gradient(135deg, #f9731644, #0c0c14)', boxShadow: '0 8px 32px -8px rgba(249,115,22,0.5)' }}
-        >
-          <TrophyIconFull size={32} className="text-yellow-400" />
-          <span className="text-[10px] font-bold uppercase text-orange-300">Leagues</span>
-        </div>
-        <div
-          className="absolute right-2 top-6 w-20 h-24 rounded-2xl border border-white/10 flex flex-col items-center justify-center gap-2 rotate-6"
-          style={{ background: 'linear-gradient(135deg, #22c55e33, #0c0c14)' }}
-        >
-          <BoltFullIcon size={28} className="text-emerald-400" />
-          <span className="text-[10px] font-bold uppercase text-slate-300">Ranks</span>
-        </div>
-      </div>
-    ),
+    visual: <CompeteVisual />,
   },
   {
-    title: <>Your <span className="text-orange-400">Soul Orb</span><br/>evolves with you.</>,
+    eyebrow: 'Page Four',
+    title: (
+      <>
+        Your{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>Soul Orb</em>{' '}
+        evolves with you.
+      </>
+    ),
     body: 'Every habit logged feeds your orb. Watch it awaken, ascend, and become unmistakably yours.',
     visual: (
       <div className="animate-soul-orb-breathe">
         <SoulOrb
           tier={MAX_ORB_TIER}
           intensity={100}
-          size={280}
+          size={260}
           interactive={false}
           hideLabel
           baseColorId="prismatic"
@@ -106,29 +77,119 @@ const PAGES: IntroPage[] = [
     ),
   },
   {
-    title: <>Endless<br/><span className="text-orange-400">customization</span>.</>,
+    eyebrow: 'Page Five',
+    title: (
+      <>
+        Endless{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>customization</em>.
+      </>
+    ),
     body: 'Mix bases, pulses, and rings. Hundreds of combinations. Ascend to unlock the rainbow tier.',
     visual: <OrbCustomizationShowcase />,
   },
 ];
 
-// ─── Orb customization auto-showcase ─────────────────────────────────────────
-//
-// Cycles the orb through several base colors, then aggressively cycles
-// through pulse colors, then rings, then transitions into a full-rainbow
-// spinning finale. Demonstrates the customizability without making the
-// user click through every combo manually.
-//
-// Timing is chosen so the whole sequence runs ~10s — long enough for the
-// user to notice each phase but short enough that they don't get bored
-// before tapping CONTINUE.
+function PillarsGrid() {
+  const items: { label: string; color: string; icon: ReactNode }[] = [
+    { label: 'Gym',    color: '#ef4444', icon: <FireIcon size={26} /> },
+    { label: 'Steps',  color: '#22c55e', icon: <BoltFullIcon size={26} /> },
+    { label: 'Water',  color: '#3b82f6', icon: <WaterIcon size={26} /> },
+    { label: 'Sleep',  color: '#8b5cf6', icon: <SleepIcon size={26} /> },
+    { label: 'Focus',  color: '#f59e0b', icon: <ScreenIcon size={26} /> },
+    { label: 'Streak', color: 'var(--b-accent)', icon: <FireIcon size={26} /> },
+  ];
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 8,
+        width: 260,
+      }}
+    >
+      {items.map((p) => (
+        <div
+          key={p.label}
+          style={{
+            aspectRatio: '1',
+            border: '1px solid var(--b-rule)',
+            borderTop: `2px solid ${p.color}`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+          }}
+        >
+          <span style={{ color: p.color, display: 'inline-flex' }}>{p.icon}</span>
+          <span
+            className="spread"
+            style={{ fontSize: 8, color: 'var(--b-ink-60)' }}
+          >
+            {p.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CompeteVisual() {
+  const cards = [
+    {
+      label: 'Duels',
+      color: '#ef4444',
+      icon: <SwordsCrossIcon size={26} />,
+      style: { left: 8, top: 24, transform: 'rotate(-6deg)', zIndex: 1 },
+    },
+    {
+      label: 'Leagues',
+      color: 'var(--b-accent)',
+      icon: <TrophyIconFull size={28} />,
+      style: { left: '50%', top: 0, transform: 'translateX(-50%)', zIndex: 2, borderTopWidth: 3 },
+    },
+    {
+      label: 'Ranks',
+      color: '#22c55e',
+      icon: <BoltFullIcon size={26} />,
+      style: { right: 8, top: 24, transform: 'rotate(6deg)', zIndex: 1 },
+    },
+  ];
+  return (
+    <div style={{ position: 'relative', width: 260, height: 180 }}>
+      {cards.map((c) => (
+        <div
+          key={c.label}
+          style={{
+            position: 'absolute',
+            width: 80,
+            height: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            background: 'var(--b-paper)',
+            border: '1px solid var(--b-rule)',
+            borderTop: `2px solid ${c.color}`,
+            ...c.style,
+          }}
+        >
+          <span style={{ color: c.color, display: 'inline-flex' }}>{c.icon}</span>
+          <span
+            className="spread"
+            style={{ fontSize: 8, color: 'var(--b-ink-60)' }}
+          >
+            {c.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const SHOWCASE_BASES = ['phoenix', 'nebula', 'celestial', 'aurora', 'bloodmoon', 'galactic'];
 const SHOWCASE_PULSES = ['pulse_eternal', 'pulse_cosmic', 'pulse_nova', 'pulse_quasar', 'pulse_stargaze', 'pulse_eternal'];
-// Ring cycle starts with a warm/neutral ring (supernova orange-yellow)
-// so it blends with whatever base color is showing during the earlier
-// base-cycle phase. Then jumps to phoenix, candy, aurora (which has
-// green but only briefly during ring cycle), and sunset.
 const SHOWCASE_RINGS = ['ring_supernova', 'ring_phoenix', 'ring_candy', 'ring_aurora', 'ring_sunset'];
 
 type ShowcasePhase = 'cycling' | 'transitioning' | 'rainbow';
@@ -146,38 +207,21 @@ function OrbCustomizationShowcase() {
     const at = (ms: number, fn: () => void) => timeouts.push(setTimeout(fn, ms));
 
     let t = 0;
-    // Phase 1 — cycle bases (faster: 320ms each)
     SHOWCASE_BASES.forEach((b) => {
       at(t, () => setConfig((c) => ({ ...c, base: b })));
       t += 320;
     });
-
-    // Brief pause holding the last base
     t += 180;
-
-    // Phase 2 — cycle pulses (200ms each — really aggressive)
     SHOWCASE_PULSES.forEach((p) => {
       at(t, () => setConfig((c) => ({ ...c, pulse: p })));
       t += 200;
     });
-
-    // Brief pause
     t += 180;
-
-    // Phase 3 — cycle rings (320ms each)
     SHOWCASE_RINGS.forEach((r) => {
       at(t, () => setConfig((c) => ({ ...c, ring: r })));
       t += 320;
     });
-
-    // Brief pause before finale
     t += 180;
-
-    // Transition phase — kick off the one-shot spin + flash. The
-    // animation runs for 1.4s; we swap colors mid-transition (at 0.7s,
-    // when the flash is at peak and the orb is most blurred) so the
-    // user perceives it as the orb fading into rainbow during the spin
-    // rather than a hard color snap.
     at(t, () => setPhase('transitioning'));
     at(t + 700, () =>
       setConfig({ base: 'rainbow', pulse: 'pulse_rainbow', ring: 'ring_rainbow' }),
@@ -189,13 +233,12 @@ function OrbCustomizationShowcase() {
 
   return (
     <div className="relative flex items-center justify-center">
-      {/* Bloom flash overlay — only mounted during the transition phase
-          so the keyframe runs once and unmounts itself. */}
       {phase === 'transitioning' && (
         <div
           className="absolute inset-0 m-auto w-[200px] h-[200px] rounded-full pointer-events-none animate-orb-flash"
           style={{
-            background: 'radial-gradient(circle, rgba(255,255,255,0.95), rgba(168,85,247,0.55) 40%, transparent 75%)',
+            background:
+              'radial-gradient(circle, rgba(255,255,255,0.95), rgba(168,85,247,0.55) 40%, transparent 75%)',
           }}
         />
       )}
@@ -203,14 +246,12 @@ function OrbCustomizationShowcase() {
         className={cn(
           phase === 'transitioning' && 'animate-orb-spin-transition',
           phase !== 'transitioning' && 'animate-soul-orb-breathe',
-          // 'rainbow' phase has the gentle breathe scale; the one-shot
-          // spin transition replaces it temporarily, then breathes again.
         )}
       >
         <SoulOrb
           tier={MAX_ORB_TIER}
           intensity={100}
-          size={260}
+          size={240}
           interactive={false}
           hideLabel
           baseColorId={config.base}
@@ -226,72 +267,165 @@ export default function IntroCarouselPage() {
   const router = useRouter();
   const [page, setPage] = useState(0);
   const isLast = page === PAGES.length - 1;
+  const stepLabel = `${String(page + 1).padStart(2, '0')} / ${String(PAGES.length).padStart(2, '0')}`;
+  const progress = ((page + 1) / PAGES.length) * 100;
 
   const next = () => {
-    if (isLast) {
-      // Phase 2 lands at /onboard/intro (the mascot's first question).
-      // For now just send to the placeholder /onboard which we'll wire
-      // in the next phase.
-      router.push('/onboard');
-    } else {
-      setPage((p) => p + 1);
-    }
+    if (isLast) router.push('/onboard');
+    else setPage((p) => p + 1);
   };
 
   const skip = () => router.push('/onboard');
 
   return (
-    <div className="min-h-screen bg-[#0d0d15] flex flex-col relative overflow-hidden">
-      {/* Aurora */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div
-          className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full opacity-40 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(239,68,68,0.40), transparent 65%)' }}
-        />
-        <div
-          className="absolute -bottom-32 -left-32 w-[420px] h-[420px] rounded-full opacity-40 blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(251,146,60,0.40), transparent 65%)' }}
-        />
-      </div>
-
-      {/* Header — back arrow + skip */}
-      <header className="relative flex items-center justify-between px-5 pt-6 pb-2">
+    <div
+      className="dir-b min-h-screen flex flex-col"
+      style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}
+    >
+      {/* Editorial header — back arrow + progress + skip */}
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '20px 22px 14px',
+          borderBottom: '1px solid var(--b-rule)',
+        }}
+      >
         <button
           onClick={() => (page === 0 ? router.push('/welcome') : setPage((p) => p - 1))}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors"
           aria-label="Back"
+          style={{
+            width: 32,
+            height: 32,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--b-ink-60)',
+            flexShrink: 0,
+          }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5" />
             <path d="M12 19l-7-7 7-7" />
           </svg>
         </button>
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            className="font-mono tabular"
+            style={{
+              fontSize: 9,
+              color: 'var(--b-ink-60)',
+              letterSpacing: '0.14em',
+              flexShrink: 0,
+            }}
+          >
+            {stepLabel}
+          </div>
+          <div
+            style={{
+              flex: 1,
+              height: 2,
+              background: 'var(--b-rule)',
+              position: 'relative',
+            }}
+          >
+            <motion.div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: 'var(--b-accent)',
+              }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+            />
+          </div>
+        </div>
+
         <button
           onClick={skip}
-          className="text-xs font-semibold text-slate-500 hover:text-slate-300 px-3 py-1.5 transition-colors uppercase tracking-wider"
+          className="font-body"
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--b-ink-60)',
+            padding: '4px 8px',
+            flexShrink: 0,
+          }}
         >
           Skip
         </button>
       </header>
 
-      {/* Page content with swipe/fade */}
-      <div className="relative flex-1 flex flex-col items-center justify-center px-6">
+      {/* Page content */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px 22px',
+        }}
+      >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={page}
-            initial={{ opacity: 0, x: 40 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
+            exit={{ opacity: 0, x: -30 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col items-center text-center"
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%' }}
           >
-            <div className="flex items-center justify-center mb-10 min-h-[200px]">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 32,
+                minHeight: 200,
+              }}
+            >
               {PAGES[page].visual}
             </div>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-white leading-tight max-w-md">
+            <div
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+            >
+              {PAGES[page].eyebrow}
+            </div>
+            <h2
+              className="font-display"
+              style={{
+                fontSize: 34,
+                fontWeight: 500,
+                lineHeight: 1.05,
+                margin: '6px 0 0',
+                maxWidth: 440,
+                color: 'var(--b-ink)',
+              }}
+            >
               {PAGES[page].title}
             </h2>
-            <p className="text-slate-300/85 mt-4 max-w-sm text-base leading-relaxed">
+            <p
+              className="font-body"
+              style={{
+                fontSize: 13,
+                color: 'var(--b-ink-60)',
+                marginTop: 14,
+                maxWidth: 360,
+                lineHeight: 1.6,
+              }}
+            >
               {PAGES[page].body}
             </p>
           </motion.div>
@@ -299,32 +433,54 @@ export default function IntroCarouselPage() {
       </div>
 
       {/* Footer — dots + CTA */}
-      <div className="relative px-6 pb-10 space-y-5 max-w-md w-full mx-auto">
-        {/* Dot indicator */}
-        <div className="flex items-center justify-center gap-2">
+      <div
+        style={{
+          padding: '14px 22px 32px',
+          maxWidth: 480,
+          width: '100%',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 18,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {PAGES.map((_, i) => (
             <button
               key={i}
               onClick={() => setPage(i)}
-              className={cn(
-                'h-1.5 rounded-full transition-all',
-                i === page ? 'w-8 bg-orange-400' : 'w-1.5 bg-white/15 hover:bg-white/25',
-              )}
               aria-label={`Go to page ${i + 1}`}
+              style={{
+                height: 2,
+                width: i === page ? 24 : 8,
+                background: i === page ? 'var(--b-accent)' : 'var(--b-rule)',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                transition: 'all 250ms',
+              }}
             />
           ))}
         </div>
 
-        {/* Primary CTA */}
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={next}
-          className="w-full py-4 rounded-full font-bold text-base text-white shadow-lg shadow-red-600/30 transition-all"
+          className="font-body"
           style={{
-            background: 'linear-gradient(90deg, #dc2626, #f97316)',
+            width: '100%',
+            padding: '14px 16px',
+            background: 'var(--b-ink)',
+            color: 'var(--b-paper)',
+            border: '1px solid var(--b-ink)',
+            cursor: 'pointer',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
           }}
         >
-          {isLast ? "LET'S GO" : 'CONTINUE'}
+          {isLast ? "Let's go →" : 'Continue →'}
         </motion.button>
       </div>
     </div>

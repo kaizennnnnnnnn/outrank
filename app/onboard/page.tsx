@@ -805,25 +805,22 @@ function SummaryCorruptionStep({
           className="relative z-[60]"
           style={{
             filter: glitchStrength > 0
-              ? `drop-shadow(0 0 ${8 + glitchStrength * 16}px rgba(254,243,199,${0.6 + glitchStrength * 0.4}))`
+              ? `drop-shadow(0 0 ${8 + glitchStrength * 16}px rgba(220,38,38,${0.6 + glitchStrength * 0.4}))`
               : undefined,
           }}
         >
-          {/* Aura ring that glows brighter the longer you hold */}
+          {/* Aura ring — deep red */}
           <div
             className="absolute inset-0 rounded-full blur-2xl pointer-events-none"
             style={{
-              background: `radial-gradient(circle, rgba(249,115,22, ${0.3 + progress * 0.5}), transparent 70%)`,
+              background: `radial-gradient(circle, rgba(220,38,38, ${0.3 + progress * 0.5}), transparent 70%)`,
               transform: `scale(${1 + progress * 0.5})`,
             }}
           />
           <PhoenixMascot size={180} />
         </div>
 
-        {/* Hold button + progress ring. The ref drives the awakening
-            overlay's origin so the energy actually spreads OUT from
-            this button, not from somewhere on the mascot. z-60 keeps
-            it tappable above the overlay. */}
+        {/* Hold button + progress ring. */}
         <div className="mt-8 flex flex-col items-center relative z-[60]">
           <button
             ref={buttonRef}
@@ -832,13 +829,17 @@ function SummaryCorruptionStep({
             onPointerLeave={() => setHolding(false)}
             onPointerCancel={() => setHolding(false)}
             disabled={completedRef.current}
-            className="relative w-20 h-20 rounded-full bg-gradient-to-br from-red-600 to-orange-500 shadow-lg shadow-red-600/40 active:scale-95 transition-transform touch-none flex items-center justify-center"
+            className="relative w-20 h-20 rounded-full active:scale-95 transition-transform touch-none flex items-center justify-center"
+            style={{
+              background: 'radial-gradient(circle at 30% 30%, #ef4444, #b91c1c 60%, #7f1d1d)',
+              boxShadow: '0 0 28px -4px rgba(220,38,38,0.7), inset 0 0 14px rgba(127,29,29,0.5)',
+            }}
             aria-label="Hold to awaken"
           >
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
             </svg>
-            {/* Progress ring */}
+            {/* Progress ring — red */}
             <svg
               className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none"
               viewBox="0 0 80 80"
@@ -846,12 +847,12 @@ function SummaryCorruptionStep({
               <circle cx="40" cy="40" r="37" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
               <circle
                 cx="40" cy="40" r="37" fill="none"
-                stroke="#fef3c7"
+                stroke="#fecaca"
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeDasharray={2 * Math.PI * 37}
                 strokeDashoffset={2 * Math.PI * 37 * (1 - progress)}
-                style={{ filter: 'drop-shadow(0 0 4px rgba(254,243,199,0.8))' }}
+                style={{ filter: 'drop-shadow(0 0 4px rgba(239,68,68,0.95))' }}
               />
             </svg>
           </button>
@@ -881,20 +882,17 @@ function SummaryCorruptionStep({
             style={{
               background: `radial-gradient(circle at ${origin.x}% ${origin.y}%,
                 rgba(255,255,255,${0.95 * progress}) 0%,
-                rgba(254,243,199,${0.92 * progress}) ${radiusVmax * 0.16}vmax,
-                rgba(251,191,36,${0.85 * progress}) ${radiusVmax * 0.32}vmax,
-                rgba(249,115,22,${0.78 * progress}) ${radiusVmax * 0.5}vmax,
-                rgba(220,38,38,${0.62 * progress}) ${radiusVmax * 0.7}vmax,
-                rgba(127,29,29,${0.4 * progress}) ${radiusVmax * 0.86}vmax,
+                rgba(254,202,202,${0.92 * progress}) ${radiusVmax * 0.14}vmax,
+                rgba(248,113,113,${0.88 * progress}) ${radiusVmax * 0.3}vmax,
+                rgba(239,68,68,${0.84 * progress}) ${radiusVmax * 0.48}vmax,
+                rgba(220,38,38,${0.78 * progress}) ${radiusVmax * 0.66}vmax,
+                rgba(153,27,27,${0.6 * progress}) ${radiusVmax * 0.82}vmax,
+                rgba(69,10,10,${0.42 * progress}) ${radiusVmax * 0.93}vmax,
                 transparent ${radiusVmax}vmax)`,
             }}
           />
 
-          {/* Single shockwave ring expanding from the button. Loops
-              while held — when the user releases and progress drains,
-              opacity scales down with progress so it fades out. The
-              ring's keyframe carries translate(-50%, -50%) so it
-              stays centered on the button regardless of size. */}
+          {/* Shockwave ring — deep red */}
           <div
             className="absolute rounded-full animate-awaken-spread-ring"
             style={{
@@ -902,8 +900,8 @@ function SummaryCorruptionStep({
               top: `${origin.y}%`,
               width: '14vmin',
               height: '14vmin',
-              border: '2px solid rgba(254,243,199,0.95)',
-              boxShadow: '0 0 22px rgba(251,146,60,0.85)',
+              border: '2px solid rgba(254,202,202,0.95)',
+              boxShadow: '0 0 22px rgba(220,38,38,0.9)',
               opacity: progress,
             }}
             aria-hidden
