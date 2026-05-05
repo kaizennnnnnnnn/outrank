@@ -32,17 +32,17 @@ interface NavLink {
 
 const PRIMARY: NavLink[] = [
   { href: '/dashboard', label: 'Home' },
-  { href: '/compete',   label: 'Compete' },
+  { href: '/friends',   label: 'Friends' },
   { href: '/orb',       label: 'Orb' },
   { href: '/feed',      label: 'Feed' },
   { href: '/profile',   label: 'You' },
 ];
 
 const SECONDARY: NavLink[] = [
+  { href: '/compete',   label: 'Compete' },
   { href: '/town',      label: 'The Town' },
   { href: '/diet',      label: 'The Plate' },
   { href: '/habits',    label: 'Roster' },
-  { href: '/friends',   label: 'Friends' },
   { href: '/settings',  label: 'Settings' },
 ];
 

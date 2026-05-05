@@ -9,14 +9,16 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon';
 /**
  * Overlay rendered once at the app-layout level. Subscribes to
  * `useUIStore.recapFlights` and animates each log into the recap draft
- * panel as a multi-stage sequence:
+ * panel as a sequence styled to match the editorial Direction B v2
+ * paper-and-ink language:
  *
- *   1. **Chip** flies on a curved arc from source → destination, scaling
- *      down and rotating slightly for character.
- *   2. **Trail** of staggered sparkle dots follows the chip's path,
- *      fading and shrinking — gives the flight a comet-like quality.
- *   3. **Splash** fires at the destination once the chip lands: an
- *      expanding glow ring + radial particle burst, confirming "filed."
+ *   1. **Liftoff hairline** at the source point — single ink-stroke
+ *      ring expanding once. No glow.
+ *   2. **Card chip** flies on a curved arc from source → destination.
+ *      The chip is a paper rectangle with a hairline border, an accent
+ *      stripe on the left, the category glyph, and `+value unit / FILED`.
+ *   3. **Splash** fires at the destination once the chip lands: a
+ *      single hairline ring + four ink dots in cardinal directions.
  *
  * Each flight self-clears via `clearRecapFlight(id)` once the splash
  * exits. Z-index 220 puts it above the modal overlay (z-50) and below
@@ -44,16 +46,9 @@ function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () =>
   const [landed, setLanded] = useState(false);
   const bumpPanelPulse = useUIStore((s) => s.bumpPanelPulse);
 
-  // A modest lift before the drop. The arc midpoint sits ~80px above the
-  // higher of the two endpoints — visible enough to read as motion, not
-  // so high it crosses the TopBar on small viewports.
   const arcLiftY = Math.min(flight.fromY, flight.toY) - 80;
   const arcMidX = (flight.fromX + flight.toX) / 2;
 
-  // Fire the panel pulse the moment the chip lands — the destination
-  // panel's border-glow flash overlaps with the splash burst, doubling
-  // the "received" signal across the chip's last frames and the
-  // panel's first frames of acknowledgement.
   const handleLanded = () => {
     setLanded(true);
     bumpPanelPulse(flight.categoryColor);
@@ -62,7 +57,6 @@ function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () =>
   return (
     <>
       <FlightLiftoff flight={flight} />
-      <FlightTrail flight={flight} arcMidX={arcMidX} arcLiftY={arcLiftY} />
       <FlightChip flight={flight} arcMidX={arcMidX} arcLiftY={arcLiftY} onLanded={handleLanded} />
       {landed && <FlightSplash flight={flight} onDone={onDone} />}
     </>
@@ -70,49 +64,28 @@ function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () =>
 }
 
 /**
- * Brief "launch" ripple at the source point. Two concentric rings expand
- * outward as the chip leaves — gives the chip a sense of weight, like
- * it pushed off the modal rather than just floated upward.
+ * A single hairline ring expanding once. Reads as a stamp-press, not a
+ * burst — fits the paper grammar.
  */
 function FlightLiftoff({ flight }: { flight: RecapFlight }) {
   return (
-    <>
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          left: 0,
-          top: 0,
-          width: 28,
-          height: 28,
-          marginLeft: -14,
-          marginTop: -14,
-          border: `1.5px solid ${flight.categoryColor}`,
-          boxShadow: `0 0 18px ${flight.categoryColor}88`,
-          x: flight.fromX,
-          y: flight.fromY,
-        }}
-        initial={{ scale: 0.4, opacity: 0.85 }}
-        animate={{ scale: 2.6, opacity: 0 }}
-        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      />
-      <motion.div
-        className="absolute rounded-full"
-        style={{
-          left: 0,
-          top: 0,
-          width: 18,
-          height: 18,
-          marginLeft: -9,
-          marginTop: -9,
-          background: `radial-gradient(circle, ${flight.categoryColor}aa 0%, ${flight.categoryColor}00 70%)`,
-          x: flight.fromX,
-          y: flight.fromY,
-        }}
-        initial={{ scale: 0.6, opacity: 1 }}
-        animate={{ scale: 2, opacity: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}
-      />
-    </>
+    <motion.div
+      className="absolute"
+      style={{
+        left: 0,
+        top: 0,
+        width: 24,
+        height: 24,
+        marginLeft: -12,
+        marginTop: -12,
+        border: `1px solid ${flight.categoryColor}`,
+        x: flight.fromX,
+        y: flight.fromY,
+      }}
+      initial={{ scale: 0.6, opacity: 1 }}
+      animate={{ scale: 2.2, opacity: 0 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+    />
   );
 }
 
@@ -136,64 +109,72 @@ function FlightChip({
         y: flight.fromY,
         scale: 1,
         opacity: 0,
-        rotate: -2,
       }}
       animate={{
         x: [flight.fromX, arcMidX, flight.toX],
         y: [flight.fromY, arcLiftY, flight.toY],
-        scale: [1, 0.95, 0.55],
+        scale: [1, 0.95, 0.6],
         opacity: [0, 1, 1, 0.85],
-        rotate: [-2, 4, -1],
       }}
       transition={{
         duration: CHIP_DURATION,
         times: [0, 0.4, 1],
-        ease: [0.34, 1.2, 0.64, 1],
+        ease: [0.34, 1.0, 0.64, 1],
         opacity: { duration: CHIP_DURATION, times: [0, 0.15, 0.85, 1], ease: 'easeOut' },
       }}
       onAnimationComplete={onLanded}
     >
       <div className="-translate-x-1/2 -translate-y-1/2">
         <div
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl backdrop-blur-md relative"
+          className="dir-b inline-flex items-center"
           style={{
-            background: `linear-gradient(135deg, ${flight.categoryColor}55, #10101aee 75%)`,
-            border: `1px solid ${flight.categoryColor}88`,
-            boxShadow:
-              `0 0 32px -2px ${flight.categoryColor}cc,` +
-              `0 0 64px -8px ${flight.categoryColor}88,` +
-              `0 8px 24px -8px #000,` +
-              `inset 0 1px 0 ${flight.categoryColor}66`,
+            background: 'var(--b-paper)',
+            color: 'var(--b-ink)',
+            border: '1px solid var(--b-ink)',
+            borderLeft: `3px solid ${flight.categoryColor}`,
+            padding: '8px 12px',
+            gap: 10,
+            // Single soft drop so the card reads as paper above other paper,
+            // without breaking the flat aesthetic. No colored glow.
+            boxShadow: '0 6px 18px -8px rgba(0,0,0,0.45)',
           }}
         >
-          {/* Inner sheen — gives the chip a glassy, premium feel */}
-          <div
-            className="absolute inset-0 rounded-2xl pointer-events-none opacity-60"
-            style={{
-              background: `linear-gradient(160deg, ${flight.categoryColor}22 0%, transparent 50%)`,
-            }}
-          />
-          <CategoryIcon
-            slug={flight.categorySlug}
-            name={flight.categoryName}
-            icon={flight.categoryIcon}
-            color={flight.categoryColor}
-            size="sm"
-          />
-          <div className="leading-none relative">
-            <p
-              className="font-mono text-sm font-bold"
-              style={{
-                color: flight.categoryColor,
-                textShadow: `0 0 10px ${flight.categoryColor}99`,
-              }}
+          <span style={{ color: flight.categoryColor, display: 'inline-flex' }}>
+            <CategoryIcon
+              slug={flight.categorySlug}
+              name={flight.categoryName}
+              icon={flight.categoryIcon}
+              color={flight.categoryColor}
+              size="sm"
+            />
+          </span>
+          <div style={{ lineHeight: 1.1 }}>
+            <div
+              className="font-display tabular"
+              style={{ fontSize: 16, fontStyle: 'italic', fontWeight: 500 }}
             >
               +{flight.value}
-              <span className="text-slate-200 font-normal ml-1 text-[11px]">{flight.unit}</span>
-            </p>
-            <p className="text-[9px] uppercase tracking-widest text-slate-400 mt-0.5">
-              filed
-            </p>
+              <span
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  fontStyle: 'normal',
+                  fontWeight: 400,
+                  color: 'var(--b-ink-60)',
+                  marginLeft: 4,
+                  textTransform: 'lowercase',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                {flight.unit}
+              </span>
+            </div>
+            <div
+              className="spread"
+              style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 3 }}
+            >
+              Filed
+            </div>
           </div>
         </div>
       </div>
@@ -202,121 +183,59 @@ function FlightChip({
 }
 
 /**
- * Three sparkle dots that follow the chip's path with staggered delays.
- * The trail fades faster than the chip, so by the time the chip lands
- * the trail has already dissipated — no clutter at the destination.
- */
-function FlightTrail({
-  flight,
-  arcMidX,
-  arcLiftY,
-}: {
-  flight: RecapFlight;
-  arcMidX: number;
-  arcLiftY: number;
-}) {
-  const sparkles = [
-    { delay: 0.06, size: 6 },
-    { delay: 0.14, size: 5 },
-    { delay: 0.22, size: 4 },
-    { delay: 0.30, size: 3 },
-  ];
-  return (
-    <>
-      {sparkles.map((s, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            left: 0,
-            top: 0,
-            width: s.size,
-            height: s.size,
-            background: flight.categoryColor,
-            boxShadow: `0 0 ${s.size * 2}px ${flight.categoryColor}`,
-          }}
-          initial={{
-            x: flight.fromX,
-            y: flight.fromY,
-            opacity: 0,
-            scale: 0.8,
-          }}
-          animate={{
-            x: [flight.fromX, arcMidX, flight.toX],
-            y: [flight.fromY, arcLiftY, flight.toY],
-            opacity: [0, 1, 0],
-            scale: [0.8, 1, 0],
-          }}
-          transition={{
-            duration: CHIP_DURATION,
-            delay: s.delay,
-            times: [0, 0.4, 0.85],
-            ease: [0.34, 1.2, 0.64, 1],
-          }}
-        />
-      ))}
-    </>
-  );
-}
-
-/**
- * Landing burst at the destination. Fires once the chip's arc completes.
- * Two layers: an expanding glow ring + 8 radial particles that fly out
- * and fade. Calls `onDone` when its own animation finishes — that's the
- * signal to clear the flight from the store.
+ * Landing mark at the destination. Single hairline ring expanding +
+ * four small ink dots radiating in cardinals. Reads as the recap panel
+ * acknowledging receipt, not a fireworks burst.
  */
 function FlightSplash({ flight, onDone }: { flight: RecapFlight; onDone: () => void }) {
-  const particles = Array.from({ length: 8 }, (_, i) => {
-    const angle = (Math.PI * 2 * i) / 8 + (i % 2 ? 0.18 : 0);
-    const dist = 28 + (i % 3) * 8;
-    return { dx: Math.cos(angle) * dist, dy: Math.sin(angle) * dist, size: 4 - (i % 3) };
-  });
+  const dots = [
+    { dx: 0,   dy: -22 },
+    { dx: 22,  dy: 0   },
+    { dx: 0,   dy: 22  },
+    { dx: -22, dy: 0   },
+  ];
 
   return (
     <>
-      {/* Expanding glow ring */}
       <motion.div
-        className="absolute rounded-full"
+        className="absolute"
         style={{
           left: 0,
           top: 0,
-          width: 24,
-          height: 24,
-          marginLeft: -12,
-          marginTop: -12,
-          border: `1.5px solid ${flight.categoryColor}`,
-          boxShadow: `0 0 24px ${flight.categoryColor}, inset 0 0 12px ${flight.categoryColor}66`,
+          width: 22,
+          height: 22,
+          marginLeft: -11,
+          marginTop: -11,
+          border: `1px solid ${flight.categoryColor}`,
           x: flight.toX,
           y: flight.toY,
         }}
-        initial={{ scale: 0.4, opacity: 0.9 }}
-        animate={{ scale: 3.2, opacity: 0 }}
+        initial={{ scale: 0.4, opacity: 1 }}
+        animate={{ scale: 3, opacity: 0 }}
         transition={{ duration: SPLASH_DURATION, ease: [0.16, 1, 0.3, 1] }}
         onAnimationComplete={onDone}
       />
-      {/* Radial particles */}
-      {particles.map((p, i) => (
+      {dots.map((d, i) => (
         <motion.div
           key={i}
-          className="absolute rounded-full"
+          className="absolute"
           style={{
             left: 0,
             top: 0,
-            width: p.size,
-            height: p.size,
-            marginLeft: -p.size / 2,
-            marginTop: -p.size / 2,
+            width: 3,
+            height: 3,
+            marginLeft: -1.5,
+            marginTop: -1.5,
             background: flight.categoryColor,
-            boxShadow: `0 0 ${p.size * 3}px ${flight.categoryColor}`,
             x: flight.toX,
             y: flight.toY,
           }}
           initial={{ x: flight.toX, y: flight.toY, opacity: 1, scale: 1 }}
           animate={{
-            x: flight.toX + p.dx,
-            y: flight.toY + p.dy,
+            x: flight.toX + d.dx,
+            y: flight.toY + d.dy,
             opacity: 0,
-            scale: 0.4,
+            scale: 0.6,
           }}
           transition={{ duration: SPLASH_DURATION, ease: [0.16, 1, 0.3, 1] }}
         />
@@ -327,8 +246,7 @@ function FlightSplash({ flight, onDone }: { flight: RecapFlight; onDone: () => v
 
 /**
  * Helper for callers — finds the recap-drop target's center, falling back
- * to bottom-center of viewport if the panel isn't on the page (e.g. user
- * is on /habits or /feed when they log).
+ * to bottom-center of viewport if the panel isn't on the page.
  */
 export function getRecapDropPoint(): { x: number; y: number } {
   if (typeof window === 'undefined') return { x: 0, y: 0 };

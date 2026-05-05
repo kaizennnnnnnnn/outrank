@@ -109,14 +109,16 @@ export default function OrbPage() {
     }
   };
 
-  // Ascend is unlimited — every cycle (climb to tier 10, ascend to
-  // reset) awards another fragment payout. The cosmetic frame +
-  // name effect grant once (arrayUnion is idempotent), so subsequent
-  // ascensions just stack fragments + the orbAscensions counter.
-  // Fragment payout scales with each cycle so the 5th ascension
-  // feels meaningfully different from the 1st.
+  // Ascend is gated to tier 10 only — the user has to climb the full
+  // 10-step evolution ladder before they can ascend. Each ascension
+  // resets orbTier to 1, so the cycle repeats. The cosmetic frame +
+  // name effect grant once (arrayUnion is idempotent); subsequent
+  // ascensions just stack fragments + orbAscensions. Fragment payout
+  // scales per cycle so the 5th ascension feels meaningfully bigger
+  // than the 1st.
   const handleAscend = async () => {
     if (!user) return;
+    if (localTier < MAX_ORB_TIER) return;
     const ascensions = ((user as unknown as { orbAscensions?: number }).orbAscensions ?? 0) + 1;
     const fragmentReward = 500 + (ascensions - 1) * 250; // 500, 750, 1000, 1250, ...
     try {
@@ -217,7 +219,7 @@ export default function OrbPage() {
               tier={MAX_ORB_TIER}
               size={210}
               onEvolve={localCharges > 0 ? handleEvolve : undefined}
-              onAscend={handleAscend}
+              onAscend={localTier >= MAX_ORB_TIER ? handleAscend : undefined}
               onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
               baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
               pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}

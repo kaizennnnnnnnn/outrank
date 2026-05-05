@@ -6,9 +6,12 @@ import { useFeed } from '@/hooks/useFeed';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatRelativeTime } from '@/lib/utils';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { FeedItem } from '@/types/feed';
+import { createDocument } from '@/lib/firestore';
+import { FeedItem, ReactionEmoji } from '@/types/feed';
+import { useUIStore } from '@/store/uiStore';
+import { FeedComments } from '@/components/social/FeedComments';
 import { Masthead } from '@/components/editorial/Masthead';
 import {
   BHeartGlyph,
@@ -21,19 +24,25 @@ import {
 import Link from 'next/link';
 
 /**
- * Feed — editorial Direction B v2 conversion. "Dispatches" front
- * page: filter tabs at top, "Today" + "Earlier" sections, with a
- * lead-dispatch card at the top of Today (richer treatment) and
- * compact rows for everything else.
+ * Feed — editorial Direction B v2. "Dispatches" front page: filter
+ * tabs at top, "Today" + "Earlier" sections, with a lead-dispatch
+ * card at the top of Today (richer treatment) and compact rows for
+ * everything else.
  *
- * Reaction picker + comments threading from the previous FeedCard /
- * RecapFeedCard implementations are not yet ported to the editorial
- * style — items are display-only here, with reaction/comment counts
- * shown as static glyph chips. Tapping the actor's name routes to
- * their profile (existing /profile/[username]) so the social graph
- * still navigates. Inline reactions return in a follow-up commit
- * once the EditorialRecapCard component lands.
+ * Reactions live in `/reactions/{originId}` — same shared doc the
+ * recap detail view writes to. Five reactions (Hyped / Beast /
+ * Respect / Fast / With you) are each represented by an editorial
+ * glyph + label (no emoji rendering). Comments expand inline below
+ * the lead card; compact rows just show counts.
  */
+
+const REACTIONS: { kind: ReactionEmoji; label: string; Glyph: React.ComponentType<{ size?: number }>; color: string }[] = [
+  { kind: '🔥', label: 'Hyped',   Glyph: BFlameGlyph,  color: '#f97316' },
+  { kind: '💪', label: 'Beast',   Glyph: BTrophyGlyph, color: '#ef4444' },
+  { kind: '👏', label: 'Respect', Glyph: BCheerGlyph,  color: '#fbbf24' },
+  { kind: '⚡', label: 'Fast',    Glyph: BCheckGlyph,  color: '#a855f7' },
+  { kind: '🤝', label: 'With',    Glyph: BHeartGlyph,  color: '#22d3ee' },
+];
 
 interface ActorCosm {
   frame?: string;
@@ -55,8 +64,11 @@ type Filter = typeof FILTERS[number]['key'];
 export default function FeedPage() {
   const { user } = useAuth();
   const { items, loading } = useFeed();
+  const addToast = useUIStore((s) => s.addToast);
   const [filter, setFilter] = useState<Filter>('all');
   const [actorCosm, setActorCosm] = useState<Record<string, ActorCosm>>({});
+  const [sharedReactions, setSharedReactions] = useState<Record<string, Record<string, string[]>>>({});
+  const [openComments, setOpenComments] = useState<Set<string>>(new Set());
 
   // Fetch poster cosmetics once per actor for richer naming/avatar.
   useEffect(() => {
@@ -90,6 +102,114 @@ export default function FeedPage() {
       if (Object.keys(next).length) setActorCosm((prev) => ({ ...prev, ...next }));
     });
   }, [items, actorCosm]);
+
+  // Pull shared reactions for items with originId — recap items share
+  // the /reactions/{originId} doc with the recap detail view, so a
+  // friend's confirm/like is reflected on both surfaces.
+  useEffect(() => {
+    if (items.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const next: Record<string, Record<string, string[]>> = {};
+      for (const item of items) {
+        const originId = (item as unknown as { originId?: string }).originId;
+        if (!originId || sharedReactions[originId]) continue;
+        try {
+          const snap = await getDoc(doc(db, `reactions/${originId}`));
+          if (snap.exists()) {
+            next[originId] = (snap.data().reactions || {}) as Record<string, string[]>;
+          } else {
+            next[originId] = {};
+          }
+        } catch { /* skip */ }
+      }
+      if (!cancelled && Object.keys(next).length) {
+        setSharedReactions((prev) => ({ ...prev, ...next }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [items, sharedReactions]);
+
+  const handleReact = async (item: FeedItem, kind: ReactionEmoji) => {
+    if (!user) return;
+    const originId = (item as unknown as { originId?: string }).originId;
+    const optimisticKey = originId ?? item.id;
+    if (!optimisticKey) return;
+
+    const current = sharedReactions[optimisticKey]?.[kind] ?? [];
+    const reacted = current.includes(user.uid);
+
+    // Optimistic local toggle so the tap feels instant.
+    setSharedReactions((prev) => {
+      const docMap = { ...(prev[optimisticKey] ?? {}) };
+      const list = new Set(docMap[kind] ?? []);
+      if (reacted) list.delete(user.uid);
+      else list.add(user.uid);
+      docMap[kind] = Array.from(list);
+      return { ...prev, [optimisticKey]: docMap };
+    });
+
+    try {
+      if (originId) {
+        const ref = doc(db, `reactions/${originId}`);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) {
+          await setDoc(ref, { reactions: { [kind]: [user.uid] } });
+        } else {
+          await updateDoc(ref, {
+            [`reactions.${kind}`]: reacted ? arrayRemove(user.uid) : arrayUnion(user.uid),
+          });
+        }
+      } else if (item.id) {
+        const ref = doc(db, `feed/${user.uid}/items/${item.id}`);
+        await updateDoc(ref, {
+          [`reactions.${kind}`]: reacted ? arrayRemove(user.uid) : arrayUnion(user.uid),
+        });
+      }
+
+      // Notify the actor (skip self-reactions).
+      if (!reacted && item.actorId && item.actorId !== user.uid) {
+        try {
+          await createDocument(`notifications/${item.actorId}/items`, {
+            type: 'friend_logged',
+            message: `${user.username} reacted to your dispatch`,
+            isRead: false,
+            relatedId: '',
+            actorId: user.uid,
+            actorAvatar: user.avatarUrl || '',
+            createdAt: Timestamp.now(),
+          });
+        } catch { /* silent — non-fatal */ }
+      }
+    } catch (err) {
+      console.error('Reaction failed:', err);
+      addToast({ type: 'error', message: 'Failed to react' });
+      // Roll back the optimistic toggle.
+      setSharedReactions((prev) => {
+        const docMap = { ...(prev[optimisticKey] ?? {}) };
+        const list = new Set(docMap[kind] ?? []);
+        if (reacted) list.add(user.uid);
+        else list.delete(user.uid);
+        docMap[kind] = Array.from(list);
+        return { ...prev, [optimisticKey]: docMap };
+      });
+    }
+  };
+
+  const reactionsFor = (item: FeedItem): Record<string, string[]> => {
+    const originId = (item as unknown as { originId?: string }).originId;
+    if (originId && sharedReactions[originId]) return sharedReactions[originId];
+    return (item.reactions ?? {}) as Record<string, string[]>;
+  };
+
+  const toggleComments = (id: string) => {
+    setOpenComments((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Filter + drop legacy 'log' items
   const visible = useMemo(() => items
@@ -224,7 +344,17 @@ export default function FeedPage() {
             <>
               <SectionLabel left="Today" right={dateShort} />
 
-              {lead && <LeadDispatch item={lead} cosm={actorCosm[lead.actorId] || {}} />}
+              {lead && (
+                <LeadDispatch
+                  item={lead}
+                  cosm={actorCosm[lead.actorId] || {}}
+                  reactions={reactionsFor(lead)}
+                  currentUid={user?.uid}
+                  onReact={(kind) => handleReact(lead, kind)}
+                  commentsOpen={lead.id ? openComments.has(lead.id) : false}
+                  onToggleComments={() => lead.id && toggleComments(lead.id)}
+                />
+              )}
 
               {todayRest.length > 0 && (
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', borderTop: '1px solid var(--b-ink)' }}>
@@ -233,6 +363,11 @@ export default function FeedPage() {
                       key={item.id}
                       item={item}
                       cosm={actorCosm[item.actorId] || {}}
+                      reactions={reactionsFor(item)}
+                      currentUid={user?.uid}
+                      onReact={(kind) => handleReact(item, kind)}
+                      commentsOpen={item.id ? openComments.has(item.id) : false}
+                      onToggleComments={() => item.id && toggleComments(item.id)}
                     />
                   ))}
                 </ul>
@@ -250,6 +385,11 @@ export default function FeedPage() {
                     key={item.id}
                     item={item}
                     cosm={actorCosm[item.actorId] || {}}
+                    reactions={reactionsFor(item)}
+                    currentUid={user?.uid}
+                    onReact={(kind) => handleReact(item, kind)}
+                    commentsOpen={item.id ? openComments.has(item.id) : false}
+                    onToggleComments={() => item.id && toggleComments(item.id)}
                   />
                 ))}
               </ul>
@@ -340,8 +480,17 @@ function glyphForType(item: FeedItem): React.ComponentType<{ size?: number; styl
 
 // ─── Lead dispatch ──────────────────────────────────────────────────
 
-function LeadDispatch({ item, cosm }: { item: FeedItem; cosm: ActorCosm }) {
-  const reactions = (item.reactions ?? {}) as Record<string, string[]>;
+interface DispatchActionProps {
+  reactions: Record<string, string[]>;
+  currentUid?: string;
+  onReact: (kind: ReactionEmoji) => void;
+  commentsOpen: boolean;
+  onToggleComments: () => void;
+}
+
+function LeadDispatch({
+  item, cosm, reactions, currentUid, onReact, commentsOpen, onToggleComments,
+}: { item: FeedItem; cosm: ActorCosm } & DispatchActionProps) {
   const totalR = Object.values(reactions).reduce((n, arr) => n + (arr?.length || 0), 0);
   const eyebrow = item.type === 'levelup'
     ? `LEVEL UP · LVL ${(item as unknown as { newLevel?: number }).newLevel ?? '?'}`
@@ -350,6 +499,8 @@ function LeadDispatch({ item, cosm }: { item: FeedItem; cosm: ActorCosm }) {
     : item.type === 'duel_win'
     ? 'DUEL WON'
     : 'DISPATCH';
+  const originId = (item as unknown as { originId?: string }).originId;
+  const commentCount = (item as unknown as { commentCount?: number }).commentCount ?? 0;
 
   return (
     <article
@@ -404,36 +555,127 @@ function LeadDispatch({ item, cosm }: { item: FeedItem; cosm: ActorCosm }) {
           &ldquo;{(item as unknown as { quote: string }).quote}&rdquo;
         </p>
       )}
+
+      {/* Reaction strip — five glyph buttons */}
+      <ReactionStrip
+        reactions={reactions}
+        currentUid={currentUid}
+        onReact={onReact}
+      />
+
+      {/* Counts + comment toggle */}
       <div
         style={{
-          marginTop: 12,
+          marginTop: 8,
           display: 'flex',
           alignItems: 'center',
-          gap: 18,
+          gap: 16,
           color: 'var(--b-ink-60)',
           fontFamily: 'var(--font-inter)',
         }}
       >
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
-          <BHeartGlyph size={14} />
+          <BHeartGlyph size={13} />
           <span className="tabular">{totalR}</span>
         </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
-          <BCommentGlyph size={14} />
-          <span className="tabular">{(item as unknown as { commentCount?: number }).commentCount ?? 0}</span>
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
-          <BCheerGlyph size={14} />
-          cheer
-        </span>
+        <button
+          onClick={onToggleComments}
+          className="font-body"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            fontSize: 11,
+            color: commentsOpen ? 'var(--b-accent)' : 'var(--b-ink-60)',
+          }}
+        >
+          <BCommentGlyph size={13} />
+          <span className="tabular">{commentCount}</span>
+          <span style={{ marginLeft: 2, fontSize: 10, letterSpacing: '0.04em' }}>
+            {commentsOpen ? 'hide' : 'comment'}
+          </span>
+        </button>
       </div>
+
+      {/* Inline comments — only when toggled open and we have an originId */}
+      {commentsOpen && originId && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--b-rule)' }}>
+          <FeedComments originId={originId} actorId={item.actorId} />
+        </div>
+      )}
     </article>
+  );
+}
+
+function ReactionStrip({
+  reactions, currentUid, onReact,
+}: {
+  reactions: Record<string, string[]>;
+  currentUid?: string;
+  onReact: (kind: ReactionEmoji) => void;
+}) {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        display: 'flex',
+        gap: 6,
+        flexWrap: 'wrap',
+      }}
+    >
+      {REACTIONS.map(({ kind, label, Glyph, color }) => {
+        const list = reactions[kind] ?? [];
+        const active = !!currentUid && list.includes(currentUid);
+        const count = list.length;
+        return (
+          <button
+            key={kind}
+            onClick={() => onReact(kind)}
+            title={label}
+            className="font-body"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '4px 8px',
+              background: active ? `${color}14` : 'transparent',
+              border: active ? `1px solid ${color}` : '1px solid var(--b-rule)',
+              cursor: 'pointer',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              color: active ? color : 'var(--b-ink-60)',
+              textTransform: 'uppercase',
+            }}
+          >
+            <span style={{ color, display: 'inline-flex' }}>
+              <Glyph size={12} />
+            </span>
+            <span>{label}</span>
+            {count > 0 && (
+              <span
+                className="font-mono tabular"
+                style={{ fontSize: 9, color: active ? color : 'var(--b-ink-40)', marginLeft: 2 }}
+              >
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
 // ─── Compact dispatch row ───────────────────────────────────────────
 
-function CompactDispatch({ item, cosm }: { item: FeedItem; cosm: ActorCosm }) {
+function CompactDispatch({
+  item, cosm, reactions, currentUid, onReact, commentsOpen, onToggleComments,
+}: { item: FeedItem; cosm: ActorCosm } & DispatchActionProps) {
   const Glyph = glyphForType(item);
   const meta  = item.type === 'levelup'
     ? `Lv. ${(item as unknown as { newLevel?: number }).newLevel ?? '?'}`
@@ -442,61 +684,144 @@ function CompactDispatch({ item, cosm }: { item: FeedItem; cosm: ActorCosm }) {
     : item.type === 'badge'
     ? 'NEW'
     : '';
+  const totalR = Object.values(reactions).reduce((n, arr) => n + (arr?.length || 0), 0);
+  const originId = (item as unknown as { originId?: string }).originId;
+  const commentCount = (item as unknown as { commentCount?: number }).commentCount ?? 0;
 
   return (
-    <li
-      className="b-row"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '20px 24px 1fr auto',
-        gap: 10,
-        alignItems: 'flex-start',
-      }}
-    >
-      <span style={{ color: 'var(--b-ink)', marginTop: 1 }}>
-        <Glyph size={18} />
-      </span>
-      <Link href={`/profile/${item.actorUsername}`}>
-        <Avatar size="sm" src={cosm.avatarUrl ?? item.actorAvatar} />
-      </Link>
+    <li className="b-row">
       <div
-        className="font-body"
-        style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--b-ink)' }}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '20px 24px 1fr auto',
+          gap: 10,
+          alignItems: 'flex-start',
+        }}
       >
-        <Link
-          href={`/profile/${item.actorUsername}`}
-          className="font-display"
-          style={{
-            fontStyle: 'italic',
-            fontWeight: 500,
-            color: 'var(--b-ink)',
-            textDecoration: 'none',
-          }}
+        <span style={{ color: 'var(--b-ink)', marginTop: 1 }}>
+          <Glyph size={18} />
+        </span>
+        <Link href={`/profile/${item.actorUsername}`}>
+          <Avatar size="sm" src={cosm.avatarUrl ?? item.actorAvatar} />
+        </Link>
+        <div
+          className="font-body"
+          style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--b-ink)' }}
         >
-          {item.actorUsername}
-        </Link>{' '}
-        {actionText(item)}
-        {meta && (
-          <div
-            className="font-mono"
+          <Link
+            href={`/profile/${item.actorUsername}`}
+            className="font-display"
             style={{
-              fontSize: 9.5,
-              color: 'var(--b-ink-40)',
-              marginTop: 3,
-              letterSpacing: '0.04em',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              color: 'var(--b-ink)',
+              textDecoration: 'none',
             }}
           >
-            {meta}
-          </div>
-        )}
+            {item.actorUsername}
+          </Link>{' '}
+          {actionText(item)}
+          {meta && (
+            <div
+              className="font-mono"
+              style={{
+                fontSize: 9.5,
+                color: 'var(--b-ink-40)',
+                marginTop: 3,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {meta}
+            </div>
+          )}
+        </div>
+        <span
+          className="font-mono tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 2 }}
+        >
+          {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
+        </span>
       </div>
-      <span
-        className="font-mono tabular"
-        style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 2 }}
+
+      {/* Action bar — react / comment */}
+      <div
+        style={{
+          marginTop: 8,
+          paddingLeft: 30,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          color: 'var(--b-ink-60)',
+          fontFamily: 'var(--font-inter)',
+        }}
       >
-        {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
-      </span>
+        <CompactReact reactions={reactions} currentUid={currentUid} onReact={onReact} />
+        <span style={{ flex: 1 }} />
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10 }}>
+          <BHeartGlyph size={11} />
+          <span className="tabular">{totalR}</span>
+        </span>
+        <button
+          onClick={onToggleComments}
+          className="font-body"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 10,
+            color: commentsOpen ? 'var(--b-accent)' : 'var(--b-ink-60)',
+          }}
+        >
+          <BCommentGlyph size={11} />
+          <span className="tabular">{commentCount}</span>
+        </button>
+      </div>
+
+      {commentsOpen && originId && (
+        <div style={{ marginTop: 10, paddingLeft: 30 }}>
+          <FeedComments originId={originId} actorId={item.actorId} />
+        </div>
+      )}
     </li>
+  );
+}
+
+function CompactReact({
+  reactions, currentUid, onReact,
+}: {
+  reactions: Record<string, string[]>;
+  currentUid?: string;
+  onReact: (kind: ReactionEmoji) => void;
+}) {
+  return (
+    <div style={{ display: 'inline-flex', gap: 4 }}>
+      {REACTIONS.map(({ kind, label, Glyph, color }) => {
+        const list = reactions[kind] ?? [];
+        const active = !!currentUid && list.includes(currentUid);
+        return (
+          <button
+            key={kind}
+            onClick={() => onReact(kind)}
+            title={label}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '3px 5px',
+              background: active ? `${color}14` : 'transparent',
+              border: active ? `1px solid ${color}` : '1px solid var(--b-rule)',
+              cursor: 'pointer',
+              color: active ? color : 'var(--b-ink-60)',
+            }}
+          >
+            <Glyph size={11} />
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
