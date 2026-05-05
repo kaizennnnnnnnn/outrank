@@ -167,17 +167,22 @@ function renderFooter(
       whileTap={{ scale: canProceed ? 0.98 : 1 }}
       onClick={canProceed ? next : undefined}
       disabled={!canProceed}
-      className={cn(
-        'w-full py-4 rounded-full font-bold text-base text-white transition-all shadow-lg',
-        canProceed
-          ? 'shadow-red-600/30 hover:brightness-110'
-          : 'shadow-none opacity-40 cursor-not-allowed',
-      )}
+      className="font-body"
       style={{
-        background: 'linear-gradient(90deg, #dc2626, #f97316)',
+        width: '100%',
+        padding: '14px 16px',
+        background: canProceed ? 'var(--b-ink)' : 'transparent',
+        color: canProceed ? 'var(--b-paper)' : 'var(--b-ink-40)',
+        border: '1px solid var(--b-ink)',
+        cursor: canProceed ? 'pointer' : 'not-allowed',
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        opacity: canProceed ? 1 : 0.4,
       }}
     >
-      {labels[step] || 'CONTINUE'}
+      {labels[step] || 'CONTINUE'} →
     </motion.button>
   );
 }

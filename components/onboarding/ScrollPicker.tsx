@@ -88,32 +88,72 @@ export function ScrollPicker({
 
   return (
     <div className={cn('flex flex-col items-center w-full select-none', className)}>
-      <div className="font-heading text-7xl font-bold text-white tabular-nums leading-none">
+      <div
+        className="font-display tabular"
+        style={{
+          fontSize: 72,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          lineHeight: 0.95,
+          color: 'var(--b-ink)',
+        }}
+      >
         {formatValue ? formatValue(value) : value}
         {unit && (
-          <span className="text-orange-400 text-2xl font-bold ml-2 align-baseline">
+          <span
+            className="font-body"
+            style={{
+              fontSize: 18,
+              fontStyle: 'normal',
+              fontWeight: 700,
+              color: 'var(--b-accent)',
+              marginLeft: 8,
+              letterSpacing: '0.04em',
+              textTransform: 'lowercase',
+              verticalAlign: 'baseline',
+            }}
+          >
             {unit}
           </span>
         )}
       </div>
 
-      <div className="relative w-full mt-12">
-        {/* Center indicator */}
+      <div className="relative w-full" style={{ marginTop: 36 }}>
+        {/* Center indicator — single ink line, no glow */}
         <div
-          className="absolute left-1/2 top-0 -translate-x-1/2 w-[3px] h-14 rounded-full z-10 pointer-events-none"
+          className="absolute pointer-events-none"
           style={{
-            background: 'linear-gradient(to bottom, #fb923c, #ef4444)',
-            boxShadow: '0 0 14px rgba(249,115,22,0.85)',
+            left: '50%',
+            top: 0,
+            transform: 'translateX(-50%)',
+            width: 2,
+            height: 56,
+            background: 'var(--b-accent)',
+            zIndex: 10,
           }}
         />
-        {/* Edge fades */}
+        {/* Edge fades — paper-color gradient so ticks fade into the page */}
         <div
-          className="absolute inset-y-0 left-0 w-16 pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to right, #0d0d15, transparent)' }}
+          className="absolute pointer-events-none"
+          style={{
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: 64,
+            background: 'linear-gradient(to right, var(--b-paper), transparent)',
+            zIndex: 10,
+          }}
         />
         <div
-          className="absolute inset-y-0 right-0 w-16 pointer-events-none z-10"
-          style={{ background: 'linear-gradient(to left, #0d0d15, transparent)' }}
+          className="absolute pointer-events-none"
+          style={{
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: 64,
+            background: 'linear-gradient(to left, var(--b-paper), transparent)',
+            zIndex: 10,
+          }}
         />
 
         <div
@@ -144,10 +184,11 @@ export function ScrollPicker({
                   }}
                 >
                   <div
-                    className={cn(
-                      'w-px rounded-full',
-                      isMajor ? 'h-10 bg-white/35' : 'h-5 bg-white/15',
-                    )}
+                    style={{
+                      width: 1,
+                      height: isMajor ? 36 : 18,
+                      background: isMajor ? 'var(--b-ink-60)' : 'var(--b-ink-40)',
+                    }}
                   />
                 </div>
               );
