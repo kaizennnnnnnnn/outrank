@@ -21,12 +21,10 @@ interface PR {
  * exercise — the standard "what's my PR" view that lift apps lead
  * with.
  *
- * Rendered only on /habits/gym. PRs are bounded by the workout
- * history window: anything older than ~30 sessions falls off this
- * view but is still in the underlying data.
- *
- * Sort: heaviest weight first, ties broken by reps. Bodyweight (kg=0)
- * ranked last so e.g. a 100kg deadlift outranks a 25-rep pushup.
+ * Editorial Direction B v2: paper background, hairline border with a
+ * 2px ink top-rule, italic display weight in accent ink. PRs are
+ * bounded by the workout history window: anything older than ~30
+ * sessions falls off this view but is still in the underlying data.
  */
 export function GymPRsBlock() {
   const { workouts, loading } = useWorkoutHistory(30);
@@ -69,7 +67,7 @@ export function GymPRsBlock() {
   }, [workouts]);
 
   if (loading) {
-    return <Skeleton className="h-32 rounded-2xl" />;
+    return <Skeleton className="h-32" />;
   }
 
   if (prs.length === 0) {
@@ -80,52 +78,121 @@ export function GymPRsBlock() {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border overflow-hidden"
       style={{
-        background: 'linear-gradient(160deg, rgba(239,68,68,0.10) 0%, rgba(11,11,20,0.7) 70%)',
-        borderColor: 'rgba(239,68,68,0.28)',
+        background: 'var(--b-paper)',
+        border: '1px solid var(--b-rule)',
+        borderTop: '2px solid var(--b-ink)',
+        overflow: 'hidden',
       }}
     >
-      <div className="flex items-center gap-2 px-4 pt-4 mb-3">
-        <span
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ background: '#ef4444', boxShadow: '0 0 6px #ef4444' }}
-        />
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-red-400">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 8,
+          padding: '16px 16px 12px',
+        }}
+      >
+        <p
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-accent)' }}
+        >
           Personal records
         </p>
-        <span className="text-[10px] font-mono text-slate-500 ml-1">
+        <span
+          className="font-body tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+        >
           · {prs.length} exercise{prs.length === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div className="divide-y divide-white/[0.04]">
-        {prs.slice(0, 8).map((pr) => (
-          <div key={pr.exerciseId} className="flex items-center justify-between gap-3 px-4 py-2.5">
-            <div className="min-w-0">
-              <p className="text-[13px] font-bold text-white truncate">{pr.exerciseName}</p>
-              <p className="text-[10px] font-mono text-slate-500 mt-0.5 capitalize">
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        {prs.slice(0, 8).map((pr, i) => (
+          <li
+            key={pr.exerciseId}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              padding: '10px 16px',
+              borderTop: i === 0 ? 'none' : '1px solid var(--b-rule)',
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <p
+                className="font-display"
+                style={{
+                  fontSize: 13,
+                  fontStyle: 'italic',
+                  fontWeight: 600,
+                  color: 'var(--b-ink)',
+                  letterSpacing: '-0.01em',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {pr.exerciseName}
+              </p>
+              <p
+                className="spread"
+                style={{
+                  fontSize: 9,
+                  color: 'var(--b-ink-40)',
+                  marginTop: 2,
+                  textTransform: 'capitalize',
+                }}
+              >
                 {pr.primaryMuscle}
               </p>
             </div>
-            <p className="text-[12px] font-mono text-white flex-shrink-0">
-              <span className="font-bold">{pr.bestReps}</span>
-              <span className="text-slate-600 mx-1">×</span>
+            <p
+              className="font-body tabular"
+              style={{ fontSize: 12, color: 'var(--b-ink)', flexShrink: 0 }}
+            >
+              <span
+                className="font-display"
+                style={{ fontStyle: 'italic', fontWeight: 600 }}
+              >
+                {pr.bestReps}
+              </span>
+              <span style={{ color: 'var(--b-ink-40)', margin: '0 4px' }}>×</span>
               {pr.bestWeight > 0 ? (
                 <>
-                  <span className="font-bold" style={{ color: '#fca5a5' }}>{pr.bestWeight}</span>
-                  <span className="text-slate-600 ml-0.5">kg</span>
+                  <span
+                    className="font-display"
+                    style={{
+                      fontStyle: 'italic',
+                      fontWeight: 600,
+                      color: 'var(--b-accent)',
+                    }}
+                  >
+                    {pr.bestWeight}
+                  </span>
+                  <span style={{ color: 'var(--b-ink-40)', marginLeft: 2 }}>kg</span>
                 </>
               ) : (
-                <span className="text-slate-400">bw</span>
+                <span style={{ color: 'var(--b-ink-60)' }}>bw</span>
               )}
             </p>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
       {prs.length > 8 && (
-        <p className="text-[10px] font-mono text-slate-600 text-center px-4 py-2 border-t border-white/[0.04]">
+        <p
+          className="font-body tabular"
+          style={{
+            fontSize: 10,
+            color: 'var(--b-ink-40)',
+            textAlign: 'center',
+            padding: '8px 16px',
+            borderTop: '1px solid var(--b-rule)',
+            fontStyle: 'italic',
+          }}
+        >
           +{prs.length - 8} more in your history
         </p>
       )}

@@ -7,14 +7,14 @@ import { useLastFriendsLeagueSnapshot } from '@/hooks/useFriendsLeague';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Profile-page summary of the user's social-stakes status: active
- * pacts (count + the most-progressed one inline) and last week's
- * Friends League finish if any. Links into /pacts and /friends-league
- * for the full views.
+ * Editorial Direction B v2 social block. Three optional rows: active
+ * pacts, incoming pact invites, and the last friends-league finish.
+ * Hairline rules between rows; accent left stripe on items that need
+ * the user's attention (incoming invites).
  *
  * Renders nothing when the user has no pacts AND no league snapshot
- * yet — keeps the profile clean for users who haven't touched the
- * social mechanics.
+ * — keeps the profile clean for users who haven't touched the social
+ * mechanics.
  */
 export function ProfileSocialBlock() {
   const { user } = useAuth();
@@ -26,7 +26,6 @@ export function ProfileSocialBlock() {
   const hasNothing = active.length === 0 && incoming.length === 0 && !snapshot;
   if (hasNothing) return null;
 
-  // Find the most-progressed active pact for an inline preview.
   const featured = active.length > 0
     ? active.reduce((best, p) => {
         const myCount = countMyDays(p, user.uid);
@@ -39,47 +38,69 @@ export function ProfileSocialBlock() {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white/[0.015] border border-white/[0.04] overflow-hidden"
+      style={{
+        borderTop: '1px solid var(--b-ink)',
+        borderBottom: '1px solid var(--b-rule)',
+        padding: '14px 0',
+      }}
     >
-      <div className="flex items-center gap-2 px-4 pt-4 mb-3">
-        <span
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ background: '#a855f7', boxShadow: '0 0 6px #a855f7' }}
-        />
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-violet-400">
-          Social
-        </p>
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+        Social
       </div>
 
-      <div className="px-4 pb-4 space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', marginTop: 10 }}>
         {/* Active pacts row */}
         {active.length > 0 && (
           <Link
             href="/pacts"
-            className="block rounded-xl border border-white/[0.04] hover:border-orange-500/30 transition-colors p-3"
             style={{
-              background: featured ? `linear-gradient(135deg, ${featured.habitColor}10 0%, rgba(11,11,20,0.7) 70%)` : undefined,
+              display: 'block',
+              padding: '10px 0',
+              borderTop: '1px solid var(--b-rule)',
+              textDecoration: 'none',
+              color: 'inherit',
             }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
                   Active pacts
-                </p>
-                <p className="font-heading text-base font-bold text-white mt-0.5">
+                </div>
+                <p
+                  className="font-display"
+                  style={{
+                    fontSize: 18,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    margin: '2px 0 0',
+                    color: 'var(--b-ink)',
+                  }}
+                >
                   {active.length} running
                 </p>
                 {featured && (
-                  <p className="text-[11px] font-mono text-slate-500 mt-1 truncate">
-                    <span style={{ color: featured.habitColor }} className="font-bold">{featured.habitName}</span>
-                    <span className="text-slate-700 mx-1.5">·</span>
+                  <p
+                    className="font-mono"
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--b-ink-60)',
+                      marginTop: 2,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    <span style={{ color: featured.habitColor, fontWeight: 700 }}>
+                      {featured.habitName}
+                    </span>
+                    <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
                     <span>{countMyDays(featured, user.uid)}/{featured.durationDays} days</span>
-                    <span className="text-slate-700 mx-1.5">·</span>
+                    <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
                     <span>vs {partnerName(featured, user.uid)}</span>
                   </p>
                 )}
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400 flex-shrink-0">
+              <span className="spread" style={{ fontSize: 9, color: 'var(--b-accent)', flexShrink: 0 }}>
                 View →
               </span>
             </div>
@@ -90,18 +111,28 @@ export function ProfileSocialBlock() {
         {incoming.length > 0 && (
           <Link
             href="/pacts"
-            className="block rounded-xl border border-amber-500/30 bg-amber-500/[0.05] p-3 hover:bg-amber-500/[0.08] transition-colors"
+            style={{
+              display: 'block',
+              padding: '10px 12px',
+              borderTop: '1px solid var(--b-rule)',
+              borderLeft: '2px solid var(--b-accent)',
+              textDecoration: 'none',
+              color: 'inherit',
+            }}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
                   Pending invite{incoming.length === 1 ? '' : 's'}
-                </p>
-                <p className="text-[12px] text-white mt-0.5">
+                </div>
+                <p
+                  className="font-body"
+                  style={{ fontSize: 12, color: 'var(--b-ink)', marginTop: 2 }}
+                >
                   {incoming.length} pact invite{incoming.length === 1 ? '' : 's'} waiting on your reply
                 </p>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400 flex-shrink-0">
+              <span className="spread" style={{ fontSize: 9, color: 'var(--b-accent)', flexShrink: 0 }}>
                 Open →
               </span>
             </div>
@@ -112,33 +143,46 @@ export function ProfileSocialBlock() {
         {snapshot && (
           <Link
             href="/friends-league"
-            className="block rounded-xl border border-white/[0.04] hover:border-violet-500/30 transition-colors p-3"
             style={{
-              background: snapshot.myRank <= 3
-                ? 'linear-gradient(135deg, rgba(34,197,94,0.10) 0%, rgba(11,11,20,0.7) 70%)'
-                : 'rgba(255,255,255,0.02)',
+              display: 'block',
+              padding: '10px 0',
+              borderTop: '1px solid var(--b-rule)',
+              textDecoration: 'none',
+              color: 'inherit',
             }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
                   Last week ({snapshot.weekKey})
-                </p>
-                <p className="font-heading text-base font-bold text-white mt-0.5">
-                  {snapshot.myRank === 1 && '👑 '}
+                </div>
+                <p
+                  className="font-display tabular"
+                  style={{
+                    fontSize: 18,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    margin: '2px 0 0',
+                    color: 'var(--b-ink)',
+                  }}
+                >
+                  {snapshot.myRank === 1 && '★ '}
                   #{snapshot.myRank} of {snapshot.standings.length}
                 </p>
-                <p className="text-[11px] font-mono text-slate-500 mt-1">
+                <p
+                  className="font-mono tabular"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+                >
                   {snapshot.myScore.toLocaleString()} XP
                   {snapshot.myReward > 0 && (
                     <>
-                      <span className="text-slate-700 mx-1.5">·</span>
-                      <span className="text-emerald-400">+{snapshot.myReward} fragments</span>
+                      <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+                      <span style={{ color: 'var(--b-accent)' }}>+{snapshot.myReward} fragments</span>
                     </>
                   )}
                 </p>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400 flex-shrink-0">
+              <span className="spread" style={{ fontSize: 9, color: 'var(--b-accent)', flexShrink: 0 }}>
                 View →
               </span>
             </div>

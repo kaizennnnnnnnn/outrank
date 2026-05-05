@@ -7,7 +7,6 @@ import { getDocument } from '@/lib/firestore';
 import { getDuelRewards } from '@/lib/duelRewards';
 import { CATEGORIES } from '@/constants/categories';
 import { Competition, CompetitionParticipant } from '@/types/competition';
-import { cn } from '@/lib/utils';
 
 interface Props {
   comp: Competition;
@@ -26,18 +25,17 @@ type LiveSkin = {
 const liveCache: Record<string, LiveSkin> = {};
 
 /**
- * Premium "duel ended, come claim your rewards" card.
+ * Editorial "duel ended, come claim your rewards" card.
  *
- * Why it's built this way:
- * - Avatars on duels were stored as a snapshot at challenge-creation time,
- *   so if a user hadn't uploaded a picture back then (or hadn't equipped a
- *   frame/name effect), that stale '' sat in the participants array forever.
- *   We pull the live user doc per participant and use whatever's current —
- *   that restores missing PFPs and also lights up any cosmetics they've
- *   equipped since.
- * - The verdict + rewards are visible *before* tapping, so the card is
- *   its own preview of the full-screen reveal (the reveal still plays
- *   the animation on claim).
+ * Avatars on duels were stored as a snapshot at challenge-creation
+ * time, so if the user hadn't uploaded a picture / hadn't equipped a
+ * frame, that stale '' sat in the participants array. We pull the
+ * live user doc per participant and use whatever's current — that
+ * restores missing PFPs and lights up freshly equipped cosmetics.
+ *
+ * The card winner gets a 2px ink top-rule. Defeat / draw stay on the
+ * normal hairline. The whole card is a button — tapping it opens the
+ * full-screen DuelResultModal claim flow.
  */
 export function DuelEndedCard({ comp, currentUserId, onClaim }: Props) {
   const me = comp.participants.find((p) => p.userId === currentUserId);
@@ -77,142 +75,143 @@ export function DuelEndedCard({ comp, currentUserId, onClaim }: Props) {
   const { xp, fragments } = getDuelRewards(outcome, comp.durationDays);
   const cat = CATEGORIES.find((c) => c.slug === comp.categorySlug);
 
-  const total = Math.max(1, myScore + oppScore);
-  const myPct = (myScore / total) * 100;
-  const oppPct = (oppScore / total) * 100;
-
   const verdictLabel = tie ? 'Draw' : won ? 'Victory' : 'Defeat';
-  const verdictColor = tie ? '#fbbf24' : won ? '#f97316' : '#64748b';
+  const verdictColor = tie ? 'var(--b-ink)' : won ? 'var(--b-accent)' : 'var(--b-ink-60)';
 
   return (
     <button
       type="button"
       onClick={() => onClaim(comp)}
-      className="group relative w-full text-left rounded-2xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
+      className="dir-b"
+      style={{
+        width: '100%',
+        textAlign: 'left',
+        background: 'transparent',
+        color: 'var(--b-ink)',
+        border: '1px solid var(--b-rule)',
+        borderTop: won ? '2px solid var(--b-ink)' : '1px solid var(--b-rule)',
+        padding: 16,
+        cursor: 'pointer',
+      }}
     >
-      {/* Animated pulsing border on unclaimed duels to draw attention */}
+      {/* Top strip — eyebrow + verdict */}
       <div
-        className="absolute inset-0 rounded-2xl pointer-events-none opacity-90"
         style={{
-          padding: 1,
-          background:
-            'linear-gradient(120deg, rgba(249,115,22,0.55), rgba(251,191,36,0.35) 40%, rgba(220,38,38,0.55) 80%)',
-          WebkitMask:
-            'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
-          WebkitMaskComposite: 'xor',
-          maskComposite: 'exclude',
-          animation: 'duel-ended-border 3.5s ease-in-out infinite',
-        }}
-      />
-
-      {/* Body */}
-      <div
-        className="relative rounded-2xl p-4"
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 130% at 50% -10%, rgba(249,115,22,0.10), transparent 55%),' +
-            'linear-gradient(160deg, #0f0f18 0%, #07070c 100%)',
-          boxShadow: '0 10px 30px -18px rgba(249,115,22,0.4)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+          gap: 8,
         }}
       >
-        {/* Top strip — category + duration + verdict ribbon */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
-            <span className="text-base leading-none" aria-hidden>{cat?.icon ?? '🏆'}</span>
-            <span className="font-semibold tracking-wide">{cat?.name ?? comp.title}</span>
-            <span className="text-slate-600">·</span>
-            <span className="font-mono text-slate-500">{comp.durationDays ?? 7}d</span>
-          </div>
-          <VerdictRibbon label={verdictLabel} color={verdictColor} />
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+          Duel Ended · {cat?.name ?? comp.title}
         </div>
-
-        {/* Participant row */}
-        <div className="flex items-center gap-3">
-          <ParticipantSide
-            participant={me}
-            live={myLive}
-            score={myScore}
-            highlight={won ? 'winner' : tie ? 'tie' : 'loser'}
-            align="left"
-          />
-
-          <div className="flex-none flex flex-col items-center px-1">
-            <span
-              className="font-heading font-bold text-lg leading-none"
-              style={{
-                background: `linear-gradient(180deg, ${verdictColor}, #ffffff 50%, ${verdictColor})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              VS
-            </span>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-slate-600 mt-1">
-              {cat?.unit ?? 'score'}
-            </span>
-          </div>
-
-          <ParticipantSide
-            participant={opp}
-            live={oppLive}
-            score={oppScore}
-            highlight={!won && !tie ? 'winner' : tie ? 'tie' : 'loser'}
-            align="right"
-          />
-        </div>
-
-        {/* Score progress — fills toward the winner */}
-        <div className="mt-3 h-1.5 rounded-full bg-[#12121c] overflow-hidden flex">
-          <div
-            className="h-full transition-[width] duration-500"
-            style={{
-              width: `${myPct}%`,
-              background: won
-                ? 'linear-gradient(90deg, #f97316, #fbbf24)'
-                : tie
-                  ? 'linear-gradient(90deg, #fbbf24, #fde68a)'
-                  : 'linear-gradient(90deg, #334155, #475569)',
-            }}
-          />
-          <div
-            className="h-full transition-[width] duration-500"
-            style={{
-              width: `${oppPct}%`,
-              background: !won && !tie
-                ? 'linear-gradient(90deg, #fbbf24, #f97316)'
-                : tie
-                  ? 'linear-gradient(90deg, #fde68a, #fbbf24)'
-                  : 'linear-gradient(90deg, #475569, #334155)',
-            }}
-          />
-        </div>
-
-        {/* Reward preview + CTA */}
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <RewardPill value={`+${xp}`} label="XP" tint="#f97316" />
-            <RewardPill value={`+${fragments}`} label="Fragments" tint="#fbbf24" />
-          </div>
-          <span
-            className="text-[11px] font-bold uppercase tracking-wider pl-2 pr-1 py-1 rounded-md"
-            style={{
-              color: '#fde68a',
-              background:
-                'linear-gradient(90deg, rgba(249,115,22,0.18), rgba(251,191,36,0.10))',
-              border: '1px solid rgba(251,191,36,0.35)',
-            }}
-          >
-            Tap to claim <span aria-hidden>→</span>
-          </span>
-        </div>
+        <span
+          className="spread"
+          style={{
+            fontSize: 9,
+            padding: '2px 8px',
+            border: `1px solid ${verdictColor}`,
+            color: verdictColor,
+          }}
+        >
+          {verdictLabel}
+        </span>
       </div>
 
-      <style>{`
-        @keyframes duel-ended-border {
-          0%, 100% { opacity: 0.65; filter: hue-rotate(0deg); }
-          50%      { opacity: 1;    filter: hue-rotate(-12deg); }
-        }
-      `}</style>
+      {/* Participant row */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <ParticipantSide
+          participant={me}
+          live={myLive}
+          score={myScore}
+          highlight={won ? 'winner' : tie ? 'tie' : 'loser'}
+          align="left"
+        />
+
+        <div
+          style={{
+            flex: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '0 6px',
+            borderLeft: '1px solid var(--b-rule)',
+            borderRight: '1px solid var(--b-rule)',
+            alignSelf: 'stretch',
+            justifyContent: 'center',
+          }}
+        >
+          <span
+            className="font-display"
+            style={{
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: 22,
+              lineHeight: 1,
+              color: 'var(--b-ink)',
+            }}
+          >
+            vs
+          </span>
+          <span
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 4 }}
+          >
+            {cat?.unit ?? 'score'}
+          </span>
+        </div>
+
+        <ParticipantSide
+          participant={opp}
+          live={oppLive}
+          score={oppScore}
+          highlight={!won && !tie ? 'winner' : tie ? 'tie' : 'loser'}
+          align="right"
+        />
+      </div>
+
+      {/* Reward preview + CTA */}
+      <div
+        style={{
+          marginTop: 12,
+          paddingTop: 10,
+          borderTop: '1px solid var(--b-rule)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.04em' }}
+        >
+          <span style={{ color: 'var(--b-ink)' }}>+{xp} XP</span>
+          <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+          <span style={{ color: 'var(--b-accent)' }}>+{fragments} frags</span>
+        </div>
+        <span
+          className="spread"
+          style={{
+            fontSize: 9,
+            color: 'var(--b-ink)',
+            borderBottom: '1px solid var(--b-ink)',
+            paddingBottom: 1,
+          }}
+        >
+          Tap to claim →
+        </span>
+      </div>
     </button>
   );
 }
@@ -230,77 +229,48 @@ function ParticipantSide({
   highlight: 'winner' | 'loser' | 'tie';
   align: 'left' | 'right';
 }) {
-  // Live avatar takes priority; fall back to stored snapshot only if the
-  // user doc fetch failed. This is what restores the missing PFPs.
+  // Live avatar takes priority; fall back to stored snapshot only if
+  // the user doc fetch failed. This is what restores missing PFPs.
   const avatarUrl = live.avatarUrl ?? participant.avatarUrl;
   const frame = live.equippedFrame;
   const nameEffect = live.equippedNameEffect;
 
-  const haloClass =
-    highlight === 'winner'
-      ? 'shadow-[0_0_32px_-4px_rgba(249,115,22,0.75)]'
-      : highlight === 'tie'
-        ? 'shadow-[0_0_24px_-4px_rgba(251,191,36,0.55)]'
-        : 'opacity-75';
+  const scoreColor =
+    highlight === 'winner' ? 'var(--b-accent)'
+      : highlight === 'tie' ? 'var(--b-ink)'
+        : 'var(--b-ink-60)';
 
   return (
     <div
-      className={cn(
-        'flex-1 min-w-0 flex items-center gap-3',
-        align === 'right' && 'flex-row-reverse text-right',
-      )}
+      style={{
+        flex: 1,
+        minWidth: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        flexDirection: align === 'right' ? 'row-reverse' : 'row',
+        textAlign: align === 'right' ? 'right' : 'left',
+      }}
     >
-      <div className={cn('relative rounded-full transition-shadow', haloClass)}>
-        <FramedAvatar src={avatarUrl} alt={participant.username} size="md" frameId={frame} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="truncate">
+      <FramedAvatar src={avatarUrl} alt={participant.username} size="md" frameId={frame} />
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           <NamePlate name={participant.username} effectId={nameEffect} size="sm" />
         </div>
         <p
-          className={cn(
-            'font-mono text-lg leading-none mt-0.5',
-            highlight === 'winner'
-              ? 'text-orange-400'
-              : highlight === 'tie'
-                ? 'text-yellow-400'
-                : 'text-slate-500',
-          )}
+          className="font-display tabular"
+          style={{
+            fontStyle: 'italic',
+            fontWeight: 500,
+            fontSize: 22,
+            lineHeight: 1,
+            color: scoreColor,
+            margin: '2px 0 0',
+          }}
         >
           {score}
         </p>
       </div>
-    </div>
-  );
-}
-
-function VerdictRibbon({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      className="relative overflow-hidden text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-md"
-      style={{
-        color: '#fff',
-        background: `linear-gradient(110deg, ${color}33, ${color}11 50%, ${color}33)`,
-        border: `1px solid ${color}55`,
-        textShadow: `0 0 12px ${color}88`,
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-function RewardPill({ value, label, tint }: { value: string; label: string; tint: string }) {
-  return (
-    <div
-      className="flex items-center gap-1.5 px-2 py-1 rounded-md"
-      style={{
-        background: `linear-gradient(145deg, ${tint}18, #0b0b14 75%)`,
-        border: `1px solid ${tint}33`,
-      }}
-    >
-      <span className="font-mono text-sm font-bold leading-none" style={{ color: tint }}>{value}</span>
-      <span className="text-[9px] uppercase tracking-wider text-slate-500 leading-none">{label}</span>
     </div>
   );
 }

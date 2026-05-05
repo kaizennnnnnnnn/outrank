@@ -2,11 +2,9 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { getDocument, setDocument, createDocument, Timestamp } from '@/lib/firestore';
-import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { UserProfile, UsernameDoc, FriendshipDoc } from '@/types/user';
 
@@ -146,107 +144,272 @@ export default function InvitePage({ params }: PageProps) {
   }, [authLoading, firebaseUser, user, username, state.kind, addToast]);
 
   return (
-    <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        {state.kind === 'loading' && <LoadingCard username={username} />}
-        {state.kind === 'not-found' && <NotFoundCard username={username} router={router} />}
-        {state.kind === 'self' && <SelfCard router={router} />}
+    <div
+      className="dir-b min-h-screen flex flex-col"
+      style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}
+    >
+      <div
+        className="spread"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink)',
+          letterSpacing: '0.32em',
+          padding: '24px 22px 12px',
+          borderBottom: '1px solid var(--b-rule)',
+          textAlign: 'center',
+        }}
+      >
+        OUTRANK
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: 460,
+          margin: '0 auto',
+          padding: '40px 22px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+        }}
+      >
+        {state.kind === 'loading' && <LoadingState username={username} />}
+        {state.kind === 'not-found' && <NotFoundState username={username} router={router} />}
+        {state.kind === 'self' && <SelfState router={router} />}
         {state.kind === 'pre-auth' && (
-          <PreAuthCard profile={state.profile} router={router} username={username} />
+          <PreAuthState profile={state.profile} router={router} username={username} />
         )}
         {state.kind === 'already-friends' && (
-          <AlreadyFriendsCard profile={state.profile} router={router} />
+          <AlreadyFriendsState profile={state.profile} router={router} />
         )}
-        {state.kind === 'pending' && <PendingCard profile={state.profile} router={router} />}
-        {state.kind === 'sending' && <SendingCard profile={state.profile} />}
-        {state.kind === 'sent' && <SentCard profile={state.profile} router={router} />}
+        {state.kind === 'pending' && <PendingState profile={state.profile} router={router} />}
+        {state.kind === 'sending' && <SendingState profile={state.profile} />}
+        {state.kind === 'sent' && <SentState profile={state.profile} router={router} />}
         {state.kind === 'error' && (
-          <ErrorCard profile={state.profile} message={state.message} router={router} />
+          <ErrorState profile={state.profile} message={state.message} router={router} />
         )}
       </div>
     </div>
   );
 }
 
-function CardShell({
-  eyebrow,
-  children,
-}: {
-  eyebrow: string;
-  children: React.ReactNode;
-}) {
+/* — — — Editorial primitives — — — */
+
+function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="relative overflow-hidden rounded-2xl border p-6"
-      style={{
-        background:
-          'radial-gradient(ellipse 100% 80% at 100% 0%, rgba(249,115,22,0.18), transparent 55%),' +
-          'linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-        borderColor: 'rgba(249,115,22,0.25)',
-        boxShadow: '0 0 30px -14px rgba(249,115,22,0.4), inset 0 1px 0 rgba(249,115,22,0.08)',
-      }}
+      className="spread"
+      style={{ fontSize: 9, color: 'var(--b-ink-60)', textAlign: 'center', marginBottom: 8 }}
     >
-      <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400 mb-2">
-        {eyebrow}
-      </p>
       {children}
     </div>
   );
 }
 
-function PersonHeader({ profile }: { profile: UserProfile }) {
+function Display({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <Avatar src={profile.avatarUrl} alt={profile.username} size="lg" />
-      <div>
-        <p className="font-heading text-xl font-bold text-white leading-none">
-          {profile.username}
-        </p>
-        <p className="text-[11px] font-mono text-slate-500 mt-1">
+    <h1
+      className="font-display"
+      style={{
+        fontSize: 38,
+        fontWeight: 500,
+        lineHeight: 1.05,
+        margin: '0 0 14px',
+        textAlign: 'center',
+        fontStyle: 'italic',
+      }}
+    >
+      {children}
+    </h1>
+  );
+}
+
+function Body({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      className="font-body"
+      style={{
+        fontSize: 14,
+        color: 'var(--b-ink-60)',
+        textAlign: 'center',
+        fontStyle: 'italic',
+        lineHeight: 1.55,
+        margin: '0 auto 24px',
+        maxWidth: 360,
+      }}
+    >
+      {children}
+    </p>
+  );
+}
+
+function FilledInkButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="font-body"
+      style={{
+        width: '100%',
+        padding: '14px 16px',
+        background: 'var(--b-ink)',
+        color: 'var(--b-paper)',
+        border: '1px solid var(--b-ink)',
+        cursor: disabled ? 'wait' : 'pointer',
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function OutlinedInkButton({
+  children,
+  onClick,
+  disabled,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="font-body"
+      style={{
+        width: '100%',
+        padding: '14px 16px',
+        background: 'transparent',
+        color: 'var(--b-ink)',
+        border: '1px solid var(--b-ink)',
+        cursor: disabled ? 'wait' : 'pointer',
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* — — — Framed avatar (paper-card) — — — */
+
+function FramedInviterAvatar({ profile }: { profile: UserProfile }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 22,
+      }}
+    >
+      <div
+        style={{
+          padding: 8,
+          border: '1px solid var(--b-ink)',
+          background: 'var(--b-paper)',
+        }}
+      >
+        <div style={{ padding: 6, border: '1px solid var(--b-rule)' }}>
+          <Avatar src={profile.avatarUrl} alt={profile.username} size="xl" />
+        </div>
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <div
+          className="font-display"
+          style={{ fontSize: 18, fontStyle: 'italic', lineHeight: 1 }}
+        >
+          @{profile.username}
+        </div>
+        <div
+          className="font-body"
+          style={{
+            fontSize: 11,
+            color: 'var(--b-ink-60)',
+            marginTop: 4,
+            fontVariantNumeric: 'tabular-nums',
+            fontStyle: 'italic',
+          }}
+        >
           Lv.{profile.level} · {profile.totalXP.toLocaleString()} XP
-        </p>
+        </div>
       </div>
     </div>
   );
 }
 
-function LoadingCard({ username }: { username: string }) {
+/* — — — States — — — */
+
+function LoadingState({ username }: { username: string }) {
   return (
-    <CardShell eyebrow="Friend invite">
-      <p className="text-white">Looking up {username}…</p>
-    </CardShell>
+    <div>
+      <Eyebrow>Friend invite</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>Looking up </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>@{username}</em>
+        <em style={{ fontStyle: 'italic' }}>…</em>
+      </Display>
+    </div>
   );
 }
 
-function NotFoundCard({ username, router }: { username: string; router: ReturnType<typeof useRouter> }) {
+function NotFoundState({ username, router }: { username: string; router: ReturnType<typeof useRouter> }) {
   return (
-    <CardShell eyebrow="Invite link broken">
-      <p className="font-heading text-xl font-bold text-white mb-2">
-        We couldn&rsquo;t find @{username}.
-      </p>
-      <p className="text-[12px] text-slate-400 mb-4">
-        The username may be misspelled or the account no longer exists.
-      </p>
-      <Button onClick={() => router.push('/dashboard')}>Go to dashboard</Button>
-    </CardShell>
+    <div>
+      <Eyebrow>Invite link broken</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>We couldn&rsquo;t find </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>@{username}</em>
+        <em style={{ fontStyle: 'italic' }}>.</em>
+      </Display>
+      <Body>The username may be misspelled or the account no longer exists.</Body>
+      <FilledInkButton onClick={() => router.push('/dashboard')}>
+        Go to dashboard →
+      </FilledInkButton>
+    </div>
   );
 }
 
-function SelfCard({ router }: { router: ReturnType<typeof useRouter> }) {
+function SelfState({ router }: { router: ReturnType<typeof useRouter> }) {
   return (
-    <CardShell eyebrow="That&rsquo;s you">
-      <p className="font-heading text-xl font-bold text-white mb-2">
-        This is your own invite link.
-      </p>
-      <p className="text-[12px] text-slate-400 mb-4">
-        Share it with a friend — they&rsquo;ll be added to your circle when they tap it.
-      </p>
-      <Button onClick={() => router.push('/friends')}>See your friends</Button>
-    </CardShell>
+    <div>
+      <Eyebrow>That&rsquo;s you</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>Your own </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>invite link</em>
+        <em style={{ fontStyle: 'italic' }}>.</em>
+      </Display>
+      <Body>Share it with a friend — they&rsquo;ll be added to your circle when they tap it.</Body>
+      <FilledInkButton onClick={() => router.push('/friends')}>
+        See your friends →
+      </FilledInkButton>
+    </div>
   );
 }
 
-function PreAuthCard({
+function PreAuthState({
   profile,
   router,
   username,
@@ -256,26 +419,42 @@ function PreAuthCard({
   username: string;
 }) {
   return (
-    <CardShell eyebrow="Friend invite">
-      <PersonHeader profile={profile} />
-      <p className="text-[14px] text-slate-300 leading-relaxed mb-4">
-        <span className="font-bold text-white">{profile.username}</span> wants you on Outrank —
-        sign in or create an account to send the friend request.
-      </p>
-      <div className="flex flex-col gap-2">
-        <Button onClick={() => router.push('/auth/login')}>Sign in</Button>
-        <Button variant="secondary" onClick={() => router.push('/auth/register')}>
+    <div>
+      <Eyebrow>You&rsquo;re invited</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>Join </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{profile.username}</em>
+        <em style={{ fontStyle: 'italic' }}>&rsquo;s circle.</em>
+      </Display>
+      <FramedInviterAvatar profile={profile} />
+      <Body>
+        Sign in or create an account to send your friend request.
+      </Body>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <FilledInkButton onClick={() => router.push('/auth/login')}>
+          Accept invite →
+        </FilledInkButton>
+        <OutlinedInkButton onClick={() => router.push('/auth/register')}>
           Create account
-        </Button>
+        </OutlinedInkButton>
       </div>
-      <p className="text-[10px] text-slate-600 text-center mt-3">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink-40)',
+          textAlign: 'center',
+          marginTop: 14,
+          fontStyle: 'italic',
+        }}
+      >
         We&rsquo;ll send your request to {username} right after you sign in.
       </p>
-    </CardShell>
+    </div>
   );
 }
 
-function AlreadyFriendsCard({
+function AlreadyFriendsState({
   profile,
   router,
 }: {
@@ -283,22 +462,27 @@ function AlreadyFriendsCard({
   router: ReturnType<typeof useRouter>;
 }) {
   return (
-    <CardShell eyebrow="Already friends">
-      <PersonHeader profile={profile} />
-      <p className="text-[14px] text-slate-300 mb-4">
-        You and {profile.username} are already friends.
-      </p>
-      <div className="flex gap-2">
-        <Button onClick={() => router.push(`/profile/${profile.username}`)}>View profile</Button>
-        <Button variant="secondary" onClick={() => router.push('/friends')}>
+    <div>
+      <Eyebrow>Already friends</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>You and </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{profile.username}</em>
+        <em style={{ fontStyle: 'italic' }}> are connected.</em>
+      </Display>
+      <FramedInviterAvatar profile={profile} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <FilledInkButton onClick={() => router.push(`/profile/${profile.username}`)}>
+          View profile →
+        </FilledInkButton>
+        <OutlinedInkButton onClick={() => router.push('/friends')}>
           Friends list
-        </Button>
+        </OutlinedInkButton>
       </div>
-    </CardShell>
+    </div>
   );
 }
 
-function PendingCard({
+function PendingState({
   profile,
   router,
 }: {
@@ -306,28 +490,39 @@ function PendingCard({
   router: ReturnType<typeof useRouter>;
 }) {
   return (
-    <CardShell eyebrow="Already pending">
-      <PersonHeader profile={profile} />
-      <p className="text-[14px] text-slate-300 mb-4">
-        Your invite to {profile.username} is already on its way — they just haven&rsquo;t accepted yet.
-      </p>
-      <Button onClick={() => router.push('/friends')}>Friends list</Button>
-    </CardShell>
+    <div>
+      <Eyebrow>Already pending</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>Awaiting </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{profile.username}</em>
+        <em style={{ fontStyle: 'italic' }}>.</em>
+      </Display>
+      <FramedInviterAvatar profile={profile} />
+      <Body>
+        Your invite is on its way — they just haven&rsquo;t accepted yet.
+      </Body>
+      <FilledInkButton onClick={() => router.push('/friends')}>
+        Friends list →
+      </FilledInkButton>
+    </div>
   );
 }
 
-function SendingCard({ profile }: { profile: UserProfile }) {
+function SendingState({ profile }: { profile: UserProfile }) {
   return (
-    <CardShell eyebrow="Sending">
-      <PersonHeader profile={profile} />
-      <p className="text-[14px] text-slate-300">
-        Sending your friend request to {profile.username}…
-      </p>
-    </CardShell>
+    <div>
+      <Eyebrow>Sending</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>Reaching out to </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{profile.username}</em>
+        <em style={{ fontStyle: 'italic' }}>…</em>
+      </Display>
+      <FramedInviterAvatar profile={profile} />
+    </div>
   );
 }
 
-function SentCard({
+function SentState({
   profile,
   router,
 }: {
@@ -335,39 +530,56 @@ function SentCard({
   router: ReturnType<typeof useRouter>;
 }) {
   return (
-    <CardShell eyebrow="Invite sent">
-      <PersonHeader profile={profile} />
-      <p className="text-[14px] text-slate-300 mb-4">
-        Friend request sent to <span className="font-bold text-white">{profile.username}</span> —
-        they&rsquo;ll see it in their bell.
-      </p>
-      <div className="flex gap-2">
-        <Button onClick={() => router.push('/dashboard')}>Continue</Button>
-        <Button variant="secondary" onClick={() => router.push('/friends')}>
-          Friends
-        </Button>
+    <div>
+      <Eyebrow>Invite sent</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>Request on its way to </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{profile.username}</em>
+        <em style={{ fontStyle: 'italic' }}>.</em>
+      </Display>
+      <FramedInviterAvatar profile={profile} />
+      <Body>They&rsquo;ll see it in their bell.</Body>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <FilledInkButton onClick={() => router.push('/dashboard')}>Continue →</FilledInkButton>
+        <OutlinedInkButton onClick={() => router.push('/friends')}>Friends</OutlinedInkButton>
       </div>
-    </CardShell>
+    </div>
   );
 }
 
-function ErrorCard({
+function ErrorState({
   profile,
   message,
+  router,
 }: {
   profile: UserProfile;
   message: string;
   router: ReturnType<typeof useRouter>;
 }) {
   return (
-    <CardShell eyebrow="Couldn&rsquo;t send">
-      <PersonHeader profile={profile} />
-      <p className="text-[14px] text-red-300 mb-3">{message}</p>
-      <Link href="/friends" className="block">
-        <Button variant="secondary" className="w-full">
-          Go to friends list
-        </Button>
-      </Link>
-    </CardShell>
+    <div>
+      <Eyebrow>Couldn&rsquo;t send</Eyebrow>
+      <Display>
+        <em style={{ fontStyle: 'italic' }}>Something </em>
+        <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>broke</em>
+        <em style={{ fontStyle: 'italic' }}>.</em>
+      </Display>
+      <FramedInviterAvatar profile={profile} />
+      <p
+        className="font-body"
+        style={{
+          fontSize: 13,
+          color: 'var(--b-accent)',
+          textAlign: 'center',
+          fontStyle: 'italic',
+          marginBottom: 20,
+        }}
+      >
+        {message}
+      </p>
+      <OutlinedInkButton onClick={() => router.push('/friends')}>
+        Go to friends list
+      </OutlinedInkButton>
+    </div>
   );
 }

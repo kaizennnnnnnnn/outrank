@@ -14,6 +14,10 @@ interface Props {
  * Daily rotating tip for a pillar habit. Same tip for everyone on the
  * same calendar day; rotation indexes via day-of-year. Renders nothing
  * for non-pillar slugs.
+ *
+ * Editorial Direction B v2 — paper background, hairline border, left
+ * accent stripe in the pillar's category color (water blue / sleep
+ * indigo / etc.). Eyebrow uses .spread, title is font-display italic.
  */
 export function PillarTip({ slug, color }: Props) {
   if (!isPillarSlug(slug)) return null;
@@ -24,20 +28,49 @@ export function PillarTip({ slug, color }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl"
       style={{
-        background: `linear-gradient(135deg, ${color}10 0%, rgba(11,11,20,0.7) 70%)`,
-        borderLeft: `2px solid ${color}`,
+        background: 'var(--b-paper)',
+        border: '1px solid var(--b-rule)',
+        borderLeft: `3px solid ${color}`,
       }}
     >
-      <div className="p-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] mb-1.5" style={{ color }}>
+      <div style={{ padding: 16 }}>
+        <p
+          className="spread"
+          style={{ fontSize: 9, color, marginBottom: 6 }}
+        >
           Tip of the day
         </p>
-        <p className="text-sm font-bold text-white leading-snug">{tip.title}</p>
-        <p className="text-[12px] text-slate-400 mt-1.5 leading-relaxed">{tip.body}</p>
+        <p
+          className="font-display"
+          style={{
+            fontSize: 16,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.25,
+            color: 'var(--b-ink)',
+          }}
+        >
+          {tip.title}
+        </p>
+        <p
+          className="font-body"
+          style={{
+            fontSize: 12,
+            color: 'var(--b-ink-60)',
+            marginTop: 6,
+            lineHeight: 1.5,
+          }}
+        >
+          {tip.body}
+        </p>
         {tip.source && (
-          <p className="text-[10px] font-mono text-slate-600 mt-2">— {tip.source}</p>
+          <p
+            className="font-body tabular"
+            style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 8 }}
+          >
+            — {tip.source}
+          </p>
         )}
       </div>
     </motion.div>

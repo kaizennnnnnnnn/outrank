@@ -9,29 +9,25 @@ interface StreakFlameProps {
 
 type Palette = {
   core: string; inner: string; mid: string; outer: string; ember: string;
-  glow: string; textClass: string;
+  glow: string;
 };
 
 function paletteOf(streak: number): Palette {
   if (streak >= 100) return {
     core: '#ffffff', inner: '#fde047', mid: '#dc2626', outer: '#450a0a',
     ember: '#fde047', glow: 'rgba(220,38,38,0.6)',
-    textClass: 'from-amber-200 via-red-500 to-rose-600',
   };
   if (streak >= 30) return {
     core: '#fef3c7', inner: '#fb923c', mid: '#dc2626', outer: '#7f1d1d',
     ember: '#f97316', glow: 'rgba(220,38,38,0.45)',
-    textClass: 'from-red-400 to-rose-600',
   };
   if (streak >= 7) return {
     core: '#fef9c3', inner: '#fbbf24', mid: '#f97316', outer: '#9a3412',
     ember: '#fb923c', glow: 'rgba(249,115,22,0.42)',
-    textClass: 'from-orange-400 to-red-600',
   };
   return {
     core: '#fef3c7', inner: '#fbbf24', mid: '#f59e0b', outer: '#b45309',
     ember: '#fde047', glow: 'rgba(245,158,11,0.4)',
-    textClass: 'from-yellow-300 to-orange-600',
   };
 }
 
@@ -152,15 +148,37 @@ export function StreakFlame({ streak, size = 'md' }: StreakFlameProps) {
         ))}
       </div>
 
+      {/* Editorial: italic display number + small "d" unit. The flame
+          icon itself stays orange/red — that's a literal flame. The
+          surrounding count text reads as ink, with the body unit set
+          smaller in muted ink so the number is the focal point. */}
       <span
         className={cn(
-          'font-heading font-bold bg-clip-text text-transparent bg-gradient-to-b',
+          'font-display tabular',
           textSizes[size],
-          p.textClass,
           streak >= 100 && 'animate-shimmer',
         )}
+        style={{
+          fontStyle: 'italic',
+          fontWeight: 600,
+          color: 'var(--b-ink)',
+          letterSpacing: '-0.01em',
+        }}
       >
-        {streak}d
+        {streak}
+        <span
+          className="font-body"
+          style={{
+            fontSize: '0.55em',
+            fontStyle: 'normal',
+            fontWeight: 500,
+            color: 'var(--b-ink-60)',
+            marginLeft: 2,
+            letterSpacing: '0.05em',
+          }}
+        >
+          d
+        </span>
       </span>
     </div>
   );

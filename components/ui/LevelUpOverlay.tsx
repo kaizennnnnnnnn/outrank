@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
 import { useAuth } from '@/hooks/useAuth';
 import { getLevelForXP } from '@/constants/levels';
 
+// Editorial level-up: a paper sheet press-stamps onto the screen.
+// Hairline frame, italic display "Level Up.", mono Lv.{N}, and a
+// concentric stamp-press radial in place of the orange particle burst.
 export function LevelUpOverlay() {
   const { user } = useAuth();
   const [show, setShow] = useState(false);
@@ -20,15 +22,6 @@ export function LevelUpOverlay() {
     if (prevLevel !== null && currentLevel.level > prevLevel) {
       setLevelInfo(currentLevel);
       setShow(true);
-
-      // Fire confetti
-      confetti({
-        particleCount: 150,
-        spread: 100,
-        origin: { y: 0.5 },
-        colors: ['#dc2626', '#ef4444', '#f97316', '#fbbf24', '#991b1b'],
-      });
-
       setTimeout(() => setShow(false), 4000);
     }
 
@@ -42,55 +35,134 @@ export function LevelUpOverlay() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md"
+          className="dir-b fixed inset-0 z-[200] flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.72)' }}
           onClick={() => setShow(false)}
         >
           <motion.div
-            initial={{ scale: 0, rotate: -10 }}
-            animate={{ scale: [0, 1.2, 1], rotate: [10, -5, 0] }}
-            transition={{ duration: 0.6, type: 'spring' }}
-            className="text-center"
+            initial={{ scale: 0.92, rotate: -1.5, opacity: 0 }}
+            animate={{ scale: [0.92, 1.04, 1], rotate: [-1.5, 0.6, 0], opacity: 1 }}
+            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
+            style={{
+              background: 'var(--b-paper)',
+              color: 'var(--b-ink)',
+              border: '1px solid var(--b-ink)',
+              borderTop: '2px solid var(--b-ink)',
+              padding: '40px 56px',
+              minWidth: 320,
+              textAlign: 'center',
+            }}
           >
-            {/* Circular burst */}
+            {/* Stamp-press radial — three concentric ink hairlines fanning
+                out behind the sheet to read as an inked impression rather
+                than a particle burst. */}
             <motion.div
-              initial={{ scale: 0, opacity: 0.8 }}
-              animate={{ scale: 3, opacity: 0 }}
-              transition={{ duration: 1.2 }}
-              className="absolute inset-0 m-auto w-32 h-32 rounded-full bg-red-600/30"
+              initial={{ scale: 0.4, opacity: 0.55 }}
+              animate={{ scale: 2.4, opacity: 0 }}
+              transition={{ duration: 1.1, ease: 'easeOut' }}
+              className="absolute inset-0 m-auto pointer-events-none"
+              style={{
+                width: 220,
+                height: 220,
+                border: '1px solid var(--b-ink)',
+                borderRadius: '50%',
+              }}
+            />
+            <motion.div
+              initial={{ scale: 0.4, opacity: 0.4 }}
+              animate={{ scale: 3.0, opacity: 0 }}
+              transition={{ delay: 0.15, duration: 1.2, ease: 'easeOut' }}
+              className="absolute inset-0 m-auto pointer-events-none"
+              style={{
+                width: 220,
+                height: 220,
+                border: '1px solid var(--b-ink)',
+                borderRadius: '50%',
+              }}
+            />
+            <motion.div
+              initial={{ scale: 0.4, opacity: 0.3 }}
+              animate={{ scale: 3.6, opacity: 0 }}
+              transition={{ delay: 0.3, duration: 1.3, ease: 'easeOut' }}
+              className="absolute inset-0 m-auto pointer-events-none"
+              style={{
+                width: 220,
+                height: 220,
+                border: '1px solid var(--b-ink)',
+                borderRadius: '50%',
+              }}
             />
 
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: [0, 1.3, 1] }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-8xl mb-4"
-            >
-              ⚡
-            </motion.div>
-
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="font-heading text-sm text-orange-400 uppercase tracking-widest mb-2"
+              transition={{ delay: 0.2 }}
+              className="spread relative z-10"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 14 }}
             >
-              Level Up!
+              Volume One — Ascension
             </motion.p>
 
-            <motion.p
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, type: 'spring' }}
-              className="font-heading text-6xl font-bold text-white mb-3"
+            <motion.h2
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.45 }}
+              className="font-display relative z-10"
+              style={{
+                fontStyle: 'italic',
+                fontWeight: 500,
+                fontSize: 56,
+                lineHeight: 1.05,
+                color: 'var(--b-ink)',
+                margin: 0,
+              }}
             >
-              {levelInfo.level}
-            </motion.p>
+              Level Up.
+            </motion.h2>
 
             <motion.p
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="font-mono relative z-10 tabular"
+              style={{
+                fontSize: 18,
+                color: 'var(--b-accent)',
+                letterSpacing: '0.08em',
+                marginTop: 14,
+                fontWeight: 600,
+              }}
+            >
+              Lv.{levelInfo.level}
+            </motion.p>
+
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.55, duration: 0.4 }}
+              className="relative z-10"
+              style={{
+                width: 64,
+                height: 1,
+                background: 'var(--b-ink)',
+                margin: '14px auto',
+                transformOrigin: 'center',
+              }}
+            />
+
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="font-heading text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-600"
+              className="font-display relative z-10"
+              style={{
+                fontStyle: 'italic',
+                fontWeight: 400,
+                fontSize: 22,
+                color: 'var(--b-ink)',
+                margin: 0,
+              }}
             >
               {levelInfo.title}
             </motion.p>
@@ -99,7 +171,8 @@ export function LevelUpOverlay() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}
-              className="text-sm text-slate-500 mt-6"
+              className="spread relative z-10"
+              style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 24 }}
             >
               Tap to continue
             </motion.p>

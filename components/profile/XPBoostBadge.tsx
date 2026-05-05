@@ -18,13 +18,17 @@ function toDate(v: XPBoostBadgeProps['activatedAt']): Date | null {
 }
 
 function formatRemaining(ms: number): string {
-  if (ms <= 0) return '0m';
+  if (ms <= 0) return '0M';
   const h = Math.floor(ms / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  if (h > 0) return `${h}H ${m}M`;
+  return `${m}M`;
 }
 
+/**
+ * Editorial Direction B v2 chip — small accent-bordered tag with a
+ * tabular mono timer. No gradient, no glow.
+ */
 export function XPBoostBadge({ activatedAt, size = 'md' }: XPBoostBadgeProps) {
   const start = toDate(activatedAt);
   const [now, setNow] = useState(Date.now());
@@ -39,20 +43,32 @@ export function XPBoostBadge({ activatedAt, size = 'md' }: XPBoostBadgeProps) {
   const remaining = endMs - now;
   if (remaining <= 0) return null;
 
-  const px = size === 'sm' ? 'px-2 py-0.5' : 'px-2.5 py-1';
-  const text = size === 'sm' ? 'text-[10px]' : 'text-xs';
+  const fontSize = size === 'sm' ? 9 : 10;
+  const padY = size === 'sm' ? 2 : 3;
+  const padX = size === 'sm' ? 6 : 8;
 
   return (
-    <div
-      className={`inline-flex items-center gap-1 rounded-full ${px} bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-red-500/20 border border-orange-400/40 shadow-[0_0_16px_-4px_rgba(251,146,60,0.6)]`}
-      title={`2x XP boost active — ${formatRemaining(remaining)} left`}
+    <span
+      title={`2× XP boost active — ${formatRemaining(remaining)} left`}
+      className="spread"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: `${padY}px ${padX}px`,
+        border: '1px solid var(--b-accent)',
+        color: 'var(--b-accent)',
+        fontSize,
+        background: 'transparent',
+      }}
     >
-      <svg width={size === 'sm' ? 10 : 12} height={size === 'sm' ? 10 : 12} viewBox="0 0 24 24" fill="currentColor" className="text-orange-300 animate-pulse">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-      </svg>
-      <span className={`font-mono font-bold text-orange-300 ${text}`}>2×</span>
-      <span className={`text-orange-400/80 ${text}`}>{formatRemaining(remaining)}</span>
-    </div>
+      <span className="font-display" style={{ fontStyle: 'italic', fontWeight: 500, letterSpacing: 0 }}>
+        2×
+      </span>
+      <span className="font-mono tabular" style={{ letterSpacing: '0.04em' }}>
+        {formatRemaining(remaining)}
+      </span>
+    </span>
   );
 }
 

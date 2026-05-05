@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useFriends } from '@/hooks/useFriends';
@@ -15,7 +13,6 @@ import { PactDurationDays, PactReward } from '@/types/pact';
 import { getDocument } from '@/lib/firestore';
 import { UserProfile } from '@/types/user';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { cn } from '@/lib/utils';
 
 interface Props {
   isOpen: boolean;
@@ -31,15 +28,11 @@ interface Props {
 const DURATIONS: PactDurationDays[] = [7, 14, 30];
 
 /**
- * Three-step pact creation flow inside a modal:
+ * Three-step pact creation flow inside an editorial Modal:
  *
  *   1. Pick a friend from the user's accepted-friends list.
  *   2. Pick one of the five pillars (custom habits aren't pact-eligible).
  *   3. Pick a duration (7/14/30 days) → confirm.
- *
- * Friend usernames + avatars are looked up once per friend on open
- * (parallelized) — friendships rows store only the friend's uid, not
- * profile fields, so a quick batch fetch builds the picker.
  */
 export function PactCreateModal({ isOpen, onClose, initialFriend }: Props) {
   const { user } = useAuth();
@@ -54,9 +47,6 @@ export function PactCreateModal({ isOpen, onClose, initialFriend }: Props) {
   const [pickedDuration, setPickedDuration] = useState<PactDurationDays>(7);
   const [creating, setCreating] = useState(false);
 
-  // Reset on open. If the caller passed an initialFriend, jump straight
-  // to step 2 — the friend's already chosen, no point in showing the
-  // picker again.
   useEffect(() => {
     if (!isOpen) return;
     if (initialFriend) {
@@ -70,8 +60,6 @@ export function PactCreateModal({ isOpen, onClose, initialFriend }: Props) {
     setPickedDuration(7);
   }, [isOpen, initialFriend]);
 
-  // Resolve usernames + avatars for the user's friends list. Reads once
-  // per open; memoized via map.
   useEffect(() => {
     if (!isOpen || friends.length === 0) {
       setFriendProfiles([]);
@@ -124,14 +112,13 @@ export function PactCreateModal({ isOpen, onClose, initialFriend }: Props) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="New Pact">
-      <div className="space-y-4">
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <Stepper step={step} />
 
         {step === 1 && (
           <FriendStep
             friends={friendProfiles}
             loading={profilesLoading}
-            picked={pickedFriend}
             onPick={(f) => {
               setPickedFriend(f);
               setStep(2);
@@ -159,21 +146,56 @@ export function PactCreateModal({ isOpen, onClose, initialFriend }: Props) {
           />
         )}
 
-        <div className="flex items-center justify-between gap-2 pt-2">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            paddingTop: 8,
+            borderTop: '1px solid var(--b-rule)',
+          }}
+        >
           {step > 1 ? (
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2) : 1))}
               disabled={creating}
+              className="font-body"
+              style={{
+                padding: '8px 14px',
+                background: 'transparent',
+                color: 'var(--b-ink-60)',
+                border: '1px solid var(--b-rule)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+              }}
             >
-              Back
-            </Button>
+              ← Back
+            </button>
           ) : <span />}
           {step === 3 && (
-            <Button onClick={submit} loading={creating}>
-              Send invite
-            </Button>
+            <button
+              onClick={submit}
+              disabled={creating}
+              className="font-body"
+              style={{
+                padding: '10px 16px',
+                background: 'var(--b-ink)',
+                color: 'var(--b-paper)',
+                border: '1px solid var(--b-ink)',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                cursor: creating ? 'not-allowed' : 'pointer',
+                opacity: creating ? 0.7 : 1,
+              }}
+            >
+              {creating ? 'Sending…' : 'Send Invite →'}
+            </button>
           )}
         </div>
       </div>
@@ -183,14 +205,16 @@ export function PactCreateModal({ isOpen, onClose, initialFriend }: Props) {
 
 function Stepper({ step }: { step: 1 | 2 | 3 }) {
   return (
-    <div className="flex items-center gap-2 mb-2">
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
       {[1, 2, 3].map((n) => (
         <div
           key={n}
-          className={cn(
-            'flex-1 h-1 rounded-full transition-colors',
-            step >= n ? 'bg-orange-400' : 'bg-[#1e1e30]',
-          )}
+          style={{
+            flex: 1,
+            height: 2,
+            background: step >= n ? 'var(--b-ink)' : 'var(--b-rule)',
+            transition: 'background-color 200ms ease',
+          }}
         />
       ))}
     </div>
@@ -200,51 +224,105 @@ function Stepper({ step }: { step: 1 | 2 | 3 }) {
 function FriendStep({
   friends,
   loading,
-  picked,
   onPick,
 }: {
   friends: UserProfile[];
   loading: boolean;
-  picked: UserProfile | null;
   onPick: (f: UserProfile) => void;
 }) {
   if (loading) {
-    return <p className="text-sm text-slate-500 text-center py-6">Loading friends…</p>;
+    return (
+      <p
+        className="font-body"
+        style={{ fontSize: 12, color: 'var(--b-ink-60)', textAlign: 'center', padding: '24px 0' }}
+      >
+        Loading friends…
+      </p>
+    );
   }
   if (friends.length === 0) {
     return (
-      <div className="text-center py-6">
-        <p className="text-sm text-slate-400">No friends yet — pacts need a partner.</p>
-        <p className="text-[11px] text-slate-600 mt-1">Add friends from the Friends page.</p>
+      <div style={{ textAlign: 'center', padding: '24px 0' }}>
+        <p
+          className="font-display"
+          style={{ fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: 'var(--b-ink)', margin: 0 }}
+        >
+          No friends yet.
+        </p>
+        <p
+          className="font-body"
+          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 4 }}
+        >
+          Pacts need a partner. Add friends from the Friends page.
+        </p>
       </div>
     );
   }
   return (
-    <div className="space-y-2 max-h-72 overflow-y-auto">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-        Pick a partner
-      </p>
-      {friends.map((f) => (
-        <motion.button
-          key={f.uid}
-          whileTap={{ scale: 0.99 }}
-          onClick={() => onPick(f)}
-          className={cn(
-            'w-full flex items-center gap-3 rounded-xl p-3 transition-all',
-            picked?.uid === f.uid
-              ? 'bg-orange-500/15 border border-orange-500/40'
-              : 'bg-[#0c0c16] border border-[#1e1e30] hover:border-orange-500/30',
-          )}
-        >
-          <Avatar src={f.avatarUrl} alt={f.username} size="md" />
-          <div className="flex-1 min-w-0 text-left">
-            <p className="text-sm font-bold text-white truncate">{f.username}</p>
-            <p className="text-[11px] font-mono text-slate-500 mt-0.5">
-              Lv.{f.level} · {f.totalXP.toLocaleString()} XP
-            </p>
-          </div>
-        </motion.button>
-      ))}
+    <div>
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}>
+        Pick a Partner
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 300,
+          overflowY: 'auto',
+          borderTop: '1px solid var(--b-rule)',
+        }}
+      >
+        {friends.map((f) => (
+          <button
+            key={f.uid}
+            onClick={() => onPick(f)}
+            className="font-body"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 8px',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '1px solid var(--b-rule)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              color: 'var(--b-ink)',
+            }}
+          >
+            <Avatar src={f.avatarUrl} alt={f.username} size="md" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p
+                className="font-display"
+                style={{
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  fontSize: 14,
+                  color: 'var(--b-ink)',
+                  margin: 0,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {f.username}
+              </p>
+              <p
+                className="font-mono tabular"
+                style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+              >
+                Lv.{f.level} · {f.totalXP.toLocaleString()} XP
+              </p>
+            </div>
+            <span
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-40)' }}
+            >
+              →
+            </span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -258,43 +336,75 @@ function PillarStep({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-        Pick a pillar
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        {PILLARS.map((p) => {
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}>
+        Pick a Pillar
+      </div>
+      <ol
+        style={{
+          listStyle: 'none',
+          margin: 0,
+          padding: 0,
+          borderTop: '1px solid var(--b-rule)',
+        }}
+      >
+        {PILLARS.map((p, i) => {
           const cat = CATEGORIES.find((c) => c.slug === p.slug);
           if (!cat) return null;
           const isPicked = picked === p.slug;
           return (
-            <motion.button
-              key={p.slug}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => onPick(p.slug)}
-              className={cn(
-                'flex items-center gap-2 rounded-xl p-3 transition-all text-left',
-                isPicked
-                  ? 'border-2'
-                  : 'bg-[#0c0c16] border border-[#1e1e30] hover:border-[#2d2d45]',
-              )}
-              style={{
-                background: isPicked ? `${cat.color}15` : undefined,
-                borderColor: isPicked ? `${cat.color}77` : undefined,
-                boxShadow: isPicked ? `0 0 12px -4px ${cat.color}aa` : undefined,
-              }}
-            >
-              <CategoryIcon
-                slug={p.slug}
-                name={p.name}
-                icon={cat.icon}
-                color={cat.color}
-                size="sm"
-              />
-              <span className="text-[12px] font-bold text-white truncate">{p.name}</span>
-            </motion.button>
+            <li key={p.slug} style={{ borderBottom: '1px solid var(--b-rule)' }}>
+              <button
+                onClick={() => onPick(p.slug)}
+                className="font-body"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '24px 32px 1fr',
+                  alignItems: 'center',
+                  gap: 12,
+                  width: '100%',
+                  padding: '12px 8px',
+                  background: isPicked ? 'var(--b-paper-2)' : 'transparent',
+                  border: 'none',
+                  borderLeft: isPicked ? `3px solid ${cat.color}` : '3px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  color: 'var(--b-ink)',
+                }}
+              >
+                <span
+                  className="font-display tabular"
+                  style={{
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    fontSize: 14,
+                    color: 'var(--b-ink-40)',
+                  }}
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <CategoryIcon
+                  slug={p.slug}
+                  name={p.name}
+                  icon={cat.icon}
+                  color={cat.color}
+                  size="sm"
+                />
+                <span
+                  className="font-display"
+                  style={{
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    fontSize: 14,
+                    color: 'var(--b-ink)',
+                  }}
+                >
+                  {p.name}
+                </span>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </div>
   );
 }
@@ -315,63 +425,114 @@ function DurationStep({
   const cat = CATEGORIES.find((c) => c.slug === slug);
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-        Pick duration
-      </p>
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}>
+        Pick Duration
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 6,
+          marginBottom: 14,
+        }}
+      >
         {DURATIONS.map((d) => {
           const r = PACT_REWARDS[d];
           const isPicked = duration === d;
           return (
-            <motion.button
+            <button
               key={d}
-              whileTap={{ scale: 0.96 }}
               onClick={() => onChange(d)}
-              className={cn(
-                'rounded-xl p-3 text-center transition-all',
-                isPicked
-                  ? 'bg-orange-500/15 border-2 border-orange-500/60'
-                  : 'bg-[#0c0c16] border border-[#1e1e30] hover:border-[#2d2d45]',
-              )}
+              className="font-body"
+              style={{
+                padding: 12,
+                textAlign: 'center',
+                background: isPicked ? 'var(--b-ink)' : 'transparent',
+                color: isPicked ? 'var(--b-paper)' : 'var(--b-ink)',
+                border: '1px solid var(--b-ink)',
+                cursor: 'pointer',
+              }}
             >
-              <p className={cn(
-                'font-heading text-2xl font-bold',
-                isPicked ? 'text-orange-400' : 'text-white',
-              )}>
+              <p
+                className="font-display tabular"
+                style={{
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  fontSize: 28,
+                  lineHeight: 1,
+                  margin: 0,
+                  color: isPicked ? 'var(--b-paper)' : 'var(--b-ink)',
+                }}
+              >
                 {d}
               </p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-0.5">
-                days
+              <p
+                className="spread"
+                style={{
+                  fontSize: 9,
+                  color: isPicked ? 'var(--b-paper)' : 'var(--b-ink-60)',
+                  marginTop: 4,
+                }}
+              >
+                Days
               </p>
-              <p className="text-[10px] font-mono text-slate-500 mt-1.5">
+              <p
+                className="font-mono tabular"
+                style={{
+                  fontSize: 10,
+                  color: isPicked ? 'var(--b-paper)' : 'var(--b-ink-60)',
+                  marginTop: 4,
+                }}
+              >
                 +{r.xp} XP
               </p>
-            </motion.button>
+            </button>
           );
         })}
       </div>
 
-      <div
-        className="rounded-xl p-3 mt-3"
-        style={{
-          background: cat ? `${cat.color}10` : undefined,
-          border: cat ? `1px solid ${cat.color}33` : undefined,
-        }}
-      >
-        <p className="text-[11px] text-slate-300 leading-relaxed">
-          You × <span className="text-white font-bold">{friend.username}</span> commit to{' '}
-          <span style={{ color: cat?.color }} className="font-bold">{cat?.name}</span> for{' '}
-          <span className="text-white font-bold">{duration} days</span>.
+      {/* Summary blockquote */}
+      <div style={{ borderTop: '2px solid var(--b-ink)', paddingTop: 10 }}>
+        <p
+          className="font-body"
+          style={{ fontSize: 12, color: 'var(--b-ink)', lineHeight: 1.5, margin: 0 }}
+        >
+          You ×{' '}
+          <em
+            className="font-display"
+            style={{ fontStyle: 'italic', fontSize: 14 }}
+          >
+            {friend.username}
+          </em>{' '}
+          commit to{' '}
+          <span style={{ fontWeight: 600 }}>{cat?.name}</span> for{' '}
+          <span className="font-mono tabular" style={{ fontWeight: 600 }}>
+            {duration} days
+          </span>
+          .
         </p>
-        <p className="text-[10px] font-mono text-slate-500 mt-2">
-          Win: <span className="text-emerald-400">+{reward.xp} XP / +{reward.fragments} frags each</span>
-          {reward.cosmeticId && <span className="text-emerald-400"> · cosmetic</span>}
+        <p
+          className="font-mono tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 6 }}
+        >
+          <span className="spread" style={{ fontSize: 9, marginRight: 6 }}>Win</span>
+          <span style={{ color: 'var(--b-accent)' }}>
+            +{reward.xp} XP / +{reward.fragments} frags each
+          </span>
+          {reward.cosmeticId && <span> · cosmetic</span>}
         </p>
-        <p className="text-[10px] font-mono text-slate-500">
-          Lose: <span className="text-red-400">−50 fragments each</span> if either side breaks.
+        <p
+          className="font-mono tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+        >
+          <span className="spread" style={{ fontSize: 9, marginRight: 6 }}>Lose</span>
+          <span style={{ color: 'var(--b-accent)' }}>−50 fragments each</span> if either side breaks.
         </p>
-        <p className="text-[10px] font-mono text-sky-300 mt-1">
-          ❄ One free miss covered by an auto-freeze. Use it carefully — only one per pact.
+        <p
+          className="font-mono tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+        >
+          One free miss covered by an auto-freeze. Use it carefully.
         </p>
       </div>
     </div>

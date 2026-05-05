@@ -129,10 +129,12 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
           padding: frame.style === 'double' ? pad / 2 : 0,
         }}
       >
-        {/* Inner cut-out — sized to match the avatar exactly (no black gap) */}
+        {/* Inner cut-out — sized to match the avatar exactly (no gap).
+            Uses paper so the cutout reads as the page background in the
+            editorial Direction B v2 layout. */}
         <div
-          className="absolute rounded-full bg-[#0d0d15]"
-          style={{ inset: pad }}
+          className="absolute rounded-full"
+          style={{ inset: pad, background: 'var(--b-paper)' }}
         />
       </div>
 
@@ -149,8 +151,8 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
           }}
         >
           <div
-            className="absolute rounded-full bg-[#0d0d15]"
-            style={{ inset: 2 }}
+            className="absolute rounded-full"
+            style={{ inset: 2, background: 'var(--b-paper)' }}
           />
         </div>
       )}

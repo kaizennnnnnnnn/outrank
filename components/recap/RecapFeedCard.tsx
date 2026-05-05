@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/utils';
 import { ReactionEmoji } from '@/types/feed';
 import { RecapFeedItem } from '@/types/recap';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
+import {
+  BFlameGlyph, BTrophyGlyph, BCheerGlyph, BCheckGlyph, BHeartGlyph,
+} from '@/components/editorial/BGlyphs';
 
 interface ActorCosm {
   frame?: string;
@@ -29,26 +31,21 @@ interface RecapFeedCardProps {
   onReact: (originId: string | undefined, itemId: string, emoji: ReactionEmoji, actorId?: string) => void;
 }
 
-const REACTIONS: { emoji: ReactionEmoji; label: string }[] = [
-  { emoji: '🔥', label: 'Hyped' },
-  { emoji: '💪', label: 'Beast' },
-  { emoji: '👏', label: 'Respect' },
-  { emoji: '⚡', label: 'Fast' },
-  { emoji: '🤝', label: 'With you' },
+const REACTIONS: { kind: ReactionEmoji; label: string; Glyph: React.ComponentType<{ size?: number }>; color: string }[] = [
+  { kind: '🔥', label: 'Hyped',   Glyph: BFlameGlyph,  color: '#f97316' },
+  { kind: '💪', label: 'Beast',   Glyph: BTrophyGlyph, color: '#ef4444' },
+  { kind: '👏', label: 'Respect', Glyph: BCheerGlyph,  color: '#fbbf24' },
+  { kind: '⚡', label: 'Fast',    Glyph: BCheckGlyph,  color: '#a855f7' },
+  { kind: '🤝', label: 'With',    Glyph: BHeartGlyph,  color: '#22d3ee' },
 ];
 
 /**
- * Premium-aesthetic recap feed card.
+ * Editorial Direction B v2 recap feed card. Hero proof image still
+ * bleeds full-width — that's the photo content, not chrome — but the
+ * surrounding paper is hairline-bordered, italic Fraunces ledger.
  *
- * Design rationale:
- *   - **Photo leads.** When a hero proof exists, it bleeds edge-to-edge.
- *   - **Single accent.** Slate typography + one warm-orange accent for
- *     active states and the View Day CTA.
- *   - **Stat-tile grid.** Up to 3 pillar tiles with a label/value
- *     hierarchy — reads as a stat block, not scattered inline text.
- *   - **Visible CTA.** A pill-style "View day" button on the bottom
- *     right makes the affordance obvious; the whole card is also
- *     tappable, but the button is the explicit visual cue.
+ * The reaction strip mirrors the feed page's ReactionStrip exactly:
+ * named glyph buttons, no rendered emoji.
  */
 export function RecapFeedCard({
   item,
@@ -73,84 +70,150 @@ export function RecapFeedCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
       transition={{ delay: Math.min(index * 0.03, 0.25), duration: 0.25 }}
-      className="relative overflow-hidden rounded-2xl bg-[#0c0c14] border border-white/[0.05] hover:border-white/[0.10] transition-colors cursor-pointer"
       onClick={() => router.push(detailHref)}
+      style={{
+        position: 'relative',
+        background: 'transparent',
+        borderTop: '1px solid var(--b-ink)',
+        borderBottom: '1px solid var(--b-rule)',
+        cursor: 'pointer',
+      }}
     >
-      {/* Header — quiet, lives above the photo */}
-      <header className="flex items-center gap-3 px-4 pt-4">
+      {/* Header */}
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px 0' }}>
         <Link
           href={`/profile/${item.actorUsername}`}
           onClick={(e) => e.stopPropagation()}
-          className="flex-shrink-0"
+          style={{ flexShrink: 0 }}
         >
           <FramedAvatar src={item.actorAvatar} alt={item.actorUsername} size="sm" frameId={cosm.frame} />
         </Link>
 
-        <div className="flex-1 min-w-0">
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Link
             href={`/profile/${item.actorUsername}`}
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 min-w-0"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              minWidth: 0,
+              textDecoration: 'none',
+              color: 'inherit',
+            }}
           >
             <NamePlate
               name={item.actorUsername}
               effectId={cosm.name}
               size="sm"
-              className="hover:text-white"
             />
             {isMine && (
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 rounded">
+              <span
+                className="spread"
+                style={{ fontSize: 8, color: 'var(--b-accent)' }}
+              >
                 You
               </span>
             )}
           </Link>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+          <p
+            className="font-mono"
+            style={{ fontSize: 10, color: 'var(--b-ink-40)', margin: '2px 0 0', letterSpacing: '0.04em' }}
+          >
             {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
           </p>
         </div>
 
-        {/* Right side: tight XP number, no gradient text */}
-        <div className="text-right shrink-0">
-          <p className="font-mono text-base font-semibold text-white tabular-nums leading-none">
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <p
+            className="font-display tabular"
+            style={{
+              fontSize: 22,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1,
+              color: 'var(--b-ink)',
+              margin: 0,
+            }}
+          >
             +{item.totalXP}
-            <span className="text-slate-600 text-[10px] font-normal ml-1">XP</span>
+            <span
+              className="font-mono"
+              style={{ fontStyle: 'normal', fontSize: 10, color: 'var(--b-ink-40)', marginLeft: 4 }}
+            >
+              XP
+            </span>
           </p>
         </div>
       </header>
 
-      {/* Hero photo — edge-to-edge bleed when present */}
+      {/* Hero photo — full-bleed when present */}
       {item.heroProofUrl && (
-        <div className="mt-3">
+        <div style={{ marginTop: 12 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={item.heroProofUrl}
             alt=""
             loading="lazy"
-            className="w-full max-h-72 object-cover"
+            style={{ width: '100%', maxHeight: 288, objectFit: 'cover', display: 'block' }}
           />
         </div>
       )}
 
-      {/* Pillar grid — up to 3 structured stat tiles with clear
-          label/value hierarchy. Reads as a stat block, not as scattered
-          inline text. */}
+      {/* Pillar grid — up to 3 hairline stat tiles */}
       {item.topCategories.length > 0 && (() => {
         const visible = item.topCategories.slice(0, 3);
-        const colCount = visible.length === 1 ? 'grid-cols-1' : visible.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
         return (
-          <div className={cn('px-4 pt-3 grid gap-1.5', colCount)}>
+          <div
+            style={{
+              padding: '12px 14px 0',
+              display: 'grid',
+              gridTemplateColumns: `repeat(${visible.length}, minmax(0, 1fr))`,
+              gap: 6,
+            }}
+          >
             {visible.map((c) => (
               <div
                 key={c.slug}
-                className="rounded-lg bg-white/[0.025] border border-white/[0.05] px-2.5 py-2 min-w-0"
+                style={{
+                  padding: '8px 10px',
+                  border: '1px solid var(--b-rule)',
+                  minWidth: 0,
+                }}
               >
-                <p className="text-[9px] uppercase tracking-widest text-slate-500 font-medium truncate">
+                <p
+                  className="spread"
+                  style={{
+                    fontSize: 8,
+                    color: 'var(--b-ink-60)',
+                    margin: 0,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   {c.name}
                 </p>
-                <p className="font-mono tabular-nums text-[15px] font-bold text-white mt-1 leading-none truncate">
+                <p
+                  className="font-display tabular"
+                  style={{
+                    fontSize: 16,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    color: 'var(--b-ink)',
+                    margin: '4px 0 0',
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
                   {c.value}
                   {c.unit && (
-                    <span className="text-slate-500 text-[10px] font-normal ml-0.5">
+                    <span
+                      className="font-mono"
+                      style={{ fontStyle: 'normal', fontSize: 10, color: 'var(--b-ink-60)', marginLeft: 2 }}
+                    >
                       {c.unit}
                     </span>
                   )}
@@ -161,11 +224,27 @@ export function RecapFeedCard({
         );
       })()}
 
-      {/* Footer row — meta info on the left, prominent View Day pill on
-          the right. The pill is the visible affordance that the card
-          opens a detail view. */}
-      <div className="px-4 pt-3 pb-3 flex items-center justify-between gap-3">
-        <p className="text-[11px] text-slate-500 font-mono tabular-nums truncate">
+      {/* Footer row */}
+      <div
+        style={{
+          padding: '10px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+        }}
+      >
+        <p
+          className="font-mono tabular"
+          style={{
+            fontSize: 10,
+            color: 'var(--b-ink-60)',
+            margin: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
           {item.logCount} log{item.logCount === 1 ? '' : 's'}
           {item.proofCount > 0 && ` · ${item.proofCount} photo${item.proofCount === 1 ? '' : 's'}`}
           {item.topCategories.length > 3 && ` · +${item.topCategories.length - 3} more`}
@@ -173,41 +252,65 @@ export function RecapFeedCard({
         <Link
           href={detailHref}
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30 hover:border-orange-500/50 text-[11px] font-semibold text-orange-400 transition-colors flex-shrink-0"
+          className="spread"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 10px',
+            background: 'var(--b-ink)',
+            color: 'var(--b-paper)',
+            fontSize: 9,
+            fontWeight: 700,
+            textDecoration: 'none',
+            flexShrink: 0,
+          }}
         >
-          View day
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          View day →
         </Link>
       </div>
 
-      {/* Hairline + reactions */}
-      <div className="border-t border-white/[0.04]">
-        <div className="px-3 py-2 flex items-center gap-1">
-          {REACTIONS.map(({ emoji, label }) => {
-            const emojiUsers = (reactionsData as Record<string, string[]>)[emoji] || [];
-            const reacted = emojiUsers.includes(currentUid || '');
-            const count = emojiUsers.length;
+      {/* Reactions */}
+      <div style={{ borderTop: '1px solid var(--b-rule)', padding: '8px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {REACTIONS.map(({ kind, label, Glyph, color }) => {
+            const list = (reactionsData as Record<string, string[]>)[kind] ?? [];
+            const reacted = !!currentUid && list.includes(currentUid);
+            const count = list.length;
             return (
               <motion.button
-                key={emoji}
-                whileTap={{ scale: 0.92 }}
+                key={kind}
+                whileTap={{ scale: 0.94 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (item.id) onReact(item.originId, item.id, emoji, item.actorId);
+                  if (item.id) onReact(item.originId, item.id, kind, item.actorId);
                 }}
                 title={label}
-                className={cn(
-                  'inline-flex items-center gap-1 px-2 py-1 rounded-md text-[12px] transition-colors',
-                  reacted
-                    ? 'bg-white/[0.08] text-white'
-                    : 'text-slate-500 hover:text-white hover:bg-white/[0.04]',
-                )}
+                className="font-body"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '4px 8px',
+                  background: reacted ? `${color}14` : 'transparent',
+                  border: reacted ? `1px solid ${color}` : '1px solid var(--b-rule)',
+                  cursor: 'pointer',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.04em',
+                  color: reacted ? color : 'var(--b-ink-60)',
+                  textTransform: 'uppercase',
+                }}
               >
-                <span className="text-[13px] leading-none">{emoji}</span>
+                <span style={{ color, display: 'inline-flex' }}>
+                  <Glyph size={12} />
+                </span>
+                <span>{label}</span>
                 {count > 0 && (
-                  <span className="font-mono tabular-nums text-[11px] text-slate-400">
+                  <span
+                    className="font-mono tabular"
+                    style={{ fontSize: 9, color: reacted ? color : 'var(--b-ink-40)', marginLeft: 2 }}
+                  >
                     {count}
                   </span>
                 )}
@@ -216,7 +319,10 @@ export function RecapFeedCard({
           })}
 
           {totalReactions > 0 && (
-            <span className="ml-auto text-[10px] text-slate-600 font-mono tabular-nums pr-1">
+            <span
+              className="font-mono tabular"
+              style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--b-ink-40)' }}
+            >
               {totalReactions}
             </span>
           )}

@@ -6,13 +6,17 @@ import { UserHabit } from '@/types/habit';
 import { getUnlockedTitles, TITLES, TITLE_RARITY_COLOR, Title, TitleContext } from '@/constants/titles';
 import { updateDocument } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
-import { cn } from '@/lib/utils';
 
 interface Props {
   user: UserProfile;
   habits: UserHabit[];
 }
 
+/**
+ * Editorial Direction B v2 titles vault. Hairline grid of title tiles;
+ * locked tiles dim, equipped tile gets an accent left stripe and the
+ * rarity label keeps its color (rarity is a meaningful signal).
+ */
 export function TitlesVault({ user, habits }: Props) {
   const addToast = useUIStore((s) => s.addToast);
   const [open, setOpen] = useState(false);
@@ -46,19 +50,37 @@ export function TitlesVault({ user, habits }: Props) {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] text-slate-500">
-          {unlocked.length} of {TITLES.length} unlocked
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p
+          className="font-mono"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.06em' }}
+        >
+          {unlocked.length} OF {TITLES.length} UNLOCKED
         </p>
         <button
           onClick={() => setOpen((v) => !v)}
-          className="text-[11px] text-orange-400 hover:text-orange-300"
+          className="spread"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            fontSize: 9,
+            color: 'var(--b-accent)',
+            fontWeight: 700,
+          }}
         >
           {open ? 'Hide locked' : 'Show locked'}
         </button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0,1fr))',
+          gap: 8,
+        }}
+      >
         {(open ? TITLES : unlocked).map((t) => {
           const isUnlocked = unlocked.some((u) => u.id === t.id);
           const isEquipped = equippedId === t.id;
@@ -68,27 +90,61 @@ export function TitlesVault({ user, habits }: Props) {
               key={t.id}
               onClick={() => isUnlocked && equip(t)}
               disabled={!isUnlocked || isEquipped}
-              className={cn(
-                'text-left rounded-xl p-2.5 border transition-all',
-                !isUnlocked && 'opacity-40 grayscale',
-                isEquipped && 'ring-1 ring-orange-500/60'
-              )}
+              className="font-body"
               style={{
-                background: `linear-gradient(145deg, ${color}14, #0b0b14 70%)`,
-                borderColor: isEquipped ? '#f97316aa' : `${color}33`,
+                textAlign: 'left',
+                padding: '10px 12px',
+                background: 'transparent',
+                border: '1px solid var(--b-rule)',
+                borderLeft: isEquipped ? '2px solid var(--b-accent)' : '1px solid var(--b-rule)',
+                cursor: !isUnlocked || isEquipped ? 'default' : 'pointer',
+                opacity: !isUnlocked ? 0.45 : 1,
+                color: 'var(--b-ink)',
               }}
             >
-              <p className="text-xs font-bold text-white truncate">{t.name}</p>
-              <p className="text-[10px] text-slate-500 truncate">{t.description}</p>
-              <div className="mt-1.5 flex items-center gap-1.5">
+              <p
+                className="font-display"
+                style={{
+                  fontSize: 14,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  margin: 0,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {t.name}
+              </p>
+              <p
+                style={{
+                  fontSize: 10,
+                  color: 'var(--b-ink-60)',
+                  margin: '2px 0 0',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {t.description}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
                 <span
-                  className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                  style={{ color, background: `${color}1a`, border: `1px solid ${color}55` }}
+                  className="spread"
+                  style={{
+                    fontSize: 8,
+                    padding: '1px 5px',
+                    border: `1px solid ${color}`,
+                    color,
+                  }}
                 >
                   {t.rarity}
                 </span>
                 {isEquipped && (
-                  <span className="text-[8px] font-bold uppercase tracking-wider text-orange-400">
+                  <span
+                    className="spread"
+                    style={{ fontSize: 8, color: 'var(--b-accent)' }}
+                  >
                     Equipped
                   </span>
                 )}

@@ -1,9 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Avatar } from '@/components/ui/Avatar';
 import { Competition } from '@/types/competition';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 interface DuelCardProps {
@@ -19,54 +17,159 @@ export function DuelCard({ competition, currentUserId }: DuelCardProps) {
 
   const isWinning = me.score > opponent.score;
   const isTied = me.score === opponent.score;
+  const diff = isTied ? 'Tied' : isWinning ? `+${me.score - opponent.score}` : `−${opponent.score - me.score}`;
+  const diffColor = isWinning ? 'var(--b-accent)' : isTied ? 'var(--b-ink-60)' : 'var(--b-ink-40)';
+  const stateColor = competition.status === 'active' ? 'var(--b-accent)' : 'var(--b-ink-60)';
 
   return (
-    <Link href={`/compete/duel/${competition.id}`}>
-      <motion.div
-        whileHover={{ scale: 1.02 }}
-        className="glass-card rounded-2xl p-4 glow-hover transition-all"
+    <Link
+      href={`/compete/duel/${competition.id}`}
+      className="dir-b"
+      style={{
+        display: 'block',
+        textDecoration: 'none',
+        color: 'var(--b-ink)',
+        background: 'transparent',
+        border: '1px solid var(--b-rule)',
+        borderLeft: `3px solid ${stateColor}`,
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 10,
+        }}
       >
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-medium text-slate-500">{competition.title}</span>
-          <span className={cn(
-            'text-xs font-mono font-bold px-2 py-0.5 rounded-full',
-            competition.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-yellow-500/10 text-yellow-400'
-          )}>
-            {competition.status}
-          </span>
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+        >
+          {competition.status === 'active' ? 'Active Duel' : competition.status}
         </div>
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+        >
+          § {competition.title}
+        </div>
+      </div>
 
-        <div className="flex items-center justify-between">
-          {/* Me */}
-          <div className="flex items-center gap-3">
-            <Avatar src={me.avatarUrl} alt={me.username} size="md" />
-            <div>
-              <p className="text-sm font-bold text-orange-400">{me.username}</p>
-              <p className="font-mono text-xl font-bold text-white">{me.score}</p>
-            </div>
-          </div>
-
-          {/* VS */}
-          <div className="text-center px-4">
-            <span className="font-heading text-2xl text-slate-600">VS</span>
-            <p className={cn(
-              'text-xs font-mono font-bold',
-              isWinning ? 'text-emerald-400' : isTied ? 'text-slate-500' : 'text-red-400'
-            )}>
-              {isWinning ? `+${me.score - opponent.score}` : isTied ? 'TIED' : `-${opponent.score - me.score}`}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        {/* Me */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <Avatar src={me.avatarUrl} alt={me.username} size="md" />
+          <div style={{ minWidth: 0 }}>
+            <p
+              className="font-body"
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--b-ink)',
+                margin: 0,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {me.username}
+            </p>
+            <p
+              className="font-display tabular"
+              style={{
+                fontSize: 22,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                color: 'var(--b-ink)',
+                margin: 0,
+                lineHeight: 1,
+              }}
+            >
+              {me.score}
             </p>
           </div>
+        </div>
 
-          {/* Opponent */}
-          <div className="flex items-center gap-3 text-right">
-            <div>
-              <p className="text-sm font-bold text-orange-400">{opponent.username}</p>
-              <p className="font-mono text-xl font-bold text-white">{opponent.score}</p>
-            </div>
-            <Avatar src={opponent.avatarUrl} alt={opponent.username} size="md" />
+        {/* VS */}
+        <div style={{ textAlign: 'center', padding: '0 12px' }}>
+          <div
+            className="font-display"
+            style={{
+              fontSize: 22,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              color: 'var(--b-ink-40)',
+              lineHeight: 1,
+            }}
+          >
+            vs
+          </div>
+          <div
+            className="font-mono tabular"
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              marginTop: 4,
+              color: diffColor,
+              letterSpacing: '0.04em',
+            }}
+          >
+            {diff}
           </div>
         </div>
-      </motion.div>
+
+        {/* Opponent */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            minWidth: 0,
+            justifyContent: 'flex-end',
+            textAlign: 'right',
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <p
+              className="font-body"
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--b-ink)',
+                margin: 0,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {opponent.username}
+            </p>
+            <p
+              className="font-display tabular"
+              style={{
+                fontSize: 22,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                color: 'var(--b-ink)',
+                margin: 0,
+                lineHeight: 1,
+              }}
+            >
+              {opponent.score}
+            </p>
+          </div>
+          <Avatar src={opponent.avatarUrl} alt={opponent.username} size="md" />
+        </div>
+      </div>
     </Link>
   );
 }

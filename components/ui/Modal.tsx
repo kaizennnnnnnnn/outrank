@@ -39,34 +39,60 @@ export function Modal({ isOpen, onClose, title, children, className, size = 'md'
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0"
+            style={{ background: 'rgba(0,0,0,0.6)' }}
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: 'spring', duration: 0.3 }}
-            className={cn(
-              'relative w-full rounded-2xl bg-[#10101a] border border-[#1e1e30] shadow-2xl p-6',
-              sizeMap[size],
-              className
-            )}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className={cn('dir-b relative w-full', sizeMap[size], className)}
+            style={{
+              background: 'var(--b-paper)',
+              border: '1px solid var(--b-ink)',
+              borderTop: '2px solid var(--b-ink)',
+              borderRadius: 0,
+              color: 'var(--b-ink)',
+            }}
           >
             {title && (
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white font-heading">{title}</h2>
+              <div
+                className="flex items-center justify-between px-5 py-3"
+                style={{ borderBottom: '1px solid var(--b-rule)' }}
+              >
+                <h2
+                  className="font-display"
+                  style={{
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    fontSize: 22,
+                    color: 'var(--b-ink)',
+                    margin: 0,
+                  }}
+                >
+                  {title}
+                </h2>
                 <button
                   onClick={onClose}
-                  className="text-slate-500 hover:text-white transition-colors p-1"
+                  aria-label="Close"
+                  className="font-display"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--b-ink)',
+                    fontSize: 22,
+                    lineHeight: 1,
+                    cursor: 'pointer',
+                    padding: '4px 6px',
+                  }}
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  ×
                 </button>
               </div>
             )}
-            {children}
+            <div className="p-5">{children}</div>
           </motion.div>
         </div>
       )}

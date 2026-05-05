@@ -7,16 +7,13 @@ import { useUIStore } from '@/store/uiStore';
 import { PROGRAMS } from '@/constants/gymPrograms';
 import { selectProgram } from '@/lib/gym';
 import { ExercisePath } from '@/types/gym';
+import { BGymGlyph, BCompassGlyph } from '@/components/editorial/BGlyphs';
 
 /**
- * First-run experience for the gym pillar. Two-step path: pick a
- * training style (Lift / Calisthenics) then pick a program from the
- * filtered list. Each program card shows audience, days/week, and a
- * one-paragraph description.
- *
- * Tapping a program writes `users/{uid}.gym.activeProgramId` and
- * resets `currentDayIndex` to 0 — the parent page re-renders with the
- * "today's workout" card.
+ * Editorial Direction B v2 first-run experience for the gym pillar.
+ * Two-step path: pick a training style (Lift / Calisthenics) then pick
+ * a program from the filtered list. Hairline cards, italic Fraunces
+ * program names, mono tabular meta lines.
  */
 export function GymProgramPicker() {
   const { user } = useAuth();
@@ -40,109 +37,169 @@ export function GymProgramPicker() {
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {/* Hero */}
       <div
-        className="relative overflow-hidden rounded-2xl border p-5"
         style={{
-          background:
-            'radial-gradient(ellipse 100% 80% at 100% 0%, rgba(239,68,68,0.18), transparent 55%),' +
-            'linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(239,68,68,0.25)',
-          boxShadow: '0 0 30px -14px rgba(239,68,68,0.4), inset 0 1px 0 rgba(239,68,68,0.08)',
+          padding: '16px 0 14px 14px',
+          borderTop: '2px solid var(--b-ink)',
+          borderBottom: '1px solid var(--b-ink)',
+          borderLeft: '2px solid var(--b-accent)',
         }}
       >
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400">Gym</p>
-        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-1">
-          Pick your program
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
+          Gym
+        </div>
+        <h1
+          className="font-display"
+          style={{
+            fontSize: 32,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: '4px 0 6px',
+            color: 'var(--b-ink)',
+          }}
+        >
+          Pick your program.
         </h1>
-        <p className="text-[12px] text-slate-400 mt-1.5 leading-relaxed max-w-md">
+        <p
+          className="font-body"
+          style={{
+            fontSize: 12,
+            color: 'var(--b-ink-60)',
+            margin: 0,
+            maxWidth: 380,
+            lineHeight: 1.5,
+          }}
+        >
           Four starter routines. Day cycles in order — skipping a calendar day doesn&rsquo;t skip the
           workout. You can switch programs any time, your history stays.
         </p>
       </div>
 
       {/* Path picker */}
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
         <PathCard
           active={path === 'lift'}
           onClick={() => setPath('lift')}
-          icon="🏋️"
+          Glyph={BGymGlyph}
           label="Lift"
           subtitle="Barbell + dumbbell"
-          color="#ef4444"
         />
         <PathCard
           active={path === 'calisthenics'}
           onClick={() => setPath('calisthenics')}
-          icon="🤸"
+          Glyph={BCompassGlyph}
           label="Calisthenics"
           subtitle="Bodyweight only"
-          color="#f97316"
         />
       </div>
 
       {/* Program list */}
       {path && (
         <section>
-          <div className="flex items-center gap-2 mb-3 px-1">
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: '#ef4444', boxShadow: '0 0 6px #ef4444' }}
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-red-400">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 8,
+              marginBottom: 10,
+              paddingTop: 8,
+              borderTop: '1px solid var(--b-ink)',
+            }}
+          >
+            <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
               Programs
-            </p>
-            <span className="text-[10px] font-mono text-slate-500 ml-1">
+            </div>
+            <span
+              className="font-mono tabular"
+              style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.04em' }}
+            >
               · {filtered.length} for {path}
             </span>
           </div>
-          <div className="space-y-3">
-            {filtered.map((program) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {filtered.map((program, idx) => (
               <motion.button
                 key={program.id}
-                whileTap={{ scale: 0.99 }}
+                whileTap={{ scale: 0.995 }}
                 onClick={() => handlePick(program.id)}
                 disabled={selecting !== null}
-                className="w-full text-left relative overflow-hidden rounded-2xl p-4 border transition-all hover:border-red-500/40 disabled:opacity-50"
+                className="font-body"
                 style={{
-                  background: 'linear-gradient(160deg, rgba(16,16,26,0.7), rgba(11,11,20,0.5))',
-                  borderColor: 'rgba(239,68,68,0.18)',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '14px 0',
+                  background: 'transparent',
+                  border: 'none',
+                  borderTop: idx === 0 ? '1px solid var(--b-rule)' : 'none',
+                  borderBottom: '1px solid var(--b-rule)',
+                  cursor: selecting !== null ? 'not-allowed' : 'pointer',
+                  opacity: selecting !== null ? 0.5 : 1,
+                  color: 'var(--b-ink)',
                 }}
               >
-                <div className="flex items-start justify-between gap-3 mb-1.5">
-                  <div>
-                    <p className="font-heading text-lg font-bold text-white leading-tight">
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p
+                      className="font-display"
+                      style={{
+                        fontSize: 18,
+                        fontStyle: 'italic',
+                        fontWeight: 500,
+                        lineHeight: 1.1,
+                        margin: 0,
+                        color: 'var(--b-ink)',
+                      }}
+                    >
                       {program.name}
                     </p>
-                    <p className="text-[10px] font-mono text-slate-500 mt-0.5">
+                    <p
+                      className="font-mono tabular"
+                      style={{ fontSize: 10, color: 'var(--b-ink-60)', margin: '2px 0 0', letterSpacing: '0.04em' }}
+                    >
                       {program.audience}
                     </p>
                   </div>
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
+                    className="spread"
                     style={{
-                      background: 'rgba(239,68,68,0.15)',
-                      border: '1px solid rgba(239,68,68,0.4)',
-                      color: '#fca5a5',
+                      padding: '2px 8px',
+                      border: '1px solid var(--b-accent)',
+                      color: 'var(--b-accent)',
+                      fontSize: 9,
+                      flexShrink: 0,
                     }}
                   >
-                    {program.daysPerWeek}d/wk
+                    {program.daysPerWeek}D/WK
                   </span>
                 </div>
-                <p className="text-[12px] text-slate-400 leading-relaxed">{program.description}</p>
-                <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                <p
+                  className="font-body"
+                  style={{ fontSize: 12, color: 'var(--b-ink-60)', lineHeight: 1.5, margin: 0 }}
+                >
+                  {program.description}
+                </p>
+                <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {program.schedule.map((d, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-[#0b0b14] border border-[#1e1e30]"
+                      className="font-mono tabular"
+                      style={{
+                        padding: '2px 7px',
+                        border: '1px solid var(--b-rule)',
+                        fontSize: 10,
+                        color: 'var(--b-ink-60)',
+                        letterSpacing: '0.04em',
+                      }}
                     >
                       {d.name}
                     </span>
                   ))}
                 </div>
                 {selecting === program.id && (
-                  <p className="mt-3 text-[10px] font-bold uppercase tracking-widest text-red-400">
+                  <p className="spread" style={{ fontSize: 9, color: 'var(--b-accent)', marginTop: 10 }}>
                     Selecting…
                   </p>
                 )}
@@ -158,37 +215,57 @@ export function GymProgramPicker() {
 function PathCard({
   active,
   onClick,
-  icon,
+  Glyph,
   label,
   subtitle,
-  color,
 }: {
   active: boolean;
   onClick: () => void;
-  icon: string;
+  Glyph: React.ComponentType<{ size?: number }>;
   label: string;
   subtitle: string;
-  color: string;
 }) {
   return (
     <motion.button
-      whileTap={{ scale: 0.97 }}
-      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="rounded-2xl p-4 border transition-all text-left"
+      className="font-body"
       style={{
-        background: active
-          ? `linear-gradient(135deg, ${color}22, #10101a 70%)`
-          : 'linear-gradient(160deg, rgba(16,16,26,0.7), rgba(11,11,20,0.5))',
-        borderColor: active ? `${color}77` : 'rgba(255,255,255,0.06)',
-        boxShadow: active ? `0 0 22px -8px ${color}aa, inset 0 1px 0 ${color}33` : undefined,
+        padding: '14px 14px',
+        textAlign: 'left',
+        background: 'transparent',
+        border: active ? '1px solid var(--b-ink)' : '1px solid var(--b-rule)',
+        borderLeft: active ? '2px solid var(--b-accent)' : '1px solid var(--b-rule)',
+        cursor: 'pointer',
+        color: 'var(--b-ink)',
       }}
     >
-      <p className="text-3xl mb-2 leading-none">{icon}</p>
-      <p className="font-heading text-base font-bold" style={{ color: active ? color : '#fff' }}>
+      <span
+        style={{
+          display: 'inline-flex',
+          color: active ? 'var(--b-accent)' : 'var(--b-ink-60)',
+        }}
+      >
+        <Glyph size={20} />
+      </span>
+      <p
+        className="font-display"
+        style={{
+          fontSize: 18,
+          fontStyle: 'italic',
+          fontWeight: 500,
+          margin: '6px 0 2px',
+          color: active ? 'var(--b-accent)' : 'var(--b-ink)',
+        }}
+      >
         {label}
       </p>
-      <p className="text-[10px] font-mono text-slate-500 mt-0.5">{subtitle}</p>
+      <p
+        className="font-mono tabular"
+        style={{ fontSize: 10, color: 'var(--b-ink-60)', margin: 0, letterSpacing: '0.04em' }}
+      >
+        {subtitle}
+      </p>
     </motion.button>
   );
 }

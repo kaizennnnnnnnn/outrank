@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Modal } from '@/components/ui/Modal';
-import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CATEGORIES, CATEGORY_SECTIONS } from '@/constants/categories';
@@ -12,7 +10,6 @@ import { Competition } from '@/types/competition';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { SwordsCrossIcon } from '@/components/ui/AppIcons';
-import { cn } from '@/lib/utils';
 
 interface CreateDuelModalProps {
   isOpen: boolean;
@@ -107,94 +104,281 @@ export function CreateDuelModal({ isOpen, onClose, opponentId, opponentUsername,
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Challenge to a Duel" size="lg">
-      <div className="space-y-5">
-        {/* VS Header */}
-        <div className="flex items-center justify-between bg-[#0c0c16] rounded-xl p-4">
-          <div className="flex items-center gap-3">
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* VS Header — editorial three-column */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
+            gap: 8,
+            padding: '12px 0',
+            borderTop: '1px solid var(--b-ink)',
+            borderBottom: '1px solid var(--b-rule)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <Avatar src={user?.avatarUrl} alt={user?.username || ''} size="md" />
-            <span className="text-sm font-bold text-white">{user?.username}</span>
+            <span
+              className="font-body"
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--b-ink)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {user?.username}
+            </span>
           </div>
-          <div className="text-center">
-            <SwordsCrossIcon size={24} className="text-red-400 mx-auto" />
-            <span className="text-[10px] text-slate-600">VS</span>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: '0 12px',
+              borderLeft: '1px solid var(--b-rule)',
+              borderRight: '1px solid var(--b-rule)',
+            }}
+          >
+            <SwordsCrossIcon size={20} className="text-[color:var(--b-accent)]" />
+            <span
+              className="spread"
+              style={{ fontSize: 9, color: 'var(--b-ink-60)', marginTop: 2 }}
+            >
+              vs
+            </span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold text-white">{opponentUsername}</span>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              minWidth: 0,
+              justifyContent: 'flex-end',
+            }}
+          >
+            <span
+              className="font-body"
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--b-ink)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textAlign: 'right',
+              }}
+            >
+              {opponentUsername}
+            </span>
             <Avatar src={opponentAvatar} alt={opponentUsername} size="md" />
           </div>
         </div>
 
         {/* Category — ALL categories grouped by section */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Pick a category</label>
-          <div className="max-h-[40vh] overflow-y-auto pr-1 space-y-4">
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
+          >
+            Pick a Category
+          </div>
+          <div
+            style={{
+              maxHeight: '40vh',
+              overflowY: 'auto',
+              paddingRight: 4,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+            }}
+          >
             {CATEGORY_SECTIONS.map((section) => (
               <div key={section}>
-                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">{section}</p>
-                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
-                  {CATEGORIES.filter((c) => c.section === section).map((cat) => (
-                    <motion.button
-                      key={cat.slug}
-                      whileTap={{ scale: 0.93 }}
-                      onClick={() => setSelectedCategory(cat.slug)}
-                      className={cn(
-                        'flex flex-col items-center gap-1 p-2 rounded-xl border transition-all',
-                        selectedCategory === cat.slug
-                          ? 'border-red-500 bg-red-500/10 shadow-md shadow-red-500/10'
-                          : 'border-[#1e1e30] bg-[#0c0c16] hover:border-[#2d2d45]'
-                      )}
-                    >
-                      <CategoryIcon icon={cat.icon} color={cat.color} size="sm" slug={cat.slug} selected={selectedCategory === cat.slug} />
-                      <span className={cn(
-                        'text-[8px] leading-tight text-center',
-                        selectedCategory === cat.slug ? 'text-white font-medium' : 'text-slate-500'
-                      )}>
-                        {cat.name}
-                      </span>
-                    </motion.button>
-                  ))}
+                <p
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-40)', marginBottom: 6 }}
+                >
+                  {section}
+                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: 6,
+                  }}
+                >
+                  {CATEGORIES.filter((c) => c.section === section).map((cat) => {
+                    const isSel = selectedCategory === cat.slug;
+                    return (
+                      <button
+                        key={cat.slug}
+                        onClick={() => setSelectedCategory(cat.slug)}
+                        className="font-body"
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: 8,
+                          background: isSel ? 'var(--b-paper-2)' : 'transparent',
+                          border: isSel ? '1px solid var(--b-ink)' : '1px solid var(--b-rule)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <CategoryIcon
+                          icon={cat.icon}
+                          color={cat.color}
+                          size="sm"
+                          slug={cat.slug}
+                          selected={isSel}
+                        />
+                        <span
+                          style={{
+                            fontSize: 9,
+                            lineHeight: 1.2,
+                            textAlign: 'center',
+                            color: isSel ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                            fontWeight: isSel ? 600 : 500,
+                          }}
+                        >
+                          {cat.name}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}
           </div>
           {selectedCat && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-orange-400">
-              <CategoryIcon icon={selectedCat.icon} color={selectedCat.color} size="sm" slug={selectedCat.slug} />
-              <span className="font-medium">{selectedCat.name}</span> selected
+            <div
+              style={{
+                marginTop: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontSize: 11,
+                color: 'var(--b-accent)',
+              }}
+            >
+              <CategoryIcon
+                icon={selectedCat.icon}
+                color={selectedCat.color}
+                size="sm"
+                slug={selectedCat.slug}
+              />
+              <span style={{ fontWeight: 600 }}>{selectedCat.name}</span>
+              <span style={{ color: 'var(--b-ink-60)' }}>selected</span>
             </div>
           )}
         </div>
 
-        {/* Duration */}
+        {/* Duration — outlined ink toggles */}
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Duration</label>
-          <div className="flex gap-2">
-            {durations.map((d) => (
-              <button
-                key={d.days}
-                onClick={() => setSelectedDuration(d.days)}
-                className={cn(
-                  'flex-1 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all',
-                  selectedDuration === d.days
-                    ? 'border-red-500 bg-red-500/10 text-white'
-                    : 'border-[#1e1e30] text-slate-500 hover:text-white'
-                )}
-              >
-                {d.label}
-              </button>
-            ))}
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
+          >
+            Duration
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {durations.map((d) => {
+              const isSel = selectedDuration === d.days;
+              return (
+                <button
+                  key={d.days}
+                  onClick={() => setSelectedDuration(d.days)}
+                  className="font-body"
+                  style={{
+                    flex: 1,
+                    padding: '10px 6px',
+                    background: isSel ? 'var(--b-ink)' : 'transparent',
+                    color: isSel ? 'var(--b-paper)' : 'var(--b-ink-60)',
+                    border: '1px solid var(--b-ink)',
+                    cursor: 'pointer',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {d.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <Button
-          className="w-full"
+        {/* Summary blockquote */}
+        {selectedCat && (
+          <div
+            style={{
+              borderTop: '2px solid var(--b-ink)',
+              paddingTop: 10,
+            }}
+          >
+            <p
+              className="font-body"
+              style={{
+                fontSize: 12,
+                color: 'var(--b-ink)',
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              <em
+                className="font-display"
+                style={{ fontStyle: 'italic', fontSize: 14 }}
+              >
+                {user?.username}
+              </em>{' '}
+              challenges{' '}
+              <em
+                className="font-display"
+                style={{ fontStyle: 'italic', fontSize: 14 }}
+              >
+                {opponentUsername}
+              </em>{' '}
+              to a{' '}
+              <span style={{ fontWeight: 600 }}>{selectedCat.name}</span> duel
+              over{' '}
+              <span className="font-mono tabular" style={{ fontWeight: 600 }}>
+                {selectedDuration} days
+              </span>
+              .
+            </p>
+          </div>
+        )}
+
+        {/* CTA */}
+        <button
           onClick={handleCreate}
-          loading={creating}
-          disabled={!selectedCategory}
+          disabled={!selectedCategory || creating}
+          className="font-body"
+          style={{
+            width: '100%',
+            height: 46,
+            border: '1px solid var(--b-ink)',
+            background: !selectedCategory ? 'var(--b-paper-2)' : 'var(--b-ink)',
+            color: !selectedCategory ? 'var(--b-ink-40)' : 'var(--b-paper)',
+            fontWeight: 700,
+            fontSize: 12,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            cursor: !selectedCategory || creating ? 'not-allowed' : 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}
         >
-          <SwordsCrossIcon size={16} />
-          Send Challenge
-        </Button>
+          <SwordsCrossIcon size={14} />
+          {creating ? 'Sending…' : 'Send Challenge'}
+        </button>
       </div>
     </Modal>
   );

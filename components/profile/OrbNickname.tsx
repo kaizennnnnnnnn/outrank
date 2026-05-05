@@ -10,15 +10,15 @@ interface Props { user: UserProfile; }
 
 /**
  * Lightweight mood model: derives from how recently the user logged
- * anything (lastActiveAt). Happy within 24h, neutral within 72h, sulky
+ * anything (lastActiveAt). Happy within 24h, drifting within 72h, sulking
  * beyond that. Computed client-side so it updates live.
  */
-function moodFor(lastActiveMs: number | null): { label: string; color: string; face: string } {
-  if (!lastActiveMs) return { label: 'Curious', color: '#94a3b8', face: '•ᴗ•' };
+function moodFor(lastActiveMs: number | null): { label: string; face: string } {
+  if (!lastActiveMs) return { label: 'Curious', face: '•ᴗ•' };
   const gapH = (Date.now() - lastActiveMs) / 3_600_000;
-  if (gapH < 24)  return { label: 'Happy',  color: '#f97316', face: '◕ᴗ◕' };
-  if (gapH < 72)  return { label: 'Drifting', color: '#fbbf24', face: '⩌_⩌' };
-  return { label: 'Sulking', color: '#64748b', face: '•︵•' };
+  if (gapH < 24)  return { label: 'Happy',    face: '◕ᴗ◕' };
+  if (gapH < 72)  return { label: 'Drifting', face: '⩌_⩌' };
+  return            { label: 'Sulking',  face: '•︵•' };
 }
 
 export function OrbNickname({ user }: Props) {
@@ -50,35 +50,91 @@ export function OrbNickname({ user }: Props) {
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 text-[11px]">
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+      }}
+    >
       {editing ? (
-        <div className="flex items-center gap-1.5">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <input
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             maxLength={20}
-            className="w-28 bg-[#0b0b14] border border-orange-500/40 rounded px-2 py-1 text-xs text-white focus:outline-none"
+            className="font-body"
+            style={{
+              width: 124,
+              background: 'transparent',
+              border: '1px solid var(--b-ink)',
+              padding: '4px 8px',
+              fontSize: 12,
+              color: 'var(--b-ink)',
+              outline: 'none',
+            }}
             onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }}
           />
-          <button onClick={save} disabled={saving} className="text-[10px] text-orange-400 hover:text-orange-300 font-bold">
+          <button
+            onClick={save}
+            disabled={saving}
+            className="spread"
+            style={{
+              fontSize: 9,
+              color: 'var(--b-accent)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontWeight: 700,
+            }}
+          >
             {saving ? '…' : 'Save'}
           </button>
-          <button onClick={() => setEditing(false)} className="text-[10px] text-slate-500 hover:text-slate-300">Cancel</button>
+          <button
+            onClick={() => setEditing(false)}
+            className="spread"
+            style={{
+              fontSize: 9,
+              color: 'var(--b-ink-40)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
         </div>
       ) : (
         <>
           <button
             onClick={() => setEditing(true)}
-            className="font-heading font-semibold text-white hover:text-orange-400 transition-colors"
+            className="font-display"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: 14,
+              color: 'var(--b-ink)',
+            }}
             title="Rename your orb"
           >
             {currentName}
           </button>
           <span
-            className="px-1.5 py-0.5 rounded font-mono text-[10px] border"
-            style={{ color: mood.color, background: `${mood.color}15`, borderColor: `${mood.color}45` }}
+            className="font-mono"
             title={`Mood: ${mood.label}`}
+            style={{
+              padding: '2px 6px',
+              border: '1px solid var(--b-rule)',
+              fontSize: 9,
+              color: 'var(--b-ink-60)',
+              letterSpacing: '0.04em',
+            }}
           >
             {mood.face} {mood.label}
           </span>

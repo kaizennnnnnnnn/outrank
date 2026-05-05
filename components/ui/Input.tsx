@@ -1,6 +1,6 @@
 'use client';
 
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { InputHTMLAttributes, forwardRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -10,33 +10,75 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, icon, ...props }, ref) => {
+  ({ className, label, error, icon, onFocus, onBlur, style, ...props }, ref) => {
+    const [focused, setFocused] = useState(false);
+    const borderColor = error ? '#ef4444' : 'var(--b-ink)';
+    const borderWidth = focused ? 2 : 1;
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">{label}</label>
+          <label
+            className="spread block"
+            style={{
+              fontSize: 9,
+              color: 'var(--b-ink-60)',
+              marginBottom: 6,
+            }}
+          >
+            {label}
+          </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">
+            <div
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: 'var(--b-ink-60)' }}
+            >
               {icon}
             </div>
           )}
           <input
             ref={ref}
+            onFocus={(e) => {
+              setFocused(true);
+              onFocus?.(e);
+            }}
+            onBlur={(e) => {
+              setFocused(false);
+              onBlur?.(e);
+            }}
             className={cn(
-              'w-full rounded-xl bg-[#10101a] border border-[#1e1e30] px-4 py-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all',
-              icon && 'pl-10',
-              error && 'border-red-500/50 focus:ring-red-500/50',
-              className
+              'w-full font-body focus:outline-none',
+              icon ? 'pl-10' : 'px-3',
+              !icon && '',
+              className,
             )}
+            style={{
+              background: 'transparent',
+              color: 'var(--b-ink)',
+              border: `${borderWidth}px solid ${borderColor}`,
+              borderRadius: 0,
+              fontSize: 13,
+              padding: icon ? '10px 12px 10px 40px' : '10px 12px',
+              // Compensate for the 1px width swing on focus so adjacent
+              // layout doesn't jiggle.
+              margin: focused ? -1 : 0,
+              ...style,
+            }}
             {...props}
           />
         </div>
-        {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
+        {error && (
+          <p
+            className="font-body"
+            style={{ marginTop: 6, fontSize: 11, color: '#ef4444' }}
+          >
+            {error}
+          </p>
+        )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = 'Input';

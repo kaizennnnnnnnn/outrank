@@ -16,9 +16,11 @@ interface DayXP {
 /**
  * Flowing section, no container. The dashboard owns surrounding spacing
  * and the section eyebrow lives here so the chart's own data drives the
- * total-XP value beside it. Drop the gradient wash + rounded frame —
- * stacking framed cards was the source of the "deck of identical boxes"
- * look on the dashboard.
+ * total-XP value beside it.
+ *
+ * Editorial Direction B v2: spread eyebrow, italic display total-XP,
+ * flat accent bars (no gradient, no glow). The graph stroke uses the
+ * editorial accent red.
  */
 export function OverallProgressGraph() {
   const { user } = useAuth();
@@ -80,29 +82,63 @@ export function OverallProgressGraph() {
       {/* Unified section eyebrow — same shape as Today's Habits below */}
       <div className="flex items-end justify-between mb-4 px-1">
         <div>
-          <div className="flex items-center gap-2">
+          <p
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+          >
+            Weekly Overview
+          </p>
+          <p
+            className="font-display tabular"
+            style={{
+              fontSize: 32,
+              fontStyle: 'italic',
+              fontWeight: 600,
+              marginTop: 2,
+              lineHeight: 1,
+              letterSpacing: '-0.02em',
+              color: 'var(--b-accent)',
+            }}
+          >
+            {totalXP.toLocaleString()}
             <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
-            />
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
-              Weekly Overview
-            </p>
-          </div>
-          <p className="font-heading text-3xl font-bold mt-1 leading-none">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">
-              {totalXP.toLocaleString()}
+              className="font-body"
+              style={{
+                fontSize: 13,
+                color: 'var(--b-ink-40)',
+                marginLeft: 6,
+                fontStyle: 'normal',
+                fontWeight: 500,
+                letterSpacing: '0.05em',
+              }}
+            >
+              XP
             </span>
-            <span className="text-slate-500 text-sm font-mono ml-1.5">XP</span>
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Logs</p>
-          <p className="font-heading text-lg font-bold text-white mt-0.5">{totalLogs}</p>
+        <div style={{ textAlign: 'right' }}>
+          <p
+            className="spread"
+            style={{ fontSize: 8, color: 'var(--b-ink-40)' }}
+          >
+            Logs
+          </p>
+          <p
+            className="font-display tabular"
+            style={{
+              fontSize: 18,
+              fontStyle: 'italic',
+              fontWeight: 600,
+              color: 'var(--b-ink)',
+              marginTop: 2,
+            }}
+          >
+            {totalLogs}
+          </p>
         </div>
       </div>
 
-      {/* Bar chart */}
+      {/* Bar chart — flat accent fill, hairline outline on today */}
       <div className="flex items-end justify-between gap-1.5 h-24 px-1">
         {data.map((day, i) => {
           const barHeight = maxXP > 0 ? (day.xp / maxXP) * 100 : 0;
@@ -111,26 +147,28 @@ export function OverallProgressGraph() {
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
               <div
-                className="w-full rounded-t-md transition-all duration-700 min-h-[3px] relative"
+                className="w-full transition-all duration-700 min-h-[3px] relative"
                 style={{
                   height: `${Math.max(barHeight, 3)}%`,
                   background: day.xp > 0
                     ? isBest
-                      ? 'linear-gradient(to top, #dc2626, #f97316, #fbbf24)'
-                      : 'linear-gradient(to top, #991b1b, #dc2626, #f97316)'
-                    : '#13131f',
-                  boxShadow: day.xp > 0
-                    ? isBest
-                      ? '0 0 14px rgba(249,115,22,0.7), inset 0 1px 0 rgba(255,255,255,0.25)'
-                      : '0 0 8px rgba(220,38,38,0.4)'
-                    : 'none',
-                  border: isToday ? '1px solid rgba(249,115,22,0.5)' : 'none',
+                      ? 'var(--b-accent)'
+                      : 'var(--b-ink)'
+                    : 'var(--b-rule)',
+                  border: isToday ? '1px solid var(--b-accent)' : 'none',
                 }}
               >
                 {isBest && (
                   <div
-                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-yellow-300 animate-frame-pulse"
-                    style={{ boxShadow: '0 0 6px #fde047' }}
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: 4,
+                      height: 4,
+                      background: 'var(--b-accent)',
+                    }}
                   />
                 )}
               </div>
@@ -143,14 +181,23 @@ export function OverallProgressGraph() {
       <div className="flex justify-between mt-2 px-1">
         {data.map((day, i) => (
           <div key={i} className="flex-1 text-center">
-            <p className={cn(
-              'text-[10px] font-bold uppercase tracking-wider',
-              i === todayIdx ? 'text-orange-400' : 'text-slate-600'
-            )}>{day.date}</p>
-            <p className={cn(
-              'text-[9px] font-mono mt-0.5',
-              day.xp > 0 ? 'text-slate-400' : 'text-slate-700'
-            )}>
+            <p
+              className={cn('spread')}
+              style={{
+                fontSize: 9,
+                color: i === todayIdx ? 'var(--b-accent)' : 'var(--b-ink-40)',
+              }}
+            >
+              {day.date}
+            </p>
+            <p
+              className="font-body tabular"
+              style={{
+                fontSize: 9,
+                marginTop: 2,
+                color: day.xp > 0 ? 'var(--b-ink-60)' : 'var(--b-ink-40)',
+              }}
+            >
               {day.xp > 0 ? `+${day.xp}` : '—'}
             </p>
           </div>

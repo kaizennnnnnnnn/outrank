@@ -11,6 +11,11 @@ interface HabitLogHistoryProps {
   habitId: string;
 }
 
+/**
+ * Editorial log history list. Each row is a hairline-divided clipping —
+ * value + time on the left, XP earned on the right in accent ink.
+ * No dark surface, no orange highlight.
+ */
 export function HabitLogHistory({ userId, habitId }: HabitLogHistoryProps) {
   const { data: logs, loading } = useCollection<HabitLog>(
     `logs/${userId}/habitLogs`,
@@ -21,37 +26,105 @@ export function HabitLogHistory({ userId, habitId }: HabitLogHistoryProps) {
   if (loading) {
     return (
       <div className="space-y-2">
-        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-xl" />)}
+        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12" />)}
       </div>
     );
   }
 
   if (logs.length === 0) {
-    return <p className="text-sm text-slate-600 text-center py-4">No logs yet</p>;
+    return (
+      <p
+        className="font-body"
+        style={{
+          fontSize: 12,
+          color: 'var(--b-ink-60)',
+          textAlign: 'center',
+          padding: '16px 0',
+          fontStyle: 'italic',
+        }}
+      >
+        No logs yet
+      </p>
+    );
   }
 
   return (
-    <div className="space-y-1.5">
+    <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
       {logs.map((log) => (
-        <div
+        <li
           key={log.id}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#10101a] border border-[#1e1e30]"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 4px',
+            borderBottom: '1px solid var(--b-rule)',
+          }}
         >
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-sm font-bold text-white">{log.value}</span>
-              <span className="text-xs text-slate-500">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span
+                className="font-display tabular"
+                style={{
+                  fontSize: 15,
+                  fontStyle: 'italic',
+                  fontWeight: 600,
+                  color: 'var(--b-ink)',
+                }}
+              >
+                {log.value}
+              </span>
+              <span
+                className="font-body"
+                style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+              >
                 {log.createdAt?.toDate ? formatRelativeTime(log.createdAt.toDate()) : ''}
               </span>
             </div>
-            {log.note && <p className="text-xs text-slate-500 mt-0.5">{log.note}</p>}
+            {log.note && (
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--b-ink-60)',
+                  marginTop: 2,
+                  fontStyle: 'italic',
+                }}
+              >
+                {log.note}
+              </p>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            {log.proofImageUrl && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>}
-            <span className="text-xs font-mono text-orange-400">+{log.xpEarned} XP</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {log.proofImageUrl && (
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ color: 'var(--b-ink-40)' }}
+              >
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            )}
+            <span
+              className="font-body tabular"
+              style={{
+                fontSize: 11,
+                color: 'var(--b-accent)',
+                fontWeight: 600,
+              }}
+            >
+              +{log.xpEarned} XP
+            </span>
           </div>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

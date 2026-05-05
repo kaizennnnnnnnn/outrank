@@ -11,7 +11,6 @@ import { getCollection, createDocument, orderBy, Timestamp } from '@/lib/firesto
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { UserHabit } from '@/types/habit';
-import { cn } from '@/lib/utils';
 
 interface FriendHabitModalProps {
   isOpen: boolean;
@@ -21,6 +20,12 @@ interface FriendHabitModalProps {
   friendAvatar: string;
 }
 
+/**
+ * Editorial Direction B v2 friend-habits modal. Hairline rows for each
+ * tracked habit; logged-today rows get an accent left stripe and a
+ * spread-caps "Logged" tag. Inline reminder + message inputs pop below
+ * each row and stay on paper.
+ */
 export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, friendAvatar }: FriendHabitModalProps) {
   const { user } = useAuth();
   const addToast = useUIStore((s) => s.addToast);
@@ -78,27 +83,58 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`${friendUsername}'s Habits`} size="md">
-      <div className="space-y-4">
+      <div className="dir-b" style={{ color: 'var(--b-ink)' }}>
         {/* Friend header */}
-        <div className="flex items-center gap-3 bg-[#0c0c16] rounded-xl p-3">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 0',
+            borderTop: '2px solid var(--b-ink)',
+            borderBottom: '1px solid var(--b-ink)',
+          }}
+        >
           <Avatar src={friendAvatar} alt={friendUsername} size="md" />
           <div>
-            <p className="text-sm font-bold text-white">{friendUsername}</p>
-            <p className="text-xs text-slate-500">{habits.length} habits tracked</p>
+            <p
+              className="font-display"
+              style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, margin: 0 }}
+            >
+              {friendUsername}
+            </p>
+            <p
+              className="font-mono tabular"
+              style={{ fontSize: 10, color: 'var(--b-ink-60)', margin: '2px 0 0', letterSpacing: '0.04em' }}
+            >
+              {habits.length} HABITS TRACKED
+            </p>
           </div>
         </div>
 
         {/* Habits list */}
         {loading ? (
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-[#18182a] rounded-xl animate-pulse" />
+              <div key={i} style={{ height: 64, border: '1px solid var(--b-rule)' }} />
             ))}
           </div>
         ) : habits.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-6">No habits yet</p>
+          <p
+            className="font-body"
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', textAlign: 'center', padding: '24px 0' }}
+          >
+            No habits yet
+          </p>
         ) : (
-          <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+          <div
+            style={{
+              maxHeight: '50vh',
+              overflowY: 'auto',
+              paddingRight: 4,
+              marginTop: 4,
+            }}
+          >
             {habits.map((habit) => {
               const loggedToday = habit.lastLogDate
                 ? new Date(habit.lastLogDate.toDate()).toDateString() === today.toDateString()
@@ -106,19 +142,36 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
               const reminded = remindedIds.includes(habit.categorySlug);
 
               return (
-                <div key={habit.categorySlug} className="space-y-2">
-                  <div className={cn(
-                    'rounded-xl p-3 border space-y-3',
-                    loggedToday
-                      ? 'bg-emerald-500/5 border-emerald-500/20'
-                      : 'bg-[#10101a] border-[#1e1e30]'
-                  )}>
+                <div key={habit.categorySlug}>
+                  <div
+                    style={{
+                      padding: '12px 0 12px 12px',
+                      borderBottom: '1px solid var(--b-rule)',
+                      borderLeft: loggedToday ? '2px solid var(--b-accent)' : '2px solid transparent',
+                    }}
+                  >
                     {/* Top row: icon + info + status */}
-                    <div className="flex items-center gap-3">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <CategoryIcon icon={habit.categoryIcon} color={habit.color} size="sm" slug={habit.categorySlug} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white">{habit.categoryName}</p>
-                        <p className="text-xs text-slate-500">Goal: {habit.goal} {habit.unit}</p>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p
+                          className="font-display"
+                          style={{
+                            fontSize: 14,
+                            fontStyle: 'italic',
+                            fontWeight: 500,
+                            color: 'var(--b-ink)',
+                            margin: 0,
+                          }}
+                        >
+                          {habit.categoryName}
+                        </p>
+                        <p
+                          className="font-mono tabular"
+                          style={{ fontSize: 10, color: 'var(--b-ink-60)', margin: '2px 0 0' }}
+                        >
+                          Goal: {habit.goal} {habit.unit}
+                        </p>
                       </div>
                       {habit.currentStreak > 0 && (
                         <StreakFlame streak={habit.currentStreak} size="sm" />
@@ -126,15 +179,25 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
                     </div>
                     {/* Bottom row: actions */}
                     {loggedToday ? (
-                      <div className="flex items-center gap-2 pl-12">
-                        <span className="text-xs text-emerald-400 font-medium">Logged today</span>
+                      <div style={{ paddingLeft: 44, marginTop: 8 }}>
+                        <span
+                          className="spread"
+                          style={{ fontSize: 9, color: 'var(--b-accent)' }}
+                        >
+                          Logged today
+                        </span>
                       </div>
                     ) : reminded ? (
-                      <div className="flex items-center gap-2 pl-12">
-                        <span className="text-xs text-orange-400 font-medium">Reminder sent</span>
+                      <div style={{ paddingLeft: 44, marginTop: 8 }}>
+                        <span
+                          className="spread"
+                          style={{ fontSize: 9, color: 'var(--b-accent)' }}
+                        >
+                          Reminder sent
+                        </span>
                       </div>
                     ) : (
-                      <div className="flex gap-2 pl-12">
+                      <div style={{ display: 'flex', gap: 8, paddingLeft: 44, marginTop: 8 }}>
                         <Button size="sm" variant="secondary" className="flex-1" onClick={() => remind(habit.categorySlug, habit.categoryName)}>
                           Remind
                         </Button>
@@ -149,7 +212,7 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
 
                   {/* Custom message input */}
                   {messageTarget === habit.categorySlug && (
-                    <div className="flex gap-2 pl-10">
+                    <div style={{ display: 'flex', gap: 8, padding: '10px 0 10px 44px' }}>
                       <Input
                         placeholder="Add a message..."
                         value={message}

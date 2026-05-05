@@ -26,6 +26,13 @@ const pxMap = {
   xl: 96,
 };
 
+const initialFontPx = {
+  sm: 13,
+  md: 16,
+  lg: 22,
+  xl: 36,
+};
+
 // Ring size is larger than avatar to create padding
 const ringSizeMap = {
   sm: 'w-10 h-10',
@@ -41,28 +48,34 @@ export function Avatar({ src, alt = 'User', size = 'md', online, className, leve
     <div className={cn('relative inline-flex shrink-0 items-center justify-center', hasRing ? ringSizeMap[size] : '', className)}>
       {hasRing && (
         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 40 40">
-          {/* Background ring */}
+          {/* Background ring — hairline rule */}
           <circle
             cx="20" cy="20" r="18"
             fill="none"
-            stroke="#1e1e30"
+            stroke="var(--b-rule)"
             strokeWidth="2.5"
           />
-          {/* Progress ring */}
+          {/* Progress ring — editorial accent */}
           <circle
             cx="20" cy="20" r="18"
             fill="none"
-            stroke="#dc2626"
+            stroke="var(--b-accent)"
             strokeWidth="2.5"
             strokeDasharray={`${Math.min(level, 100) * 1.131} 113.1`}
             strokeLinecap="round"
           />
         </svg>
       )}
-      <div className={cn(
-        'rounded-full overflow-hidden bg-[#18182a] flex items-center justify-center relative z-10',
-        sizeMap[size]
-      )}>
+      <div
+        className={cn(
+          'rounded-full overflow-hidden flex items-center justify-center relative z-10',
+          sizeMap[size],
+        )}
+        style={{
+          background: 'var(--b-paper)',
+          border: '1px solid var(--b-ink)',
+        }}
+      >
         {src ? (
           <Image
             src={src}
@@ -72,16 +85,28 @@ export function Avatar({ src, alt = 'User', size = 'md', online, className, leve
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="text-slate-500 font-bold text-sm">
+          <span
+            className="font-display"
+            style={{
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: initialFontPx[size],
+              color: 'var(--b-ink-60)',
+              lineHeight: 1,
+            }}
+          >
             {alt.charAt(0).toUpperCase()}
           </span>
         )}
       </div>
       {online !== undefined && (
-        <span className={cn(
-          'absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0d0d15] z-20',
-          online ? 'bg-emerald-500' : 'bg-slate-600'
-        )} />
+        <span
+          className="absolute bottom-0 right-0 w-3 h-3 rounded-full z-20"
+          style={{
+            background: online ? '#10b981' : 'var(--b-ink-40)',
+            border: '2px solid var(--b-paper)',
+          }}
+        />
       )}
     </div>
   );

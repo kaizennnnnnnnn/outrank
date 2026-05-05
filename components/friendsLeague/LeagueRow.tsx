@@ -1,10 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Avatar } from '@/components/ui/Avatar';
 import { FriendsLeagueEntry } from '@/types/friendsLeague';
-import { cn } from '@/lib/utils';
 
 interface Props {
   entry: FriendsLeagueEntry;
@@ -13,78 +11,115 @@ interface Props {
   showRewardPreview: boolean;
 }
 
-const PODIUM_GRADIENTS: Record<number, string> = {
-  1: 'linear-gradient(135deg, #facc15, #f59e0b)',  // gold
-  2: 'linear-gradient(135deg, #d4d4d8, #a1a1aa)',  // silver
-  3: 'linear-gradient(135deg, #d97706, #92400e)',  // bronze
-};
+// Roman numerals for the top three — magazine convention shared with
+// the editorial /leaderboard page.
+const romans = ['I', 'II', 'III'];
 
 /**
- * One row in the friends-league leaderboard. Top 3 get podium tinting +
- * a reward preview chip; the user's own row is highlighted regardless
- * of rank.
+ * One row in the friends-league leaderboard. Top 3 get the roman-numeral
+ * podium treatment + a reward preview chip; the user's own row gets a
+ * 3px ink left-rule regardless of rank.
  */
 export function LeagueRow({ entry, isMe, showRewardPreview }: Props) {
   const isPodium = entry.rank >= 1 && entry.rank <= 3;
-  const podiumGradient = PODIUM_GRADIENTS[entry.rank];
+  const rankLabel = isPodium ? romans[entry.rank - 1] : String(entry.rank);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn(
-        'flex items-center gap-3 px-4 py-3 transition-colors',
-        isMe ? 'bg-orange-500/[0.06]' : 'hover:bg-white/[0.02]',
-      )}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '38px auto 1fr auto',
+        gap: 12,
+        alignItems: 'center',
+        padding: '12px 0',
+        borderBottom: '1px solid var(--b-rule)',
+        borderLeft: isMe ? '3px solid var(--b-accent)' : '3px solid transparent',
+        paddingLeft: isMe ? 12 : 0,
+        background: isMe ? 'var(--b-paper-2, transparent)' : 'transparent',
+      }}
     >
-      {/* Rank badge */}
+      {/* Rank */}
       <div
-        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 font-mono font-bold text-sm"
+        className="font-display tabular"
         style={{
-          background: isPodium && podiumGradient ? podiumGradient : 'rgba(255,255,255,0.04)',
-          border: isPodium ? 'none' : '1px solid rgba(255,255,255,0.08)',
-          color: isPodium ? '#0b0b14' : '#94a3b8',
-          boxShadow: isPodium ? '0 0 12px -2px rgba(255,255,255,0.3)' : undefined,
+          fontSize: isPodium ? 22 : 14,
+          fontStyle: isPodium ? 'italic' : 'normal',
+          fontWeight: 500,
+          textAlign: 'right',
+          color: isPodium ? 'var(--b-ink)' : 'var(--b-ink-40)',
+          letterSpacing: isPodium ? 0 : '0.02em',
         }}
       >
-        {entry.rank}
+        {rankLabel}
       </div>
 
-      <Link href={isMe ? '/profile' : `/profile/${entry.username}`} className="flex-shrink-0">
+      <Link href={isMe ? '/profile' : `/profile/${entry.username}`} style={{ flexShrink: 0 }}>
         <Avatar src={entry.avatarUrl} alt={entry.username} size="sm" />
       </Link>
 
-      <div className="flex-1 min-w-0">
+      <div style={{ minWidth: 0 }}>
         <Link
           href={isMe ? '/profile' : `/profile/${entry.username}`}
-          className="text-sm font-bold text-white truncate hover:text-orange-400 transition-colors"
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: 'var(--b-ink)',
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            maxWidth: '100%',
+          }}
+          className="font-body truncate"
         >
-          {entry.username}
+          <span
+            style={{
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {entry.username}
+          </span>
           {isMe && (
-            <span className="ml-1.5 text-[9px] font-bold uppercase tracking-widest text-orange-400 bg-orange-500/15 border border-orange-500/35 px-1.5 py-0.5 rounded">
+            <span
+              className="spread"
+              style={{ fontSize: 8, color: 'var(--b-accent)', flexShrink: 0 }}
+            >
               You
             </span>
           )}
         </Link>
-        <p className="text-[10px] font-mono text-slate-500 mt-0.5">
-          <span className="text-slate-300">{entry.score.toLocaleString()}</span>
-          <span className="text-slate-600 ml-1">XP this week</span>
+        <p
+          className="font-mono tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+        >
+          <span style={{ color: 'var(--b-ink)' }}>
+            {entry.score.toLocaleString()}
+          </span>{' '}
+          XP this week
         </p>
       </div>
 
       {showRewardPreview && entry.reward > 0 && (
         <span
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold flex-shrink-0"
+          className="font-mono tabular"
           style={{
-            background: 'rgba(34,197,94,0.12)',
-            border: '1px solid rgba(34,197,94,0.35)',
-            color: '#34d399',
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '2px 8px',
+            border: '1px solid var(--b-accent)',
+            color: 'var(--b-accent)',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            flexShrink: 0,
           }}
           title="Estimated reward if standings hold to Sunday"
         >
           +{entry.reward}
         </span>
       )}
-    </motion.div>
+    </div>
   );
 }

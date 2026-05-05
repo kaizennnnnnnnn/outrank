@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { FriendsLeagueSnapshot } from '@/types/friendsLeague';
 
@@ -8,62 +7,166 @@ interface Props {
   snapshot: FriendsLeagueSnapshot;
 }
 
+// Roman numerals for the top three — shared editorial convention.
+const romans = ['I', 'II', 'III'];
+
 /**
- * Banner above the live leaderboard surfacing the user's result from
- * the week that just ended. Three flavors:
- *
- *   • Podium (rank 1-3) — green tint, reward callout.
- *   • Honorable mention (rank 4-10) — neutral tint.
- *   • Below 10 / no participants — hidden (banner doesn't render).
+ * Editorial blockquote-style banner above the live leaderboard surfacing
+ * the user's result from the week that just ended, plus the previous
+ * week's top 3.
  */
 export function LastWeekBanner({ snapshot }: Props) {
   const onPodium = snapshot.myRank >= 1 && snapshot.myRank <= 3;
   if (snapshot.myRank > 10 || snapshot.standings.length === 0) return null;
 
-  const accent = onPodium ? '#22c55e' : '#64748b';
   const label =
-    snapshot.myRank === 1 ? 'You won last week 👑' :
-    snapshot.myRank === 2 ? 'You took 2nd last week' :
-    snapshot.myRank === 3 ? 'You took 3rd last week' :
-    `You finished #${snapshot.myRank} last week`;
+    snapshot.myRank === 1 ? 'You won the week.' :
+    snapshot.myRank === 2 ? 'You took second.' :
+    snapshot.myRank === 3 ? 'You took third.' :
+    `You finished ${snapshot.myRank}th.`;
+
+  // Top three of the prior week, for the entries strip.
+  const topThree = snapshot.standings.slice(0, 3);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-2xl p-4"
+    <div
+      className="dir-b"
       style={{
-        background: `linear-gradient(135deg, ${accent}10 0%, rgba(11,11,20,0.7) 70%)`,
-        border: `1px solid ${accent}33`,
+        background: 'transparent',
+        borderTop: '2px solid var(--b-ink)',
+        borderBottom: '1px solid var(--b-rule)',
+        padding: '14px 16px',
+        color: 'var(--b-ink)',
       }}
     >
       <div
-        className="absolute top-0 left-0 bottom-0 w-[2px]"
-        style={{ background: accent }}
-      />
-      <div className="relative flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: accent }}>
-            {snapshot.weekKey}
-          </p>
-          <p className="text-sm font-bold text-white mt-0.5 truncate">{label}</p>
-          <p className="text-[11px] font-mono text-slate-500 mt-1">
-            {snapshot.myScore.toLocaleString()} XP
-            {snapshot.myReward > 0 && (
-              <>
-                <span className="text-slate-700 mx-1.5">·</span>
-                <span className="text-emerald-400">+{snapshot.myReward} fragments paid out</span>
-              </>
-            )}
-          </p>
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          gap: 12,
+          marginBottom: 10,
+        }}
+      >
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+          Last Week · {snapshot.weekKey}
         </div>
         <Link
           href="/inventory"
-          className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-white flex-shrink-0"
+          className="spread"
+          style={{
+            fontSize: 9,
+            color: 'var(--b-ink)',
+            textDecoration: 'none',
+            borderBottom: '1px solid var(--b-ink)',
+            paddingBottom: 1,
+          }}
         >
           View →
         </Link>
       </div>
-    </motion.div>
+
+      <p
+        className="font-display"
+        style={{
+          fontStyle: 'italic',
+          fontWeight: 500,
+          fontSize: 22,
+          lineHeight: 1.1,
+          margin: 0,
+          color: onPodium ? 'var(--b-ink)' : 'var(--b-ink-60)',
+        }}
+      >
+        Top 3
+      </p>
+
+      {/* Three rank entries with reward in mono accent */}
+      <ol
+        style={{
+          listStyle: 'none',
+          margin: '10px 0 0',
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+        }}
+      >
+        {topThree.map((entry, i) => (
+          <li
+            key={entry.userId}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '24px 1fr auto',
+              alignItems: 'baseline',
+              gap: 10,
+              paddingBottom: 6,
+              borderBottom: i === topThree.length - 1 ? 'none' : '1px solid var(--b-rule)',
+            }}
+          >
+            <span
+              className="font-display tabular"
+              style={{
+                fontStyle: 'italic',
+                fontWeight: 500,
+                fontSize: 16,
+                color: 'var(--b-ink)',
+                textAlign: 'right',
+              }}
+            >
+              {romans[i]}
+            </span>
+            <span
+              className="font-body"
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: 'var(--b-ink)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {entry.username}
+            </span>
+            <span
+              className="font-mono tabular"
+              style={{
+                fontSize: 11,
+                color: 'var(--b-accent)',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+              }}
+            >
+              {entry.reward > 0 ? `+${entry.reward}` : '—'}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      {/* User's own line — restated below the top 3 */}
+      <p
+        className="font-mono tabular"
+        style={{
+          fontSize: 10,
+          color: 'var(--b-ink-60)',
+          marginTop: 10,
+          paddingTop: 8,
+          borderTop: '1px solid var(--b-rule)',
+        }}
+      >
+        {label}{' '}
+        <span style={{ color: 'var(--b-ink)' }}>
+          {snapshot.myScore.toLocaleString()} XP
+        </span>
+        {snapshot.myReward > 0 && (
+          <>
+            <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+            <span style={{ color: 'var(--b-accent)' }}>
+              +{snapshot.myReward} fragments paid out
+            </span>
+          </>
+        )}
+      </p>
+    </div>
   );
 }

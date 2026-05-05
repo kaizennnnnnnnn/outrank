@@ -37,9 +37,11 @@ const DEFAULTS: Required<PillarSettingsShape> = {
  * Lightweight reminder settings for the water and sleep pillars. Lives
  * on the habit detail page (`/habits/[slug]`). Writes back to
  * `users/{uid}.pillarSettings.*` — read by the `pillarReminders` Cloud
- * Function every 15 minutes. Sane defaults apply if the user never
- * touches this; toggling off stops the function from firing for that
- * pillar without losing the time configuration.
+ * Function every 15 minutes.
+ *
+ * Editorial Direction B v2: paper background, hairline border with a
+ * 3px left stripe in the pillar's category color. Square ink-outlined
+ * Save button. Toggle uses ink/accent.
  */
 export function PillarReminderSettings({ pillar, color }: Props) {
   const { user } = useAuth();
@@ -79,31 +81,38 @@ export function PillarReminderSettings({ pillar, color }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl p-4"
       style={{
-        background: `linear-gradient(135deg, ${color}10 0%, rgba(11,11,20,0.7) 70%)`,
-        border: `1px solid ${color}33`,
+        background: 'var(--b-paper)',
+        border: '1px solid var(--b-rule)',
+        borderLeft: `3px solid ${color}`,
+        padding: 16,
       }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: color, boxShadow: `0 0 6px ${color}` }}
-          />
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color }}>
-            Reminders
-          </p>
-        </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        <p
+          className="spread"
+          style={{ fontSize: 9, color }}
+        >
+          Reminders
+        </p>
         {dirty && (
           <button
             onClick={save}
             disabled={saving}
-            className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md transition-colors disabled:opacity-50"
+            className="spread transition-colors disabled:opacity-50"
             style={{
-              background: `${color}22`,
-              border: `1px solid ${color}55`,
-              color,
+              fontSize: 10,
+              padding: '4px 10px',
+              background: 'transparent',
+              border: '1px solid var(--b-ink)',
+              color: 'var(--b-ink)',
             }}
           >
             {saving ? 'Saving…' : 'Save'}
@@ -133,21 +142,37 @@ function ToggleRow({
   color: string;
 }) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <span className="text-[12px] text-slate-300">{label}</span>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '8px 0',
+        borderBottom: '1px solid var(--b-rule)',
+      }}
+    >
+      <span
+        className="font-body"
+        style={{ fontSize: 12, color: 'var(--b-ink)' }}
+      >
+        {label}
+      </span>
       <button
         onClick={() => onChange(!value)}
         role="switch"
         aria-checked={value}
-        className="relative w-10 h-5 rounded-full transition-colors"
+        className="relative w-10 h-5 transition-colors"
         style={{
-          background: value ? color : '#1e1e30',
-          boxShadow: value ? `0 0 8px ${color}66` : undefined,
+          background: value ? color : 'transparent',
+          border: `1px solid ${value ? color : 'var(--b-ink-40)'}`,
         }}
       >
         <span
-          className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform"
-          style={{ transform: value ? 'translateX(20px)' : 'translateX(0)' }}
+          className="absolute top-0.5 left-0.5 w-3.5 h-3.5 transition-transform"
+          style={{
+            background: value ? 'var(--b-paper)' : 'var(--b-ink)',
+            transform: value ? 'translateX(20px)' : 'translateX(0)',
+          }}
         />
       </button>
     </div>
@@ -166,14 +191,37 @@ function TimeRow({
   disabled?: boolean;
 }) {
   return (
-    <div className={`flex items-center justify-between py-1.5 ${disabled ? 'opacity-50' : ''}`}>
-      <span className="text-[12px] text-slate-400">{label}</span>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '8px 0',
+        borderBottom: '1px solid var(--b-rule)',
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      <span
+        className="font-body"
+        style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+      >
+        {label}
+      </span>
       <input
         type="time"
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-[#0c0c16] border border-[#1e1e30] rounded-md px-2 py-1 font-mono text-[12px] text-white focus:outline-none focus:border-orange-400/50"
+        className="font-body tabular"
+        style={{
+          background: 'transparent',
+          border: '1px solid var(--b-rule)',
+          padding: '4px 8px',
+          fontSize: 12,
+          color: 'var(--b-ink)',
+          outline: 'none',
+          colorScheme: 'dark',
+        }}
       />
     </div>
   );
@@ -208,13 +256,35 @@ function WaterSettings({
         onChange={(v) => setDraft((d) => ({ ...d, waterSleepAt: v }))}
         disabled={!draft.waterEnabled}
       />
-      <div className={`flex items-center justify-between py-1.5 ${!draft.waterEnabled ? 'opacity-50' : ''}`}>
-        <span className="text-[12px] text-slate-400">Every</span>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 0',
+          borderBottom: '1px solid var(--b-rule)',
+          opacity: !draft.waterEnabled ? 0.5 : 1,
+        }}
+      >
+        <span
+          className="font-body"
+          style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+        >
+          Every
+        </span>
         <select
           disabled={!draft.waterEnabled}
           value={draft.waterCadenceMinutes}
           onChange={(e) => setDraft((d) => ({ ...d, waterCadenceMinutes: parseInt(e.target.value, 10) }))}
-          className="bg-[#0c0c16] border border-[#1e1e30] rounded-md px-2 py-1 font-mono text-[12px] text-white focus:outline-none focus:border-orange-400/50"
+          className="font-body tabular"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--b-rule)',
+            padding: '4px 8px',
+            fontSize: 12,
+            color: 'var(--b-ink)',
+            outline: 'none',
+          }}
         >
           <option value={60}>60 min</option>
           <option value={90}>90 min</option>
@@ -222,7 +292,16 @@ function WaterSettings({
           <option value={180}>3 hours</option>
         </select>
       </div>
-      <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink-40)',
+          marginTop: 12,
+          lineHeight: 1.5,
+          fontStyle: 'italic',
+        }}
+      >
         Soft pings inside your waking window. Quick-log chips on the dashboard make it one tap to record.
       </p>
     </div>
@@ -252,13 +331,35 @@ function SleepSettings({
         onChange={(v) => setDraft((d) => ({ ...d, sleepBedtimeAt: v }))}
         disabled={!draft.sleepReminderEnabled}
       />
-      <div className={`flex items-center justify-between py-1.5 ${!draft.sleepReminderEnabled ? 'opacity-50' : ''}`}>
-        <span className="text-[12px] text-slate-400">Remind me</span>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '8px 0',
+          borderBottom: '1px solid var(--b-rule)',
+          opacity: !draft.sleepReminderEnabled ? 0.5 : 1,
+        }}
+      >
+        <span
+          className="font-body"
+          style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
+        >
+          Remind me
+        </span>
         <select
           disabled={!draft.sleepReminderEnabled}
           value={draft.sleepWindDownMinutes}
           onChange={(e) => setDraft((d) => ({ ...d, sleepWindDownMinutes: parseInt(e.target.value, 10) }))}
-          className="bg-[#0c0c16] border border-[#1e1e30] rounded-md px-2 py-1 font-mono text-[12px] text-white focus:outline-none focus:border-orange-400/50"
+          className="font-body tabular"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--b-rule)',
+            padding: '4px 8px',
+            fontSize: 12,
+            color: 'var(--b-ink)',
+            outline: 'none',
+          }}
         >
           <option value={15}>15 min before</option>
           <option value={30}>30 min before</option>
@@ -266,7 +367,16 @@ function SleepSettings({
           <option value={60}>1 hour before</option>
         </select>
       </div>
-      <p className="text-[10px] text-slate-600 mt-2 leading-relaxed">
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink-40)',
+          marginTop: 12,
+          lineHeight: 1.5,
+          fontStyle: 'italic',
+        }}
+      >
         One nudge to start winding down. Phones away — your sleep tomorrow night thanks you.
       </p>
     </div>

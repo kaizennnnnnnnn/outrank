@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Avatar } from '@/components/ui/Avatar';
-import { Button } from '@/components/ui/Button';
 import { Pact } from '@/types/pact';
 import { acceptPact, declinePact, PACT_REWARDS } from '@/lib/pacts';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,12 +14,10 @@ interface Props {
 }
 
 /**
- * Pending invite row. Two flavors:
+ * Pending invite row, editorial paper-and-ink. Two flavors:
  *
  *   • Incoming (outgoing == false) — Accept / Decline buttons.
  *   • Outgoing (outgoing == true) — read-only, "waiting for X" copy.
- *
- * Hidden once status flips out of 'pending'.
  */
 export function PactInvitePill({ pact, outgoing }: Props) {
   const { user } = useAuth();
@@ -61,54 +57,99 @@ export function PactInvitePill({ pact, outgoing }: Props) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl p-4"
+    <div
+      className="dir-b"
       style={{
-        background: `linear-gradient(135deg, ${pact.habitColor}14 0%, rgba(11,11,20,0.7) 70%)`,
-        borderLeft: `2px solid ${pact.habitColor}`,
+        background: 'transparent',
+        border: '1px solid var(--b-rule)',
+        borderLeft: `3px solid ${pact.habitColor}`,
+        padding: 14,
+        color: 'var(--b-ink)',
       }}
     >
-      <div className="flex items-center gap-3">
-        <Avatar src={partnerMeta?.avatarUrl || ''} alt={partnerMeta?.username || ''} size="md" />
-        <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400">
-            {outgoing ? 'Waiting on' : 'Pact invite'}
-          </p>
-          <p className="text-sm font-bold text-white truncate">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Avatar
+          src={partnerMeta?.avatarUrl || ''}
+          alt={partnerMeta?.username || ''}
+          size="md"
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
+            {outgoing ? 'Waiting On' : 'Pact Invite'}
+          </div>
+          <p
+            className="font-display"
+            style={{
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: 16,
+              color: 'var(--b-ink)',
+              margin: '2px 0 0',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
             {partnerMeta?.username || 'A friend'}
           </p>
-          <p className="text-[11px] font-mono text-slate-500 mt-0.5">
-            <span style={{ color: pact.habitColor }} className="font-bold">{pact.habitName}</span>
-            <span className="text-slate-700 mx-1.5">·</span>
+          <p
+            className="font-mono tabular"
+            style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 4 }}
+          >
+            <span style={{ color: pact.habitColor, fontWeight: 600 }}>
+              {pact.habitName}
+            </span>
+            <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
             {pact.durationDays}-day
-            <span className="text-slate-700 mx-1.5">·</span>
-            <span className="text-emerald-400">+{reward.xp} XP / +{reward.fragments} frags each</span>
+            <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+            <span style={{ color: 'var(--b-accent)' }}>
+              +{reward.xp} XP / +{reward.fragments} frags each
+            </span>
           </p>
         </div>
         {!outgoing && (
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <Button
-              size="sm"
-              variant="ghost"
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <button
               onClick={onDecline}
-              loading={busy === 'decline'}
               disabled={busy !== null}
+              className="font-body"
+              style={{
+                padding: '8px 12px',
+                background: 'transparent',
+                color: 'var(--b-ink-60)',
+                border: '1px solid var(--b-rule)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                cursor: busy !== null ? 'not-allowed' : 'pointer',
+                opacity: busy === 'decline' ? 0.6 : 1,
+              }}
             >
-              Decline
-            </Button>
-            <Button
-              size="sm"
+              {busy === 'decline' ? '…' : 'Decline'}
+            </button>
+            <button
               onClick={onAccept}
-              loading={busy === 'accept'}
               disabled={busy !== null}
+              className="font-body"
+              style={{
+                padding: '8px 12px',
+                background: 'var(--b-ink)',
+                color: 'var(--b-paper)',
+                border: '1px solid var(--b-ink)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                cursor: busy !== null ? 'not-allowed' : 'pointer',
+                opacity: busy === 'accept' ? 0.6 : 1,
+              }}
             >
-              Accept
-            </Button>
+              {busy === 'accept' ? '…' : 'Accept'}
+            </button>
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

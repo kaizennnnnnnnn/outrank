@@ -8,35 +8,68 @@ interface XPProgressBarProps {
   showLabel?: boolean;
 }
 
+/**
+ * Editorial Direction B v2 XP bar. Track is the rule colour, fill is
+ * accent ink — flat, no gradient, no glow. Labels are mono tabular.
+ */
 export function XPProgressBar({ totalXP, showLabel = true }: XPProgressBarProps) {
   const xp = getXPProgress(totalXP);
   const level = getLevelForXP(totalXP);
   const next = getNextLevel(level.level);
 
   return (
-    <div className="w-full">
+    <div style={{ width: '100%' }}>
       {showLabel && (
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="text-xs text-slate-400">
-            Lv.{level.level} {level.title}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            marginBottom: 6,
+          }}
+        >
+          <span
+            className="font-body"
+            style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+          >
+            <span className="font-mono tabular">Lv.{level.level}</span>{' '}
+            <em
+              className="font-display"
+              style={{ fontStyle: 'italic', color: 'var(--b-ink)' }}
+            >
+              {level.title}
+            </em>
           </span>
           {next && (
-            <span className="text-xs font-mono text-slate-600">
+            <span
+              className="font-mono tabular"
+              style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+            >
               {xp.current}/{xp.needed} XP
             </span>
           )}
         </div>
       )}
-      <div className="w-full h-2.5 bg-[#18182a] rounded-full overflow-hidden">
+      <div
+        style={{
+          width: '100%',
+          height: 2,
+          background: 'var(--b-rule)',
+          overflow: 'hidden',
+        }}
+      >
         <motion.div
-          className="h-full bg-gradient-to-r from-red-600 via-red-500 to-orange-400 rounded-full"
+          style={{ height: '100%', background: 'var(--b-accent)' }}
           initial={{ width: 0 }}
           animate={{ width: `${xp.percentage}%` }}
           transition={{ duration: 1, ease: 'easeOut' }}
         />
       </div>
       {next && showLabel && (
-        <p className="text-[10px] text-slate-600 mt-1">
+        <p
+          className="font-body"
+          style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 4 }}
+        >
           Next: Lv.{next.level} {next.title}
         </p>
       )}

@@ -4,12 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { resendVerificationEmail } from '@/lib/auth';
-import { Button } from '@/components/ui/Button';
 import { useUIStore } from '@/store/uiStore';
-import { MailFullIcon } from '@/components/ui/AppIcons';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function VerifyEmailPage() {
   const addToast = useUIStore((s) => s.addToast);
+  const { firebaseUser } = useAuth();
   const [sending, setSending] = useState(false);
 
   const handleResend = async () => {
@@ -24,35 +24,173 @@ export default function VerifyEmailPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#0d0d15] flex items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md text-center space-y-6"
-      >
-        <div className="flex justify-center"><MailFullIcon size={56} className="text-orange-400" /></div>
-        <h1 className="text-2xl font-bold text-white font-heading">Check Your Email</h1>
-        <p className="text-slate-400">
-          We&apos;ve sent a verification link to your email address. Click the link to verify your account and unlock all features.
-        </p>
+  const email = firebaseUser?.email || 'your email address';
 
-        <div className="bg-[#10101a] border border-[#1e1e30] rounded-2xl p-6 space-y-3">
-          <Button onClick={handleResend} loading={sending} className="w-full">
-            Resend Verification Email
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => window.location.reload()}
-            className="w-full"
-          >
-            I&apos;ve Verified - Refresh
-          </Button>
+  return (
+    <div
+      className="dir-b min-h-screen flex flex-col"
+      style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}
+    >
+      <div
+        className="spread"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink)',
+          letterSpacing: '0.32em',
+          padding: '24px 22px 12px',
+          borderBottom: '1px solid var(--b-rule)',
+          textAlign: 'center',
+        }}
+      >
+        OUTRANK
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: 420,
+          margin: '0 auto',
+          padding: '48px 22px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', textAlign: 'center' }}
+        >
+          A note from the editor
         </div>
 
-        <Link href="/auth/login" className="text-sm text-orange-400 hover:text-orange-300">
-          Back to Login
-        </Link>
+        <h1
+          className="font-display"
+          style={{
+            fontSize: 42,
+            fontWeight: 500,
+            lineHeight: 1,
+            margin: '8px 0 14px',
+            textAlign: 'center',
+          }}
+        >
+          <em style={{ fontStyle: 'italic' }}>Verify your </em>
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>email</em>
+          <em style={{ fontStyle: 'italic' }}>.</em>
+        </h1>
+
+        <p
+          className="font-body"
+          style={{
+            fontSize: 15,
+            color: 'var(--b-ink-60)',
+            textAlign: 'center',
+            fontStyle: 'italic',
+            lineHeight: 1.55,
+            margin: '0 auto 28px',
+            maxWidth: 340,
+          }}
+        >
+          We sent a link to <span style={{ color: 'var(--b-ink)', fontStyle: 'normal' }}>{email}</span>. Click it to confirm your account.
+        </p>
+
+        {/* Editorial blockquote — quiet hairline frame */}
+        <div
+          style={{
+            borderTop: '1px solid var(--b-ink)',
+            borderBottom: '1px solid var(--b-rule)',
+            padding: '20px 4px',
+            marginBottom: 28,
+          }}
+        >
+          <p
+            className="font-body"
+            style={{
+              fontSize: 13,
+              color: 'var(--b-ink-60)',
+              fontStyle: 'italic',
+              lineHeight: 1.55,
+              textAlign: 'center',
+            }}
+          >
+            Didn&rsquo;t see it? Check spam, then resend below.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <motion.button
+            type="button"
+            onClick={handleResend}
+            disabled={sending}
+            whileTap={{ scale: 0.98 }}
+            className="font-body"
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              background: 'transparent',
+              color: 'var(--b-ink)',
+              border: '1px solid var(--b-ink)',
+              cursor: sending ? 'wait' : 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              opacity: sending ? 0.6 : 1,
+            }}
+          >
+            {sending ? 'Sending…' : 'Resend verification →'}
+          </motion.button>
+
+          <motion.button
+            type="button"
+            onClick={() => window.location.reload()}
+            whileTap={{ scale: 0.98 }}
+            className="font-body"
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              background: 'var(--b-ink)',
+              color: 'var(--b-paper)',
+              border: '1px solid var(--b-ink)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}
+          >
+            I&rsquo;ve verified — refresh →
+          </motion.button>
+        </div>
+
+        <p
+          className="font-body"
+          style={{
+            textAlign: 'center',
+            fontSize: 13,
+            color: 'var(--b-ink-60)',
+            marginTop: 28,
+            fontStyle: 'italic',
+          }}
+        >
+          <Link
+            href="/auth/login"
+            className="spread"
+            style={{
+              fontSize: 10,
+              color: 'var(--b-ink)',
+              fontStyle: 'normal',
+              borderBottom: '1px solid var(--b-ink)',
+              paddingBottom: 1,
+            }}
+          >
+            Back to sign in →
+          </Link>
+        </p>
       </motion.div>
     </div>
   );

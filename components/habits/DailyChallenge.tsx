@@ -11,6 +11,14 @@ import { logHabit } from '@/lib/logHabit';
 import { useUIStore } from '@/store/uiStore';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
+/**
+ * Pinned-quest banner. Lives between sections without claiming card
+ * status — visual signal is the colored left edge bar in the
+ * challenge category color, no rounded frame, no glow.
+ *
+ * Editorial Direction B v2: spread eyebrow in accent ink, italic
+ * display headline, hairline rule under the eyebrow.
+ */
 export function DailyChallenge() {
   const { user } = useAuth();
   const { habits } = useHabits();
@@ -61,41 +69,83 @@ export function DailyChallenge() {
   if (completed) return null;
 
   return (
-    // Pinned-quest banner: lives between sections without claiming card status.
-    // Visual signal is the colored left edge bar + a faint horizontal tint —
-    // no rounded frame, no border, no glow. Sits on the page like a Linear
-    // inbox item, distinct because of color not because of enclosure.
     <motion.section
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex items-center gap-2 mb-2.5 px-1">
-        <div
-          className="w-1.5 h-1.5 rounded-full animate-pulse"
-          style={{ background: cat.color, boxShadow: `0 0 6px ${cat.color}` }}
-        />
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 8,
+          marginBottom: 10,
+          padding: '0 4px',
+        }}
+      >
+        <p
+          className="spread"
+          style={{ fontSize: 9, color: 'var(--b-accent)' }}
+        >
           Daily Challenge
         </p>
       </div>
 
       <div
-        className="relative flex items-center gap-3 py-2.5 pl-4 pr-2"
         style={{
-          background: `linear-gradient(90deg, ${cat.color}14 0%, transparent 70%)`,
-          borderLeft: `2px solid ${cat.color}`,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 8px 12px 16px',
+          background: 'var(--b-paper)',
+          borderTop: '1px solid var(--b-rule)',
+          borderBottom: '1px solid var(--b-rule)',
+          borderLeft: `3px solid ${cat.color}`,
         }}
       >
         <CategoryIcon slug={cat.slug} name={cat.name} icon={cat.icon} color={cat.color} size="md" />
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white leading-tight truncate">{challenge.text}</p>
-          <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p
+            className="font-display"
+            style={{
+              fontSize: 15,
+              fontStyle: 'italic',
+              fontWeight: 600,
+              color: 'var(--b-ink)',
+              letterSpacing: '-0.01em',
+              lineHeight: 1.2,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {challenge.text}
+          </p>
+          <div
+            className="font-body tabular"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              marginTop: 2,
+              fontSize: 11,
+              color: 'var(--b-ink-60)',
+            }}
+          >
             <span>{cat.name}</span>
-            <span className="text-slate-700">·</span>
+            <span style={{ color: 'var(--b-ink-40)' }}>·</span>
             <span>{challenge.value} {cat.unit}</span>
-            <span className="text-slate-700">·</span>
-            <span className="inline-flex items-center gap-0.5 text-orange-400 font-mono font-bold">
+            <span style={{ color: 'var(--b-ink-40)' }}>·</span>
+            <span
+              style={{
+                color: 'var(--b-accent)',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
               <svg width={9} height={9} viewBox="0 0 24 24" fill="currentColor">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>

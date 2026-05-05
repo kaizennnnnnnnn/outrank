@@ -19,14 +19,9 @@ import {
 /**
  * Dashboard banner offering streak repair on broken pillars/habits.
  *
- * Shows at most three habits with active repair offers — anything
- * more would dominate the dashboard. Each row: icon, name, the
- * broken streak length, the fragment cost, and a Repair button. Tap
- * Repair → ConfirmDialog → fragment spend → currentStreak restored
- * to previousStreak + 1.
- *
- * Banner self-hides when the offer expires (48h window) or after
- * repair, since the underlying habit fields get cleared.
+ * Editorial Direction B v2: paper background, hairline border, ink
+ * eyebrow, italic display name. The accent left stripe signals "needs
+ * attention" without leaning on red glow.
  */
 export function StreakRepairBanner() {
   const { user } = useAuth();
@@ -63,24 +58,42 @@ export function StreakRepairBanner() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center gap-2 mb-2.5 px-1">
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: '#dc2626', boxShadow: '0 0 6px #dc2626' }}
-          />
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-red-400">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 8,
+            marginBottom: 10,
+            padding: '0 4px',
+          }}
+        >
+          <p
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-accent)' }}
+          >
             Streak Repair
           </p>
-          <span className="text-[10px] font-mono text-slate-500 ml-1">
+          <span
+            className="font-body tabular"
+            style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+          >
             · {repairables.length} broken
           </span>
         </div>
         <AnimatePresence initial={false}>
-          <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
-            {repairables.map((habit) => (
+          <div
+            style={{
+              border: '1px solid var(--b-rule)',
+              borderLeft: '3px solid var(--b-accent)',
+              background: 'var(--b-paper)',
+              overflow: 'hidden',
+            }}
+          >
+            {repairables.map((habit, idx) => (
               <RepairRow
                 key={habit.categorySlug}
                 habit={habit}
+                isFirst={idx === 0}
                 onRepair={() => setConfirming(habit)}
               />
             ))}
@@ -107,9 +120,11 @@ export function StreakRepairBanner() {
 
 function RepairRow({
   habit,
+  isFirst,
   onRepair,
 }: {
   habit: UserHabit;
+  isFirst: boolean;
   onRepair: () => void;
 }) {
   const cost = streakRepairCost(habit.previousStreak || 0);
@@ -120,7 +135,13 @@ function RepairRow({
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -4 }}
-      className="flex items-center gap-3 px-4 py-3"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 16px',
+        borderTop: isFirst ? 'none' : '1px solid var(--b-rule)',
+      }}
     >
       <CategoryIcon
         slug={habit.categorySlug}
@@ -129,14 +150,31 @@ function RepairRow({
         color={habit.color}
         size="md"
       />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-white truncate">{habit.categoryName}</p>
-        <p className="text-[11px] font-mono text-slate-500 mt-0.5">
-          <span className="text-red-300">Was {habit.previousStreak}d</span>
-          <span className="text-slate-700 mx-1.5">·</span>
-          <span style={{ color: habit.color }} className="font-bold">−{cost} frags</span>
-          <span className="text-slate-700 mx-1.5">·</span>
-          <span className="text-amber-300">{hoursLeft}h left</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p
+          className="font-display"
+          style={{
+            fontSize: 14,
+            fontStyle: 'italic',
+            fontWeight: 600,
+            color: 'var(--b-ink)',
+            letterSpacing: '-0.01em',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {habit.categoryName}
+        </p>
+        <p
+          className="font-body tabular"
+          style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 2 }}
+        >
+          <span style={{ color: 'var(--b-accent)' }}>Was {habit.previousStreak}d</span>
+          <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+          <span style={{ color: habit.color, fontWeight: 600 }}>−{cost} frags</span>
+          <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+          <span style={{ color: 'var(--b-ink-60)' }}>{hoursLeft}h left</span>
         </p>
       </div>
       <Button size="sm" variant="secondary" onClick={onRepair}>

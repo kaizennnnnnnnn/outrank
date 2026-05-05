@@ -18,13 +18,14 @@ interface Props {
  * habit.unit). Renders nothing while loading; the parent already shows
  * skeleton placeholders for header/stats above it.
  *
+ * Editorial Direction B v2: paper background, hairline border with a
+ * 2px ink top-rule for emphasis. Eyebrow uses .spread, stat numbers
+ * are font-display tabular italic. Bar chart fills with the pillar's
+ * category color (water blue / sleep indigo / etc.) — no glow.
+ *
  * "Best day" deduplicates by date — if a user logs water 4× in a day
  * we sum to 3.2L rather than counting individual sips as candidates.
  * "Hit rate" is days where the day-sum ≥ habit.goal divided by 30.
- *
- * Mini-chart: last 30 days (oldest → newest left to right). Cell
- * height scales by (day-sum / max-day-sum). Today's cell gets an
- * accent ring.
  */
 export function PillarStatsCard({ habit }: Props) {
   const { user } = useAuth();
@@ -52,15 +53,25 @@ export function PillarStatsCard({ habit }: Props) {
   if (loading) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-32 rounded-2xl" />
+        <Skeleton className="h-32" />
       </div>
     );
   }
 
   if (daySum.size === 0) {
     return (
-      <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] p-4 text-center">
-        <p className="text-[12px] text-slate-500">
+      <div
+        style={{
+          background: 'var(--b-paper)',
+          border: '1px solid var(--b-rule)',
+          padding: 16,
+          textAlign: 'center',
+        }}
+      >
+        <p
+          className="font-body"
+          style={{ fontSize: 12, color: 'var(--b-ink-60)', fontStyle: 'italic' }}
+        >
           Log this pillar a few times — stats unlock once there&rsquo;s data to chart.
         </p>
       </div>
@@ -86,54 +97,65 @@ export function PillarStatsCard({ habit }: Props) {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border overflow-hidden"
       style={{
-        background: `linear-gradient(160deg, ${habit.color}10 0%, rgba(11,11,20,0.7) 70%)`,
-        borderColor: `${habit.color}33`,
+        background: 'var(--b-paper)',
+        border: '1px solid var(--b-rule)',
+        borderTop: '2px solid var(--b-ink)',
+        overflow: 'hidden',
       }}
     >
-      <div className="flex items-center gap-2 px-4 pt-4 mb-3">
-        <span
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ background: habit.color, boxShadow: `0 0 6px ${habit.color}` }}
-        />
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: habit.color }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '16px 16px 12px',
+        }}
+      >
+        <p
+          className="spread"
+          style={{ fontSize: 9, color: habit.color }}
+        >
           30-day stats
         </p>
       </div>
 
       {/* Stat tiles */}
-      <div className="grid grid-cols-2 gap-2 px-4 mb-4">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 8,
+          padding: '0 16px',
+          marginBottom: 16,
+        }}
+      >
         <Tile
           label="7-day avg"
           value={fmt(weeklyAvg)}
           unit={habit.unit}
-          color={habit.color}
         />
         <Tile
           label="30-day avg"
           value={fmt(monthlyAvg)}
           unit={habit.unit}
-          color={habit.color}
         />
         <Tile
           label="Best day"
           value={fmt(bestDay.value)}
           unit={habit.unit}
-          color={habit.color}
           subtitle={bestDay.value > 0 ? bestDay.dateKey : 'no logs yet'}
         />
         <Tile
           label="Goal hit"
           value={`${Math.round(hitRate * 100)}%`}
           unit=""
-          color={habit.color}
           subtitle={`${last30Cells.filter((c) => c.value >= habit.goal).length}/30 days`}
         />
       </div>
 
       {/* Mini bar chart */}
-      <div className="px-4 pb-4">
+      <div style={{ padding: '0 16px 16px' }}>
         <div className="flex items-end gap-[2px] h-16">
           {last30Cells.map((cell) => {
             const pct = cell.value > 0 ? Math.max(0.04, cell.value / max30) : 0;
@@ -141,26 +163,35 @@ export function PillarStatsCard({ habit }: Props) {
             return (
               <div
                 key={cell.dateKey}
-                className="flex-1 rounded-sm relative"
+                className="flex-1 relative"
                 title={`${cell.dateKey}: ${fmt(cell.value)}${habit.unit ? habit.unit : ''}${goalMet ? ' · goal met' : ''}`}
                 style={{
                   height: `${pct * 100}%`,
                   minHeight: cell.value > 0 ? '3px' : '2px',
                   background: cell.value === 0
-                    ? 'rgba(255,255,255,0.04)'
+                    ? 'var(--b-rule)'
                     : goalMet
-                      ? `linear-gradient(to top, ${habit.color}88, ${habit.color})`
-                      : `linear-gradient(to top, ${habit.color}55, ${habit.color}99)`,
+                      ? habit.color
+                      : 'var(--b-ink)',
                   border: cell.isToday
                     ? `1px solid ${habit.color}`
                     : '1px solid transparent',
-                  boxShadow: goalMet ? `0 0 4px ${habit.color}66` : undefined,
+                  opacity: goalMet ? 1 : (cell.value === 0 ? 1 : 0.6),
                 }}
               />
             );
           })}
         </div>
-        <div className="flex justify-between mt-1.5 text-[9px] font-mono text-slate-600">
+        <div
+          className="font-body tabular"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: 6,
+            fontSize: 9,
+            color: 'var(--b-ink-40)',
+          }}
+        >
           <span>30d ago</span>
           <span>today</span>
         </div>
@@ -173,24 +204,63 @@ function Tile({
   label,
   value,
   unit,
-  color,
   subtitle,
 }: {
   label: string;
   value: string;
   unit: string;
-  color: string;
   subtitle?: string;
 }) {
   return (
-    <div className="rounded-xl p-3 bg-white/[0.02] border border-white/[0.04]">
-      <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">{label}</p>
-      <p className="font-heading text-xl font-bold mt-1" style={{ color }}>
+    <div
+      style={{
+        padding: 12,
+        background: 'transparent',
+        border: '1px solid var(--b-rule)',
+      }}
+    >
+      <p
+        className="spread"
+        style={{ fontSize: 9, color: 'var(--b-ink-40)' }}
+      >
+        {label}
+      </p>
+      <p
+        className="font-display tabular"
+        style={{
+          fontSize: 22,
+          fontStyle: 'italic',
+          fontWeight: 600,
+          marginTop: 4,
+          color: 'var(--b-ink)',
+          letterSpacing: '-0.02em',
+          lineHeight: 1,
+        }}
+      >
         {value}
-        {unit && <span className="text-slate-500 text-xs font-mono ml-1">{unit}</span>}
+        {unit && (
+          <span
+            className="font-body"
+            style={{
+              fontSize: 11,
+              color: 'var(--b-ink-40)',
+              marginLeft: 4,
+              fontStyle: 'normal',
+              fontWeight: 500,
+              letterSpacing: '0.05em',
+            }}
+          >
+            {unit}
+          </span>
+        )}
       </p>
       {subtitle && (
-        <p className="text-[9px] font-mono text-slate-600 mt-0.5">{subtitle}</p>
+        <p
+          className="font-body tabular"
+          style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 2 }}
+        >
+          {subtitle}
+        </p>
       )}
     </div>
   );

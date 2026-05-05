@@ -12,76 +12,205 @@ interface DuelVsScreenProps {
 }
 
 export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsScreenProps) {
+  const total = Math.max(1, player1.score + player2.score);
+  const p1Pct = (player1.score / total) * 100;
+  const p2Pct = (player2.score / total) * 100;
+  const leader =
+    player1.score === player2.score ? 'tie'
+      : player1.score > player2.score ? 'p1' : 'p2';
+
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-[#10101a] to-[#0d0d15] border border-[#1e1e30] p-8">
-      {/* Background glow effects */}
-      <div className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-red-600/5 to-transparent" />
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-orange-600/5 to-transparent" />
+    <div
+      className="dir-b"
+      style={{
+        background: 'transparent',
+        border: '1px solid var(--b-rule)',
+        borderTop: '2px solid var(--b-ink)',
+        padding: 28,
+        color: 'var(--b-ink)',
+      }}
+    >
+      <div style={{ textAlign: 'center', marginBottom: 18 }}>
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+          The Duel
+        </div>
+        <p
+          className="font-body"
+          style={{
+            fontSize: 11,
+            color: 'var(--b-ink-60)',
+            marginTop: 4,
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+          }}
+        >
+          {title}
+        </p>
+      </div>
 
-      <p className="text-center text-xs text-slate-500 mb-6">{title}</p>
-
-      <div className="flex items-center justify-between">
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
         {/* Player 1 */}
         <motion.div
-          initial={{ x: -100, opacity: 0 }}
+          initial={{ x: -40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: 'spring', duration: 0.6 }}
-          className="flex flex-col items-center gap-3"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+          }}
         >
           <Avatar src={player1.avatarUrl} alt={player1.username} size="xl" />
-          <p className="text-sm font-bold text-orange-400">{player1.username}</p>
-          <p className="font-mono text-4xl font-bold text-white">{player1.score}</p>
+          <p
+            className="font-body"
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--b-ink)',
+              margin: 0,
+            }}
+          >
+            {player1.username}
+          </p>
+          <p
+            className="font-display tabular"
+            style={{
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: 38,
+              lineHeight: 1,
+              color: leader === 'p1' ? 'var(--b-accent)' : 'var(--b-ink)',
+              margin: 0,
+            }}
+          >
+            {player1.score}
+          </p>
         </motion.div>
 
-        {/* VS Center */}
+        {/* VS Center — hairline divider both sides */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', delay: 0.3, duration: 0.5 }}
-          className="flex flex-col items-center gap-2"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+            padding: '0 16px',
+            borderLeft: '1px solid var(--b-rule)',
+            borderRight: '1px solid var(--b-rule)',
+            alignSelf: 'stretch',
+            justifyContent: 'center',
+            minHeight: 140,
+          }}
         >
-          <span className="font-heading text-4xl font-bold text-slate-500">VS</span>
+          <span
+            className="font-display"
+            style={{
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: 56,
+              lineHeight: 1,
+              color: 'var(--b-ink)',
+            }}
+          >
+            vs
+          </span>
           {timeRemaining && (
-            <div className="text-center">
-              <p className="text-xs text-slate-600">Time left</p>
-              <p className="font-mono text-sm font-bold text-white">{timeRemaining}</p>
+            <div style={{ textAlign: 'center', marginTop: 6 }}>
+              <p className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+                Time Left
+              </p>
+              <p
+                className="font-mono tabular"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--b-ink)',
+                  marginTop: 2,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {timeRemaining}
+              </p>
             </div>
           )}
         </motion.div>
 
         {/* Player 2 */}
         <motion.div
-          initial={{ x: 100, opacity: 0 }}
+          initial={{ x: 40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ type: 'spring', duration: 0.6 }}
-          className="flex flex-col items-center gap-3"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+          }}
         >
           <Avatar src={player2.avatarUrl} alt={player2.username} size="xl" />
-          <p className="text-sm font-bold text-orange-400">{player2.username}</p>
-          <p className="font-mono text-4xl font-bold text-white">{player2.score}</p>
+          <p
+            className="font-body"
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--b-ink)',
+              margin: 0,
+            }}
+          >
+            {player2.username}
+          </p>
+          <p
+            className="font-display tabular"
+            style={{
+              fontStyle: 'italic',
+              fontWeight: 500,
+              fontSize: 38,
+              lineHeight: 1,
+              color: leader === 'p2' ? 'var(--b-accent)' : 'var(--b-ink)',
+              margin: 0,
+            }}
+          >
+            {player2.score}
+          </p>
         </motion.div>
       </div>
 
-      {/* Score difference bar */}
-      <div className="mt-8">
-        <div className="w-full h-2 bg-[#18182a] rounded-full overflow-hidden flex">
-          <div
-            className="h-full bg-gradient-to-r from-red-600 to-orange-400 rounded-l-full transition-all duration-500"
-            style={{
-              width: `${player1.score + player2.score > 0
-                ? (player1.score / (player1.score + player2.score)) * 100
-                : 50}%`,
-            }}
-          />
-          <div
-            className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-r-full transition-all duration-500"
-            style={{
-              width: `${player1.score + player2.score > 0
-                ? (player2.score / (player1.score + player2.score)) * 100
-                : 50}%`,
-            }}
-          />
-        </div>
+      {/* Score split rule */}
+      <div
+        style={{
+          marginTop: 28,
+          height: 3,
+          display: 'flex',
+          border: '1px solid var(--b-ink)',
+        }}
+      >
+        <div
+          style={{
+            height: '100%',
+            width: `${p1Pct}%`,
+            background: leader === 'p1' ? 'var(--b-accent)' : 'var(--b-ink-40)',
+            transition: 'width 500ms ease',
+          }}
+        />
+        <div
+          style={{
+            height: '100%',
+            width: `${p2Pct}%`,
+            background: leader === 'p2' ? 'var(--b-accent)' : 'var(--b-ink-40)',
+            transition: 'width 500ms ease',
+          }}
+        />
       </div>
     </div>
   );

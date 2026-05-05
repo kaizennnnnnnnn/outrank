@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LEVEL_REWARDS, LevelReward } from '@/constants/levelRewards';
 import { LEVELS } from '@/constants/levels';
-import { cn } from '@/lib/utils';
 
 function xpForLevel(lv: number): number {
   const found = LEVELS.find((l) => l.level === lv);
@@ -18,15 +17,27 @@ interface Props {
   currentXP: number;
 }
 
-const tierStyles: Record<LevelReward['tier'], { text: string; bg: string; border: string; label: string }> = {
-  minor:    { text: '#cbd5e1', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.22)', label: 'Tick' },
-  medium:   { text: '#60a5fa', bg: 'rgba(59,130,246,0.12)',  border: 'rgba(59,130,246,0.35)',  label: 'Milestone' },
-  major:    { text: '#fbbf24', bg: 'rgba(245,158,11,0.14)',  border: 'rgba(245,158,11,0.45)',  label: 'Major' },
-  capstone: { text: '#f9a8d4', bg: 'rgba(236,72,153,0.16)',  border: 'rgba(236,72,153,0.55)',  label: 'Capstone' },
+const tierColor: Record<LevelReward['tier'], string> = {
+  minor:    'var(--b-ink-60)',
+  medium:   'var(--b-ink)',
+  major:    'var(--b-accent)',
+  capstone: 'var(--b-accent)',
 };
 
+const tierLabel: Record<LevelReward['tier'], string> = {
+  minor:    'Tick',
+  medium:   'Milestone',
+  major:    'Major',
+  capstone: 'Capstone',
+};
+
+/**
+ * Editorial Direction B v2 level rewards modal. Italic Fraunces title;
+ * level rows are a hairline ledger with mono numerals on the left and
+ * a tier eyebrow + reward sentence on the right. The current level row
+ * gets a 2px ink left rule and a small "Current" cap.
+ */
 export function LevelRewardsModal({ isOpen, onClose, currentLevel, currentXP }: Props) {
-  // Progress toward the next level — animated from 0 to actual on open.
   const currentLevelXP = xpForLevel(currentLevel);
   const nextLevelXP = xpForLevel(currentLevel + 1);
   const xpInLevel = Math.max(0, currentXP - currentLevelXP);
@@ -37,13 +48,11 @@ export function LevelRewardsModal({ isOpen, onClose, currentLevel, currentXP }: 
   const [animatedXP, setAnimatedXP] = useState(0);
   useEffect(() => {
     if (!isOpen) { setAnimatedProgress(0); setAnimatedXP(0); return; }
-    // Animate to the actual progress over ~900ms
     const start = performance.now();
     const duration = 900;
     let raf = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      // Ease-out quad
       const eased = 1 - (1 - t) * (1 - t);
       setAnimatedProgress(progress * eased);
       setAnimatedXP(Math.round(xpInLevel * eased));
@@ -59,52 +68,107 @@ export function LevelRewardsModal({ isOpen, onClose, currentLevel, currentXP }: 
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 z-[190] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="dir-b"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 190,
+            background: 'rgba(20, 18, 14, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
         >
           <motion.div
-            initial={{ scale: 0.92, y: 16 }}
+            initial={{ scale: 0.96, y: 12 }}
             animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0 }}
+            exit={{ scale: 0.97, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-lg max-h-[85vh] rounded-2xl border border-[#1e1e30] bg-gradient-to-b from-[#12121c] to-[#07070c] overflow-hidden flex flex-col"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 540,
+              maxHeight: '85vh',
+              background: 'var(--b-paper)',
+              color: 'var(--b-ink)',
+              border: '1px solid var(--b-ink)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
           >
             {/* Header */}
-            <div className="p-5 border-b border-[#1e1e30]">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400">
+            <div style={{ padding: '18px 20px', borderBottom: '1px solid var(--b-ink)' }}>
+              <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
                 Level Progression
-              </p>
-              <div className="mt-1 flex items-end justify-between">
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 4 }}>
                 <div>
-                  <p className="font-heading text-3xl font-bold text-white">
+                  <p
+                    className="font-display tabular"
+                    style={{
+                      fontSize: 36,
+                      fontStyle: 'italic',
+                      fontWeight: 500,
+                      lineHeight: 1,
+                      margin: 0,
+                    }}
+                  >
                     Level {currentLevel}
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    {currentXP.toLocaleString()} XP total
+                  <p
+                    className="font-mono tabular"
+                    style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 4 }}
+                  >
+                    {currentXP.toLocaleString()} XP TOTAL
                   </p>
                 </div>
                 <button
                   onClick={onClose}
-                  className="text-xs text-slate-500 hover:text-white"
+                  className="spread"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    fontSize: 9,
+                    color: 'var(--b-ink-60)',
+                  }}
                 >
                   Close
                 </button>
               </div>
 
-              {/* Animated progress bar toward the next level */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                  <span>Progress to Level {currentLevel + 1}</span>
-                  <span className="font-mono">
+              {/* Animated progress bar */}
+              <div style={{ marginTop: 14 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    justifyContent: 'space-between',
+                    marginBottom: 4,
+                  }}
+                >
+                  <span
+                    className="font-body"
+                    style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
+                  >
+                    Progress to Level {currentLevel + 1}
+                  </span>
+                  <span
+                    className="font-mono tabular"
+                    style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+                  >
                     {animatedXP.toLocaleString()} / {xpNeeded.toLocaleString()} XP
                   </span>
                 </div>
-                <div className="h-2.5 bg-[#18182a] rounded-full overflow-hidden">
+                <div style={{ height: 2, background: 'var(--b-rule)', overflow: 'hidden' }}>
                   <div
-                    className="h-full rounded-full"
                     style={{
                       width: `${Math.max(2, animatedProgress * 100)}%`,
-                      background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24)',
-                      boxShadow: '0 0 10px rgba(249,115,22,0.7)',
+                      height: '100%',
+                      background: 'var(--b-accent)',
                       transition: 'width 40ms linear',
                     }}
                   />
@@ -113,81 +177,114 @@ export function LevelRewardsModal({ isOpen, onClose, currentLevel, currentXP }: 
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
-              {LEVEL_REWARDS.map((r) => {
-                const xpNeeded = xpForLevel(r.level);
-                const isPast = r.level <= currentLevel;
-                const isCurrent = r.level === currentLevel;
-                const isNext = r.level === currentLevel + 1;
-                const s = tierStyles[r.tier];
-                return (
-                  <div
-                    key={r.level}
-                    className={cn(
-                      'relative rounded-xl p-3 flex items-center gap-3 transition-all',
-                      isCurrent && 'ring-1 ring-orange-500/60',
-                    )}
-                    style={{
-                      background: isPast
-                        ? `linear-gradient(145deg, ${s.bg}, #0b0b14 60%)`
-                        : '#0b0b14',
-                      border: `1px solid ${isPast ? s.border : '#1e1e30'}`,
-                      opacity: isPast || isCurrent || isNext ? 1 : 0.55,
-                    }}
-                  >
-                    {/* Level badge */}
-                    <div
-                      className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 font-heading font-bold"
+            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 20px 14px' }}>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {LEVEL_REWARDS.map((r) => {
+                  const xpAt = xpForLevel(r.level);
+                  const isPast = r.level <= currentLevel;
+                  const isCurrent = r.level === currentLevel;
+                  const isNext = r.level === currentLevel + 1;
+                  const color = tierColor[r.tier];
+                  return (
+                    <li
+                      key={r.level}
                       style={{
-                        background: isPast ? `${s.bg}` : '#0c0c16',
-                        border: `1px solid ${isPast ? s.border : '#1e1e30'}`,
-                        color: isPast ? s.text : '#475569',
-                        boxShadow: r.tier === 'capstone' && isPast ? `0 0 10px ${s.text}55` : undefined,
+                        display: 'grid',
+                        gridTemplateColumns: '46px 1fr auto',
+                        gap: 12,
+                        alignItems: 'center',
+                        padding: '12px 0',
+                        borderBottom: '1px solid var(--b-rule)',
+                        borderLeft: isCurrent ? '2px solid var(--b-accent)' : '2px solid transparent',
+                        paddingLeft: isCurrent ? 10 : 0,
+                        opacity: isPast || isCurrent || isNext ? 1 : 0.55,
                       }}
                     >
-                      {r.level}
-                    </div>
-
-                    {/* Reward */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                          style={{ color: s.text, background: s.bg, border: `1px solid ${s.border}` }}
+                      <span
+                        className="font-display tabular"
+                        style={{
+                          fontSize: 24,
+                          fontStyle: 'italic',
+                          fontWeight: 500,
+                          color: isPast ? 'var(--b-ink)' : 'var(--b-ink-40)',
+                          textAlign: 'right',
+                        }}
+                      >
+                        {r.level}
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                          <span
+                            className="spread"
+                            style={{ fontSize: 9, color }}
+                          >
+                            {tierLabel[r.tier]}
+                          </span>
+                          <span
+                            className="font-mono tabular"
+                            style={{ fontSize: 9, color: 'var(--b-ink-40)' }}
+                          >
+                            {xpAt.toLocaleString()} XP
+                          </span>
+                        </div>
+                        <p
+                          className="font-body"
+                          style={{
+                            fontSize: 13,
+                            color: 'var(--b-ink)',
+                            margin: '3px 0 0',
+                            lineHeight: 1.4,
+                          }}
                         >
-                          {s.label}
-                        </span>
-                        <span className="text-[10px] text-slate-600 font-mono">
-                          {xpNeeded.toLocaleString()} XP
-                        </span>
+                          +{r.fragments} fragments
+                          {r.extra && (
+                            <span style={{ color: 'var(--b-ink-60)' }}> · {r.extra}</span>
+                          )}
+                        </p>
                       </div>
-                      <p className="text-sm font-semibold text-white mt-0.5">
-                        +{r.fragments} fragments
-                        {r.extra && <span className="text-slate-400 font-normal"> · {r.extra}</span>}
-                      </p>
-                    </div>
+                      <span
+                        className="spread"
+                        style={{
+                          fontSize: 8,
+                          color: isCurrent ? 'var(--b-accent)' : 'var(--b-ink-40)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {isCurrent ? 'Current' : isPast ? 'Claimed' : isNext ? 'Next' : ''}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
 
-                    {/* Status chip */}
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap">
-                      {isPast ? (isCurrent ? 'Current' : 'Claimed') : isNext ? 'Next' : ''}
-                    </span>
-                  </div>
-                );
-              })}
-
-              {/* After 50 — prestige prompt */}
+              {/* After 50 — prestige */}
               <div
-                className="mt-4 rounded-xl p-4 text-center"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(236,72,153,0.14), #0b0b14 60%)',
-                  border: '1px solid rgba(236,72,153,0.35)',
+                  marginTop: 16,
+                  padding: '12px 14px',
+                  borderTop: '2px solid var(--b-ink)',
+                  borderBottom: '1px solid var(--b-ink)',
+                  textAlign: 'center',
                 }}
               >
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-300">
+                <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
                   After Level 50
+                </div>
+                <p
+                  className="font-display"
+                  style={{
+                    fontSize: 18,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    margin: '4px 0 4px',
+                  }}
+                >
+                  Prestige unlocks.
                 </p>
-                <p className="text-sm text-white mt-1 font-semibold">Prestige unlocks</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p
+                  className="font-body"
+                  style={{ fontSize: 11, color: 'var(--b-ink-60)', margin: 0, lineHeight: 1.5 }}
+                >
                   Reset to Level 1 with a permanent +1% XP multiplier per ascension.
                 </p>
               </div>

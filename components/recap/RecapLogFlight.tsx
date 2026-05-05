@@ -100,6 +100,9 @@ function FlightChip({
   arcLiftY: number;
   onLanded: () => void;
 }) {
+  // Subtle rotation lifecycle — slight tilt at liftoff (like a slip
+  // of paper coming free), straightening mid-flight, snapping flat
+  // at landing. Reads as a clipping being filed, not a digital chip.
   return (
     <motion.div
       className="absolute"
@@ -109,12 +112,14 @@ function FlightChip({
         y: flight.fromY,
         scale: 1,
         opacity: 0,
+        rotate: -6,
       }}
       animate={{
         x: [flight.fromX, arcMidX, flight.toX],
         y: [flight.fromY, arcLiftY, flight.toY],
-        scale: [1, 0.95, 0.6],
-        opacity: [0, 1, 1, 0.85],
+        scale: [1, 0.92, 0.5],
+        opacity: [0, 1, 1, 0.9],
+        rotate: [-6, 2, 0],
       }}
       transition={{
         duration: CHIP_DURATION,
@@ -134,8 +139,8 @@ function FlightChip({
             borderLeft: `3px solid ${flight.categoryColor}`,
             padding: '8px 12px',
             gap: 10,
-            // Single soft drop so the card reads as paper above other paper,
-            // without breaking the flat aesthetic. No colored glow.
+            // Soft drop so the card reads as paper above other paper.
+            // No colored glow; the shadow is pure ink.
             boxShadow: '0 6px 18px -8px rgba(0,0,0,0.45)',
           }}
         >
@@ -183,9 +188,11 @@ function FlightChip({
 }
 
 /**
- * Landing mark at the destination. Single hairline ring expanding +
- * four small ink dots radiating in cardinals. Reads as the recap panel
- * acknowledging receipt, not a fireworks burst.
+ * Landing mark — a wax-stamp impression. Two rings layered: an outer
+ * thick category-colored ring that punches in from large→small (the
+ * stamp settling onto paper), and a hairline inner ring that opens
+ * from small→large (ink spreading into the paper grain). Plus four
+ * cardinal ink dots for character.
  */
 function FlightSplash({ flight, onDone }: { flight: RecapFlight; onDone: () => void }) {
   const dots = [
@@ -197,6 +204,25 @@ function FlightSplash({ flight, onDone }: { flight: RecapFlight; onDone: () => v
 
   return (
     <>
+      {/* Outer ring — stamp settling: large → small + fade */}
+      <motion.div
+        className="absolute"
+        style={{
+          left: 0,
+          top: 0,
+          width: 28,
+          height: 28,
+          marginLeft: -14,
+          marginTop: -14,
+          border: `2px solid ${flight.categoryColor}`,
+          x: flight.toX,
+          y: flight.toY,
+        }}
+        initial={{ scale: 2.4, opacity: 0 }}
+        animate={{ scale: 1, opacity: [0, 1, 0.6] }}
+        transition={{ duration: SPLASH_DURATION * 0.55, ease: [0.34, 1.4, 0.64, 1] }}
+      />
+      {/* Inner hairline — ink bleeding into paper: small → large + fade */}
       <motion.div
         className="absolute"
         style={{

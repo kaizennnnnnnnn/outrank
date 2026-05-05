@@ -8,7 +8,6 @@ import { useUIStore } from '@/store/uiStore';
 import { Workout, WorkoutExercise, SetLog } from '@/types/gym';
 import { ExerciseSetLogger } from './ExerciseSetLogger';
 import { RestTimer } from './RestTimer';
-import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { updateWorkoutSets, completeWorkout } from '@/lib/gym';
 import { haptic } from '@/lib/haptics';
@@ -20,15 +19,12 @@ interface Props {
 }
 
 /**
- * Active workout orchestrator. Renders each prescribed exercise as an
- * ExerciseSetLogger card, tracks which exercise is currently "active"
- * (the one whose sets aren't fully done), drives the rest timer
- * between sets, and handles workout completion → fires the gym log →
- * routes back to /gym with the recap flight in motion.
+ * Editorial Direction B v2 active-workout orchestrator. Hairline header
+ * with italic Fraunces day name, mono progress counter, flat ink fill
+ * progress bar, and a single-action Finish/End-early control.
  *
- * Persistence: every set update writes through to the workout doc via
- * updateWorkoutSets. The doc is the source of truth — refreshing the
- * page mid-workout doesn't lose state.
+ * The exercise stack and rest timer are unchanged in behaviour — they
+ * have their own conversions; this file only changes the chrome.
  */
 export function ActiveWorkoutSession({ workoutId, workout }: Props) {
   const router = useRouter();
@@ -36,14 +32,11 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
   const addToast = useUIStore((s) => s.addToast);
   const [exercises, setExercises] = useState<WorkoutExercise[]>(workout.exercises);
   const [restSeconds, setRestSeconds] = useState(0);
-  const [restNonce, setRestNonce] = useState(0); // forces RestTimer remount to re-trigger
+  const [restNonce, setRestNonce] = useState(0);
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [burst, setBurst] = useState(0);
 
-  // The "active" exercise is the first one with incomplete sets — the
-  // user's natural focus point. Once everything is done we let any of
-  // them stay editable.
   const activeIdx = exercises.findIndex((ex) => ex.sets.some((s) => !s.completed));
   const allDone = activeIdx === -1;
 
@@ -60,9 +53,7 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
     try {
       await updateWorkoutSets(user.uid, workoutId, next);
     } catch {
-      // Non-fatal — local state still reflects the user's input. They
-      // can finish the workout and the completeWorkout call will write
-      // the final state.
+      // Non-fatal — local state still reflects the user's input.
     }
   };
 
@@ -86,7 +77,6 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
       haptic('success');
       setBurst((n) => n + 1);
       addToast({ type: 'success', message: 'Workout complete — filed to today\'s record.' });
-      // Brief delay so the burst is visible before route change
       setTimeout(() => router.push('/gym'), 600);
     } catch {
       addToast({ type: 'error', message: 'Could not save workout' });
@@ -94,62 +84,91 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
     }
   };
 
-  return (
-    <div className="max-w-3xl mx-auto space-y-5 pb-32">
-      <ParticleBurst trigger={burst} color="#ef4444" count={50} />
+  const finishLabel = allDone ? 'Finish' : 'End early';
+  const finishIsCta = allDone;
 
-      {/* Header — program/day + progress bar + finish button */}
+  return (
+    <div style={{ maxWidth: 720, margin: '0 auto', paddingBottom: 128 }}>
+      <ParticleBurst trigger={burst} color="#a85a3a" count={50} />
+
+      {/* Header — program/day + progress + finish button */}
       <div
-        className="relative overflow-hidden rounded-2xl border p-4"
         style={{
-          background:
-            'radial-gradient(ellipse 100% 80% at 100% 0%, rgba(239,68,68,0.18), transparent 55%),' +
-            'linear-gradient(160deg, #10101a 0%, #0b0b14 100%)',
-          borderColor: 'rgba(239,68,68,0.25)',
-          boxShadow: '0 0 24px -14px rgba(239,68,68,0.4), inset 0 1px 0 rgba(239,68,68,0.08)',
+          padding: '14px 0 14px 14px',
+          borderTop: '2px solid var(--b-ink)',
+          borderBottom: '1px solid var(--b-ink)',
+          borderLeft: '2px solid var(--b-accent)',
+          marginBottom: 18,
         }}
       >
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-red-400">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="spread" style={{ fontSize: 9, color: 'var(--b-accent)' }}>
               Active Workout
-            </p>
-            <h1 className="font-heading text-xl font-bold text-white mt-0.5 leading-none">
+            </div>
+            <h1
+              className="font-display"
+              style={{
+                fontSize: 24,
+                fontStyle: 'italic',
+                fontWeight: 500,
+                lineHeight: 1.05,
+                margin: '4px 0 0',
+                color: 'var(--b-ink)',
+              }}
+            >
               {workout.dayName}
             </h1>
-            <p className="text-[11px] font-mono text-slate-500 mt-1">{workout.programName}</p>
+            <p
+              className="font-mono tabular"
+              style={{ fontSize: 10, color: 'var(--b-ink-60)', margin: '4px 0 0', letterSpacing: '0.04em' }}
+            >
+              {workout.programName}
+            </p>
           </div>
-          <Button
-            variant={allDone ? 'primary' : 'secondary'}
-            size="sm"
+          <button
             onClick={() => setConfirmFinish(true)}
-            loading={completing}
+            disabled={completing}
+            className="font-body"
+            style={{
+              flexShrink: 0,
+              height: 32,
+              padding: '0 14px',
+              border: '1px solid var(--b-ink)',
+              background: finishIsCta ? 'var(--b-ink)' : 'transparent',
+              color: finishIsCta ? 'var(--b-paper)' : 'var(--b-ink)',
+              fontWeight: 700,
+              fontSize: 10,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              cursor: completing ? 'not-allowed' : 'pointer',
+              opacity: completing ? 0.6 : 1,
+            }}
           >
-            {allDone ? 'Finish' : 'End early'}
-          </Button>
+            {completing ? '…' : finishLabel}
+          </button>
         </div>
 
         {/* Progress bar */}
-        <div className="w-full h-1.5 bg-[#0d0d15] rounded-full overflow-hidden border border-[#1e1e30]">
+        <div style={{ width: '100%', height: 2, background: 'var(--b-rule)', overflow: 'hidden', marginRight: 14 }}>
           <motion.div
-            className="h-full rounded-full"
-            style={{
-              background: 'linear-gradient(90deg, #dc2626, #f97316, #fbbf24)',
-              boxShadow: '0 0 10px rgba(239,68,68,0.6)',
-            }}
+            style={{ height: '100%', background: 'var(--b-accent)' }}
             initial={false}
             animate={{ width: `${(completedSets / Math.max(totalSets, 1)) * 100}%` }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           />
         </div>
-        <p className="text-[10px] font-mono text-slate-500 mt-1.5">
-          <span className="text-white">{completedSets}</span>
-          <span className="text-slate-600"> / {totalSets} sets</span>
+        <p
+          className="font-mono tabular"
+          style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 6 }}
+        >
+          <span style={{ color: 'var(--b-ink)' }}>{completedSets}</span>
+          <span> / {totalSets} sets</span>
         </p>
       </div>
 
       {/* Exercise stack */}
-      <div className="space-y-3">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {exercises.map((ex, i) => (
           <ExerciseSetLogger
             key={`${ex.exerciseId}-${i}`}
@@ -161,14 +180,13 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
         ))}
       </div>
 
-      {/* Rest timer — only one slot, parent controls when it shows.
-          Remount via key={restNonce} so a new set restarts cleanly. */}
+      {/* Rest timer */}
       {restSeconds > 0 && (
         <RestTimer
           key={restNonce}
           seconds={restSeconds}
           onDone={() => setRestSeconds(0)}
-          color="#ef4444"
+          color="var(--b-accent)"
         />
       )}
 

@@ -1,10 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
 import { MiniOrb } from '@/components/profile/MiniOrb';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 interface LeaderboardRowProps {
@@ -24,82 +22,115 @@ interface LeaderboardRowProps {
   orbRingColor?: string;
 }
 
-const rankColors: Record<number, string> = {
-  1: 'text-yellow-400',
-  2: 'text-slate-300',
-  3: 'text-amber-700',
-};
-
-function MedalIcon({ rank }: { rank: number }) {
-  if (rank > 3) return null;
-  return (
-    <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="14" r="6" fill="currentColor" opacity="0.15" />
-      <circle cx="12" cy="14" r="6" />
-      <path d="M8.21 13.89L7 22l5-3 5 3-1.21-8.12" />
-      <path d="M15 2h-2l-1 4-1-4H9" />
-    </svg>
-  );
-}
+// Roman numerals for the top three — magazine convention shared with
+// the editorial /leaderboard page.
+const romans = ['I', 'II', 'III'];
 
 export function LeaderboardRow({
-  rank, username, avatarUrl, score, delta, isCurrentUser, index,
+  rank, username, avatarUrl, score, delta, isCurrentUser,
   frameId, nameEffectId,
   orbTier, orbBaseColor, orbPulseColor, orbRingColor,
 }: LeaderboardRowProps) {
+  const isPodium = rank <= 3;
+  const rankLabel = isPodium ? romans[rank - 1] : String(rank);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: Math.min(index * 0.03, 0.4) }}
-      className={cn(
-        'flex items-center gap-3 px-4 py-3 hover:bg-[#1e1e30]/50 transition-colors',
-        isCurrentUser && 'bg-red-500/5 border-l-2 border-red-500'
-      )}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '38px 1fr auto',
+        gap: 12,
+        alignItems: 'center',
+        padding: '12px 0',
+        borderBottom: '1px solid var(--b-rule)',
+        background: isCurrentUser ? 'var(--b-paper-2, transparent)' : 'transparent',
+        borderLeft: isCurrentUser ? '3px solid var(--b-accent)' : 'none',
+        paddingLeft: isCurrentUser ? 12 : 0,
+      }}
     >
       {/* Rank */}
-      <div className={cn('w-8 flex items-center justify-center', rankColors[rank] || 'text-slate-600')}>
-        {rank <= 3 ? <MedalIcon rank={rank} /> : <span className="font-mono text-sm font-bold text-slate-600">#{rank}</span>}
+      <div
+        className="font-display tabular"
+        style={{
+          fontSize: isPodium ? 22 : 14,
+          fontStyle: isPodium ? 'italic' : 'normal',
+          fontWeight: 500,
+          textAlign: 'right',
+          color: isPodium ? 'var(--b-ink)' : 'var(--b-ink-40)',
+          letterSpacing: isPodium ? 0 : '0.02em',
+        }}
+      >
+        {rankLabel}
       </div>
 
-      {/* Avatar (with frame) */}
-      <Link href={`/profile/${username}`} className="flex items-center gap-2.5 flex-1 min-w-0">
+      {/* Avatar + name */}
+      <Link
+        href={`/profile/${username}`}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          minWidth: 0,
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
         <FramedAvatar src={avatarUrl} alt={username} size="sm" frameId={frameId} />
-
-        <div className="flex-1 min-w-0 flex items-center gap-1.5">
+        <div
+          style={{
+            minWidth: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
           <NamePlate
             name={username}
             effectId={nameEffectId}
             size="sm"
-            className={cn('truncate', isCurrentUser && !nameEffectId && 'text-orange-400')}
+            className="truncate"
           />
-          {isCurrentUser && <span className="text-[10px] text-orange-500 font-medium">(you)</span>}
-          {/* Mini orb — tiny animated companion showing the user's orb cosmetics */}
+          {isCurrentUser && (
+            <span
+              className="spread"
+              style={{ fontSize: 8, color: 'var(--b-accent)' }}
+            >
+              You
+            </span>
+          )}
           {orbTier !== undefined && (
             <MiniOrb
               tier={orbTier}
               baseColorId={orbBaseColor}
               pulseColorId={orbPulseColor}
               ringColorId={orbRingColor}
-              size={20}
+              size={16}
             />
           )}
         </div>
       </Link>
 
       {/* Score + Delta */}
-      <div className="text-right">
-        <p className="font-mono text-sm font-bold text-white">{score.toLocaleString()}</p>
+      <div style={{ textAlign: 'right' }}>
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 13, fontWeight: 600, color: 'var(--b-ink)' }}
+        >
+          {score.toLocaleString()}
+        </div>
         {delta !== 0 && (
-          <motion.p
-            initial={{ x: 10, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className={cn('text-xs font-mono', delta > 0 ? 'text-emerald-400' : 'text-red-400')}
+          <div
+            className="font-mono"
+            style={{
+              fontSize: 9,
+              color: delta > 0 ? '#34d399' : '#ef4444',
+              marginTop: 1,
+            }}
           >
             {delta > 0 ? `▲${delta}` : `▼${Math.abs(delta)}`}
-          </motion.p>
+          </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
