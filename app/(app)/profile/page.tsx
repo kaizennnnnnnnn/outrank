@@ -106,12 +106,29 @@ export default function ProfilePage() {
           <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
             Dossier
           </div>
-          <h1
-            className="font-display"
-            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
-          >
-            <em style={{ fontStyle: 'italic' }}>{user.username}</em>
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+            <h1
+              className="font-display"
+              style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>{user.username}</em>
+            </h1>
+            <Link
+              href="/settings"
+              className="font-body"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-accent)',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                textDecoration: 'none',
+                flexShrink: 0,
+              }}
+            >
+              Settings →
+            </Link>
+          </div>
           <div
             className="font-body"
             style={{ fontSize: 11, color: 'var(--b-ink-60)', letterSpacing: '0.02em' }}
