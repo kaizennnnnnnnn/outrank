@@ -455,6 +455,23 @@ body {
   animation-delay: calc(var(--i, 0) * 60ms);
 }
 
+/* Active league crest — slow conic gradient rotation on the outer
+   notched-octagon frame. Reads as a struck-metal medallion catching
+   ambient light from a slowly-orbiting source. GPU-composited. */
+@keyframes league-frame-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Active crest — diagonal foil shine that sweeps across the inner
+   medallion every 3.8s. Same mechanic as metallic-shine but on a
+   raster background-image rather than text-clipped, so the entire
+   crest reads as foil-stamped briefly. */
+@keyframes league-crest-sweep {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
 @keyframes phoenix-react {
   /* Quick acknowledgment nod-shake — head dips, swings side to side,
      then settles. Kept under 700ms so it never gets in the way of the

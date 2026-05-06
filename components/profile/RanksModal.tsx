@@ -114,10 +114,10 @@ export function RanksModal({ isOpen, onClose, weeklyXP }: Props) {
                       }}
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: '52px 1fr',
-                        alignItems: 'center',
-                        gap: 14,
-                        padding: '14px 0',
+                        gridTemplateColumns: '64px 1fr',
+                        alignItems: 'flex-start',
+                        gap: 16,
+                        padding: '16px 0',
                         borderBottom: '1px solid var(--b-rule)',
                         borderLeft: isCurrent ? '3px solid var(--b-accent)' : '3px solid transparent',
                         paddingLeft: isCurrent ? 10 : 0,
@@ -126,8 +126,8 @@ export function RanksModal({ isOpen, onClose, weeklyXP }: Props) {
                           : 'transparent',
                       }}
                     >
-                      <LeagueCrest league={l} size={48} active={isCurrent} locked={isLocked} />
-                      <div style={{ minWidth: 0 }}>
+                      <LeagueCrest league={l} size={62} active={isCurrent} locked={isLocked} />
+                      <div style={{ minWidth: 0, paddingTop: 2 }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                           <span
                             className={isCurrent ? 'font-display league-crest-shine' : 'font-display'}
