@@ -472,6 +472,277 @@ export function FoodIcon(p: SvgProps) {
   );
 }
 
+// MUSIC INSTRUMENTS — distinct from MusicIcon (musical notes)
+export function GuitarIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <ellipse cx="9" cy="16" rx="5" ry="6" fill="currentColor" opacity="0.12" />
+      <ellipse cx="9" cy="16" rx="5" ry="6" />
+      <circle cx="9" cy="16" r="2" />
+      <line x1="14" y1="11" x2="20" y2="3" />
+      <rect x="18" y="2" width="3" height="3" rx="0.5" transform="rotate(45 19.5 3.5)" />
+      <line x1="9" y1="10" x2="9" y2="14" opacity="0.4" />
+      <line x1="9" y1="18" x2="9" y2="21" opacity="0.4" />
+    </Svg>
+  );
+}
+
+export function PianoIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="2" y="6" width="20" height="13" rx="1.5" fill="currentColor" opacity="0.1" />
+      <rect x="2" y="6" width="20" height="13" rx="1.5" />
+      <line x1="7" y1="6" x2="7" y2="19" opacity="0.5" />
+      <line x1="12" y1="6" x2="12" y2="19" opacity="0.5" />
+      <line x1="17" y1="6" x2="17" y2="19" opacity="0.5" />
+      <rect x="5" y="6" width="2" height="7" fill="currentColor" />
+      <rect x="10" y="6" width="2" height="7" fill="currentColor" />
+      <rect x="15" y="6" width="2" height="7" fill="currentColor" />
+    </Svg>
+  );
+}
+
+export function PencilDrawIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3 21l3.5-1 11-11-2.5-2.5-11 11z" fill="currentColor" opacity="0.12" />
+      <path d="M3 21l3.5-1 11-11-2.5-2.5-11 11z" />
+      <path d="M14 6.5L17 3.5l3.5 3.5-3 3" />
+      <line x1="13" y1="9" x2="15" y2="11" opacity="0.4" />
+      <line x1="3" y1="21" x2="6.5" y2="20" />
+    </Svg>
+  );
+}
+
+// MIND addenda
+export function TrophyThreeIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M6 4h12v6a6 6 0 01-12 0V4z" fill="currentColor" opacity="0.12" />
+      <path d="M6 4h12v6a6 6 0 01-12 0V4z" />
+      <path d="M6 5H3v3a3 3 0 003 3" />
+      <path d="M18 5h3v3a3 3 0 01-3 3" />
+      <line x1="9" y1="20" x2="15" y2="20" />
+      <line x1="12" y1="16" x2="12" y2="20" />
+      <text x="12" y="11" textAnchor="middle" fontSize="6" fontWeight="700" fill="currentColor" stroke="none">3</text>
+    </Svg>
+  );
+}
+
+export function MirrorIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <ellipse cx="12" cy="9" rx="7" ry="6" fill="currentColor" opacity="0.1" />
+      <ellipse cx="12" cy="9" rx="7" ry="6" />
+      <ellipse cx="12" cy="9" rx="4" ry="3.5" opacity="0.4" />
+      <line x1="12" y1="15" x2="12" y2="20" />
+      <line x1="8" y1="22" x2="16" y2="22" />
+    </Svg>
+  );
+}
+
+// FINANCE addenda
+export function ChartUpIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="2" y="3" width="20" height="18" rx="2" fill="currentColor" opacity="0.06" />
+      <rect x="2" y="3" width="20" height="18" rx="2" />
+      <polyline points="5 16 9 12 12 14 19 7" strokeWidth="2" />
+      <polyline points="15 7 19 7 19 11" strokeWidth="2" />
+    </Svg>
+  );
+}
+
+export function MoneyPlusIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="2" y="6" width="20" height="12" rx="2" fill="currentColor" opacity="0.1" />
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="12" cy="12" r="3" />
+      <line x1="12" y1="10" x2="12" y2="14" />
+      <line x1="10" y1="12" x2="14" y2="12" />
+    </Svg>
+  );
+}
+
+export function WalletNoIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3 7h18a1 1 0 011 1v9a1 1 0 01-1 1H3a1 1 0 01-1-1V8a1 1 0 011-1z" fill="currentColor" opacity="0.1" />
+      <path d="M3 7h18a1 1 0 011 1v9a1 1 0 01-1 1H3a1 1 0 01-1-1V8a1 1 0 011-1z" />
+      <path d="M16 12h2v2h-2z" fill="currentColor" />
+      <line x1="6" y1="6" x2="18" y2="20" stroke="currentColor" strokeWidth="2" />
+    </Svg>
+  );
+}
+
+export function BudgetReviewIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" opacity="0.06" />
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <line x1="7" y1="9" x2="13" y2="9" opacity="0.5" />
+      <line x1="7" y1="13" x2="11" y2="13" opacity="0.5" />
+      <line x1="7" y1="17" x2="14" y2="17" opacity="0.5" />
+      <polyline points="15 14 17 16 20 12" strokeWidth="2" />
+    </Svg>
+  );
+}
+
+// LIFESTYLE / SOCIAL addenda
+export function CallParentIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.81.36 1.6.68 2.36a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.76.32 1.55.55 2.36.68A2 2 0 0122 16.92z" />
+      <path d="M16 4l1.5 1.5L20 3" strokeWidth="1.5" />
+      <circle cx="18" cy="4" r="1" fill="currentColor" />
+    </Svg>
+  );
+}
+
+export function MoonHeartIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor" opacity="0.12" />
+      <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+      <path d="M14.5 12c0-1 .8-1.8 1.8-1.8.5 0 1 .2 1.3.6.3-.4.8-.6 1.3-.6 1 0 1.8.8 1.8 1.8 0 1.5-3.1 3.5-3.1 3.5s-3.1-2-3.1-3.5z" fill="currentColor" />
+    </Svg>
+  );
+}
+
+export function WaveHandIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M9 11V6a1.5 1.5 0 013 0v5" />
+      <path d="M12 11V5a1.5 1.5 0 013 0v6" />
+      <path d="M15 11V6.5a1.5 1.5 0 013 0V13a6 6 0 01-6 6h-1a6 6 0 01-6-6v-1a1.5 1.5 0 013 0v1" />
+      <path d="M2 8c1 0 2 1 2 2" opacity="0.4" />
+      <path d="M2 5c2 0 3 1 3 3" opacity="0.4" />
+    </Svg>
+  );
+}
+
+export function StarSparkleIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 2l1.8 5.6L20 9l-4.8 3.6L17 19l-5-3.4L7 19l1.8-6.4L4 9l6.2-1.4L12 2z" fill="currentColor" opacity="0.18" />
+      <path d="M12 2l1.8 5.6L20 9l-4.8 3.6L17 19l-5-3.4L7 19l1.8-6.4L4 9l6.2-1.4L12 2z" />
+      <circle cx="20" cy="4" r="1" fill="currentColor" opacity="0.6" />
+      <circle cx="4" cy="19" r="1" fill="currentColor" opacity="0.6" />
+    </Svg>
+  );
+}
+
+// HEALTH / DENTAL addenda
+export function ToothIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 2c-3 0-6 1.5-6 5 0 2 1 4 1 7s0 8 2 8 2-4 3-6 1-2 0-2 0 2 0 4 1 4 3 4 2-5 2-8 1-5 1-7c0-3.5-3-5-6-5z" fill="currentColor" opacity="0.12" />
+      <path d="M12 2c-3 0-6 1.5-6 5 0 2 1 4 1 7s0 8 2 8 2-4 3-6 1-2 0-2 0 2 0 4 1 4 3 4 2-5 2-8 1-5 1-7c0-3.5-3-5-6-5z" />
+    </Svg>
+  );
+}
+
+export function SunscreenIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="7" y="8" width="10" height="13" rx="1.5" fill="currentColor" opacity="0.12" />
+      <rect x="7" y="8" width="10" height="13" rx="1.5" />
+      <rect x="9" y="5" width="6" height="3" rx="0.5" />
+      <line x1="9" y1="13" x2="15" y2="13" opacity="0.5" />
+      <text x="12" y="18" textAnchor="middle" fontSize="6" fontWeight="700" fill="currentColor" stroke="none">SPF</text>
+    </Svg>
+  );
+}
+
+export function ToothbrushIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="3" y="14" width="14" height="3" rx="1" transform="rotate(-30 10 15.5)" fill="currentColor" opacity="0.15" />
+      <rect x="3" y="14" width="14" height="3" rx="1" transform="rotate(-30 10 15.5)" />
+      <rect x="14" y="6" width="6" height="3.5" rx="0.5" transform="rotate(-30 17 7.75)" fill="currentColor" opacity="0.3" />
+      <line x1="14.5" y1="9" x2="15.2" y2="11" strokeWidth="1.5" opacity="0.6" />
+      <line x1="16" y1="8.5" x2="16.7" y2="10.5" strokeWidth="1.5" opacity="0.6" />
+      <line x1="17.5" y1="8" x2="18.2" y2="10" strokeWidth="1.5" opacity="0.6" />
+      <line x1="19" y1="7.5" x2="19.7" y2="9.5" strokeWidth="1.5" opacity="0.6" />
+    </Svg>
+  );
+}
+
+// Distinct re-styling for slugs that previously shared icons
+export function VocabularyIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="3" y="4" width="18" height="16" rx="2" fill="currentColor" opacity="0.08" />
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <text x="7" y="13" fontSize="6" fontWeight="700" fill="currentColor" stroke="none">Aa</text>
+      <line x1="13" y1="11" x2="18" y2="11" opacity="0.5" />
+      <line x1="13" y1="14" x2="17" y2="14" opacity="0.4" />
+      <line x1="6" y1="17" x2="18" y2="17" opacity="0.3" />
+    </Svg>
+  );
+}
+
+export function NoSocialIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="6" y="2" width="12" height="20" rx="2" fill="currentColor" opacity="0.08" />
+      <rect x="6" y="2" width="12" height="20" rx="2" />
+      <line x1="9" y1="6" x2="15" y2="6" opacity="0.4" />
+      <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2.5" />
+    </Svg>
+  );
+}
+
+export function NoAlcoholIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M9 3h6l-1 6a4 4 0 11-4 0L9 3z" fill="currentColor" opacity="0.1" />
+      <path d="M9 3h6l-1 6a4 4 0 11-4 0L9 3z" />
+      <line x1="12" y1="14" x2="12" y2="20" />
+      <line x1="9" y1="20" x2="15" y2="20" />
+      <line x1="3" y1="4" x2="21" y2="22" stroke="currentColor" strokeWidth="2.5" />
+    </Svg>
+  );
+}
+
+export function NoJunkIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M5 9h14l-2 11H7L5 9z" fill="currentColor" opacity="0.1" />
+      <path d="M5 9h14l-2 11H7L5 9z" />
+      <path d="M3 9h18" />
+      <path d="M9 4l3 5 3-5" />
+      <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="2.5" />
+    </Svg>
+  );
+}
+
+export function DesignVectorIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <rect x="3" y="3" width="6" height="6" rx="1" fill="currentColor" opacity="0.18" />
+      <rect x="3" y="3" width="6" height="6" rx="1" />
+      <rect x="15" y="15" width="6" height="6" rx="1" fill="currentColor" opacity="0.18" />
+      <rect x="15" y="15" width="6" height="6" rx="1" />
+      <line x1="9" y1="6" x2="18" y2="6" opacity="0.5" />
+      <line x1="6" y1="9" x2="6" y2="18" opacity="0.5" />
+      <path d="M9 9l9 9" strokeDasharray="2 2" opacity="0.6" />
+    </Svg>
+  );
+}
+
+export function ClientHandshakeIcon(p: SvgProps) {
+  return (
+    <Svg {...p}>
+      <path d="M11 11l-2.5-2.5a2 2 0 00-2.8 2.8L11 16l5.3-4.7a2 2 0 00-2.8-2.8L11 11z" fill="currentColor" opacity="0.15" />
+      <path d="M11 11l-2.5-2.5a2 2 0 00-2.8 2.8L11 16l5.3-4.7a2 2 0 00-2.8-2.8L11 11z" />
+      <path d="M2 18l4-4" opacity="0.4" />
+      <path d="M22 6l-4 4" opacity="0.4" />
+    </Svg>
+  );
+}
+
 // Generic fallback
 export function GenericIcon(p: SvgProps) {
   return (
@@ -483,58 +754,90 @@ export function GenericIcon(p: SvgProps) {
   );
 }
 
-// Category slug → icon mapping
+// Category slug → icon mapping. Every slug declared in
+// `constants/categories.ts` must resolve here so no habit ever falls
+// back to GenericIcon. Aliases (drawing/drawings, savings/save-money)
+// each get a distinct visual treatment.
 const CATEGORY_ICON_MAP: Record<string, React.ComponentType<SvgProps>> = {
-  'gym': GymIcon,
-  'running': RunningIcon,
-  'steps': StepsIcon,
-  'water': WaterIcon,
-  'sleep': SleepIcon,
-  'cold-shower': ColdShowerIcon,
-  'yoga': YogaIcon,
-  'swimming': SwimmingIcon,
-  'cycling': CyclingIcon,
-  'calories': CaloriesIcon,
-  'books': BookIcon,
-  'pages': BookIcon,
-  'meditation': MeditationIcon,
-  'journaling': JournalIcon,
-  'courses': GraduationIcon,
-  'language': GlobeIcon,
-  'podcasts': HeadphonesIcon,
-  'chess': ChessIcon,
-  'flashcards': FlashcardsIcon,
-  'vocabulary': GlobeIcon,
-  'savings': SavingsIcon,
-  'no-impulse': ShieldCheckIcon,
-  'expenses': WritingIcon,
-  'side-income': SavingsIcon,
-  'investments': SavingsIcon,
-  'designs': PaletteIcon,
-  'drawings': JournalIcon,
-  'photos': CameraIconCustom,
-  'music': MusicIcon,
-  'videos': VideoIcon,
-  'writing': WritingIcon,
-  'coding': CodeIcon,
-  'commits': GitIcon,
-  'projects': RocketIcon,
-  'deep-work': CrosshairIcon,
-  'outreach': MailIcon,
-  'clients': HeartIcon,
-  'networking': PhoneIcon,
-  'screen-time': ScreenIcon,
-  'alcohol-free': ShieldCheckIcon,
-  'junk-free': ShieldCheckIcon,
-  'early-wake': SunriseIcon,
-  'outside': TreeIcon,
-  'gratitude': HeartIcon,
-  'no-social': ScreenIcon,
-  'supplements': PillIcon,
-  'meal-prep': FoodIcon,
-  'no-caffeine': CoffeeIcon,
-  'skincare': SparkleIcon,
-  'stretch': StretchIcon,
+  // BODY
+  'gym':            GymIcon,
+  'running':        RunningIcon,
+  'steps':          StepsIcon,
+  'water':          WaterIcon,
+  'sleep':          SleepIcon,
+  'cold-shower':    ColdShowerIcon,
+  'yoga':           YogaIcon,
+  'swimming':       SwimmingIcon,
+  'cycling':        CyclingIcon,
+  'calories':       CaloriesIcon,
+
+  // MIND
+  'books':          BookIcon,
+  'pages':          WritingIcon,           // pages = pages-of-text, not whole books
+  'meditation':     MeditationIcon,
+  'journaling':     JournalIcon,
+  'courses':        GraduationIcon,
+  'language':       GlobeIcon,
+  'podcasts':       HeadphonesIcon,
+  'chess':          ChessIcon,
+  'flashcards':     FlashcardsIcon,
+  'vocabulary':     VocabularyIcon,        // distinct "Aa" card from language globe
+  'gratitude':      HeartIcon,
+  'three-wins':     TrophyThreeIcon,
+  'reflection':     MirrorIcon,
+
+  // FINANCE
+  'savings':        SavingsIcon,
+  'save-money':     SavingsIcon,
+  'no-impulse':     WalletNoIcon,          // wallet-with-strike, distinct from generic shield
+  'expenses':       BudgetReviewIcon,
+  'side-income':    MoneyPlusIcon,
+  'investments':    ChartUpIcon,
+  'invest':         ChartUpIcon,
+  'no-spend':       WalletNoIcon,
+  'budget-review':  BudgetReviewIcon,
+
+  // CREATIVITY
+  'designs':        DesignVectorIcon,      // vector-grid, distinct from PaletteIcon
+  'drawings':       PaletteIcon,
+  'drawing':        PencilDrawIcon,
+  'photos':         CameraIconCustom,
+  'music':          MusicIcon,
+  'guitar':         GuitarIcon,
+  'piano':          PianoIcon,
+  'videos':         VideoIcon,
+  'writing':        WritingIcon,
+
+  // CAREER
+  'coding':         CodeIcon,
+  'commits':        GitIcon,
+  'projects':       RocketIcon,
+  'deep-work':      CrosshairIcon,
+  'outreach':       MailIcon,
+  'clients':        ClientHandshakeIcon,   // handshake, distinct from HeartIcon
+  'networking':     PhoneIcon,
+
+  // LIFESTYLE
+  'screen-time':    ScreenIcon,
+  'alcohol-free':   NoAlcoholIcon,
+  'junk-free':      NoJunkIcon,
+  'early-wake':     SunriseIcon,
+  'outside':        TreeIcon,
+  'no-social':      NoSocialIcon,
+  'call-parent':    CallParentIcon,
+  'date-night':     MoonHeartIcon,
+  'friend-checkin': WaveHandIcon,
+  'compliment':     StarSparkleIcon,
+
+  // HEALTH
+  'supplements':    PillIcon,
+  'meal-prep':      FoodIcon,
+  'no-caffeine':    CoffeeIcon,
+  'skincare':       SparkleIcon,
+  'stretch':        StretchIcon,
+  'floss':          ToothIcon,
+  'sunscreen':      SunscreenIcon,
+  'brush-twice':    ToothbrushIcon,
 };
 
 export function getCategoryIconComponent(slug: string): React.ComponentType<SvgProps> {

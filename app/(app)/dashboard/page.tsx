@@ -16,6 +16,8 @@ import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
 import { StreakRepairBanner } from '@/components/habits/StreakRepairBanner';
 import { PILLARS, isPillarSlug, type Pillar } from '@/constants/pillars';
 import { Masthead } from '@/components/editorial/Masthead';
+import { getCategoryIconComponent } from '@/components/ui/CategoryIcons';
+import { resolveSlug } from '@/constants/categories';
 import {
   BCheckGlyph,
   BArrowRightGlyph,
@@ -575,13 +577,15 @@ export default function DashboardPage() {
               <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
                 {personalHabits.map((habit, i) => {
                   const done = isLoggedToday(habit);
+                  const slug = resolveSlug(habit.categorySlug, habit.categoryName) || 'generic';
+                  const HabitGlyph = getCategoryIconComponent(slug);
                   return (
                     <li
                       key={habit.categorySlug}
                       onClick={() => openLogModal(habit)}
                       style={{
                         display: 'flex',
-                        alignItems: 'baseline',
+                        alignItems: 'center',
                         gap: 12,
                         padding: '12px 0',
                         borderBottom: '1px solid var(--b-rule)',
@@ -590,9 +594,19 @@ export default function DashboardPage() {
                     >
                       <span
                         className="font-mono"
-                        style={{ fontSize: 10, color: 'var(--b-ink-40)', width: 22 }}
+                        style={{ fontSize: 10, color: 'var(--b-ink-40)', width: 22, alignSelf: 'flex-start', paddingTop: 2 }}
                       >
                         {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span
+                        style={{
+                          color: habit.color || 'var(--b-ink-60)',
+                          flexShrink: 0,
+                          display: 'inline-flex',
+                          opacity: done ? 0.4 : 1,
+                        }}
+                      >
+                        <HabitGlyph size={20} />
                       </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div

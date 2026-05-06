@@ -356,6 +356,23 @@ body {
   will-change: transform;
 }
 
+@keyframes typing-cursor-blink {
+  /* Slow steady-on with a quick blink near the end, so the cursor
+     reads as "alive but not noisy" — like the user just finished
+     typing and could continue. */
+  0%, 88%, 100% { opacity: 1; }
+  90%, 96%      { opacity: 0; }
+}
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  background: var(--b-accent);
+  margin-left: 6px;
+  vertical-align: -0.12em;
+  animation: typing-cursor-blink 2.6s ease-in-out infinite;
+  will-change: opacity;
+}
+
 @keyframes phoenix-react {
   /* Quick acknowledgment nod-shake — head dips, swings side to side,
      then settles. Kept under 700ms so it never gets in the way of the

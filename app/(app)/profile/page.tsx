@@ -112,6 +112,11 @@ export default function ProfilePage() {
               style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
             >
               <em style={{ fontStyle: 'italic' }}>{user.username}</em>
+              <span
+                className="typing-cursor"
+                aria-hidden
+                style={{ height: '0.85em' }}
+              />
             </h1>
             <div style={{ display: 'flex', gap: 14, flexShrink: 0 }}>
               <Link

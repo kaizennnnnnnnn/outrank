@@ -7,6 +7,7 @@ import { Recap, RecapEntry } from '@/types/recap';
 import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
 import { FeedComments } from '@/components/social/FeedComments';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Masthead } from '@/components/editorial/Masthead';
 import { formatRelativeTime } from '@/lib/utils';
 import {
   canEdit,
@@ -26,26 +27,19 @@ interface Props {
 }
 
 /**
- * Full story view of a published Recap. Header with day stats, then a
- * scroll-through of each entry (photo + note + meta + per-entry
- * verification controls), then the comments thread at the bottom.
- *
- * Verification: friends can Confirm or Flag any entry. State lives in
- * `/reactions/{recapOriginId}_{logId}` — same collection comments and
- * the standard reactions use, so no new rules. Confirms upgrade the
- * entry toward tier-2 in the verification ladder; flags raise it for
- * review (UI surfaces only — moderation pipeline is later).
+ * Full story view of a published Recap — editorial Direction B v2.
+ * Header reads as a periodical entry: spread eyebrow "Daily Record",
+ * italic display headline with username, mono date, big italic +XP
+ * pulled to the right, hairline-bracketed stat strip below. Each entry
+ * is a numbered editorial row with the proof image full-bleed and the
+ * verification chips quietly below. Comments at the bottom inside a
+ * blockquote-style frame.
  */
 export function RecapDetailView({ recap, isOwner }: Props) {
   const { user } = useAuth();
-  const heroColor = recap.entries[0]?.categoryColor || '#f97316';
   const dateLabel = formatDateLong(recap.localDate);
   const editable = isOwner && canEdit(recap);
 
-  // Hours-left in the edit window (whole hours, snapshot at mount). The
-  // canEdit gate above keeps this >= 0 when shown. State initializer
-  // touches Date.now() once, satisfying React 19's purity rule the same
-  // way RecapDraftPanel does.
   const [editHoursLeft] = useState(() => {
     if (!editable || !recap.publishedAt) return 0;
     return Math.max(
@@ -59,8 +53,6 @@ export function RecapDetailView({ recap, isOwner }: Props) {
 
   const [editingEntry, setEditingEntry] = useState<RecapEntry | null>(null);
 
-  // Bulk-load verifications once when the recap renders. Optimistic
-  // updates after that — taps hit the local map, then write through.
   const [verifications, setVerifications] = useState<Record<string, EntryVerification>>({});
 
   useEffect(() => {
@@ -69,144 +61,252 @@ export function RecapDetailView({ recap, isOwner }: Props) {
       .then((map) => {
         if (!cancelled) setVerifications(map);
       })
-      .catch(() => { /* non-fatal — UI just won't show counts */ });
+      .catch(() => { /* non-fatal */ });
     return () => { cancelled = true; };
   }, [recap]);
 
-  // Memoize the entries copy so re-renders during the edit modal's
-  // open/close don't trigger downstream re-mounts.
   const entries = useMemo(() => recap.entries, [recap.entries]);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
-      {/* Header card — only frame on the page, anchors identity for the day */}
-      <div
-        className="relative overflow-hidden rounded-2xl border p-5"
-        style={{
-          background: `radial-gradient(ellipse 100% 80% at 100% 0%, ${heroColor}22, transparent 55%),` +
-            `linear-gradient(160deg, #10101a 0%, #0b0b14 100%)`,
-          borderColor: `${heroColor}33`,
-          boxShadow: `inset 0 1px 0 ${heroColor}25, 0 0 30px -14px ${heroColor}55`,
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-400">
-              Daily Record
-            </p>
-            <h1 className="font-heading text-2xl sm:text-3xl font-bold text-white mt-1">
-              <Link href={`/profile/${recap.username}`} className="hover:text-orange-400 transition-colors">
-                {recap.username}
-              </Link>
-              <span className="text-slate-500 font-normal text-base ml-2">· {dateLabel}</span>
-            </h1>
-            <p className="text-[11px] text-slate-500 mt-1.5 font-mono">
-              {recap.publishedAt ? `Published ${formatRelativeTime(recap.publishedAt.toDate())}` : 'Draft'}
-              {recap.lastEditedAt && ` · edited ${formatRelativeTime(recap.lastEditedAt.toDate())}`}
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="font-heading text-3xl font-bold leading-none">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">
-                +{recap.totalXP}
-              </span>
-            </p>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-slate-500 mt-1">XP</p>
-          </div>
-        </div>
+    <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
+      <div className="max-w-2xl mx-auto pb-32">
+        <Masthead section="The Day" />
 
-        <div className="flex items-center gap-3 mt-4 text-[11px] font-mono text-slate-500 flex-wrap">
-          <span>
-            <span className="text-slate-300 font-bold">{recap.logCount}</span> log{recap.logCount === 1 ? '' : 's'}
-          </span>
-          <span className="text-slate-700">·</span>
-          <span>
-            <span className="text-slate-300 font-bold">{recap.proofCount}</span> photo{recap.proofCount === 1 ? '' : 's'}
-          </span>
-          {recap.publishReward && recap.publishReward.xp > 0 && (
-            <span
-              className="text-[10px] font-mono px-1.5 py-0.5 rounded inline-flex items-center gap-1"
+        <div style={{ padding: '0 22px' }}>
+          {/* Editorial header */}
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Daily Record
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1
+                className="font-display"
+                style={{ fontSize: 34, fontWeight: 500, lineHeight: 1.05, margin: '2px 0 4px' }}
+              >
+                <Link
+                  href={`/profile/${recap.username}`}
+                  style={{ color: 'var(--b-ink)', textDecoration: 'none' }}
+                >
+                  <em style={{ fontStyle: 'italic' }}>{recap.username}</em>
+                </Link>
+              </h1>
+              <div
+                className="font-body tabular"
+                style={{ fontSize: 11, color: 'var(--b-ink-60)', letterSpacing: '0.02em' }}
+              >
+                <span style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  {dateLabel}
+                </span>
+                {recap.publishedAt && (
+                  <span style={{ color: 'var(--b-ink-40)', marginLeft: 6 }}>
+                    · published {formatRelativeTime(recap.publishedAt.toDate())}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div
+                className="font-display tabular"
+                style={{ fontSize: 38, fontStyle: 'italic', fontWeight: 500, lineHeight: 1, color: 'var(--b-accent)' }}
+              >
+                +{recap.totalXP}
+              </div>
+              <div
+                className="spread"
+                style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 4 }}
+              >
+                XP earned
+              </div>
+            </div>
+          </div>
+
+          {/* Stat strip — counts of logs, photos, pillars */}
+          <div
+            style={{
+              marginTop: 14,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              borderTop: '1px solid var(--b-ink)',
+              borderBottom: '1px solid var(--b-rule)',
+            }}
+          >
+            <StatCell label="Logs" value={String(recap.logCount)} />
+            <StatCell label="Photos" value={String(recap.proofCount)} border />
+            <StatCell
+              label="Pillars"
+              value={`${recap.publishReward?.pillarsLogged ?? '—'} / 5`}
+              border
+            />
+          </div>
+
+          {/* Publish reward chip + edit window */}
+          {(recap.publishReward || (editable && editHoursLeft > 0)) && (
+            <div
               style={{
-                color: '#34d399',
-                background: 'rgba(34,197,94,0.12)',
-                border: '1px solid rgba(34,197,94,0.3)',
+                marginTop: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
               }}
-              title={`Earned at publish for ${recap.publishReward.pillarsLogged}/5 pillars`}
             >
-              🎁 +{recap.publishReward.xp} XP · +{recap.publishReward.fragments} frags
-            </span>
+              {recap.publishReward && recap.publishReward.xp > 0 && (
+                <span
+                  className="spread"
+                  style={{
+                    fontSize: 9,
+                    color: '#34d399',
+                    padding: '3px 8px',
+                    border: '1px solid #34d39980',
+                  }}
+                  title={`Earned at publish for ${recap.publishReward.pillarsLogged}/5 pillars`}
+                >
+                  +{recap.publishReward.xp} XP · +{recap.publishReward.fragments} frags
+                </span>
+              )}
+              {editable && editHoursLeft > 0 && (
+                <span
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-accent)' }}
+                >
+                  Editable for {editHoursLeft}h
+                </span>
+              )}
+            </div>
           )}
-          {editable && editHoursLeft > 0 && (
-            <span className="ml-auto text-[10px] uppercase tracking-widest text-emerald-400">
-              Editable for {editHoursLeft}h
-            </span>
-          )}
+
+          {/* Entries — numbered editorial rows */}
+          <section style={{ marginTop: 24 }}>
+            <div
+              style={{
+                paddingTop: 12,
+                borderTop: '1px solid var(--b-ink)',
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                marginBottom: 10,
+              }}
+            >
+              <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+                The Day
+              </div>
+              <div
+                className="font-mono tabular"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+              >
+                § {String(entries.length).padStart(2, '0')}
+              </div>
+            </div>
+
+            {!isOwner && (
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  color: 'var(--b-ink-40)',
+                  marginBottom: 8,
+                  fontStyle: 'italic',
+                }}
+              >
+                Tap an entry to confirm or flag it.
+              </p>
+            )}
+
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {entries.map((entry, i) => (
+                <RecapEntryRow
+                  key={entry.logId}
+                  entry={entry}
+                  index={i}
+                  isOwner={isOwner}
+                  canEdit={editable}
+                  onEdit={() => setEditingEntry(entry)}
+                  currentUid={user?.uid}
+                  recapOriginId={recap.originId}
+                  verification={verifications[entry.logId] || { confirm: [], flag: [] }}
+                  onVerificationChange={(logId, next) =>
+                    setVerifications((m) => ({ ...m, [logId]: next }))
+                  }
+                />
+              ))}
+            </ul>
+          </section>
+
+          {/* Comments */}
+          <section style={{ marginTop: 24 }}>
+            <div
+              style={{
+                paddingTop: 12,
+                borderTop: '1px solid var(--b-ink)',
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+                Discussion
+              </div>
+              <div
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+              >
+                Open thread
+              </div>
+            </div>
+            <FeedComments originId={recap.originId} actorId={recap.userId} />
+          </section>
+
+          {/* Back to feed */}
+          <div style={{ textAlign: 'center', marginTop: 28 }}>
+            <Link
+              href="/feed"
+              className="font-body"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                textDecoration: 'none',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+              }}
+            >
+              ← Back to dispatches
+            </Link>
+          </div>
         </div>
       </div>
 
-      {/* Story — entries flow on the page, no per-entry frames */}
-      <section>
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <span
-            className="w-1.5 h-1.5 rounded-full animate-pulse"
-            style={{ background: '#f97316', boxShadow: '0 0 6px #f97316' }}
-          />
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-orange-400">
-            The Day
-          </p>
-          {!isOwner && (
-            <span className="text-[10px] font-mono text-slate-600 ml-1">
-              · tap an entry to confirm or flag
-            </span>
-          )}
-        </div>
-
-        <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] divide-y divide-white/[0.04] overflow-hidden">
-          {entries.map((entry, i) => (
-            <RecapEntryRow
-              key={entry.logId}
-              entry={entry}
-              index={i}
-              isOwner={isOwner}
-              canEdit={editable}
-              onEdit={() => setEditingEntry(entry)}
-              currentUid={user?.uid}
-              recapOriginId={recap.originId}
-              verification={verifications[entry.logId] || { confirm: [], flag: [] }}
-              onVerificationChange={(logId, next) =>
-                setVerifications((m) => ({ ...m, [logId]: next }))
-              }
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Comments — same infra as feed comments, threaded by originId */}
-      <section>
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ background: '#a855f7', boxShadow: '0 0 6px #a855f7' }}
-          />
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-violet-400">
-            Discussion
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white/[0.015] border border-white/[0.04] p-4">
-          <FeedComments originId={recap.originId} actorId={recap.userId} />
-        </div>
-      </section>
-
-      {/* Owner-only edit modal. Mounted unconditionally so the
-          open/close animation runs from a stable parent — entry is
-          set on Edit tap, cleared on close. canEdit gating happens at
-          the row's button level, not here. */}
       <RecapEditEntryModal
         isOpen={!!editingEntry}
         onClose={() => setEditingEntry(null)}
         recapDateKey={recap.localDate}
         entry={editingEntry}
       />
+    </div>
+  );
+}
+
+function StatCell({ label, value, border }: { label: string; value: string; border?: boolean }) {
+  return (
+    <div
+      style={{
+        padding: '10px 0',
+        textAlign: 'center',
+        borderLeft: border ? '1px solid var(--b-rule)' : 'none',
+      }}
+    >
+      <div
+        className="font-display tabular"
+        style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, lineHeight: 1 }}
+      >
+        {value}
+      </div>
+      <div
+        className="spread"
+        style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 4 }}
+      >
+        {label}
+      </div>
     </div>
   );
 }
@@ -240,17 +340,13 @@ function RecapEntryRow({
   const myFlag = currentUid ? verification.flag.includes(currentUid) : false;
   const confirmCount = verification.confirm.length;
   const flagCount = verification.flag.length;
-
-  // Tier 2 = "verified by friend" — at least one non-owner has confirmed.
-  // Self-confirms (owner confirming their own entry) don't count.
-  const friendConfirms = verification.confirm.filter((u) => u !== entry.logId && u !== currentUid);
   const hasFriendConfirm = verification.confirm.some((u) => u !== currentUid);
+  const friendConfirmCount = verification.confirm.filter((u) => u !== currentUid).length;
 
   const handleVerify = async (kind: 'confirm' | 'flag') => {
     if (!currentUid || isOwner) return;
     const isOn = kind === 'confirm' ? myConfirm : myFlag;
 
-    // Optimistic update so the tap feels immediate.
     const next: EntryVerification = {
       confirm:
         kind === 'confirm'
@@ -276,87 +372,118 @@ function RecapEntryRow({
       }
     } catch {
       addToast({ type: 'error', message: 'Could not save' });
-      // Revert on failure
       onVerificationChange(entry.logId, verification);
     }
   };
 
   return (
-    <motion.div
+    <motion.li
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.04, 0.3) }}
-      className="p-4 space-y-3"
+      style={{
+        padding: '14px 0',
+        borderBottom: '1px solid var(--b-rule)',
+      }}
     >
-      <div className="flex items-center gap-3">
+      <div style={{ display: 'grid', gridTemplateColumns: '24px 32px 1fr auto', gap: 10, alignItems: 'flex-start' }}>
+        <span
+          className="font-mono tabular"
+          style={{
+            fontSize: 10,
+            color: 'var(--b-ink-40)',
+            textAlign: 'right',
+            paddingTop: 4,
+            letterSpacing: '0.04em',
+          }}
+        >
+          {String(index + 1).padStart(2, '0')}
+        </span>
         <CategoryIcon
           slug={entry.habitSlug}
           name={entry.categoryName}
           icon={entry.categoryIcon}
           color={entry.categoryColor}
-          size="md"
+          size="sm"
         />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="text-sm font-bold text-white truncate">{entry.categoryName}</p>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+            <div
+              className="font-display"
+              style={{ fontSize: 15, fontStyle: 'italic', fontWeight: 500, lineHeight: 1.1 }}
+            >
+              {entry.categoryName}
+            </div>
             {hasFriendConfirm && (
               <span
-                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded inline-flex items-center gap-1"
+                className="spread"
                 style={{
+                  fontSize: 8,
                   color: '#34d399',
-                  background: 'rgba(34,197,94,0.15)',
-                  border: '1px solid rgba(34,197,94,0.4)',
+                  padding: '1px 5px',
+                  border: '1px solid #34d39980',
                 }}
-                title={`Verified by ${friendConfirms.length || confirmCount} ${(friendConfirms.length || confirmCount) === 1 ? 'friend' : 'friends'}`}
+                title={`Verified by ${friendConfirmCount || confirmCount} friend${(friendConfirmCount || confirmCount) === 1 ? '' : 's'}`}
               >
-                <svg width={9} height={9} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Verified
+                ✓ Verified
               </span>
             )}
             {flagCount > 0 && (
               <span
-                className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-[1px] rounded"
+                className="spread"
                 style={{
+                  fontSize: 8,
                   color: '#fbbf24',
-                  background: 'rgba(245,158,11,0.15)',
-                  border: '1px solid rgba(245,158,11,0.4)',
+                  padding: '1px 5px',
+                  border: '1px solid #fbbf2480',
                 }}
-                title={`Flagged by ${flagCount} ${flagCount === 1 ? 'friend' : 'friends'}`}
+                title={`Flagged by ${flagCount}`}
               >
-                ⚠ Flagged · {flagCount}
+                ⚠ {flagCount}
               </span>
             )}
+            {entry.verified && <VerifiedBadge />}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 mt-0.5">
-            <span style={{ color: entry.categoryColor }} className="font-bold">
+          <div
+            className="font-mono tabular"
+            style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2, letterSpacing: '0.04em' }}
+          >
+            <span style={{ color: entry.categoryColor, fontWeight: 600 }}>
               {entry.value}{entry.unit}
             </span>
-            <span className="text-slate-700">·</span>
-            <span>+{entry.xpEarned} XP</span>
-            <span className="text-slate-700">·</span>
-            <span>{entry.loggedAt?.toDate ? timeOfDay(entry.loggedAt.toDate()) : ''}</span>
+            <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+            +{entry.xpEarned} XP
+            <span style={{ color: 'var(--b-ink-40)', margin: '0 6px' }}>·</span>
+            {entry.loggedAt?.toDate ? timeOfDay(entry.loggedAt.toDate()) : ''}
           </div>
         </div>
-        {entry.verified && <VerifiedBadge />}
       </div>
 
       {entry.note && (
-        <p className="text-[13px] text-slate-300 leading-snug pl-12">
+        <p
+          className="font-display"
+          style={{
+            margin: '10px 0 0 66px',
+            fontSize: 13,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.5,
+            color: 'var(--b-ink)',
+          }}
+        >
           &ldquo;{entry.note}&rdquo;
         </p>
       )}
 
       {entry.proofImageUrl && (
-        <div className="pl-12">
+        <div style={{ marginTop: 10, marginLeft: 66, border: '1px solid var(--b-rule)' }}>
           <ProofImage src={entry.proofImageUrl} alt={`${entry.categoryName} proof`} />
         </div>
       )}
 
-      {/* Friend-only verification controls. Owner sees the counts only. */}
+      {/* Friend-only verification controls */}
       {!isOwner && currentUid && (
-        <div className="pl-12 flex items-center gap-2 pt-1">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, marginLeft: 66 }}>
           <VerifyChip
             kind="confirm"
             active={myConfirm}
@@ -371,29 +498,52 @@ function RecapEntryRow({
           />
         </div>
       )}
+
+      {/* Owner verification counts + edit */}
       {isOwner && (confirmCount > 0 || flagCount > 0 || canEdit) && (
-        <div className="pl-12 flex items-center gap-3 text-[10px] font-mono text-slate-500 pt-1">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            marginTop: 8,
+            marginLeft: 66,
+          }}
+          className="font-mono tabular"
+        >
           {confirmCount > 0 && (
-            <span className="text-emerald-400">
+            <span style={{ fontSize: 10, color: '#34d399' }}>
               ✓ {confirmCount} confirm{confirmCount === 1 ? '' : 's'}
             </span>
           )}
           {flagCount > 0 && (
-            <span className="text-amber-400">
+            <span style={{ fontSize: 10, color: '#fbbf24' }}>
               ⚠ {flagCount} flag{flagCount === 1 ? '' : 's'}
             </span>
           )}
           {canEdit && (
             <button
               onClick={onEdit}
-              className="ml-auto text-[10px] font-bold uppercase tracking-widest text-orange-400 hover:text-orange-300"
+              className="font-body"
+              style={{
+                marginLeft: 'auto',
+                fontSize: 9,
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--b-accent)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+              }}
             >
               Edit ↗
             </button>
           )}
         </div>
       )}
-    </motion.div>
+    </motion.li>
   );
 }
 
@@ -408,30 +558,41 @@ function VerifyChip({
   count: number;
   onClick: () => void;
 }) {
-  const color = kind === 'confirm' ? '#22c55e' : '#f59e0b';
+  const color = kind === 'confirm' ? '#22c55e' : '#fbbf24';
   const label = kind === 'confirm' ? 'Confirm' : 'Flag';
   return (
     <motion.button
-      whileTap={{ scale: 0.92 }}
+      whileTap={{ scale: 0.94 }}
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-mono transition-all border"
+      className="font-body"
       style={{
-        borderColor: active ? color : '#1e1e30',
-        background: active ? `${color}22` : '#0b0b14',
-        color: active ? color : '#94a3b8',
-        boxShadow: active ? `0 0 10px -2px ${color}66, inset 0 1px 0 ${color}22` : undefined,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        padding: '4px 10px',
+        background: active ? `${color}14` : 'transparent',
+        border: active ? `1px solid ${color}` : '1px solid var(--b-rule)',
+        cursor: 'pointer',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+        color: active ? color : 'var(--b-ink-60)',
       }}
     >
       {kind === 'confirm' ? (
-        <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
       ) : (
-        <span className="text-[11px] leading-none">⚠</span>
+        <span style={{ fontSize: 11, lineHeight: 1 }}>⚠</span>
       )}
-      <span className="font-bold">{label}</span>
+      <span>{label}</span>
       {count > 0 && (
-        <span className="font-mono text-[10px]" style={{ color: active ? color : '#64748b' }}>
+        <span
+          className="font-mono tabular"
+          style={{ fontSize: 9, color: active ? color : 'var(--b-ink-40)', marginLeft: 2 }}
+        >
           {count}
         </span>
       )}
