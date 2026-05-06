@@ -291,14 +291,13 @@ export default function DietPage() {
             </div>
           )}
 
-          {/* Calorie ring + macros */}
+          {/* Calorie ring + macros — sits clean on paper, no flanking
+              rules so the ring isn't bracketed by stray ink lines. */}
           {summary && (
             <div
               style={{
                 marginTop: 18,
-                borderTop: '1px solid var(--b-ink)',
-                borderBottom: '1px solid var(--b-ink)',
-                padding: '24px 0',
+                padding: '20px 0 4px',
                 display: 'flex',
                 justifyContent: 'center',
               }}
