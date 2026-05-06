@@ -71,20 +71,17 @@ export function LeagueCrest({ league, size = 56, active, locked }: Props) {
         />
       )}
 
-      {/* Outer ring — tinted color frame, shaped as a notched octagon.
-          Active rank gets a slowly-rotating conic shimmer underneath
-          via a sibling pseudo-via inline gradient. */}
+      {/* Outer ring — flat color frame, shaped as a notched octagon.
+          Active rank's "shine" comes only from the halo pulse + the
+          interior foil sweep; the spinning conic was reading as
+          dizzy. */}
       <div
         aria-hidden
         style={{
           position: 'absolute',
           inset: 0,
-          background: active
-            ? `conic-gradient(from 0deg, ${league.color}, ${league.color}99, ${league.color}, ${league.color}cc, ${league.color})`
-            : league.color,
+          background: league.color,
           clipPath: notchedPath,
-          animation: active ? 'league-frame-rotate 7s linear infinite' : undefined,
-          willChange: active ? 'transform' : undefined,
         }}
       />
 

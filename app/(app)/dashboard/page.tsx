@@ -334,9 +334,12 @@ export default function DashboardPage() {
             <BArrowRightGlyph size={18} style={{ color: 'var(--b-ink-60)' }} />
           </Link>
 
-          {/* THE TOWN — discreet directory strip linking to /town */}
+          {/* THE TOWN — directory strip linking to /town. Animated
+              red headline + per-cell hover lift + bespoke ink badges
+              instead of the old hourglass emoji. */}
           <Link
             href="/town"
+            className="town-strip"
             style={{
               display: 'block',
               marginTop: 18,
@@ -353,13 +356,24 @@ export default function DashboardPage() {
                 alignItems: 'baseline',
                 borderBottom: '1px solid var(--b-rule)',
                 paddingBottom: 4,
-                marginBottom: 6,
+                marginBottom: 8,
               }}
             >
-              <span className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+              <span
+                className="font-display metallic-shine"
+                style={{
+                  fontSize: 14,
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  letterSpacing: '0.04em',
+                }}
+              >
                 The Town
               </span>
-              <span className="font-body" style={{ fontSize: 9, color: 'var(--b-ink-40)', letterSpacing: '0.08em' }}>
+              <span
+                className="font-body metallic-shine"
+                style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.14em' }}
+              >
                 VISIT →
               </span>
             </div>
@@ -371,43 +385,60 @@ export default function DashboardPage() {
                 fontFamily: 'var(--font-inter)',
               }}
             >
-              {[
-                { l: 'Market',    badge: '14' },
-                { l: 'Quests',    badge: '02' },
-                { l: 'Seasonal',  badge: '—', dim: true },
-                { l: 'Travelers', badge: '⌛' },
-                { l: 'Stable',    badge: '12' },
-                { l: 'Inn',       badge: '·' },
-                { l: 'Atelier',   badge: '◆', accent: true },
-              ].map((c, i) => (
+              {([
+                { l: 'Market',    kind: 'text' as const, badge: '14', tone: '#dc2626' },
+                { l: 'Quests',    kind: 'text' as const, badge: '02', tone: '#f97316' },
+                { l: 'Seasonal',  kind: 'text' as const, badge: '—',  tone: 'var(--b-ink-40)', dim: true },
+                { l: 'Travelers', kind: 'svg'  as const, tone: '#a855f7' },
+                { l: 'Stable',    kind: 'text' as const, badge: '12', tone: '#3b82f6' },
+                { l: 'Inn',       kind: 'text' as const, badge: '·',  tone: '#22c55e' },
+                { l: 'Atelier',   kind: 'text' as const, badge: '◆',  tone: '#ec4899' },
+              ]).map((c, i) => (
                 <div
                   key={c.l}
+                  className="town-cell"
                   style={{
+                    ['--cell-tone' as string]: c.tone,
                     flex: 1,
                     textAlign: 'center',
-                    padding: '6px 0',
+                    padding: '8px 0',
                     borderLeft: i ? '1px solid var(--b-rule)' : 'none',
-                    opacity: c.dim ? 0.45 : 1,
+                    opacity: c.dim ? 0.5 : 1,
+                    position: 'relative',
                   }}
                 >
                   <div
-                    className="font-mono tabular"
+                    className="font-display tabular"
                     style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: c.accent ? 'var(--b-accent)' : 'var(--b-ink)',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: c.tone,
                       lineHeight: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: 16,
                     }}
                   >
-                    {c.badge}
+                    {c.kind === 'svg' ? (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 2h12" />
+                        <path d="M6 22h12" />
+                        <path d="M6 2v4l6 6 6-6V2" fill="currentColor" fillOpacity="0.18" />
+                        <path d="M6 22v-4l6-6 6 6v4" fill="currentColor" fillOpacity="0.18" />
+                      </svg>
+                    ) : (
+                      c.badge
+                    )}
                   </div>
                   <div
                     style={{
                       fontSize: 8,
-                      marginTop: 4,
+                      marginTop: 5,
                       color: 'var(--b-ink-60)',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
+                      letterSpacing: '0.1em',
+                      fontWeight: 600,
                     }}
                   >
                     {c.l}

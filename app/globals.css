@@ -517,6 +517,31 @@ body {
   transform: translateX(1px);
 }
 
+/* Dashboard Town strip — the compact 7-cell directory link. Each cell
+   gets a subtle lift on hover (parent strip hover so all cells lift
+   together as a single tappable directory) and a faint tone-color
+   wash over the active cell when the cursor is over the strip. The
+   tone is per-cell via --cell-tone CSS var. */
+.town-strip {
+  transition: transform 200ms ease;
+}
+.town-strip:hover,
+.town-strip:focus-visible {
+  transform: translateY(-1px);
+  outline: none;
+}
+.town-cell {
+  transition: background 220ms ease;
+}
+.town-strip:hover .town-cell:hover,
+.town-strip:focus-visible .town-cell:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cell-tone, var(--b-accent)) 14%, transparent) 0%,
+    transparent 100%
+  );
+}
+
 @keyframes phoenix-react {
   /* Quick acknowledgment nod-shake — head dips, swings side to side,
      then settles. Kept under 700ms so it never gets in the way of the
