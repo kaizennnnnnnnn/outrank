@@ -406,6 +406,13 @@ body {
   will-change: background-position;
 }
 
+/* Soft accent dot pulse — used as a "now / live" affordance next to
+   eyebrow labels. Opacity-only so it composites without paint. */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.3; transform: scale(0.7); }
+}
+
 /* League crest shine — same sweep mechanic as metallic-shine but the
    gradient color comes from the element's --crest-color custom prop.
    Used by the LeagueCrest component to give each rank a foil-stamp

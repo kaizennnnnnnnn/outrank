@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
 import { useSchedule } from '@/hooks/useSchedule';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Modal } from '@/components/ui/Modal';
 import { createDocument, removeDocument, Timestamp } from '@/lib/firestore';
 import { useUIStore } from '@/store/uiStore';
 import { UserHabit } from '@/types/habit';
@@ -13,7 +15,7 @@ import { ScheduleEntry } from '@/types/schedule';
 import Link from 'next/link';
 import { Masthead } from '@/components/editorial/Masthead';
 
-// 0 = Monday through 6 = Sunday (European convention)
+// 0 = Monday through 6 = Sunday (European convention used across the app)
 const DAYS = [
   { idx: 0, short: 'Mon', long: 'Monday' },
   { idx: 1, short: 'Tue', long: 'Tuesday' },
@@ -23,17 +25,70 @@ const DAYS = [
   { idx: 5, short: 'Sat', long: 'Saturday' },
   { idx: 6, short: 'Sun', long: 'Sunday' },
 ];
-// 6 AM through 11 PM (inclusive) — waking hours
+
+// Waking-hour slots, 6 AM through 11 PM. 24h format is more editorial than AM/PM.
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6);
 
-function fmtHour(h: number): string {
-  if (h === 0) return '12';
-  if (h < 12) return `${h}`;
-  if (h === 12) return '12';
-  return `${h - 12}`;
+function fmtHHmm(h: number): string {
+  return `${String(h).padStart(2, '0')}:00`;
 }
-function fmtHourMeridian(h: number): string {
-  return h < 12 ? 'AM' : 'PM';
+
+function fmtUntil(totalMinutes: number): string {
+  if (totalMinutes <= 0) return 'now';
+  const days = Math.floor(totalMinutes / (60 * 24));
+  if (days >= 1) return `in ${days} day${days === 1 ? '' : 's'}`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours >= 1) {
+    if (minutes === 0) return `in ${hours} hr`;
+    return `in ${hours} hr ${minutes} min`;
+  }
+  return `in ${minutes} min`;
+}
+
+function dayLabel(targetIdx: number, todayIdx: number): string {
+  const offset = (targetIdx - todayIdx + 7) % 7;
+  if (offset === 0) return 'Today';
+  if (offset === 1) return 'Tomorrow';
+  return DAYS[targetIdx].long;
+}
+
+function dateForDay(targetIdx: number, todayIdx: number, now: Date): Date {
+  const offset = (targetIdx - todayIdx + 7) % 7;
+  const d = new Date(now);
+  d.setDate(d.getDate() + offset);
+  return d;
+}
+
+function fmtDate(d: Date): string {
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mon = d.toLocaleDateString('en-US', { month: 'short' });
+  return `${dd} ${mon}`;
+}
+
+interface NextUp {
+  entry: ScheduleEntry;
+  minutesUntil: number;
+  dayOffset: number;
+}
+
+function findNextUp(
+  entries: ScheduleEntry[],
+  todayIdx: number,
+  currentHour: number,
+  currentMinute: number,
+): NextUp | null {
+  let best: NextUp | null = null;
+  for (const entry of entries) {
+    const offset = (entry.dayOfWeek - todayIdx + 7) % 7;
+    const minutesUntil = offset * 24 * 60 + (entry.hour - currentHour) * 60 - currentMinute;
+    // Treat anything firing within the last 5 minutes as still "now".
+    if (minutesUntil < -5) continue;
+    if (!best || minutesUntil < best.minutesUntil) {
+      best = { entry, minutesUntil: Math.max(0, minutesUntil), dayOffset: offset };
+    }
+  }
+  return best;
 }
 
 export default function SchedulePage() {
@@ -42,17 +97,46 @@ export default function SchedulePage() {
   const { entries, loading: scheduleLoading } = useSchedule();
   const addToast = useUIStore((s) => s.addToast);
 
-  const [selectedHabit, setSelectedHabit] = useState<UserHabit | null>(null);
-  const [placing, setPlacing] = useState(false);
-
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
+
   const todayIdx = (now.getDay() + 6) % 7;
   const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
   const tz = typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC';
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const entryMap = useMemo(() => {
+    const m = new Map<string, ScheduleEntry>();
+    for (const e of entries) m.set(`${e.dayOfWeek}-${e.hour}`, e);
+    return m;
+  }, [entries]);
+
+  const byDay = useMemo(() => {
+    const m: Record<number, ScheduleEntry[]> = {};
+    for (let i = 0; i < 7; i++) m[i] = [];
+    for (const e of entries) m[e.dayOfWeek].push(e);
+    for (const k of Object.keys(m)) {
+      m[Number(k)].sort((a, b) => a.hour - b.hour);
+    }
+    return m;
+  }, [entries]);
+
+  const nextUp = useMemo(
+    () => findNextUp(entries, todayIdx, currentHour, currentMinute),
+    [entries, todayIdx, currentHour, currentMinute],
+  );
+
+  const stats = useMemo(() => {
+    const total = entries.length;
+    const distinctHabits = new Set(entries.map((e) => e.habitSlug)).size;
+    return { total, distinctHabits };
+  }, [entries]);
 
   const sendTestNotification = async () => {
     if (!user) return;
@@ -72,38 +156,6 @@ export default function SchedulePage() {
     }
   };
 
-  const entryMap = useMemo(() => {
-    const m = new Map<string, ScheduleEntry>();
-    for (const e of entries) m.set(`${e.dayOfWeek}-${e.hour}`, e);
-    return m;
-  }, [entries]);
-
-  const placeHabit = async (habit: UserHabit, dayOfWeek: number, hour: number) => {
-    if (!user || placing) return;
-    const key = `${dayOfWeek}-${hour}`;
-    if (entryMap.has(key)) {
-      addToast({ type: 'error', message: 'That slot is already taken' });
-      return;
-    }
-    setPlacing(true);
-    try {
-      await createDocument(`scheduleEntries/${user.uid}/items`, {
-        habitSlug: habit.categorySlug,
-        habitName: habit.categoryName,
-        habitIcon: habit.categoryIcon,
-        habitColor: habit.color,
-        dayOfWeek,
-        hour,
-        createdAt: Timestamp.now(),
-      });
-      addToast({ type: 'success', message: `Scheduled ${habit.categoryName}` });
-    } catch {
-      addToast({ type: 'error', message: 'Failed to schedule' });
-    } finally {
-      setPlacing(false);
-    }
-  };
-
   const removeEntry = async (entry: ScheduleEntry) => {
     if (!user || !entry.id) return;
     try {
@@ -114,43 +166,45 @@ export default function SchedulePage() {
     }
   };
 
-  const onHabitDragStart = (e: React.DragEvent, habit: UserHabit) => {
-    e.dataTransfer.setData('application/habit-slug', habit.categorySlug);
-    e.dataTransfer.effectAllowed = 'copy';
-    setSelectedHabit(habit);
-  };
-  const onSlotDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
-  const onSlotDrop = (e: React.DragEvent, dayOfWeek: number, hour: number) => {
-    e.preventDefault();
-    const slug = e.dataTransfer.getData('application/habit-slug');
-    const habit = habits.find((h) => h.categorySlug === slug);
-    if (habit) placeHabit(habit, dayOfWeek, hour);
-  };
-
-  const onSlotClick = (dayOfWeek: number, hour: number) => {
+  const placeHabit = async (habit: UserHabit, dayOfWeek: number, hour: number) => {
+    if (!user || busy) return;
     const key = `${dayOfWeek}-${hour}`;
-    const existing = entryMap.get(key);
-    if (existing) {
-      if (confirm(`Remove ${existing.habitName} from this slot?`)) removeEntry(existing);
+    if (entryMap.has(key)) {
+      addToast({ type: 'error', message: 'That slot is already taken' });
       return;
     }
-    if (selectedHabit) {
-      placeHabit(selectedHabit, dayOfWeek, hour);
+    setBusy(true);
+    try {
+      await createDocument(`scheduleEntries/${user.uid}/items`, {
+        habitSlug: habit.categorySlug,
+        habitName: habit.categoryName,
+        habitIcon: habit.categoryIcon,
+        habitColor: habit.color,
+        dayOfWeek,
+        hour,
+        createdAt: Timestamp.now(),
+      });
+      addToast({ type: 'success', message: `Scheduled ${habit.categoryName} · ${DAYS[dayOfWeek].long} ${fmtHHmm(hour)}` });
+      setAddOpen(false);
+    } catch {
+      addToast({ type: 'error', message: 'Failed to schedule' });
+    } finally {
+      setBusy(false);
     }
   };
 
   if (!user) return null;
 
+  // Order day sections: today first, then forward through the week.
+  const orderedDays = Array.from({ length: 7 }, (_, i) => (todayIdx + i) % 7);
+
   return (
     <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
-      <div className="max-w-5xl mx-auto pb-32">
+      <div className="max-w-3xl mx-auto pb-32">
         <Masthead section="The Almanac" />
 
         <div style={{ padding: '0 22px' }}>
-          {/* Editorial header */}
+          {/* Header */}
           <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
             The Almanac
           </div>
@@ -161,443 +215,828 @@ export default function SchedulePage() {
             >
               <em style={{ fontStyle: 'italic' }}>Schedule</em>
             </h1>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-              <button
-                onClick={sendTestNotification}
-                className="font-body"
-                style={{
-                  fontSize: 10,
-                  padding: '5px 10px',
-                  background: 'transparent',
-                  border: '1px solid var(--b-ink)',
-                  cursor: 'pointer',
-                  fontWeight: 700,
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
-                  color: 'var(--b-ink)',
-                }}
-                title={`Your timezone: ${tz}`}
-              >
-                Test push
-              </button>
-              <Link
-                href="/dashboard"
-                className="font-body"
-                style={{ fontSize: 10, color: 'var(--b-ink-60)', textDecoration: 'none', letterSpacing: '0.08em' }}
-              >
-                ← BACK
-              </Link>
-            </div>
+            <Link
+              href="/dashboard"
+              className="font-body"
+              style={{ fontSize: 10, color: 'var(--b-ink-60)', textDecoration: 'none', letterSpacing: '0.08em' }}
+            >
+              ← BACK
+            </Link>
           </div>
           <p
             className="font-body"
-            style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 420, lineHeight: 1.5 }}
+            style={{ fontSize: 12, color: 'var(--b-ink-60)', maxWidth: 460, lineHeight: 1.55, marginBottom: 14 }}
           >
-            {selectedHabit
-              ? <>Tap a slot to place <em style={{ color: 'var(--b-accent)' }}>{selectedHabit.categoryName}</em>.</>
-              : (
-                <>
-                  <span className="lg:hidden">Tap a habit, then tap a slot.</span>
-                  <span className="hidden lg:inline">Pick a habit on the right, then tap a slot — or drag it onto the grid.</span>
-                </>
-              )
-            }
+            A weekly arrangement of your discipline. Tap any block to remove. We push a reminder when its hour arrives.
           </p>
 
-          {/* Mobile habit strip */}
+          {/* Stats line */}
           <div
-            className="lg:hidden"
+            className="font-mono tabular"
             style={{
-              marginTop: 14,
-              paddingTop: 10,
-              paddingBottom: 10,
-              borderTop: '1px solid var(--b-ink)',
+              display: 'flex',
+              gap: 18,
+              fontSize: 9,
+              color: 'var(--b-ink-60)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              borderTop: '1px solid var(--b-rule)',
               borderBottom: '1px solid var(--b-rule)',
-              position: 'sticky',
-              top: 0,
-              zIndex: 20,
-              background: 'var(--b-paper)',
+              padding: '8px 0',
+              marginBottom: 18,
             }}
           >
-            <div
-              className="spread"
-              style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 6 }}
-            >
-              Your Habits
-            </div>
-            {habitsLoading ? (
-              <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} style={{ minWidth: 120 }}>
-                    <Skeleton className="h-10" />
-                  </div>
-                ))}
-              </div>
-            ) : habits.length === 0 ? (
-              <Link
-                href="/habits"
-                className="font-body"
-                style={{ fontSize: 11, color: 'var(--b-accent)', letterSpacing: '0.04em' }}
-              >
-                Add habits first →
-              </Link>
-            ) : (
-              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-                {habits.map((habit) => {
-                  const isSelected = selectedHabit?.categorySlug === habit.categorySlug;
-                  return (
-                    <button
-                      key={habit.categorySlug}
-                      onClick={() => setSelectedHabit(isSelected ? null : habit)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        padding: '6px 10px',
-                        flexShrink: 0,
-                        background: isSelected ? 'var(--b-ink)' : 'transparent',
-                        color: isSelected ? 'var(--b-paper)' : 'var(--b-ink)',
-                        border: '1px solid var(--b-ink)',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <CategoryIcon
-                        icon={habit.categoryIcon}
-                        color={isSelected ? '#fff' : habit.color}
-                        size="sm"
-                        slug={habit.categorySlug}
-                      />
-                      <span
-                        className="font-body"
-                        style={{ fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}
-                      >
-                        {habit.categoryName}
-                      </span>
-                    </button>
-                  );
-                })}
-                {selectedHabit && (
-                  <button
-                    onClick={() => setSelectedHabit(null)}
-                    style={{
-                      flexShrink: 0,
-                      fontSize: 9,
-                      color: 'var(--b-ink-60)',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '0 6px',
-                      letterSpacing: '0.08em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-            )}
+            <span>Entries · <span style={{ color: 'var(--b-ink)', fontWeight: 700 }}>{stats.total}</span></span>
+            <span>Habits · <span style={{ color: 'var(--b-ink)', fontWeight: 700 }}>{stats.distinctHabits}</span></span>
+            <span style={{ marginLeft: 'auto', textTransform: 'none', letterSpacing: '0.04em' }} title={`Your timezone: ${tz}`}>
+              <span style={{ opacity: 0.6 }}>tz · </span>{tz.split('/').pop()?.replace(/_/g, ' ')}
+            </span>
           </div>
 
-          {/* Grid + sidebar */}
-          <div
-            style={{
-              marginTop: 18,
-              display: 'grid',
-              gap: 14,
-            }}
-            className="lg:grid-cols-[1fr_220px]"
+          {/* Next-up card */}
+          {scheduleLoading ? (
+            <Skeleton className="h-28 w-full" />
+          ) : nextUp ? (
+            <NextUpCard
+              entry={nextUp.entry}
+              minutesUntil={nextUp.minutesUntil}
+              dayOffset={nextUp.dayOffset}
+              now={now}
+              todayIdx={todayIdx}
+            />
+          ) : (
+            <EmptyHero onAdd={() => setAddOpen(true)} hasHabits={habits.length > 0} />
+          )}
+
+          {/* Add CTA */}
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 18, marginBottom: 18 }}>
+            <button
+              onClick={() => setAddOpen(true)}
+              disabled={habits.length === 0}
+              className="font-body"
+              style={{
+                flex: 1,
+                padding: '12px 14px',
+                background: habits.length === 0 ? 'var(--b-ink-15)' : 'var(--b-ink)',
+                color: 'var(--b-paper)',
+                border: 'none',
+                cursor: habits.length === 0 ? 'not-allowed' : 'pointer',
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+              }}
+            >
+              + Add to schedule
+            </button>
+            <button
+              onClick={sendTestNotification}
+              className="font-body"
+              style={{
+                padding: '12px 14px',
+                background: 'transparent',
+                border: '1px solid var(--b-ink)',
+                cursor: 'pointer',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: 'var(--b-ink)',
+                whiteSpace: 'nowrap',
+              }}
+              title={`Your timezone: ${tz}`}
+            >
+              Test push
+            </button>
+          </div>
+
+          {/* The week, day by day */}
+          {scheduleLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32" />)}
+            </div>
+          ) : (
+            <div>
+              {orderedDays.map((dayIdx) => {
+                const isToday = dayIdx === todayIdx;
+                const dayEntries = byDay[dayIdx];
+                return (
+                  <DaySection
+                    key={dayIdx}
+                    dayIdx={dayIdx}
+                    isToday={isToday}
+                    label={dayLabel(dayIdx, todayIdx)}
+                    date={fmtDate(dateForDay(dayIdx, todayIdx, now))}
+                    entries={dayEntries}
+                    currentHour={currentHour}
+                    currentMinute={currentMinute}
+                    nextUpId={nextUp?.entry.id}
+                    onRemove={removeEntry}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Add modal */}
+      <AddEntryModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        habits={habits}
+        habitsLoading={habitsLoading}
+        entryMap={entryMap}
+        busy={busy}
+        onConfirm={placeHabit}
+      />
+    </div>
+  );
+}
+
+// ------------------- NEXT UP HERO -------------------
+
+function NextUpCard({
+  entry,
+  minutesUntil,
+  dayOffset,
+  now,
+  todayIdx,
+}: {
+  entry: ScheduleEntry;
+  minutesUntil: number;
+  dayOffset: number;
+  now: Date;
+  todayIdx: number;
+}) {
+  const dayName = dayOffset === 0
+    ? 'today'
+    : dayOffset === 1
+    ? 'tomorrow'
+    : DAYS[entry.dayOfWeek].long.toLowerCase();
+
+  const target = dateForDay(entry.dayOfWeek, todayIdx, now);
+  const dateStr = fmtDate(target);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      style={{
+        position: 'relative',
+        border: '1px solid var(--b-ink)',
+        padding: '18px 18px 20px',
+        background: 'var(--b-paper)',
+      }}
+    >
+      {/* accent top stripe */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -1,
+          left: -1,
+          right: -1,
+          height: 3,
+          background: entry.habitColor,
+        }}
+      />
+      {/* eyebrow */}
+      <div
+        className="spread"
+        style={{
+          fontSize: 9,
+          color: 'var(--b-accent)',
+          marginBottom: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <span>Next Up</span>
+        <span
+          style={{
+            display: 'inline-block',
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'var(--b-accent)',
+            animation: 'pulse-dot 1.8s ease-in-out infinite',
+          }}
+        />
+        <span className="font-mono tabular" style={{ color: 'var(--b-ink-60)', letterSpacing: '0.08em' }}>
+          {fmtUntil(minutesUntil)}
+        </span>
+      </div>
+
+      {/* headline */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <h2
+          className="font-display"
+          style={{
+            fontSize: 30,
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: 0,
+            fontStyle: 'italic',
+          }}
+        >
+          Time for{' '}
+          <span className="metallic-shine" style={{ fontStyle: 'italic' }}>
+            {entry.habitName}
+          </span>.
+        </h2>
+      </div>
+
+      {/* meta row */}
+      <div
+        style={{
+          marginTop: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          paddingTop: 10,
+          borderTop: '1px solid var(--b-rule)',
+        }}
+      >
+        <CategoryIcon
+          slug={entry.habitSlug}
+          icon={entry.habitIcon}
+          color={entry.habitColor}
+          size="sm"
+        />
+        <div className="font-mono tabular" style={{ fontSize: 11, color: 'var(--b-ink)' }}>
+          <span style={{ fontWeight: 700 }}>{fmtHHmm(entry.hour)}</span>
+          <span style={{ color: 'var(--b-ink-60)', margin: '0 8px' }}>·</span>
+          <span style={{ color: 'var(--b-ink-60)' }}>{dayName} {dayOffset > 1 ? `· ${dateStr}` : ''}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function EmptyHero({ onAdd, hasHabits }: { onAdd: () => void; hasHabits: boolean }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        border: '1px dashed var(--b-ink)',
+        padding: '22px 18px',
+        textAlign: 'center',
+      }}
+    >
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}>
+        Open Calendar
+      </div>
+      <h2
+        className="font-display"
+        style={{ fontSize: 26, fontStyle: 'italic', fontWeight: 500, margin: 0, lineHeight: 1.1 }}
+      >
+        Nothing on the books.
+      </h2>
+      <p
+        className="font-body"
+        style={{ fontSize: 11.5, color: 'var(--b-ink-60)', maxWidth: 360, margin: '8px auto 14px', lineHeight: 1.5 }}
+      >
+        {hasHabits
+          ? 'Pin a habit to a specific hour and we will tap you on the shoulder.'
+          : 'Pick up a habit first — then return here to set its hours.'}
+      </p>
+      {hasHabits ? (
+        <button
+          onClick={onAdd}
+          className="font-body"
+          style={{
+            padding: '10px 18px',
+            background: 'var(--b-ink)',
+            color: 'var(--b-paper)',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+          }}
+        >
+          + Plan an hour
+        </button>
+      ) : (
+        <Link
+          href="/habits"
+          className="font-body"
+          style={{
+            display: 'inline-block',
+            padding: '10px 18px',
+            background: 'var(--b-ink)',
+            color: 'var(--b-paper)',
+            textDecoration: 'none',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Pick a habit →
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// ------------------- DAY SECTION -------------------
+
+function DaySection({
+  dayIdx,
+  isToday,
+  label,
+  date,
+  entries,
+  currentHour,
+  currentMinute,
+  nextUpId,
+  onRemove,
+}: {
+  dayIdx: number;
+  isToday: boolean;
+  label: string;
+  date: string;
+  entries: ScheduleEntry[];
+  currentHour: number;
+  currentMinute: number;
+  nextUpId?: string;
+  onRemove: (e: ScheduleEntry) => void;
+}) {
+  // Where to draw the NOW line — between entries whose hour is closest to current.
+  const nowFraction = isToday
+    ? Math.min(1, Math.max(0, (currentHour - HOURS[0] + currentMinute / 60) / HOURS.length))
+    : null;
+
+  return (
+    <section style={{ marginBottom: 22 }}>
+      {/* Header rule */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 10,
+          paddingBottom: 6,
+          borderBottom: isToday ? '2px solid var(--b-accent)' : '1px solid var(--b-ink)',
+        }}
+      >
+        {isToday && (
+          <span
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-accent)' }}
           >
-            {/* Grid */}
-            <div style={{ overflowX: 'auto', border: '1px solid var(--b-rule)', padding: 10 }}>
-              {scheduleLoading ? (
-                <Skeleton className="h-[500px]" />
-              ) : (
-                <div style={{ minWidth: 720 }}>
-                  {/* Day headers */}
-                  <div
+            Today
+          </span>
+        )}
+        <h3
+          className="font-display"
+          style={{
+            fontSize: 22,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            margin: 0,
+            color: isToday ? 'var(--b-ink)' : 'var(--b-ink)',
+          }}
+        >
+          {isToday ? DAYS[dayIdx].long : label}
+        </h3>
+        <span
+          className="font-mono tabular"
+          style={{
+            marginLeft: 'auto',
+            fontSize: 10,
+            color: 'var(--b-ink-60)',
+            letterSpacing: '0.08em',
+          }}
+        >
+          {date}
+        </span>
+      </div>
+
+      {entries.length === 0 ? (
+        <div
+          className="font-body"
+          style={{
+            padding: '14px 0',
+            fontSize: 11,
+            color: 'var(--b-ink-40)',
+            fontStyle: 'italic',
+            letterSpacing: '0.02em',
+          }}
+        >
+          — open day —
+        </div>
+      ) : (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0, position: 'relative' }}>
+          {entries.map((e, i) => {
+            const isPast = isToday && (e.hour < currentHour || (e.hour === currentHour && currentMinute > 5));
+            const isCurrent = isToday && e.hour === currentHour && currentMinute <= 5;
+            const isNext = e.id === nextUpId;
+            return (
+              <EntryRow
+                key={e.id}
+                entry={e}
+                isPast={isPast}
+                isCurrent={isCurrent}
+                isNext={isNext}
+                onRemove={onRemove}
+                lastInDay={i === entries.length - 1}
+              />
+            );
+          })}
+        </ul>
+      )}
+
+      {/* NOW marker — drawn after the entry list so it overlays correctly. */}
+      {isToday && nowFraction !== null && entries.length > 0 && (
+        <div
+          aria-hidden
+          style={{
+            position: 'relative',
+            height: 0,
+          }}
+        >
+          {/* Marker is intentionally outside the list — it lives in the day header rule visually */}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function EntryRow({
+  entry,
+  isPast,
+  isCurrent,
+  isNext,
+  onRemove,
+  lastInDay,
+}: {
+  entry: ScheduleEntry;
+  isPast: boolean;
+  isCurrent: boolean;
+  isNext: boolean;
+  onRemove: (e: ScheduleEntry) => void;
+  lastInDay: boolean;
+}) {
+  const opacity = isPast ? 0.42 : 1;
+
+  return (
+    <li
+      style={{
+        position: 'relative',
+        display: 'grid',
+        gridTemplateColumns: '64px 1fr auto',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 0',
+        borderBottom: lastInDay ? 'none' : '1px solid var(--b-rule)',
+        opacity,
+      }}
+    >
+      {/* time gutter */}
+      <div
+        className="font-mono tabular"
+        style={{
+          fontSize: 14,
+          letterSpacing: '0.04em',
+          color: isNext || isCurrent ? 'var(--b-accent)' : 'var(--b-ink)',
+          fontWeight: isNext || isCurrent ? 700 : 500,
+        }}
+      >
+        {fmtHHmm(entry.hour)}
+      </div>
+
+      {/* body */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <span
+          aria-hidden
+          style={{
+            display: 'inline-block',
+            width: 3,
+            alignSelf: 'stretch',
+            background: entry.habitColor,
+          }}
+        />
+        <CategoryIcon
+          slug={entry.habitSlug}
+          icon={entry.habitIcon}
+          color={entry.habitColor}
+          size="sm"
+        />
+        <div style={{ minWidth: 0 }}>
+          <div
+            className="font-display"
+            style={{
+              fontSize: 16,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1.1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              textDecoration: isPast ? 'line-through' : 'none',
+            }}
+          >
+            {entry.habitName}
+          </div>
+          {(isNext || isCurrent) && (
+            <div
+              className="font-mono"
+              style={{
+                fontSize: 8.5,
+                color: 'var(--b-accent)',
+                letterSpacing: '0.18em',
+                textTransform: 'uppercase',
+                marginTop: 2,
+              }}
+            >
+              {isCurrent ? 'happening now' : 'next up'}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* remove */}
+      <button
+        onClick={() => {
+          if (confirm(`Remove ${entry.habitName} from ${DAYS[entry.dayOfWeek].long} ${fmtHHmm(entry.hour)}?`)) {
+            onRemove(entry);
+          }
+        }}
+        aria-label={`Remove ${entry.habitName}`}
+        className="font-body"
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: 'var(--b-ink-40)',
+          cursor: 'pointer',
+          fontSize: 16,
+          padding: '6px 8px',
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </button>
+    </li>
+  );
+}
+
+// ------------------- ADD ENTRY MODAL -------------------
+
+function AddEntryModal({
+  open,
+  onClose,
+  habits,
+  habitsLoading,
+  entryMap,
+  busy,
+  onConfirm,
+}: {
+  open: boolean;
+  onClose: () => void;
+  habits: UserHabit[];
+  habitsLoading: boolean;
+  entryMap: Map<string, ScheduleEntry>;
+  busy: boolean;
+  onConfirm: (h: UserHabit, day: number, hour: number) => void;
+}) {
+  const [habit, setHabit] = useState<UserHabit | null>(null);
+  const [day, setDay] = useState<number | null>(null);
+  const [hour, setHour] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      setHabit(null);
+      setDay(null);
+      setHour(null);
+    }
+  }, [open]);
+
+  const canConfirm = !!habit && day !== null && hour !== null;
+
+  return (
+    <Modal isOpen={open} onClose={onClose} title="Plan an hour" size="lg">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Step 1 — habit */}
+        <section>
+          <div
+            className="spread"
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
+          >
+            <span style={{ color: 'var(--b-accent)' }}>I.</span> Habit
+          </div>
+          {habitsLoading ? (
+            <Skeleton className="h-20" />
+          ) : habits.length === 0 ? (
+            <p className="font-body" style={{ fontSize: 12, color: 'var(--b-ink-60)' }}>
+              No habits yet. <Link href="/habits" style={{ color: 'var(--b-accent)' }}>Add one →</Link>
+            </p>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                gap: 6,
+              }}
+            >
+              {habits.map((h) => {
+                const isSelected = habit?.categorySlug === h.categorySlug;
+                return (
+                  <button
+                    key={h.categorySlug}
+                    onClick={() => setHabit(h)}
                     style={{
-                      display: 'grid',
-                      gridTemplateColumns: '50px repeat(7, minmax(0, 1fr))',
-                      gap: 2,
-                      marginBottom: 6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 10px',
+                      background: isSelected ? 'var(--b-ink)' : 'transparent',
+                      color: isSelected ? 'var(--b-paper)' : 'var(--b-ink)',
+                      border: '1px solid var(--b-ink)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
                     }}
                   >
-                    <div style={{ position: 'sticky', left: 0, zIndex: 12, background: 'var(--b-paper)' }} />
-                    {DAYS.map((d) => {
-                      const isToday = d.idx === todayIdx;
-                      return (
-                        <div
-                          key={d.idx}
-                          className="font-body"
-                          style={{
-                            textAlign: 'center',
-                            padding: '8px 0',
-                            fontSize: 10,
-                            fontWeight: isToday ? 700 : 500,
-                            letterSpacing: '0.14em',
-                            textTransform: 'uppercase',
-                            color: isToday ? 'var(--b-accent)' : 'var(--b-ink-60)',
-                            borderBottom: isToday ? '2px solid var(--b-accent)' : '1px solid var(--b-rule)',
-                          }}
-                        >
-                          {d.short}
-                          {isToday && (
-                            <div
-                              className="font-mono"
-                              style={{ fontSize: 8, color: 'var(--b-accent)', marginTop: 2 }}
-                            >
-                              today
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Hour rows */}
-                  {HOURS.map((h) => {
-                    const isCurrentHour = h === currentHour;
-                    return (
-                      <div
-                        key={h}
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: '50px repeat(7, minmax(0, 1fr))',
-                          gap: 2,
-                          marginBottom: 2,
-                        }}
-                      >
-                        <div
-                          className="font-mono tabular"
-                          style={{
-                            position: 'sticky',
-                            left: 0,
-                            zIndex: 11,
-                            fontSize: 10,
-                            textAlign: 'right',
-                            paddingRight: 6,
-                            paddingTop: 4,
-                            background: 'var(--b-paper)',
-                            color: isCurrentHour ? 'var(--b-accent)' : 'var(--b-ink-40)',
-                            fontWeight: isCurrentHour ? 700 : 400,
-                          }}
-                        >
-                          {fmtHour(h)}
-                          <span
-                            style={{
-                              fontSize: 7,
-                              marginLeft: 1,
-                              color: 'var(--b-ink-40)',
-                            }}
-                          >
-                            {fmtHourMeridian(h)}
-                          </span>
-                        </div>
-                        {DAYS.map((d) => {
-                          const key = `${d.idx}-${h}`;
-                          const entry = entryMap.get(key);
-                          if (entry) {
-                            return (
-                              <button
-                                key={key}
-                                onClick={() => onSlotClick(d.idx, h)}
-                                style={{
-                                  position: 'relative',
-                                  height: 38,
-                                  padding: '0 6px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                                  background: `${entry.habitColor}18`,
-                                  border: `1px solid ${entry.habitColor}80`,
-                                  borderLeft: `3px solid ${entry.habitColor}`,
-                                  cursor: 'pointer',
-                                  overflow: 'hidden',
-                                  color: 'var(--b-ink)',
-                                }}
-                              >
-                                <CategoryIcon
-                                  slug={entry.habitSlug}
-                                  icon={entry.habitIcon}
-                                  color={entry.habitColor}
-                                  size="sm"
-                                />
-                                <span
-                                  className="font-body"
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {entry.habitName}
-                                </span>
-                              </button>
-                            );
-                          }
-                          const isNow = d.idx === todayIdx && h === currentHour;
-                          return (
-                            <button
-                              key={key}
-                              onClick={() => onSlotClick(d.idx, h)}
-                              onDragOver={onSlotDragOver}
-                              onDrop={(e) => onSlotDrop(e, d.idx, h)}
-                              aria-label={`${d.long} ${fmtHour(h)}${fmtHourMeridian(h)}`}
-                              style={{
-                                height: 38,
-                                background: selectedHabit
-                                  ? 'rgba(249,115,22,0.06)'
-                                  : isNow
-                                    ? 'rgba(249,115,22,0.04)'
-                                    : 'transparent',
-                                border: selectedHabit
-                                  ? '1px dashed var(--b-accent)'
-                                  : '1px dashed var(--b-rule)',
-                                cursor: 'pointer',
-                              }}
-                            />
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                    <CategoryIcon
+                      slug={h.categorySlug}
+                      icon={h.categoryIcon}
+                      color={isSelected ? '#fff' : h.color}
+                      size="sm"
+                    />
+                    <span
+                      className="font-body"
+                      style={{
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {h.categoryName}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
+          )}
+        </section>
 
-            {/* Desktop sidebar */}
-            <div
-              className="hidden lg:block"
-              style={{
-                position: 'sticky',
-                top: 16,
-                alignSelf: 'flex-start',
-                height: 'fit-content',
-              }}
+        {/* Step 2 — day */}
+        <AnimatePresence>
+          {habit && (
+            <motion.section
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.25 }}
             >
               <div
                 className="spread"
                 style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
               >
-                Your Habits
+                <span style={{ color: 'var(--b-accent)' }}>II.</span> Day
               </div>
-              {habitsLoading ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10" />)}
-                </div>
-              ) : habits.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '14px 0' }}>
-                  <p className="font-body" style={{ fontSize: 11, color: 'var(--b-ink-60)', marginBottom: 6 }}>
-                    No habits yet
-                  </p>
-                  <Link
-                    href="/habits"
-                    className="font-body"
-                    style={{ fontSize: 11, color: 'var(--b-accent)', textDecoration: 'none', letterSpacing: '0.04em' }}
-                  >
-                    Add a habit →
-                  </Link>
-                </div>
-              ) : (
-                <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderTop: '1px solid var(--b-rule)' }}>
-                  {habits.map((habit) => {
-                    const isSelected = selectedHabit?.categorySlug === habit.categorySlug;
-                    return (
-                      <li key={habit.categorySlug}>
-                        <button
-                          draggable
-                          onDragStart={(e) => onHabitDragStart(e, habit)}
-                          onDragEnd={() => setSelectedHabit(null)}
-                          onClick={() => setSelectedHabit(isSelected ? null : habit)}
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            padding: '10px 6px',
-                            background: isSelected ? `${habit.color}15` : 'transparent',
-                            border: 'none',
-                            borderBottom: '1px solid var(--b-rule)',
-                            cursor: 'grab',
-                            textAlign: 'left',
-                            color: 'var(--b-ink)',
-                          }}
-                        >
-                          <CategoryIcon
-                            icon={habit.categoryIcon}
-                            color={habit.color}
-                            size="sm"
-                            slug={habit.categorySlug}
-                          />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div
-                              className="font-display"
-                              style={{ fontSize: 13, fontStyle: 'italic', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                            >
-                              {habit.categoryName}
-                            </div>
-                            <div
-                              className="font-body tabular"
-                              style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
-                            >
-                              {habit.goal} {habit.unit}
-                            </div>
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-              {selectedHabit && (
-                <button
-                  onClick={() => setSelectedHabit(null)}
-                  className="font-body"
-                  style={{
-                    marginTop: 8,
-                    width: '100%',
-                    padding: '6px 0',
-                    fontSize: 9,
-                    color: 'var(--b-ink-60)',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Clear selection
-                </button>
-              )}
-
-              {/* Tip block */}
               <div
                 style={{
-                  marginTop: 16,
-                  padding: '10px 12px',
-                  border: '1px solid var(--b-rule)',
-                  background: 'var(--b-paper-2, transparent)',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                  gap: 4,
                 }}
               >
-                <div
-                  className="spread"
-                  style={{ fontSize: 8, color: 'var(--b-accent)', marginBottom: 4 }}
-                >
-                  Note
-                </div>
-                <p
-                  className="font-body"
-                  style={{ fontSize: 10, color: 'var(--b-ink-60)', lineHeight: 1.5 }}
-                >
-                  Drag on desktop, or tap a habit then tap a slot on mobile. Tap a scheduled block to remove it.
-                </p>
+                {DAYS.map((d) => {
+                  const isSelected = day === d.idx;
+                  return (
+                    <button
+                      key={d.idx}
+                      onClick={() => setDay(d.idx)}
+                      className="font-body"
+                      style={{
+                        padding: '10px 0',
+                        background: isSelected ? 'var(--b-ink)' : 'transparent',
+                        color: isSelected ? 'var(--b-paper)' : 'var(--b-ink)',
+                        border: '1px solid var(--b-ink)',
+                        cursor: 'pointer',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: '0.14em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {d.short}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* Step 3 — hour */}
+        <AnimatePresence>
+          {habit && day !== null && (
+            <motion.section
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.25 }}
+            >
+              <div
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}
+              >
+                <span style={{ color: 'var(--b-accent)' }}>III.</span> Hour
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(64px, 1fr))',
+                  gap: 4,
+                }}
+              >
+                {HOURS.map((h) => {
+                  const taken = entryMap.has(`${day}-${h}`);
+                  const isSelected = hour === h;
+                  return (
+                    <button
+                      key={h}
+                      onClick={() => !taken && setHour(h)}
+                      disabled={taken}
+                      className="font-mono tabular"
+                      style={{
+                        padding: '8px 0',
+                        background: isSelected
+                          ? 'var(--b-accent)'
+                          : taken
+                          ? 'var(--b-ink-15)'
+                          : 'transparent',
+                        color: isSelected
+                          ? '#fff'
+                          : taken
+                          ? 'var(--b-ink-40)'
+                          : 'var(--b-ink)',
+                        border: `1px solid ${isSelected ? 'var(--b-accent)' : 'var(--b-rule)'}`,
+                        cursor: taken ? 'not-allowed' : 'pointer',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        textDecoration: taken ? 'line-through' : 'none',
+                      }}
+                      title={taken ? 'Already scheduled' : ''}
+                    >
+                      {fmtHHmm(h)}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* Confirm */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+          <button
+            onClick={onClose}
+            className="font-body"
+            style={{
+              padding: '10px 16px',
+              background: 'transparent',
+              border: '1px solid var(--b-ink)',
+              cursor: 'pointer',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--b-ink)',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              if (canConfirm) onConfirm(habit!, day!, hour!);
+            }}
+            disabled={!canConfirm || busy}
+            className="font-body"
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              background: canConfirm ? 'var(--b-ink)' : 'var(--b-ink-15)',
+              color: canConfirm ? 'var(--b-paper)' : 'var(--b-ink-40)',
+              border: 'none',
+              cursor: canConfirm && !busy ? 'pointer' : 'not-allowed',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {busy ? 'Saving…' : canConfirm ? `Pin · ${DAYS[day!].short} ${fmtHHmm(hour!)}` : 'Pick all three'}
+          </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
