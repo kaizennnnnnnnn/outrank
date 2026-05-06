@@ -369,6 +369,12 @@ body {
   background: var(--b-accent);
   margin-left: 6px;
   vertical-align: -0.12em;
+  /* Italic slant to match the Fraunces display italic next to it.
+     skewX(-12deg) leans the cursor's top to the right — same axis
+     as the username it sits beside, so it reads as a typing caret
+     for italic copy rather than a vertical bar bolted onto the end. */
+  transform: skewX(-12deg);
+  transform-origin: bottom left;
   animation: typing-cursor-blink 2.6s ease-in-out infinite;
   will-change: opacity;
 }
