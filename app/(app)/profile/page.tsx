@@ -124,28 +124,26 @@ export default function ProfilePage() {
                 className="font-body"
                 style={{
                   fontSize: 10,
-                  color: 'var(--b-accent)',
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   fontWeight: 700,
                   textDecoration: 'none',
                 }}
               >
-                Roster →
+                <span className="metallic-shine">Roster →</span>
               </Link>
               <Link
                 href="/settings"
                 className="font-body"
                 style={{
                   fontSize: 10,
-                  color: 'var(--b-accent)',
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.12em',
                   textTransform: 'uppercase',
                   fontWeight: 700,
                   textDecoration: 'none',
                 }}
               >
-                Settings →
+                <span className="metallic-shine">Settings →</span>
               </Link>
             </div>
           </div>

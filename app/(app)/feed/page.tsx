@@ -36,13 +36,12 @@ import Link from 'next/link';
  * the lead card; compact rows just show counts.
  */
 
-const REACTIONS: { kind: ReactionEmoji; label: string; Glyph: React.ComponentType<{ size?: number }>; color: string }[] = [
-  { kind: '🔥', label: 'Hyped',   Glyph: BFlameGlyph,  color: '#f97316' },
-  { kind: '💪', label: 'Beast',   Glyph: BTrophyGlyph, color: '#ef4444' },
-  { kind: '👏', label: 'Respect', Glyph: BCheerGlyph,  color: '#fbbf24' },
-  { kind: '⚡', label: 'Fast',    Glyph: BCheckGlyph,  color: '#a855f7' },
-  { kind: '🤝', label: 'With',    Glyph: BHeartGlyph,  color: '#22d3ee' },
-];
+// Single canonical reaction. Keyed by '🔥' so legacy reaction docs
+// (which used five different emoji buckets) still register under the
+// heart UI; the count helper below sums across every legacy key so
+// nothing already given is "lost."
+const HEART_KIND: ReactionEmoji = '🔥';
+const LEGACY_REACTION_KINDS: ReactionEmoji[] = ['🔥', '💪', '👏', '⚡', '🤝'];
 
 interface ActorCosm {
   frame?: string;
@@ -573,39 +572,38 @@ function LeadDispatch({
         </Link>
       )}
 
-      {/* View day link — recap items only */}
+      {/* View day — distinctive metallic-shine button, recap items only */}
       {detailHref && (
-        <Link
-          href={detailHref}
-          className="font-body"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            marginTop: 10,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            color: 'var(--b-accent)',
-            textDecoration: 'none',
-          }}
-        >
-          View the day{proofCount > 0 ? ` · ${proofCount} photo${proofCount === 1 ? '' : 's'}` : ''} →
-        </Link>
+        <div style={{ marginTop: 14 }}>
+          <Link
+            href={detailHref}
+            className="font-body"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 16px',
+              border: '1px solid var(--b-accent)',
+              borderLeft: '3px solid var(--b-accent)',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+              background: 'transparent',
+            }}
+          >
+            <span className="metallic-shine">
+              View the day{proofCount > 0 ? ` · ${proofCount} photo${proofCount === 1 ? '' : 's'}` : ''} →
+            </span>
+          </Link>
+        </div>
       )}
 
-      {/* Reaction strip — five glyph buttons */}
-      <ReactionStrip
-        reactions={reactions}
-        currentUid={currentUid}
-        onReact={onReact}
-      />
-
-      {/* Counts + comment toggle */}
+      {/* Heart-only reaction + comment toggle */}
       <div
         style={{
-          marginTop: 8,
+          marginTop: 12,
           display: 'flex',
           alignItems: 'center',
           gap: 16,
@@ -613,10 +611,7 @@ function LeadDispatch({
           fontFamily: 'var(--font-inter)',
         }}
       >
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
-          <BHeartGlyph size={13} />
-          <span className="tabular">{totalR}</span>
-        </span>
+        <HeartReact reactions={reactions} currentUid={currentUid} onReact={onReact} />
         <button
           onClick={onToggleComments}
           className="font-body"
@@ -650,63 +645,52 @@ function LeadDispatch({
   );
 }
 
-function ReactionStrip({
+/**
+ * Single heart reaction button. Writes to the canonical HEART_KIND
+ * bucket; the count sums across every legacy bucket so reactions
+ * given before the simplification still show up.
+ */
+function HeartReact({
   reactions, currentUid, onReact,
 }: {
   reactions: Record<string, string[]>;
   currentUid?: string;
   onReact: (kind: ReactionEmoji) => void;
 }) {
+  const heartList = reactions[HEART_KIND] ?? [];
+  const active = !!currentUid && heartList.includes(currentUid);
+  // Sum across all legacy reaction kinds so an old fire/clap/etc still
+  // counts toward the total displayed next to the heart.
+  const totalCount = LEGACY_REACTION_KINDS.reduce(
+    (n, k) => n + (reactions[k]?.length || 0),
+    0,
+  );
   return (
-    <div
+    <button
+      onClick={() => onReact(HEART_KIND)}
+      className="font-body"
       style={{
-        marginTop: 12,
-        display: 'flex',
+        display: 'inline-flex',
+        alignItems: 'center',
         gap: 6,
-        flexWrap: 'wrap',
+        padding: '4px 10px',
+        background: active ? 'var(--b-accent)' : 'transparent',
+        border: active ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+        cursor: 'pointer',
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.08em',
+        color: active ? 'var(--b-paper)' : 'var(--b-ink-60)',
+        textTransform: 'uppercase',
       }}
     >
-      {REACTIONS.map(({ kind, label, Glyph, color }) => {
-        const list = reactions[kind] ?? [];
-        const active = !!currentUid && list.includes(currentUid);
-        const count = list.length;
-        return (
-          <button
-            key={kind}
-            onClick={() => onReact(kind)}
-            title={label}
-            className="font-body"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '4px 8px',
-              background: active ? `${color}14` : 'transparent',
-              border: active ? `1px solid ${color}` : '1px solid var(--b-rule)',
-              cursor: 'pointer',
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: '0.04em',
-              color: active ? color : 'var(--b-ink-60)',
-              textTransform: 'uppercase',
-            }}
-          >
-            <span style={{ color, display: 'inline-flex' }}>
-              <Glyph size={12} />
-            </span>
-            <span>{label}</span>
-            {count > 0 && (
-              <span
-                className="font-mono tabular"
-                style={{ fontSize: 9, color: active ? color : 'var(--b-ink-40)', marginLeft: 2 }}
-              >
-                {count}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
+      <BHeartGlyph size={12} />
+      {totalCount > 0 && (
+        <span className="font-mono tabular" style={{ fontSize: 10 }}>
+          {totalCount}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -794,38 +778,39 @@ function CompactDispatch({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
+              gap: 6,
+              padding: '6px 10px',
+              border: '1px solid var(--b-accent)',
+              borderLeft: '3px solid var(--b-accent)',
               fontSize: 9,
               fontWeight: 700,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: 'var(--b-accent)',
               textDecoration: 'none',
+              background: 'transparent',
             }}
           >
-            View the day{proofCount > 0 ? ` · ${proofCount} photo${proofCount === 1 ? '' : 's'}` : ''} →
+            <span className="metallic-shine">
+              View the day{proofCount > 0 ? ` · ${proofCount} photo${proofCount === 1 ? '' : 's'}` : ''} →
+            </span>
           </Link>
         </div>
       )}
 
-      {/* Action bar — react / comment */}
+      {/* Action bar — heart + comment */}
       <div
         style={{
           marginTop: 8,
           paddingLeft: 30,
           display: 'flex',
           alignItems: 'center',
-          gap: 14,
+          gap: 12,
           color: 'var(--b-ink-60)',
           fontFamily: 'var(--font-inter)',
         }}
       >
-        <CompactReact reactions={reactions} currentUid={currentUid} onReact={onReact} />
+        <HeartReact reactions={reactions} currentUid={currentUid} onReact={onReact} />
         <span style={{ flex: 1 }} />
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10 }}>
-          <BHeartGlyph size={11} />
-          <span className="tabular">{totalR}</span>
-        </span>
         <button
           onClick={onToggleComments}
           className="font-body"
@@ -852,41 +837,6 @@ function CompactDispatch({
         </div>
       )}
     </li>
-  );
-}
-
-function CompactReact({
-  reactions, currentUid, onReact,
-}: {
-  reactions: Record<string, string[]>;
-  currentUid?: string;
-  onReact: (kind: ReactionEmoji) => void;
-}) {
-  return (
-    <div style={{ display: 'inline-flex', gap: 4 }}>
-      {REACTIONS.map(({ kind, label, Glyph, color }) => {
-        const list = reactions[kind] ?? [];
-        const active = !!currentUid && list.includes(currentUid);
-        return (
-          <button
-            key={kind}
-            onClick={() => onReact(kind)}
-            title={label}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '3px 5px',
-              background: active ? `${color}14` : 'transparent',
-              border: active ? `1px solid ${color}` : '1px solid var(--b-rule)',
-              cursor: 'pointer',
-              color: active ? color : 'var(--b-ink-60)',
-            }}
-          >
-            <Glyph size={11} />
-          </button>
-        );
-      })}
-    </div>
   );
 }
 

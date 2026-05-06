@@ -485,13 +485,13 @@ function ThemeSection() {
   const options: { key: EditorialTheme; label: string; sub: string; preview: { paper: string; ink: string } }[] = [
     {
       key: 'dark',
-      label: 'Dark',
-      sub: 'Near-black paper, warm cream ink.',
+      label: 'Ink',
+      sub: 'Near-black paper, warm cream ink. The night edition.',
       preview: { paper: '#0d0d15', ink: '#f5f1ea' },
     },
     {
       key: 'light',
-      label: 'Light',
+      label: 'Paper',
       sub: 'Cream paper, dark ink — like a printed periodical.',
       preview: { paper: '#f4f1ea', ink: '#14130f' },
     },
