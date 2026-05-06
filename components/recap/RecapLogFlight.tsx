@@ -8,21 +8,23 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon';
 
 /**
  * Overlay rendered once at the app-layout level. Subscribes to
- * `useUIStore.recapFlights` and animates each log into the recap draft
- * panel as a sequence styled to match the editorial Direction B v2
- * paper-and-ink language:
+ * `useUIStore.recapFlights` and animates each log into the recap
+ * draft panel as a paper-slip-being-tossed-onto-the-desk sequence,
+ * styled to match the editorial Direction B v2 paper-and-ink language.
  *
- *   1. **Liftoff hairline** at the source point — single ink-stroke
- *      ring expanding once. No glow.
- *   2. **Card chip** flies on a curved arc from source → destination.
- *      The chip is a paper rectangle with a hairline border, an accent
- *      stripe on the left, the category glyph, and `+value unit / FILED`.
- *   3. **Splash** fires at the destination once the chip lands: a
- *      single hairline ring + four ink dots in cardinal directions.
- *
- * Each flight self-clears via `clearRecapFlight(id)` once the splash
- * exits. Z-index 220 puts it above the modal overlay (z-50) and below
- * the level-up overlay (z-260).
+ * Sequence:
+ *   1. **Liftoff** — single hairline ring expanding once, plus a
+ *      brief category-color flash at the source point.
+ *   2. **Trail** — three faint hairline dashes following the arc,
+ *      fading sequentially. Like a stenographer's pen tracking the
+ *      slip's path across the page.
+ *   3. **Card** — paper card with a hairline ink border, accent stripe
+ *      on the left, glyph + value + "FILED" stamp. Tilts heavily on
+ *      liftoff (-14deg), straightens mid-arc (8deg), then snaps flat
+ *      at landing. Lands with a small overshoot bounce.
+ *   4. **Splash** — wax-stamp impression at destination: outer thick
+ *      category-colored ring punching in + inner hairline ring
+ *      bleeding out + four cardinal ink dots radiating.
  */
 export function RecapLogFlight() {
   const flights = useUIStore((s) => s.recapFlights);
@@ -39,14 +41,14 @@ export function RecapLogFlight() {
   );
 }
 
-const CHIP_DURATION = 0.85;
-const SPLASH_DURATION = 0.55;
+const CHIP_DURATION = 0.95;
+const SPLASH_DURATION = 0.6;
 
 function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () => void }) {
   const [landed, setLanded] = useState(false);
   const bumpPanelPulse = useUIStore((s) => s.bumpPanelPulse);
 
-  const arcLiftY = Math.min(flight.fromY, flight.toY) - 80;
+  const arcLiftY = Math.min(flight.fromY, flight.toY) - 90;
   const arcMidX = (flight.fromX + flight.toX) / 2;
 
   const handleLanded = () => {
@@ -57,6 +59,7 @@ function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () =>
   return (
     <>
       <FlightLiftoff flight={flight} />
+      <FlightTrail flight={flight} arcMidX={arcMidX} arcLiftY={arcLiftY} />
       <FlightChip flight={flight} arcMidX={arcMidX} arcLiftY={arcLiftY} onLanded={handleLanded} />
       {landed && <FlightSplash flight={flight} onDone={onDone} />}
     </>
@@ -64,28 +67,105 @@ function FlightSequence({ flight, onDone }: { flight: RecapFlight; onDone: () =>
 }
 
 /**
- * A single hairline ring expanding once. Reads as a stamp-press, not a
- * burst — fits the paper grammar.
+ * Hairline ring + accent flash at the source. Reads as the slip
+ * coming free of the surface.
  */
 function FlightLiftoff({ flight }: { flight: RecapFlight }) {
   return (
-    <motion.div
-      className="absolute"
-      style={{
-        left: 0,
-        top: 0,
-        width: 24,
-        height: 24,
-        marginLeft: -12,
-        marginTop: -12,
-        border: `1px solid ${flight.categoryColor}`,
-        x: flight.fromX,
-        y: flight.fromY,
-      }}
-      initial={{ scale: 0.6, opacity: 1 }}
-      animate={{ scale: 2.2, opacity: 0 }}
-      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-    />
+    <>
+      <motion.div
+        className="absolute"
+        style={{
+          left: 0,
+          top: 0,
+          width: 28,
+          height: 28,
+          marginLeft: -14,
+          marginTop: -14,
+          border: `1px solid ${flight.categoryColor}`,
+          x: flight.fromX,
+          y: flight.fromY,
+        }}
+        initial={{ scale: 0.5, opacity: 1 }}
+        animate={{ scale: 2.6, opacity: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      />
+      {/* Tight category-color core flash */}
+      <motion.div
+        className="absolute"
+        style={{
+          left: 0,
+          top: 0,
+          width: 14,
+          height: 14,
+          marginLeft: -7,
+          marginTop: -7,
+          background: flight.categoryColor,
+          x: flight.fromX,
+          y: flight.fromY,
+          opacity: 0.9,
+        }}
+        initial={{ scale: 0.4, opacity: 0.9 }}
+        animate={{ scale: 1.6, opacity: 0 }}
+        transition={{ duration: 0.32, ease: 'easeOut' }}
+      />
+    </>
+  );
+}
+
+/**
+ * Three faint hairline dashes that follow the chip's arc with
+ * staggered delays — fade out as the chip passes each. The trail
+ * leaves a clear paper-trail signature without competing with the
+ * chip itself.
+ */
+function FlightTrail({
+  flight,
+  arcMidX,
+  arcLiftY,
+}: {
+  flight: RecapFlight;
+  arcMidX: number;
+  arcLiftY: number;
+}) {
+  const dashes = [
+    { delay: 0.08, len: 12 },
+    { delay: 0.18, len: 10 },
+    { delay: 0.28, len: 8 },
+    { delay: 0.38, len: 6 },
+  ];
+  return (
+    <>
+      {dashes.map((d, i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          style={{
+            left: 0,
+            top: 0,
+            width: d.len,
+            height: 1,
+            background: flight.categoryColor,
+          }}
+          initial={{
+            x: flight.fromX,
+            y: flight.fromY,
+            opacity: 0,
+          }}
+          animate={{
+            x: [flight.fromX, arcMidX, flight.toX],
+            y: [flight.fromY, arcLiftY, flight.toY],
+            opacity: [0, 0.7, 0],
+          }}
+          transition={{
+            duration: CHIP_DURATION * 0.85,
+            delay: d.delay,
+            times: [0, 0.4, 0.85],
+            ease: [0.34, 1.0, 0.64, 1],
+          }}
+        />
+      ))}
+    </>
   );
 }
 
@@ -100,9 +180,10 @@ function FlightChip({
   arcLiftY: number;
   onLanded: () => void;
 }) {
-  // Subtle rotation lifecycle — slight tilt at liftoff (like a slip
-  // of paper coming free), straightening mid-flight, snapping flat
-  // at landing. Reads as a clipping being filed, not a digital chip.
+  // Paper-toss motion: heavy tilt on liftoff (-14deg, like the slip
+  // is breaking free), straightens mid-arc (8deg, near horizontal),
+  // settles flat at landing. A small overshoot at the end (scale 0.55
+  // → 0.5) reads as the slip thwacking onto the desk.
   return (
     <motion.div
       className="absolute"
@@ -110,22 +191,22 @@ function FlightChip({
       initial={{
         x: flight.fromX,
         y: flight.fromY,
-        scale: 1,
+        scale: 1.05,
         opacity: 0,
-        rotate: -6,
+        rotate: -14,
       }}
       animate={{
-        x: [flight.fromX, arcMidX, flight.toX],
-        y: [flight.fromY, arcLiftY, flight.toY],
-        scale: [1, 0.92, 0.5],
-        opacity: [0, 1, 1, 0.9],
-        rotate: [-6, 2, 0],
+        x: [flight.fromX, arcMidX, flight.toX, flight.toX],
+        y: [flight.fromY, arcLiftY, flight.toY, flight.toY],
+        scale: [1.05, 0.95, 0.55, 0.5],
+        opacity: [0, 1, 1, 0.92],
+        rotate: [-14, 8, 1, 0],
       }}
       transition={{
         duration: CHIP_DURATION,
-        times: [0, 0.4, 1],
+        times: [0, 0.42, 0.92, 1],
         ease: [0.34, 1.0, 0.64, 1],
-        opacity: { duration: CHIP_DURATION, times: [0, 0.15, 0.85, 1], ease: 'easeOut' },
+        opacity: { duration: CHIP_DURATION, times: [0, 0.15, 0.88, 1], ease: 'easeOut' },
       }}
       onAnimationComplete={onLanded}
     >
@@ -136,12 +217,15 @@ function FlightChip({
             background: 'var(--b-paper)',
             color: 'var(--b-ink)',
             border: '1px solid var(--b-ink)',
-            borderLeft: `3px solid ${flight.categoryColor}`,
-            padding: '8px 12px',
-            gap: 10,
-            // Soft drop so the card reads as paper above other paper.
-            // No colored glow; the shadow is pure ink.
-            boxShadow: '0 6px 18px -8px rgba(0,0,0,0.45)',
+            borderLeft: `4px solid ${flight.categoryColor}`,
+            padding: '10px 14px',
+            gap: 12,
+            // Two-layer shadow: a tight ink drop + a softer wider one
+            // so the slip reads as paper sitting above paper, with a
+            // crisper edge than a single soft shadow gives you.
+            boxShadow:
+              '0 2px 0 -1px rgba(0,0,0,0.18),' +
+              '0 10px 24px -10px rgba(0,0,0,0.55)',
           }}
         >
           <span style={{ color: flight.categoryColor, display: 'inline-flex' }}>
@@ -153,16 +237,16 @@ function FlightChip({
               size="sm"
             />
           </span>
-          <div style={{ lineHeight: 1.1 }}>
+          <div style={{ lineHeight: 1.05 }}>
             <div
               className="font-display tabular"
-              style={{ fontSize: 16, fontStyle: 'italic', fontWeight: 500 }}
+              style={{ fontSize: 20, fontStyle: 'italic', fontWeight: 500 }}
             >
               +{flight.value}
               <span
                 className="font-body"
                 style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   fontStyle: 'normal',
                   fontWeight: 400,
                   color: 'var(--b-ink-60)',
@@ -176,9 +260,9 @@ function FlightChip({
             </div>
             <div
               className="spread"
-              style={{ fontSize: 8, color: 'var(--b-ink-60)', marginTop: 3 }}
+              style={{ fontSize: 8.5, color: flight.categoryColor, marginTop: 4 }}
             >
-              Filed
+              FILED · §
             </div>
           </div>
         </div>
@@ -188,56 +272,55 @@ function FlightChip({
 }
 
 /**
- * Landing mark — a wax-stamp impression. Two rings layered: an outer
- * thick category-colored ring that punches in from large→small (the
- * stamp settling onto paper), and a hairline inner ring that opens
- * from small→large (ink spreading into the paper grain). Plus four
- * cardinal ink dots for character.
+ * Wax-stamp impression at the destination. Outer thick category-color
+ * ring punches in (large→small + opacity in/out) — the stamp settling.
+ * Inner hairline ring opens out — ink bleeding into paper. Four
+ * cardinal dots radiate as character marks.
  */
 function FlightSplash({ flight, onDone }: { flight: RecapFlight; onDone: () => void }) {
   const dots = [
-    { dx: 0,   dy: -22 },
-    { dx: 22,  dy: 0   },
-    { dx: 0,   dy: 22  },
-    { dx: -22, dy: 0   },
+    { dx: 0,   dy: -24 },
+    { dx: 24,  dy: 0   },
+    { dx: 0,   dy: 24  },
+    { dx: -24, dy: 0   },
   ];
 
   return (
     <>
-      {/* Outer ring — stamp settling: large → small + fade */}
+      {/* Outer thick stamp — large, settles down */}
       <motion.div
         className="absolute"
         style={{
           left: 0,
           top: 0,
-          width: 28,
-          height: 28,
-          marginLeft: -14,
-          marginTop: -14,
-          border: `2px solid ${flight.categoryColor}`,
+          width: 30,
+          height: 30,
+          marginLeft: -15,
+          marginTop: -15,
+          border: `2.5px solid ${flight.categoryColor}`,
           x: flight.toX,
           y: flight.toY,
         }}
-        initial={{ scale: 2.4, opacity: 0 }}
-        animate={{ scale: 1, opacity: [0, 1, 0.6] }}
-        transition={{ duration: SPLASH_DURATION * 0.55, ease: [0.34, 1.4, 0.64, 1] }}
+        initial={{ scale: 2.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: [0, 1, 0.7] }}
+        transition={{ duration: SPLASH_DURATION * 0.5, ease: [0.34, 1.4, 0.64, 1] }}
       />
-      {/* Inner hairline — ink bleeding into paper: small → large + fade */}
+      {/* Inner hairline — ink bleeding into paper, opens out */}
       <motion.div
         className="absolute"
         style={{
           left: 0,
           top: 0,
-          width: 22,
-          height: 22,
-          marginLeft: -11,
-          marginTop: -11,
+          width: 24,
+          height: 24,
+          marginLeft: -12,
+          marginTop: -12,
           border: `1px solid ${flight.categoryColor}`,
           x: flight.toX,
           y: flight.toY,
         }}
         initial={{ scale: 0.4, opacity: 1 }}
-        animate={{ scale: 3, opacity: 0 }}
+        animate={{ scale: 3.2, opacity: 0 }}
         transition={{ duration: SPLASH_DURATION, ease: [0.16, 1, 0.3, 1] }}
         onAnimationComplete={onDone}
       />
@@ -248,10 +331,10 @@ function FlightSplash({ flight, onDone }: { flight: RecapFlight; onDone: () => v
           style={{
             left: 0,
             top: 0,
-            width: 3,
-            height: 3,
-            marginLeft: -1.5,
-            marginTop: -1.5,
+            width: 4,
+            height: 4,
+            marginLeft: -2,
+            marginTop: -2,
             background: flight.categoryColor,
             x: flight.toX,
             y: flight.toY,
@@ -261,7 +344,7 @@ function FlightSplash({ flight, onDone }: { flight: RecapFlight; onDone: () => v
             x: flight.toX + d.dx,
             y: flight.toY + d.dy,
             opacity: 0,
-            scale: 0.6,
+            scale: 0.5,
           }}
           transition={{ duration: SPLASH_DURATION, ease: [0.16, 1, 0.3, 1] }}
         />

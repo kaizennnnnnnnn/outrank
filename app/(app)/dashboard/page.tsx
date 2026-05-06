@@ -129,9 +129,15 @@ export default function DashboardPage() {
   // own +0.25/+0.5/+1 quick-log surface but for the editorial dashboard
   // we just open the standard QuickLogModal (faithful to the design,
   // which shows uniform rows). Other pillars open the modal too.
+  //
+  // Already-logged habits are no-ops — the row visibly strikes through,
+  // and a second tap shouldn't quietly produce a second log.
   const handlePillarTap = (pillar: Pillar, habit: UserHabit | undefined) => {
     if (!habit) {
       router.push('/habits');
+      return;
+    }
+    if (habit && isLoggedToday(habit)) {
       return;
     }
     if (pillar.slug === 'gym') {
@@ -478,13 +484,15 @@ export default function DashboardPage() {
                     <li
                       key={pillar.slug}
                       onClick={() => handlePillarTap(pillar, habit)}
+                      aria-disabled={done}
                       style={{
                         display: 'flex',
                         alignItems: 'baseline',
                         gap: 12,
                         padding: '12px 0',
                         borderBottom: '1px solid var(--b-rule)',
-                        cursor: 'pointer',
+                        cursor: done ? 'default' : 'pointer',
+                        pointerEvents: done ? 'none' : 'auto',
                       }}
                     >
                       <span
@@ -494,7 +502,7 @@ export default function DashboardPage() {
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       {Glyph && (
-                        <Glyph size={18} style={{ color: 'var(--b-ink-60)', flexShrink: 0 }} />
+                        <Glyph size={18} style={{ color: done ? 'var(--b-ink-40)' : 'var(--b-ink-60)', flexShrink: 0 }} />
                       )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
@@ -582,14 +590,16 @@ export default function DashboardPage() {
                   return (
                     <li
                       key={habit.categorySlug}
-                      onClick={() => openLogModal(habit)}
+                      onClick={() => { if (!done) openLogModal(habit); }}
+                      aria-disabled={done}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
                         padding: '12px 0',
                         borderBottom: '1px solid var(--b-rule)',
-                        cursor: 'pointer',
+                        cursor: done ? 'default' : 'pointer',
+                        pointerEvents: done ? 'none' : 'auto',
                       }}
                     >
                       <span
