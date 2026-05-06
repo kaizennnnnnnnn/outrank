@@ -2,14 +2,13 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { LEAGUES, getLeague, getNextLeague } from '@/constants/seasons';
+import { LeagueCrest } from './LeagueCrest';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   weeklyXP: number;
 }
-
-const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
 // Reward summary for each league — purely informational, shown in the modal.
 const leagueRewards: Record<string, string> = {
@@ -98,45 +97,46 @@ export function RanksModal({ isOpen, onClose, weeklyXP }: Props) {
             {/* Body */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '4px 20px 14px' }}>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {[...LEAGUES].reverse().map((l) => {
+                {[...LEAGUES].reverse().map((l, displayIdx) => {
                   const isCurrent = l.id === current.id;
+                  const isReached = weeklyXP >= l.minWeeklyXP;
+                  const isLocked = !isReached;
                   const reward = leagueRewards[l.id] || '';
-                  const idx = LEAGUES.indexOf(l);
                   return (
-                    <li
+                    <motion.li
                       key={l.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        delay: 0.04 + displayIdx * 0.05,
+                        duration: 0.4,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: '32px 1fr auto',
+                        gridTemplateColumns: '52px 1fr',
                         alignItems: 'center',
-                        gap: 12,
-                        padding: '12px 0',
+                        gap: 14,
+                        padding: '14px 0',
                         borderBottom: '1px solid var(--b-rule)',
-                        borderLeft: isCurrent ? '2px solid var(--b-accent)' : '2px solid transparent',
+                        borderLeft: isCurrent ? '3px solid var(--b-accent)' : '3px solid transparent',
                         paddingLeft: isCurrent ? 10 : 0,
+                        background: isCurrent
+                          ? `linear-gradient(90deg, ${l.color}10, transparent 80%)`
+                          : 'transparent',
                       }}
                     >
-                      <span
-                        className="font-display tabular"
-                        style={{
-                          fontSize: 18,
-                          fontStyle: 'italic',
-                          fontWeight: 500,
-                          color: l.color,
-                          textAlign: 'right',
-                        }}
-                      >
-                        {NUMERALS[idx] ?? ''}
-                      </span>
+                      <LeagueCrest league={l} size={48} active={isCurrent} locked={isLocked} />
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
                           <span
-                            className="font-display"
+                            className={isCurrent ? 'font-display league-crest-shine' : 'font-display'}
                             style={{
-                              fontSize: 16,
+                              ['--crest-color' as string]: l.color,
+                              fontSize: 18,
                               fontStyle: 'italic',
                               fontWeight: 500,
-                              color: l.color,
+                              color: isCurrent ? undefined : l.color,
                             }}
                           >
                             {l.name}
@@ -144,27 +144,46 @@ export function RanksModal({ isOpen, onClose, weeklyXP }: Props) {
                           {isCurrent && (
                             <span
                               className="spread"
-                              style={{ fontSize: 8, color: 'var(--b-accent)' }}
+                              style={{
+                                fontSize: 8,
+                                color: 'var(--b-paper)',
+                                background: 'var(--b-accent)',
+                                padding: '2px 6px',
+                                letterSpacing: '0.18em',
+                              }}
                             >
                               You
+                            </span>
+                          )}
+                          {isLocked && (
+                            <span
+                              className="spread"
+                              style={{ fontSize: 8, color: 'var(--b-ink-40)' }}
+                            >
+                              Locked
                             </span>
                           )}
                         </div>
                         <p
                           className="font-mono tabular"
-                          style={{ fontSize: 10, color: 'var(--b-ink-40)', margin: '2px 0 0' }}
+                          style={{ fontSize: 10, color: 'var(--b-ink-40)', margin: '3px 0 0', letterSpacing: '0.04em' }}
                         >
                           {l.minWeeklyXP.toLocaleString()}+ weekly XP
                         </p>
                         <p
                           className="font-body"
-                          style={{ fontSize: 11, color: 'var(--b-ink-60)', margin: '4px 0 0', lineHeight: 1.4 }}
+                          style={{
+                            fontSize: 11,
+                            color: isCurrent ? 'var(--b-ink)' : 'var(--b-ink-60)',
+                            margin: '5px 0 0',
+                            lineHeight: 1.45,
+                            fontStyle: isCurrent ? 'italic' : 'normal',
+                          }}
                         >
                           {reward}
                         </p>
                       </div>
-                      <span />
-                    </li>
+                    </motion.li>
                   );
                 })}
               </ul>

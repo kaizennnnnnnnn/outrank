@@ -9,10 +9,9 @@ import {
   getSeasonPassTier, getSeasonPassProgress, SEASON_PASS_TIERS,
 } from '@/constants/seasons';
 import { RanksModal } from './RanksModal';
+import { LeagueCrest } from './LeagueCrest';
 
 interface Props { user: UserProfile; }
-
-const NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 
 export function SeasonCard({ user }: Props) {
   const [ranksOpen, setRanksOpen] = useState(false);
@@ -31,7 +30,8 @@ export function SeasonCard({ user }: Props) {
     ? (weeklyXP - league.minWeeklyXP) / (nextLeague.minWeeklyXP - league.minWeeklyXP)
     : 1;
 
-  const leagueIndex = LEAGUES.indexOf(league);
+  // Suppress: still imported elsewhere. Remove explicit unused.
+  void LEAGUES;
 
   return (
     <div
@@ -50,14 +50,14 @@ export function SeasonCard({ user }: Props) {
             Season {season}
           </div>
           <div
-            className="font-display"
+            className="font-display league-crest-shine"
             style={{
+              ['--crest-color' as string]: league.color,
               fontSize: 28,
               fontStyle: 'italic',
               fontWeight: 500,
               lineHeight: 1,
               marginTop: 2,
-              color: league.color,
             }}
           >
             {league.name}
@@ -70,30 +70,10 @@ export function SeasonCard({ user }: Props) {
           </div>
         </div>
 
-        {/* Roman numeral crest */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 56,
-            height: 56,
-            border: `1px solid ${league.color}`,
-            flexShrink: 0,
-          }}
-        >
-          <span
-            className="font-display tabular"
-            style={{
-              fontSize: 22,
-              fontStyle: 'italic',
-              fontWeight: 500,
-              color: league.color,
-            }}
-          >
-            {NUMERALS[leagueIndex] ?? ''}
-          </span>
-        </div>
+        {/* Premium league crest — chevron-stack mark + roman numeral
+            with metallic shine and pulsing color halo on the active rank. */}
+        <LeagueCrest league={league} size={62} active />
+
       </div>
 
       {/* Promotion bar */}
