@@ -4,7 +4,10 @@ import * as admin from 'firebase-admin';
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
 
-// Runs every day at midnight UTC
+// Runs every day at midnight UTC. Streaks that weren't extended yesterday
+// either consume a freeze token or break. We batch all per-user actions
+// into a SINGLE consolidated notification so the user doesn't get
+// blasted with one message per affected habit.
 export const scheduledStreaks = functions.pubsub
   .schedule('0 0 * * *')
   .timeZone('UTC')
@@ -16,72 +19,60 @@ export const scheduledStreaks = functions.pubsub
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
 
-      // Get all users
       const usersSnap = await db.collection('users').where('isBanned', '==', false).get();
 
       for (const userDoc of usersSnap.docs) {
         const userId = userDoc.id;
-
-        // Get all habits for this user
         const habitsSnap = await db.collection(`habits/${userId}/userHabits`).get();
+
+        // Collect, don't notify per-habit. We send one digest at the end.
+        const broken: { name: string; days: number }[] = [];
+        const frozen: { name: string }[] = [];
+        let freezesLeft = (userDoc.data().streakFreezeTokens as number) || 0;
 
         for (const habitDoc of habitsSnap.docs) {
           const habit = habitDoc.data();
-
           if (!habit.lastLogDate || habit.currentStreak === 0) continue;
 
           const lastLog = habit.lastLogDate.toDate();
           lastLog.setHours(0, 0, 0, 0);
 
-          // If last log was before yesterday, streak is broken
           if (lastLog.getTime() < yesterday.getTime()) {
-            const userData = userDoc.data();
-
-            // Check if user has streak freeze tokens
-            if (userData.streakFreezeTokens > 0) {
-              // Consume a freeze token
+            if (freezesLeft > 0) {
+              freezesLeft -= 1;
               await db.doc(`users/${userId}`).update({
                 streakFreezeTokens: admin.firestore.FieldValue.increment(-1),
               });
-
-              // Notify user that freeze was used
-              await db.collection(`notifications/${userId}/items`).add({
-                type: 'streak_at_risk',
-                message: `Streak freeze used for ${habit.categoryName}! You have ${userData.streakFreezeTokens - 1} left. ❄️`,
-                isRead: false,
-                relatedId: habitDoc.id,
-                actorId: 'system',
-                actorAvatar: '',
-                createdAt: admin.firestore.Timestamp.now(),
-              });
-
+              frozen.push({ name: habit.categoryName });
               console.log(`Streak freeze used: ${userId}/${habitDoc.id}`);
             } else {
-              // Break the streak
               const oldStreak = habit.currentStreak;
               await habitDoc.ref.update({ currentStreak: 0 });
-
-              // Notify user
-              await db.collection(`notifications/${userId}/items`).add({
-                type: 'streak_broken',
-                message: `Your ${oldStreak}-day streak in ${habit.categoryName} ended. Start again today! 💪`,
-                isRead: false,
-                relatedId: habitDoc.id,
-                actorId: 'system',
-                actorAvatar: '',
-                createdAt: admin.firestore.Timestamp.now(),
-              });
-
+              broken.push({ name: habit.categoryName, days: oldStreak });
               console.log(`Streak broken: ${userId}/${habitDoc.id} (was ${oldStreak})`);
             }
           }
+        }
+
+        // Single consolidated notification.
+        if (broken.length > 0 || frozen.length > 0) {
+          const message = composeStreakDigest(broken, frozen, freezesLeft);
+          await db.collection(`notifications/${userId}/items`).add({
+            type: broken.length > 0 ? 'streak_broken' : 'streak_at_risk',
+            message,
+            isRead: false,
+            relatedId: '',
+            actorId: 'system',
+            actorAvatar: '',
+            createdAt: admin.firestore.Timestamp.now(),
+          });
         }
       }
 
       // Refill streak freeze tokens weekly (every Monday)
       if (today.getDay() === 1) {
         const allUsers = await db.collection('users').get();
-        const batch = db.batch();
+        let batch = db.batch();
         let count = 0;
 
         for (const userDoc of allUsers.docs) {
@@ -93,9 +84,9 @@ export const scheduledStreaks = functions.pubsub
             count++;
           }
 
-          // Batch limit
           if (count >= 400) {
             await batch.commit();
+            batch = db.batch();
             count = 0;
           }
         }
@@ -110,7 +101,39 @@ export const scheduledStreaks = functions.pubsub
     }
   });
 
-// Runs every day at 8PM UTC — "streak at risk" reminder
+/**
+ * Build one message that covers everything that happened to this user's
+ * streaks last night. Order: broken first (the bad news), frozen second,
+ * with the remaining freeze count tagged on if any freezes consumed.
+ */
+function composeStreakDigest(
+  broken: { name: string; days: number }[],
+  frozen: { name: string }[],
+  freezesLeft: number,
+): string {
+  const parts: string[] = [];
+
+  if (broken.length === 1) {
+    parts.push(`Your ${broken[0].days}-day ${broken[0].name} streak ended.`);
+  } else if (broken.length > 1) {
+    parts.push(`${broken.length} streaks ended overnight.`);
+  }
+
+  if (frozen.length === 1) {
+    parts.push(
+      `${frozen[0].name} streak saved with a freeze (${freezesLeft} left).`,
+    );
+  } else if (frozen.length > 1) {
+    parts.push(
+      `${frozen.length} streaks saved with freezes (${freezesLeft} left).`,
+    );
+  }
+
+  return parts.join(' ') || 'Streak update';
+}
+
+// Runs every day at 8PM UTC — "streak at risk" reminder. Sends ONE
+// consolidated notification per user instead of one per habit.
 export const streakReminder = functions.pubsub
   .schedule('0 20 * * *')
   .timeZone('UTC')
@@ -128,28 +151,47 @@ export const streakReminder = functions.pubsub
         const userId = userDoc.id;
         const habitsSnap = await db.collection(`habits/${userId}/userHabits`).get();
 
+        // Gather every streak that's at risk for this user.
+        const atRisk: { name: string; days: number }[] = [];
+
         for (const habitDoc of habitsSnap.docs) {
           const habit = habitDoc.data();
           if (habit.currentStreak === 0) continue;
 
           const lastLog = habit.lastLogDate?.toDate();
           if (!lastLog) continue;
-
           lastLog.setHours(0, 0, 0, 0);
 
-          // If not logged today, send reminder
           if (lastLog.getTime() < today.getTime()) {
-            await db.collection(`notifications/${userId}/items`).add({
-              type: 'streak_at_risk',
-              message: `Your ${habit.currentStreak}-day streak in ${habit.categoryName} is at risk! Log now to keep it alive. ⚠️`,
-              isRead: false,
-              relatedId: habitDoc.id,
-              actorId: 'system',
-              actorAvatar: '',
-              createdAt: admin.firestore.Timestamp.now(),
+            atRisk.push({
+              name: habit.categoryName,
+              days: habit.currentStreak,
             });
           }
         }
+
+        if (atRisk.length === 0) continue;
+
+        // Single message. Singular if one habit, plural otherwise.
+        let message: string;
+        if (atRisk.length === 1) {
+          message = `Your streak is in danger — ${atRisk[0].days}-day ${atRisk[0].name}. Log it before midnight.`;
+        } else {
+          // Cap the listed names so the FCM body doesn't get truncated.
+          const names = atRisk.map((h) => h.name).slice(0, 3).join(', ');
+          const more = atRisk.length > 3 ? ` and ${atRisk.length - 3} more` : '';
+          message = `Your ${atRisk.length} streaks are in danger — ${names}${more}. Log them before midnight.`;
+        }
+
+        await db.collection(`notifications/${userId}/items`).add({
+          type: 'streak_at_risk',
+          message,
+          isRead: false,
+          relatedId: '',
+          actorId: 'system',
+          actorAvatar: '',
+          createdAt: admin.firestore.Timestamp.now(),
+        });
       }
 
       console.log('streakReminder completed');

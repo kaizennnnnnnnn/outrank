@@ -75,25 +75,61 @@ export const scheduleNotifier = functions.pubsub
         continue;
       }
 
+      // Collect all entries for this hour that haven't fired today, and
+      // send ONE consolidated notification covering all of them. Marking
+      // each entry's lastFiredDateKey is still per-entry so the
+      // idempotency guarantee holds even if a future fire moves an entry
+      // to a different hour mid-day.
+      const dueEntries: { name: string; doc: typeof entriesSnap.docs[number] }[] = [];
       for (const entryDoc of entriesSnap.docs) {
         const entry = entryDoc.data();
-        // Idempotency: skip if we already fired for this date
         if (entry.lastFiredDateKey === local.dateKey) continue;
+        dueEntries.push({
+          name: entry.habitName || 'your habit',
+          doc: entryDoc,
+        });
+      }
 
-        try {
-          await entryDoc.ref.update({ lastFiredDateKey: local.dateKey });
-          await db.collection(`notifications/${userId}/items`).add({
-            type: 'schedule_reminder',
-            message: `Time for ${entry.habitName || 'your habit'} — let's go`,
-            isRead: false,
-            relatedId: entry.habitSlug || '',
-            actorId: '',
-            actorAvatar: '',
-            createdAt: admin.firestore.Timestamp.now(),
-          });
-        } catch (err) {
-          console.error(`fire schedule failed for ${userId}/${entryDoc.id}`, err);
+      if (dueEntries.length === 0) continue;
+
+      // Stamp idempotency keys first so the digest can fail without
+      // double-firing on the next minute's cron.
+      try {
+        const stampBatch = db.batch();
+        for (const { doc } of dueEntries) {
+          stampBatch.update(doc.ref, { lastFiredDateKey: local.dateKey });
         }
+        await stampBatch.commit();
+      } catch (err) {
+        console.error(`fire schedule stamp failed for ${userId}`, err);
+        continue;
+      }
+
+      // Compose one message. Singular for one habit, name-list for two
+      // or three, count + first three for more.
+      const names = dueEntries.map((e) => e.name);
+      let message: string;
+      if (names.length === 1) {
+        message = `Time for ${names[0]} — let's go.`;
+      } else if (names.length <= 3) {
+        message = `Time for ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}.`;
+      } else {
+        const head = names.slice(0, 3).join(', ');
+        message = `Time for ${names.length} habits — ${head} and ${names.length - 3} more.`;
+      }
+
+      try {
+        await db.collection(`notifications/${userId}/items`).add({
+          type: 'schedule_reminder',
+          message,
+          isRead: false,
+          relatedId: '',
+          actorId: '',
+          actorAvatar: '',
+          createdAt: admin.firestore.Timestamp.now(),
+        });
+      } catch (err) {
+        console.error(`fire schedule notify failed for ${userId}`, err);
       }
     }
   });
