@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Avatar } from '@/components/ui/Avatar';
 import { CategoryIcon } from '@/components/ui/CategoryIcon';
-import { StreakFlame } from '@/components/habits/StreakFlame';
+import { BFlameGlyph } from '@/components/editorial/BGlyphs';
 import { getCollection, createDocument, orderBy, Timestamp } from '@/lib/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
@@ -174,7 +174,43 @@ export function FriendHabitModal({ isOpen, onClose, friendId, friendUsername, fr
                         </p>
                       </div>
                       {habit.currentStreak > 0 && (
-                        <StreakFlame streak={habit.currentStreak} size="sm" />
+                        <span
+                          className="font-display tabular"
+                          aria-label={`${habit.currentStreak} day streak`}
+                          title={`${habit.currentStreak}-day streak`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '2px 6px',
+                            border: '1px solid var(--b-rule)',
+                            color: 'var(--b-ink)',
+                            fontStyle: 'italic',
+                            fontWeight: 600,
+                            fontSize: 13,
+                            letterSpacing: '-0.01em',
+                            lineHeight: 1,
+                          }}
+                        >
+                          <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
+                            <BFlameGlyph size={11} />
+                          </span>
+                          {habit.currentStreak}
+                          <span
+                            className="font-body"
+                            style={{
+                              fontSize: 8.5,
+                              fontStyle: 'normal',
+                              fontWeight: 600,
+                              color: 'var(--b-ink-60)',
+                              letterSpacing: '0.12em',
+                              textTransform: 'uppercase',
+                              marginLeft: 1,
+                            }}
+                          >
+                            d
+                          </span>
+                        </span>
                       )}
                     </div>
                     {/* Bottom row: actions */}
