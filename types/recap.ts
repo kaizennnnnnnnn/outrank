@@ -83,6 +83,8 @@ export interface RecapFeedItem {
   totalXP: number;
   logCount: number;
   proofCount: number;
+  // Distinct pillars covered (0..5). Drives the feed copy ("3 of 5 pillars").
+  pillarsLogged: number;
   // Top 3 categories by XP for the preview chips
   topCategories: Array<{
     slug: string;

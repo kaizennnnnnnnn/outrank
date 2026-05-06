@@ -501,6 +501,10 @@ function LeadDispatch({
     : 'DISPATCH';
   const originId = (item as unknown as { originId?: string }).originId;
   const commentCount = (item as unknown as { commentCount?: number }).commentCount ?? 0;
+  const recapDate = (item as unknown as { recapDate?: string }).recapDate;
+  const detailHref = item.type === 'recap' && recapDate ? `/recap/${item.actorId}/${recapDate}` : null;
+  const proofCount = (item as unknown as { proofCount?: number }).proofCount ?? 0;
+  const heroProofUrl = (item as unknown as { heroProofUrl?: string }).heroProofUrl;
 
   return (
     <article
@@ -554,6 +558,41 @@ function LeadDispatch({
         >
           &ldquo;{(item as unknown as { quote: string }).quote}&rdquo;
         </p>
+      )}
+
+      {/* Hero proof image — full-bleed if the recap has one */}
+      {detailHref && heroProofUrl && (
+        <Link href={detailHref} style={{ display: 'block', margin: '12px 0', border: '1px solid var(--b-rule)' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={heroProofUrl}
+            alt=""
+            loading="lazy"
+            style={{ display: 'block', width: '100%', maxHeight: 280, objectFit: 'cover' }}
+          />
+        </Link>
+      )}
+
+      {/* View day link — recap items only */}
+      {detailHref && (
+        <Link
+          href={detailHref}
+          className="font-body"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            marginTop: 10,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--b-accent)',
+            textDecoration: 'none',
+          }}
+        >
+          View the day{proofCount > 0 ? ` · ${proofCount} photo${proofCount === 1 ? '' : 's'}` : ''} →
+        </Link>
       )}
 
       {/* Reaction strip — five glyph buttons */}
@@ -687,6 +726,9 @@ function CompactDispatch({
   const totalR = Object.values(reactions).reduce((n, arr) => n + (arr?.length || 0), 0);
   const originId = (item as unknown as { originId?: string }).originId;
   const commentCount = (item as unknown as { commentCount?: number }).commentCount ?? 0;
+  const recapDate = (item as unknown as { recapDate?: string }).recapDate;
+  const detailHref = item.type === 'recap' && recapDate ? `/recap/${item.actorId}/${recapDate}` : null;
+  const proofCount = (item as unknown as { proofCount?: number }).proofCount ?? 0;
 
   return (
     <li className="b-row">
@@ -742,6 +784,29 @@ function CompactDispatch({
           {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
         </span>
       </div>
+
+      {/* View day link — recap items only */}
+      {detailHref && (
+        <div style={{ marginTop: 6, paddingLeft: 30 }}>
+          <Link
+            href={detailHref}
+            className="font-body"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--b-accent)',
+              textDecoration: 'none',
+            }}
+          >
+            View the day{proofCount > 0 ? ` · ${proofCount} photo${proofCount === 1 ? '' : 's'}` : ''} →
+          </Link>
+        </div>
+      )}
 
       {/* Action bar — react / comment */}
       <div

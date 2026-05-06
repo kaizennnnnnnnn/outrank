@@ -249,6 +249,7 @@ export async function publishRecap(userId: string, dateKey: string = localDateKe
     totalXP: recap.totalXP,
     logCount: recap.logCount,
     proofCount: recap.proofCount,
+    pillarsLogged,
     topCategories,
     heroProofUrl,
     message: `${recap.username} published their day · ${recap.logCount} log${recap.logCount === 1 ? '' : 's'} · +${recap.totalXP} XP`,
