@@ -472,6 +472,51 @@ body {
   100% { background-position: -200% center; }
 }
 
+/* Town destination row — animates the left stripe + "ENTER →" tag on
+   hover/focus so the row clearly reads as tappable. The stripe widens
+   from 2px → 4px and brightens from rule → accent color; the row
+   surface picks up a soft horizontal wash in the row's accent color
+   (driven by --row-tone CSS var). Tap pulls the row 1px right for
+   tactile feedback. GPU-composited (transform + background only). */
+.town-row {
+  position: relative;
+  transition: padding-left 220ms ease, transform 120ms ease;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--row-tone, var(--b-accent)) 10%, transparent) 0%,
+    transparent 60%
+  );
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  background-position: left center;
+  transition: background-size 320ms ease, padding-left 220ms ease, transform 120ms ease;
+}
+.town-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: var(--b-rule);
+  transition: width 220ms ease, background 220ms ease;
+  pointer-events: none;
+}
+.town-row:hover,
+.town-row:focus-visible {
+  background-size: 100% 100%;
+  padding-left: 8px;
+  outline: none;
+}
+.town-row:hover::before,
+.town-row:focus-visible::before {
+  width: 4px;
+  background: var(--row-tone, var(--b-accent));
+}
+.town-row:active {
+  transform: translateX(1px);
+}
+
 @keyframes phoenix-react {
   /* Quick acknowledgment nod-shake — head dips, swings side to side,
      then settles. Kept under 700ms so it never gets in the way of the
