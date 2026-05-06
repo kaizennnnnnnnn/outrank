@@ -12,7 +12,7 @@ import { createPactInvite, PACT_REWARDS } from '@/lib/pacts';
 import { PactDurationDays, PactReward } from '@/types/pact';
 import { getDocument } from '@/lib/firestore';
 import { UserProfile } from '@/types/user';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { getCategoryIconComponent } from '@/components/ui/CategoryIcons';
 
 interface Props {
   isOpen: boolean;
@@ -382,13 +382,14 @@ function PillarStep({
                 >
                   {String(i + 1).padStart(2, '0')}
                 </span>
-                <CategoryIcon
-                  slug={p.slug}
-                  name={p.name}
-                  icon={cat.icon}
-                  color={cat.color}
-                  size="sm"
-                />
+                {(() => {
+                  const Glyph = getCategoryIconComponent(p.slug);
+                  return (
+                    <span style={{ color: cat.color, display: 'inline-flex' }}>
+                      <Glyph size={20} />
+                    </span>
+                  );
+                })()}
                 <span
                   className="font-display"
                   style={{

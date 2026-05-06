@@ -34,6 +34,7 @@ import {
 } from '@/components/editorial/BGlyphs';
 import { collection, query, where, getDocs, Timestamp as FsTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getCategoryIconComponent, GenericIcon } from '@/components/ui/CategoryIcons';
 
 /**
  * Habits — editorial Direction B v2 conversion.
@@ -89,7 +90,19 @@ const SLUG_GLYPH: Record<string, GlyphCmp> = {
 };
 
 function glyphFor(slug: string): GlyphCmp {
-  return SLUG_GLYPH[slug] ?? BFlameGlyph;
+  // The unique-per-category SVG library is the source of truth for
+  // habit icons — every slug in constants/categories.ts has a
+  // distinct visual there. Only fall through to the small editorial
+  // BGlyphs set as a last-resort alias (they're more
+  // typographically-styled but fewer in number).
+  const fromLibrary = getCategoryIconComponent(slug);
+  // getCategoryIconComponent always returns *something* (GenericIcon
+  // when the slug is unknown), so prefer the editorial alias when we
+  // hit the generic catch-all.
+  if (fromLibrary === GenericIcon && SLUG_GLYPH[slug]) {
+    return SLUG_GLYPH[slug];
+  }
+  return fromLibrary as GlyphCmp;
 }
 
 // Word-form count, 1-99. Falls through to numeric for higher.
@@ -478,41 +491,103 @@ export default function HabitsPage() {
         </div>
       </div>
 
-      {/* Category Browser Modal — preserved as-is */}
+      {/* Category Browser Modal — editorial */}
       <Modal isOpen={showBrowser} onClose={() => setShowBrowser(false)} title="Browse Categories" size="lg">
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-          {CATEGORY_SECTIONS.map((section) => (
-            <div key={section}>
-              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{section}</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {CATEGORIES.filter((c) => c.section === section).map((cat) => {
-                  const isSubscribed = subscribedSlugs.includes(cat.slug);
-                  const Glyph = glyphFor(cat.slug);
-                  return (
-                    <button
-                      key={cat.slug}
-                      onClick={() => !isSubscribed && addHabit(cat.slug)}
-                      disabled={isSubscribed || adding === cat.slug}
-                      className={cn(
-                        'flex items-center gap-2 p-3 rounded-xl border text-left transition-all',
-                        isSubscribed
-                          ? 'border-emerald-500/20 bg-emerald-500/5 opacity-60'
-                          : 'border-[#1e1e30] bg-[#10101a] hover:border-red-500/30 hover:bg-red-500/5'
-                      )}
-                    >
-                      <Glyph size={20} style={{ color: '#fff', flexShrink: 0 }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-white truncate">{cat.name}</p>
-                        <p className="text-[10px] text-slate-600">{cat.unit}</p>
-                      </div>
-                      {isSubscribed && <CheckCircleFullIcon size={14} className="text-emerald-400" />}
-                      {adding === cat.slug && <span className="text-xs text-slate-500">...</span>}
-                    </button>
-                  );
-                })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22, maxHeight: '60vh', overflowY: 'auto', paddingRight: 4 }}>
+          {CATEGORY_SECTIONS.map((section) => {
+            const sectionCats = CATEGORIES.filter((c) => c.section === section);
+            if (sectionCats.length === 0) return null;
+            return (
+              <div key={section}>
+                <div
+                  className="spread"
+                  style={{
+                    fontSize: 9,
+                    color: 'var(--b-ink-60)',
+                    paddingBottom: 6,
+                    borderBottom: '1px solid var(--b-ink)',
+                    marginBottom: 8,
+                  }}
+                >
+                  {section}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  {sectionCats.map((cat) => {
+                    const isSubscribed = subscribedSlugs.includes(cat.slug);
+                    const Glyph = glyphFor(cat.slug);
+                    const busy = adding === cat.slug;
+                    return (
+                      <button
+                        key={cat.slug}
+                        onClick={() => !isSubscribed && addHabit(cat.slug)}
+                        disabled={isSubscribed || busy}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '24px 1fr auto',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '10px 12px',
+                          background: 'transparent',
+                          border: '1px solid var(--b-rule)',
+                          borderLeft: isSubscribed
+                            ? `3px solid #34d399`
+                            : `3px solid ${cat.color}`,
+                          cursor: isSubscribed ? 'default' : 'pointer',
+                          textAlign: 'left',
+                          color: 'var(--b-ink)',
+                          opacity: isSubscribed ? 0.55 : 1,
+                        }}
+                      >
+                        <span style={{ color: cat.color, display: 'inline-flex', flexShrink: 0 }}>
+                          <Glyph size={20} />
+                        </span>
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            className="font-display"
+                            style={{
+                              fontSize: 13,
+                              fontStyle: 'italic',
+                              fontWeight: 500,
+                              lineHeight: 1.15,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {cat.name}
+                          </div>
+                          <div
+                            className="font-body"
+                            style={{
+                              fontSize: 10,
+                              color: 'var(--b-ink-40)',
+                              marginTop: 1,
+                              letterSpacing: '0.04em',
+                            }}
+                          >
+                            {cat.unit}
+                          </div>
+                        </div>
+                        {isSubscribed && (
+                          <span style={{ color: '#34d399', display: 'inline-flex', flexShrink: 0 }}>
+                            <CheckCircleFullIcon size={14} />
+                          </span>
+                        )}
+                        {busy && (
+                          <span
+                            className="font-mono"
+                            style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+                          >
+                            …
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Modal>
     </div>

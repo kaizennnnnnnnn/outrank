@@ -290,12 +290,22 @@ export default function DirectMessageThread({
                       className="font-body"
                       style={{
                         maxWidth: '80%',
-                        padding: '8px 12px',
+                        padding: '10px 14px',
                         fontSize: 13,
                         lineHeight: 1.5,
-                        background: mine ? 'var(--b-ink)' : 'transparent',
+                        // Mine: filled-ink card, paper text. Theirs: paper-
+                        // tint card with a clearly-visible ink-15 hairline.
+                        // Earlier attempt used `transparent` + var(--b-rule)
+                        // (12%) which read as invisible on dark mode — the
+                        // message text floated in the void with no bubble
+                        // shape, making messages look like they hadn't
+                        // arrived at all.
+                        background: mine ? 'var(--b-ink)' : 'var(--b-paper-2)',
                         color: mine ? 'var(--b-paper)' : 'var(--b-ink)',
-                        border: mine ? '1px solid var(--b-ink)' : '1px solid var(--b-rule)',
+                        border: mine ? '1px solid var(--b-ink)' : '1px solid var(--b-ink-15)',
+                        borderLeft: mine
+                          ? '1px solid var(--b-ink)'
+                          : '3px solid var(--b-accent)',
                       }}
                     >
                       {m.content}
