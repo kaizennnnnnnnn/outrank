@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Recap, RecapEntry } from '@/types/recap';
 import { ProofImage, VerifiedBadge } from '@/components/social/ProofImage';
 import { FeedComments } from '@/components/social/FeedComments';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { getCategoryIconComponent } from '@/components/ui/CategoryIcons';
 import { Masthead } from '@/components/editorial/Masthead';
 import { formatRelativeTime } from '@/lib/utils';
 import {
@@ -399,13 +399,24 @@ function RecapEntryRow({
         >
           {String(index + 1).padStart(2, '0')}
         </span>
-        <CategoryIcon
-          slug={entry.habitSlug}
-          name={entry.categoryName}
-          icon={entry.categoryIcon}
-          color={entry.categoryColor}
-          size="sm"
-        />
+        {(() => {
+          const Glyph = getCategoryIconComponent(entry.habitSlug);
+          return (
+            <span
+              style={{
+                color: entry.categoryColor,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                flexShrink: 0,
+              }}
+            >
+              <Glyph size={22} />
+            </span>
+          );
+        })()}
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
             <div
