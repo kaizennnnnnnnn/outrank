@@ -400,6 +400,41 @@ body {
   50%      { opacity: 0.3; transform: scale(0.7); }
 }
 
+/* Diet quick-link card — clickable affordance. Idle the card sits
+   flat with its OPEN pill in plain ink; on hover the card lifts 1px,
+   the pill arrow nudges 2px right, and a faint accent wash sweeps in
+   from the left. Tap pushes the whole card 1px right for tactile
+   confirmation. GPU-composited (transform + background-size). */
+.diet-card {
+  transition: transform 160ms ease, background-size 320ms ease, box-shadow 200ms ease;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--b-accent) 9%, transparent) 0%,
+    transparent 55%
+  );
+  background-size: 0% 100%;
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+.diet-card:hover,
+.diet-card:focus-visible {
+  transform: translateY(-1px);
+  background-size: 100% 100%;
+  outline: none;
+  box-shadow: 0 2px 0 0 var(--b-ink);
+}
+.diet-card:active {
+  transform: translateY(0) translateX(1px);
+  box-shadow: none;
+}
+.diet-card .diet-card-pill {
+  transition: transform 160ms ease;
+}
+.diet-card:hover .diet-card-pill,
+.diet-card:focus-visible .diet-card-pill {
+  transform: translateX(2px);
+}
+
 /* League crest shine — same sweep mechanic as metallic-shine but the
    gradient color comes from the element's --crest-color custom prop.
    Used by the LeagueCrest component to give each rank a foil-stamp

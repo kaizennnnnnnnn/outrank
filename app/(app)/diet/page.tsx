@@ -32,15 +32,48 @@ const MEAL_LABELS: Record<MealType, string> = {
   snack:     'Snacks',
 };
 
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function dateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
 export default function DietPage() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<MealEntry[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // viewDate drives which day's meals we render. Defaults to today;
+  // arrow buttons step backward through history. Stored as a startOfDay
+  // Date so re-subscribes only fire when the calendar day actually changes.
+  const [viewDate, setViewDate] = useState<Date>(() => startOfDay(new Date()));
 
   useEffect(() => {
     if (!user) return;
-    return subscribeMealsForDate(user.uid, new Date(), setEntries);
-  }, [user]);
+    return subscribeMealsForDate(user.uid, viewDate, setEntries);
+  }, [user, viewDate]);
+
+  const today = startOfDay(new Date());
+  const isToday = dateKey(viewDate) === dateKey(today);
+  const isFuture = viewDate.getTime() > today.getTime();
+  const goBack = () => {
+    const next = new Date(viewDate);
+    next.setDate(next.getDate() - 1);
+    setViewDate(startOfDay(next));
+  };
+  const goForward = () => {
+    if (isToday) return;
+    const next = new Date(viewDate);
+    next.setDate(next.getDate() + 1);
+    setViewDate(startOfDay(next));
+  };
+  const returnToToday = () => setViewDate(startOfDay(new Date()));
 
   const goals = useMemo(() => {
     if (!user) return null;
@@ -80,14 +113,24 @@ export default function DietPage() {
     );
   }
 
-  const summary = goals ? summarizeDay(entries, goals) : null;
+  const summary = goals ? summarizeDay(entries, goals, viewDate) : null;
   const grouped = MEAL_TYPE_ORDER.map((mt) => ({
     mealType: mt,
     items:    entries.filter((e) => e.mealType === mt),
   }));
-  const dateLabel = new Date().toLocaleDateString('en-US', {
+  const dateLabel = viewDate.toLocaleDateString('en-US', {
     weekday: 'long', day: '2-digit', month: 'short',
   });
+  const shortPrev = (() => {
+    const d = new Date(viewDate);
+    d.setDate(d.getDate() - 1);
+    return d.toLocaleDateString('en-US', { weekday: 'short', day: '2-digit' });
+  })();
+  const shortNext = (() => {
+    const d = new Date(viewDate);
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString('en-US', { weekday: 'short', day: '2-digit' });
+  })();
 
   return (
     <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
@@ -96,14 +139,43 @@ export default function DietPage() {
 
         <div style={{ padding: '0 22px' }}>
           <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
-            Today
+            {isToday ? 'Today' : 'History'}
           </div>
-          <h1
-            className="font-display"
-            style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
           >
-            <em style={{ fontStyle: 'italic' }}>The Plate.</em>
-          </h1>
+            <h1
+              className="font-display"
+              style={{ fontSize: 38, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>The Plate.</em>
+            </h1>
+            {!isToday && (
+              <button
+                onClick={returnToToday}
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  padding: '6px 11px',
+                  background: 'var(--b-ink)',
+                  color: 'var(--b-paper)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 700,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Return to today
+              </button>
+            )}
+          </div>
           <div
             className="font-body"
             style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
@@ -117,6 +189,74 @@ export default function DietPage() {
                 </span>
               </>
             )}
+          </div>
+
+          {/* Date stepper — prev / current pill / next. Next is disabled
+              when viewing today (no future entries). Current pill is
+              static; tapping prev/next moves one day at a time. */}
+          <div
+            style={{
+              marginTop: 14,
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              gap: 6,
+              alignItems: 'center',
+              borderTop: '1px solid var(--b-rule)',
+              borderBottom: '1px solid var(--b-rule)',
+              padding: '10px 0',
+            }}
+          >
+            <button
+              onClick={goBack}
+              className="font-body tabular"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--b-ink-60)',
+                cursor: 'pointer',
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                textAlign: 'left',
+                padding: '4px 0',
+                fontWeight: 600,
+              }}
+              aria-label={`Previous day · ${shortPrev}`}
+            >
+              ← {shortPrev}
+            </button>
+            <span
+              className="spread"
+              style={{
+                fontSize: 9,
+                color: 'var(--b-ink)',
+                textAlign: 'center',
+                padding: '0 12px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {isToday ? 'Today' : dateKey(viewDate).slice(5)}
+            </span>
+            <button
+              onClick={goForward}
+              disabled={isToday || isFuture}
+              className="font-body tabular"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: isToday ? 'var(--b-ink-15)' : 'var(--b-ink-60)',
+                cursor: isToday ? 'not-allowed' : 'pointer',
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                textAlign: 'right',
+                padding: '4px 0',
+                fontWeight: 600,
+              }}
+              aria-label={isToday ? 'No newer day' : `Next day · ${shortNext}`}
+            >
+              {isToday ? '—' : `${shortNext} →`}
+            </button>
           </div>
 
           {/* Goals missing — editorial info row instead of amber card */}
@@ -151,14 +291,13 @@ export default function DietPage() {
             </div>
           )}
 
-          {/* Calorie ring + macros */}
+          {/* Calorie ring + macros — sits clean on paper, no flanking
+              rules so the ring isn't bracketed by stray ink lines. */}
           {summary && (
             <div
               style={{
                 marginTop: 18,
-                borderTop: '1px solid var(--b-ink)',
-                borderBottom: '1px solid var(--b-ink)',
-                padding: '24px 0',
+                padding: '20px 0 4px',
                 display: 'flex',
                 justifyContent: 'center',
               }}
@@ -211,17 +350,18 @@ export default function DietPage() {
         </div>
       </div>
 
-      {/* Floating add button — kept the brand-red gradient as a visual
-          anchor; everything else is editorial. */}
+      {/* Floating add button — solid accent red, no orange gradient.
+          A 1px ink ring keeps it on the editorial register, the soft
+          shadow grounds it without the previous orange glow. */}
       <button
         onClick={() => setSheetOpen(true)}
         className="fixed bottom-24 sm:bottom-8 right-5 z-30"
         style={{
-          width: 52,
-          height: 52,
+          width: 54,
+          height: 54,
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, var(--b-accent), #f97316)',
-          boxShadow: '0 8px 22px -4px rgba(220,38,38,0.55)',
+          background: 'var(--b-accent)',
+          boxShadow: '0 6px 16px -6px rgba(220,38,38,0.55), 0 0 0 1px var(--b-ink)',
           color: '#ffffff',
           border: 'none',
           display: 'flex',

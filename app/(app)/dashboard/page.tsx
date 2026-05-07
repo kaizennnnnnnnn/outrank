@@ -26,6 +26,7 @@ import {
   BSleepGlyph,
   BFocusGlyph,
   BStepsGlyph,
+  BCaloriesGlyph,
 } from '@/components/editorial/BGlyphs';
 
 /**
@@ -297,41 +298,104 @@ export default function DashboardPage() {
             <StreakRepairBanner />
           </div>
 
-          {/* Diet quick-link — restyled as editorial row */}
+          {/* Diet quick-link — clickable editorial CTA card. Hairline
+              perimeter + 3px accent left rule, italic display headline
+              with metallic-shine, ink-filled OPEN pill on the right.
+              Hover lifts the card and slides the arrow on the pill;
+              tap pushes 1px right (.diet-card class in globals.css). */}
           <Link
             href="/diet"
-            className="block"
+            className="diet-card block"
             style={{
-              borderTop: '1px solid var(--b-rule)',
-              borderBottom: '1px solid var(--b-rule)',
-              padding: '12px 0',
+              position: 'relative',
               marginTop: 18,
+              padding: '14px 14px 14px 18px',
+              border: '1px solid var(--b-ink)',
+              background: 'var(--b-paper)',
               display: 'flex',
               alignItems: 'center',
               gap: 14,
+              textDecoration: 'none',
+              color: 'var(--b-ink)',
+              overflow: 'hidden',
             }}
           >
+            {/* accent left stripe */}
             <span
-              className="spread"
-              style={{ fontSize: 9, color: 'var(--b-accent)', width: 44 }}
+              aria-hidden
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 3,
+                background: 'var(--b-accent)',
+              }}
+            />
+            {/* fork-flame mark */}
+            <span
+              aria-hidden
+              style={{
+                width: 38,
+                height: 38,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid var(--b-ink)',
+                color: 'var(--b-accent)',
+                flexShrink: 0,
+              }}
             >
-              NEW
+              <BCaloriesGlyph size={20} />
             </span>
-            <div style={{ flex: 1 }}>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                className="spread"
+                style={{ fontSize: 8.5, color: 'var(--b-accent)', marginBottom: 2 }}
+              >
+                AI · New
+              </div>
               <div
                 className="font-display"
-                style={{ fontSize: 17, fontWeight: 500, lineHeight: 1.1 }}
+                style={{
+                  fontSize: 18,
+                  fontWeight: 500,
+                  fontStyle: 'italic',
+                  lineHeight: 1.1,
+                }}
               >
-                Track your diet
+                <span className="metallic-shine">Track your diet.</span>
               </div>
               <div
                 className="font-body"
-                style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 2 }}
+                style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 3 }}
               >
-                Type what you ate · AI counts the calories.
+                Type what you ate — we count the calories.
               </div>
             </div>
-            <BArrowRightGlyph size={18} style={{ color: 'var(--b-ink-60)' }} />
+
+            {/* OPEN pill — explicit clickable affordance */}
+            <span
+              className="diet-card-pill font-body tabular"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 11px 7px 12px',
+                background: 'var(--b-ink)',
+                color: 'var(--b-paper)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              Open
+              <BArrowRightGlyph size={11} />
+            </span>
           </Link>
 
           {/* THE TOWN — directory strip linking to /town. Animated
