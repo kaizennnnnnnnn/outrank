@@ -513,130 +513,222 @@ function OrbLootReveal({
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-6"
+      className="dir-b fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{
+        background: 'rgba(0,0,0,0.78)',
+        backdropFilter: 'blur(6px)',
+      }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="dir-b relative w-full max-w-sm rounded-3xl border-2 p-6 text-center"
+        className="relative w-full max-w-sm"
         style={{
-          borderColor: c.color,
-          background: `radial-gradient(ellipse 100% 80% at 50% 0%, ${c.glow}, transparent 70%), var(--b-paper-2)`,
-          boxShadow: `0 0 60px -8px ${c.glow}`,
+          background: 'var(--b-paper)',
           color: 'var(--b-ink)',
+          border: '1px solid var(--b-ink)',
+          borderTop: `3px solid ${c.color}`,
+          padding: '20px 22px 22px',
+          animation: 'orb-loot-reveal-in 480ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
-        <p
-          className="spread"
-          style={{ fontSize: 10, color: c.color, textShadow: `0 0 12px ${c.glow}` }}
+        {/* Eyebrow rule + spread caps */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            borderBottom: '1px solid var(--b-rule)',
+            paddingBottom: 6,
+            marginBottom: 12,
+          }}
         >
-          {c.name}
-        </p>
+          <span className="spread" style={{ fontSize: 9, color: c.color }}>
+            Evolution Reward
+          </span>
+          <span
+            className="font-mono tabular"
+            style={{
+              fontSize: 9,
+              color: 'var(--b-ink-60)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Rarity · {c.name}
+          </span>
+        </div>
+
+        {/* Headline */}
         <h3
           className="font-display"
-          style={{ fontSize: 24, fontWeight: 500, lineHeight: 1.1, marginTop: 8 }}
+          style={{
+            fontSize: 28,
+            fontWeight: 500,
+            lineHeight: 1.05,
+            margin: 0,
+            textAlign: 'center',
+            letterSpacing: '-0.01em',
+          }}
         >
-          <em style={{ fontStyle: 'italic' }}>{loot.label}</em>
+          <em style={{ fontStyle: 'italic', color: c.color }}>{loot.label}</em>
         </h3>
         <p
           className="font-body"
-          style={{ fontSize: 13, color: 'var(--b-ink-60)', marginTop: 8, lineHeight: 1.5 }}
+          style={{
+            fontSize: 12,
+            color: 'var(--b-ink-60)',
+            textAlign: 'center',
+            lineHeight: 1.5,
+            margin: '8px auto 0',
+            maxWidth: 280,
+            fontStyle: 'italic',
+          }}
         >
           {loot.detail}
         </p>
 
+        {/* Hero illustration — hairline-framed orb */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            margin: '18px 0 14px',
+          }}
+        >
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              border: '1px solid var(--b-ink)',
+              background: 'var(--b-paper)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                inset: 1,
+                background: `radial-gradient(circle at 35% 30%, ${c.color}33, transparent 70%)`,
+                pointerEvents: 'none',
+              }}
+            />
+            <OrbLootIcon loot={loot} color={c.color} />
+          </div>
+        </div>
+
+        {/* Reward chips — editorial hairline tiles */}
         <div
           style={{
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 8,
-            marginTop: 18,
+            gap: 6,
+            marginTop: 6,
           }}
         >
-          {!!loot.fragments && (
-            <span
-              className="font-mono tabular"
-              style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: 'rgba(220,38,38,0.1)',
-                border: '1px solid rgba(220,38,38,0.4)',
-                color: 'var(--b-accent)',
-              }}
-            >
-              +{loot.fragments} fragments
-            </span>
-          )}
-          {!!loot.xp && (
-            <span
-              className="font-mono tabular"
-              style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: 'rgba(245,241,234,0.06)',
-                border: '1px solid var(--b-rule)',
-                color: 'var(--b-ink)',
-              }}
-            >
-              +{loot.xp} XP
-            </span>
-          )}
-          {!!loot.awakening && (
-            <span
-              className="font-mono tabular"
-              style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: 'rgba(245,241,234,0.06)',
-                border: '1px solid var(--b-rule)',
-                color: 'var(--b-ink)',
-              }}
-            >
-              +{loot.awakening} awakening
-            </span>
-          )}
-          {!!loot.cosmeticId && (
-            <span
-              className="font-body"
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: 'rgba(220,38,38,0.1)',
-                border: '1px solid rgba(220,38,38,0.4)',
-                color: 'var(--b-accent)',
-              }}
-            >
-              Cosmetic unlocked
-            </span>
-          )}
+          {!!loot.fragments && <RewardChip label={`+${loot.fragments}`} unit="Fragments" tone={c.color} />}
+          {!!loot.xp && <RewardChip label={`+${loot.xp}`} unit="XP" />}
+          {!!loot.awakening && <RewardChip label={`+${loot.awakening}`} unit="Awakening" tone={c.color} />}
+          {!!loot.cosmeticId && <RewardChip label="Cosmetic" unit="Unlocked" tone={c.color} />}
         </div>
 
+        {/* CTA */}
         <button
           onClick={onClose}
           className="font-body"
           style={{
-            marginTop: 22,
+            marginTop: 18,
             width: '100%',
-            height: 44,
+            padding: '12px 16px',
             border: '1px solid var(--b-ink)',
             background: 'var(--b-ink)',
             color: 'var(--b-paper)',
             fontWeight: 700,
-            fontSize: 12,
-            letterSpacing: '0.08em',
+            fontSize: 11,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
             cursor: 'pointer',
           }}
         >
-          CLAIM
+          Claim →
         </button>
       </div>
     </div>
+  );
+}
+
+function RewardChip({ label, unit, tone }: { label: string; unit: string; tone?: string }) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: 5,
+        padding: '5px 9px',
+        border: `1px solid ${tone ?? 'var(--b-rule)'}`,
+        background: 'transparent',
+      }}
+    >
+      <span
+        className="font-display tabular"
+        style={{
+          fontSize: 13,
+          fontStyle: 'italic',
+          fontWeight: 600,
+          color: tone ?? 'var(--b-ink)',
+          lineHeight: 1,
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className="spread"
+        style={{
+          fontSize: 7.5,
+          color: 'var(--b-ink-60)',
+          letterSpacing: '0.18em',
+        }}
+      >
+        {unit}
+      </span>
+    </div>
+  );
+}
+
+function OrbLootIcon({ loot, color }: { loot: OrbLoot; color: string }) {
+  const stroke = { color, filter: `drop-shadow(0 0 4px ${color}66)` } as React.CSSProperties;
+  if (loot.cosmeticId) {
+    return (
+      <svg width={44} height={44} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={stroke}>
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="5" />
+      </svg>
+    );
+  }
+  if (loot.fragments) {
+    return (
+      <svg width={44} height={44} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={stroke}>
+        <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+      </svg>
+    );
+  }
+  if (loot.awakening) {
+    return (
+      <svg width={44} height={44} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={stroke}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 3v18M3 12h18" />
+      </svg>
+    );
+  }
+  return (
+    <svg width={44} height={44} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={stroke}>
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
   );
 }
 

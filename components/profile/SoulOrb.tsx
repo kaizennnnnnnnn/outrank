@@ -677,7 +677,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         />
 
         <div
-          className={ascending ? 'animate-ascend-collapse' : ''}
+          className={
+            ascending ? 'animate-ascend-collapse'
+            : evolving ? 'orb-evolving-spin'
+            : ''
+          }
           style={{
             width: size,
             height: size,

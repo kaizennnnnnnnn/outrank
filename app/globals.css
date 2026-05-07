@@ -501,6 +501,35 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .orb-mythic-pulse { animation: orb-mythic-pulse 3.4s ease-in-out infinite; }
 
+/* Orb evolve spin — old slot-machine wind-up: starts fast, slows
+   down with ease-out cubic, total ~2.2s, two full revolutions plus
+   a touch of overshoot. Runs on the canvas wrapper (not the canvas
+   itself) so it composes cleanly with the per-frame canvas spin
+   that already happens in the renderer's evolve phase. */
+@keyframes orb-evolving-spin {
+  0%   { transform: rotate(0deg)   scale(1); }
+  60%  { transform: rotate(620deg) scale(1.04); }
+  85%  { transform: rotate(740deg) scale(1.0); }
+  100% { transform: rotate(720deg) scale(1.0); }
+}
+.orb-evolving-spin {
+  animation: orb-evolving-spin 2.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* Loot reveal entrance — slides up + fades in with a subtle scale.
+   Slow enough to read as a deliberate flourish, not a flash. */
+@keyframes orb-loot-reveal-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* ─── Orb tier-name animations ─────────────────────────────────────
    Each evolution tier earns a richer text treatment than the last so
    the cosmetic ladder is legible at a glance. Tiers 1-2 are static
