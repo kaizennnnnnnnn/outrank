@@ -409,6 +409,169 @@ body {
 .orb-light-backdrop { opacity: 0; transition: opacity 200ms ease; }
 html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
+/* ─── Display-typography sheen variants ───────────────────────────
+   Companions to .metallic-shine (red) for headers that want movement
+   without recoloring the text away from ink/white. */
+
+/* Soft white sheen — used on the dashboard "Day" word + the level
+   number. Keeps the text in ink/white but drags a faint highlight
+   stripe across it on a long loop so it reads alive. */
+@keyframes shine-sweep-light {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.shine-light {
+  background-image: linear-gradient(
+    110deg,
+    var(--b-ink) 0%,
+    var(--b-ink) 38%,
+    rgba(255, 255, 255, 0.92) 48%,
+    rgba(255, 255, 255, 0.65) 52%,
+    var(--b-ink) 62%,
+    var(--b-ink) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine-sweep-light 5.5s linear infinite;
+  will-change: background-position;
+}
+
+/* ─── Orb tier-name animations ─────────────────────────────────────
+   Each evolution tier earns a richer text treatment than the last so
+   the cosmetic ladder is legible at a glance. Tiers 1-2 are static
+   ink; 3-5 carry a warm metallic sheen in the tier's accent; 6-8
+   shift to dual-hue iridescence; 9-10 go full prismatic with a
+   chromatic-aberration text-shadow that doubles as a soft halo.
+   GPU-composited (background-position + opacity + transform). */
+
+@keyframes tier-name-flicker {
+  0%, 100% { opacity: 0.92; }
+  50%      { opacity: 1.0; }
+}
+@keyframes tier-name-shine {
+  0%   { background-position: 220% center; }
+  100% { background-position: -220% center; }
+}
+@keyframes tier-name-prism {
+  0%, 100% {
+    text-shadow:
+      -1px 0 0 rgba(236, 72, 153, 0.55),
+       1px 0 0 rgba(34, 211, 238, 0.55),
+       0 0 14px rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    text-shadow:
+      -2px 0 0 rgba(168, 85, 247, 0.55),
+       2px 0 0 rgba(253, 224, 71, 0.55),
+       0 0 22px rgba(255, 255, 255, 0.45);
+  }
+}
+
+/* Tier 1 — Ember: completely static, just italic ink (faint spark) */
+.tier-name-1 { color: var(--b-ink); }
+
+/* Tier 2 — Flame: subtle warm flicker */
+.tier-name-2 {
+  color: #d97706;
+  animation: tier-name-flicker 2.6s ease-in-out infinite;
+}
+
+/* Tier 3 — Inferno: warm red sheen */
+.tier-name-3 {
+  background-image: linear-gradient(110deg, #b91c1c 0%, #b91c1c 40%, #fef3c7 50%, #b91c1c 60%, #b91c1c 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-shine 4.2s linear infinite;
+}
+
+/* Tier 4 — Phoenix: red→amber sheen + soft warm halo */
+.tier-name-4 {
+  background-image: linear-gradient(110deg, #dc2626 0%, #dc2626 35%, #fde047 48%, #f97316 56%, #dc2626 70%, #dc2626 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-shine 3.6s linear infinite;
+  filter: drop-shadow(0 0 12px rgba(220, 38, 38, 0.35));
+}
+
+/* Tier 5 — Supernova: white-hot core sheen + bigger halo */
+.tier-name-5 {
+  background-image: linear-gradient(110deg, #b91c1c 0%, #f97316 30%, #ffffff 50%, #f97316 70%, #b91c1c 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-shine 3.0s linear infinite;
+  filter: drop-shadow(0 0 16px rgba(253, 224, 71, 0.55));
+}
+
+/* Tier 6 — Galactic: indigo→violet→cyan iridescence */
+.tier-name-6 {
+  background-image: linear-gradient(110deg, #4338ca 0%, #7c3aed 30%, #22d3ee 50%, #7c3aed 70%, #4338ca 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-shine 2.8s linear infinite;
+  filter: drop-shadow(0 0 14px rgba(124, 58, 237, 0.5));
+}
+
+/* Tier 7 — Nebula: magenta→cyan with pink core */
+.tier-name-7 {
+  background-image: linear-gradient(110deg, #9333ea 0%, #ec4899 25%, #fde047 50%, #ec4899 75%, #9333ea 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-shine 2.4s linear infinite;
+  filter: drop-shadow(0 0 16px rgba(236, 72, 153, 0.55));
+}
+
+/* Tier 8 — Singularity: violet/pink shimmer + chromatic aberration */
+.tier-name-8 {
+  background-image: linear-gradient(110deg, #1e1b4b 0%, #7c3aed 25%, #f0abfc 50%, #7c3aed 75%, #1e1b4b 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-shine 2.2s linear infinite, tier-name-prism 3.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.6));
+}
+
+/* Tier 9 — Primordial: emerald→cyan→gold prismatic */
+.tier-name-9 {
+  background-image: linear-gradient(110deg, #059669 0%, #22d3ee 25%, #fde047 50%, #22d3ee 75%, #059669 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-shine 1.9s linear infinite, tier-name-prism 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.65));
+}
+
+/* Tier 10 — Transcendent: full prismatic rainbow + heavy aberration */
+@keyframes tier-name-rainbow {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+.tier-name-10 {
+  background-image: linear-gradient(
+    90deg,
+    #fde047, #ec4899, #a855f7, #22d3ee, #84cc16, #fde047, #ec4899, #a855f7
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tier-name-rainbow 4.5s linear infinite, tier-name-prism 2.0s ease-in-out infinite;
+  filter: drop-shadow(0 0 22px rgba(253, 224, 71, 0.75));
+}
+
 /* Full Awaken CTA — the long-road 100% payoff button. Editorial
    palette (accent red on ink border) with a metallic-shine sweep
    tearing across the label, a slow halo pulse breathing red light

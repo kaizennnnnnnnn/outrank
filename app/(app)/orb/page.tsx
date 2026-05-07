@@ -192,7 +192,12 @@ export default function OrbPage() {
             className="font-display"
             style={{ fontSize: 46, fontWeight: 500, lineHeight: 1, margin: '4px 0 0' }}
           >
-            <em style={{ fontStyle: 'italic' }}>{tierConfig.name}</em>
+            <em
+              className={`tier-name-${Math.max(1, Math.min(10, localTier))}`}
+              style={{ fontStyle: 'italic' }}
+            >
+              {tierConfig.name}
+            </em>
           </h1>
           <p
             className="font-body"

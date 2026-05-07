@@ -168,10 +168,10 @@ export default function DashboardPage() {
               color: 'var(--b-ink)',
             }}
           >
-            Day{' '}
+            <span className="shine-light">Day</span>{' '}
             <em
-              className="font-display"
-              style={{ fontStyle: 'italic', color: 'var(--b-accent)', fontWeight: 500 }}
+              className="font-display metallic-shine"
+              style={{ fontStyle: 'italic', fontWeight: 500 }}
             >
               {dayWord(dayN)}
             </em>
@@ -211,7 +211,7 @@ export default function DashboardPage() {
                 Level
               </div>
               <div
-                className="font-display tabular"
+                className="font-display tabular shine-light"
                 style={{ fontSize: 64, fontWeight: 500, lineHeight: 0.95, marginTop: 2 }}
               >
                 {level.level}
