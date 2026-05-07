@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getOrbTier, MAX_ORB_TIER } from '@/constants/orbTiers';
-import { getOrbBaseColor, getOrbPulseColor, getOrbRingColor, isRainbowColor } from '@/constants/orbColors';
+import { getOrbBaseColor, getOrbPulseColor, getOrbRingColor, isRainbowColor, isMythicBaseColor } from '@/constants/orbColors';
 import { Button } from '@/components/ui/Button';
 
 interface SoulOrbProps {
@@ -686,6 +686,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         >
           <canvas
             ref={canvasRef}
+            className={isMythicBaseColor(baseColorId) ? 'orb-mythic-pulse' : ''}
             style={{
               width: size, height: size, maxWidth: '100%', cursor: 'grab', touchAction: 'none',
               opacity: fadeOut ? 0 : 1,

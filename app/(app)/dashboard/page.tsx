@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useHabits } from '@/hooks/useHabits';
+import { useFriends } from '@/hooks/useFriends';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { QuickLogModal } from '@/components/habits/QuickLogModal';
 import { SoulOrb } from '@/components/profile/SoulOrb';
@@ -70,6 +71,11 @@ function dayWord(n: number): string {
 export default function DashboardPage() {
   const { user, firebaseUser } = useAuth();
   const { habits, loading: habitsLoading } = useHabits();
+  // Live friend count from the friendships subscription, not the
+  // denormalized user.friendCount field — that counter drifts when
+  // unfriend writes fail or pre-Cloud-Function legacy data sticks
+  // around. friends.length is the source of truth.
+  const { friends } = useFriends();
   const router = useRouter();
 
   const [logModal, setLogModal] = useState(false);
@@ -119,7 +125,7 @@ export default function DashboardPage() {
   // Reads as "your unbroken streak" rather than calendar days since signup.
   const longestCurrentStreak = habits.reduce((m, h) => Math.max(m, h.currentStreak || 0), 0);
   const dayN = Math.max(1, longestCurrentStreak);
-  const friendCount = (user as unknown as { friendCount?: number }).friendCount ?? 0;
+  const friendCount = friends.length;
 
   const openLogModal = (habit: UserHabit) => {
     setSelectedHabit(habit);
@@ -289,7 +295,7 @@ export default function DashboardPage() {
             }}
           >
             <Stat value={String(longestCurrentStreak)} label="streak" accent />
-            <Stat value={league.name.toUpperCase()} label="league" small />
+            <Stat value={league.name.toUpperCase()} label="league" small toneColor={league.color} />
             <Stat value={String(friendCount)} label="friends" />
           </div>
 
@@ -767,11 +773,16 @@ function Stat({
   label,
   accent,
   small,
+  toneColor,
 }: {
   value:  string;
   label:  string;
   accent?: boolean;
   small?:  boolean;
+  /** When supplied, the value renders as a slow shine sweep that
+      uses this tone — used for the league name so it picks up the
+      bronze / silver / gold / etc colour of the current league. */
+  toneColor?: string;
 }) {
   return (
     <div
@@ -782,12 +793,15 @@ function Stat({
       }}
     >
       <div
-        className="font-display tabular"
+        className={toneColor ? 'font-display tabular tone-shine' : 'font-display tabular'}
         style={{
           fontSize: small ? 16 : 26,
           fontWeight: 500,
           lineHeight: 1,
-          color: accent ? 'var(--b-accent)' : 'var(--b-ink)',
+          color: toneColor ? undefined : (accent ? 'var(--b-accent)' : 'var(--b-ink)'),
+          ...(toneColor
+            ? ({ ['--tone' as string]: toneColor } as React.CSSProperties)
+            : {}),
         }}
       >
         {value}
