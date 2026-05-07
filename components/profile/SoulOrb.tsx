@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getOrbTier, MAX_ORB_TIER } from '@/constants/orbTiers';
-import { getOrbBaseColor, getOrbPulseColor, getOrbRingColor, isRainbowColor, isMythicBaseColor } from '@/constants/orbColors';
+import { getOrbBaseColor, getOrbPulseColor, getOrbRingColor, isRainbowColor } from '@/constants/orbColors';
 import { Button } from '@/components/ui/Button';
 
 interface SoulOrbProps {
@@ -654,13 +654,6 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
 
   const config = getOrbTier(tier);
 
-  // Mythic-tier base colors get a rotating chromatic aura that
-  // separates them visibly from legendary — the four neon stops sweep
-  // around the orb body so the cosmetic feels alive instead of static.
-  // Excludes rainbow (it has its own per-frame hue cycle in the canvas).
-  const baseIsMythic = isMythicBaseColor(baseColorId);
-  const baseCol = baseColorId ? getOrbBaseColor(baseColorId) : null;
-
   return (
     <div className="flex flex-col items-center">
       <div
@@ -683,21 +676,6 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
           }}
         />
 
-        {/* Mythic chromatic aura — only renders for mythic base colors.
-            The four palette stops feed CSS custom props on the
-            conic-gradient halo (.mythic-aura). */}
-        {baseIsMythic && baseCol && !hideBody && (
-          <div
-            aria-hidden
-            className="mythic-aura"
-            style={{
-              ['--m1' as string]: baseCol.outer,
-              ['--m2' as string]: baseCol.mid,
-              ['--m3' as string]: baseCol.inner,
-              ['--m4' as string]: baseCol.core,
-            } as React.CSSProperties}
-          />
-        )}
         <div
           className={ascending ? 'animate-ascend-collapse' : ''}
           style={{

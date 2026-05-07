@@ -64,18 +64,16 @@ export const ORB_BASE_COLORS: OrbColorSet[] = [
   { id: 'mirage',    name: 'Mirage',    outer: '#b45309', mid: '#ec4899', inner: '#22d3ee', core: '#fef3c7', glow: 'rgba(236,72,153,0.5)' },
 
   // ---- MYTHIC ----
-  // Pushed to neon — near-pure RGB primaries for maximum chromatic
-  // pop. Each non-rainbow mythic uses 4 distinct full-saturation
-  // hues so every band of the radial gradient reads as its own
-  // signal-color stripe rather than a tonal blend. Glows are at full
-  // alpha (1.0) so the mythic halo bleeds beyond the orb body.
+  // Cranked to absolute primaries — every stop is pure or near-pure
+  // RGB so the orb body ships actual signal colors instead of brand-
+  // tinted approximations. Glows at full alpha so the halo bleeds.
   { id: 'rainbow',     name: 'Rainbow',     outer: '#dc2626', mid: '#eab308', inner: '#22c55e', core: '#a855f7', glow: 'rgba(168,85,247,0.7)' },
-  { id: 'stargaze',    name: 'Stargaze',    outer: '#9d00ff', mid: '#ff00aa', inner: '#00f0ff', core: '#fff200', glow: 'rgba(255,0,170,1.0)' },
-  { id: 'eternal',     name: 'Eternal',     outer: '#ff0080', mid: '#ff5500', inner: '#ffd700', core: '#00ffff', glow: 'rgba(255,215,0,1.0)' },
-  { id: 'quasar',      name: 'Quasar',      outer: '#0040ff', mid: '#ff00aa', inner: '#fff200', core: '#00ffff', glow: 'rgba(255,0,170,1.0)' },
-  { id: 'nova',        name: 'Nova',        outer: '#ff0066', mid: '#ff5500', inner: '#fff200', core: '#00ffff', glow: 'rgba(255,242,0,1.0)' },
-  { id: 'celestial',   name: 'Celestial',   outer: '#8b00ff', mid: '#00f0ff', inner: '#39ff14', core: '#ff00aa', glow: 'rgba(57,255,20,1.0)' },
-  { id: 'singularity', name: 'Singularity', outer: '#9d00ff', mid: '#ff0066', inner: '#00f0ff', core: '#39ff14', glow: 'rgba(255,0,102,1.0)' },
+  { id: 'stargaze',    name: 'Stargaze',    outer: '#b300ff', mid: '#ff00ff', inner: '#00ffff', core: '#ffff00', glow: 'rgba(255,0,255,1.0)' },
+  { id: 'eternal',     name: 'Eternal',     outer: '#ff0066', mid: '#ff3300', inner: '#ffcc00', core: '#00ffff', glow: 'rgba(255,204,0,1.0)' },
+  { id: 'quasar',      name: 'Quasar',      outer: '#0033ff', mid: '#ff00ff', inner: '#ffff00', core: '#00ffff', glow: 'rgba(255,0,255,1.0)' },
+  { id: 'nova',        name: 'Nova',        outer: '#ff00aa', mid: '#ff3300', inner: '#ffff00', core: '#00ffff', glow: 'rgba(255,255,0,1.0)' },
+  { id: 'celestial',   name: 'Celestial',   outer: '#aa00ff', mid: '#00ffff', inner: '#00ff00', core: '#ff00ff', glow: 'rgba(0,255,0,1.0)' },
+  { id: 'singularity', name: 'Singularity', outer: '#b300ff', mid: '#ff0066', inner: '#00ffff', core: '#00ff00', glow: 'rgba(255,0,102,1.0)' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -118,13 +116,13 @@ export const ORB_PULSE_COLORS: OrbColorSet[] = [
   { id: 'nebula_p',  name: 'Nebula Pulse', outer: '#4c1d95', mid: '#ec4899', inner: '#22d3ee', core: '#ffffff', glow: 'rgba(168,85,247,0.6)' },
 
   // ---- MYTHIC ----
-  // Mirror of base-mythic neon redesign — near-pure RGB primaries.
+  // Mirror of base-mythic neon redesign — pure RGB primaries.
   { id: 'pulse_rainbow',  name: 'Rainbow Pulse',  outer: '#dc2626', mid: '#eab308', inner: '#22c55e', core: '#a855f7', glow: 'rgba(236,72,153,0.65)' },
-  { id: 'pulse_stargaze', name: 'Stargaze Pulse', outer: '#9d00ff', mid: '#ff00aa', inner: '#00f0ff', core: '#fff200', glow: 'rgba(255,0,170,1.0)' },
-  { id: 'pulse_eternal',  name: 'Eternal Pulse',  outer: '#ff0080', mid: '#ff5500', inner: '#ffd700', core: '#00ffff', glow: 'rgba(255,215,0,1.0)' },
-  { id: 'pulse_quasar',   name: 'Quasar Pulse',   outer: '#0040ff', mid: '#ff00aa', inner: '#fff200', core: '#00ffff', glow: 'rgba(255,0,170,1.0)' },
-  { id: 'pulse_cosmic',   name: 'Cosmic Pulse',   outer: '#8b00ff', mid: '#00f0ff', inner: '#39ff14', core: '#ff00aa', glow: 'rgba(57,255,20,1.0)' },
-  { id: 'pulse_nova',     name: 'Nova Pulse',     outer: '#ff0066', mid: '#ff5500', inner: '#fff200', core: '#00ffff', glow: 'rgba(255,242,0,1.0)' },
+  { id: 'pulse_stargaze', name: 'Stargaze Pulse', outer: '#b300ff', mid: '#ff00ff', inner: '#00ffff', core: '#ffff00', glow: 'rgba(255,0,255,1.0)' },
+  { id: 'pulse_eternal',  name: 'Eternal Pulse',  outer: '#ff0066', mid: '#ff3300', inner: '#ffcc00', core: '#00ffff', glow: 'rgba(255,204,0,1.0)' },
+  { id: 'pulse_quasar',   name: 'Quasar Pulse',   outer: '#0033ff', mid: '#ff00ff', inner: '#ffff00', core: '#00ffff', glow: 'rgba(255,0,255,1.0)' },
+  { id: 'pulse_cosmic',   name: 'Cosmic Pulse',   outer: '#aa00ff', mid: '#00ffff', inner: '#00ff00', core: '#ff00ff', glow: 'rgba(0,255,0,1.0)' },
+  { id: 'pulse_nova',     name: 'Nova Pulse',     outer: '#ff00aa', mid: '#ff3300', inner: '#ffff00', core: '#00ffff', glow: 'rgba(255,255,0,1.0)' },
 ];
 
 export function getOrbBaseColor(id: string): OrbColorSet {
@@ -171,13 +169,13 @@ export const ORB_RING_COLORS: OrbColorSet[] = [
   { id: 'ring_phoenix', name: 'Phoenix', outer: '#450a0a', mid: '#dc2626', inner: '#fde047', core: '#ffffff', glow: 'rgba(239,68,68,0.6)' },
 
   // ---- MYTHIC ----
-  // Mirror of base-mythic neon redesign — near-pure RGB primaries.
+  // Mirror of base-mythic neon redesign — pure RGB primaries.
   { id: 'ring_rainbow',   name: 'Rainbow',   outer: '#dc2626', mid: '#eab308', inner: '#22c55e', core: '#a855f7', glow: 'rgba(168,85,247,0.6)' },
-  { id: 'ring_void',      name: 'Void',      outer: '#9d00ff', mid: '#ff0066', inner: '#00f0ff', core: '#39ff14', glow: 'rgba(255,0,102,1.0)' },
-  { id: 'ring_supernova', name: 'Supernova', outer: '#ff0066', mid: '#ff5500', inner: '#fff200', core: '#00ffff', glow: 'rgba(255,242,0,1.0)' },
-  { id: 'ring_cosmic',    name: 'Cosmic',    outer: '#8b00ff', mid: '#00f0ff', inner: '#39ff14', core: '#ff00aa', glow: 'rgba(57,255,20,1.0)' },
-  { id: 'ring_celestial', name: 'Celestial', outer: '#9d00ff', mid: '#fff200', inner: '#00f0ff', core: '#ff00aa', glow: 'rgba(255,242,0,1.0)' },
-  { id: 'ring_eternal',   name: 'Eternal',   outer: '#ff0080', mid: '#ff5500', inner: '#ffd700', core: '#00ffff', glow: 'rgba(255,215,0,1.0)' },
+  { id: 'ring_void',      name: 'Void',      outer: '#b300ff', mid: '#ff0066', inner: '#00ffff', core: '#00ff00', glow: 'rgba(255,0,102,1.0)' },
+  { id: 'ring_supernova', name: 'Supernova', outer: '#ff00aa', mid: '#ff3300', inner: '#ffff00', core: '#00ffff', glow: 'rgba(255,255,0,1.0)' },
+  { id: 'ring_cosmic',    name: 'Cosmic',    outer: '#aa00ff', mid: '#00ffff', inner: '#00ff00', core: '#ff00ff', glow: 'rgba(0,255,0,1.0)' },
+  { id: 'ring_celestial', name: 'Celestial', outer: '#b300ff', mid: '#ffff00', inner: '#00ffff', core: '#ff00ff', glow: 'rgba(255,255,0,1.0)' },
+  { id: 'ring_eternal',   name: 'Eternal',   outer: '#ff0066', mid: '#ff3300', inner: '#ffcc00', core: '#00ffff', glow: 'rgba(255,204,0,1.0)' },
 ];
 
 export function getOrbRingColor(id: string): OrbColorSet {
