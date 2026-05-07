@@ -154,12 +154,17 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     const isSmall = size <= 100;
     // Cap main-sphere particles for perf. Tiers 6-10 compensate with more
     // rings / satellites / arcs rather than raw particle count.
+    // At small sizes (landing hero, leaderboard rows) we previously
+    // dropped to 25% of full particle count — that left huge gaps and
+    // each remaining dot read as a smoke puff. Bumping to ~55% of
+    // full + lowering particleScale gives the orb a finer, denser dot
+    // pattern that still scales perf-wise.
     const PARTICLE_CAP = 700;
     const rawNumP = isSmall
-      ? Math.floor(config.particles * 0.25)
+      ? Math.floor(config.particles * 0.55)
       : Math.floor(config.particles * (0.5 + pct * 0.5));
-    const numP = Math.min(rawNumP, isSmall ? 200 : PARTICLE_CAP);
-    const particleScale = isSmall ? 0.5 : 1.0;
+    const numP = Math.min(rawNumP, isSmall ? 360 : PARTICLE_CAP);
+    const particleScale = isSmall ? 0.35 : 1.0;
     const speedMultiplier = isSmall ? 2.0 : 1.0;
     // Heavy mode = skip per-particle radial gradients (biggest perf cost) for
     // high-tier / dense orbs. The solid fill still looks dense because
@@ -569,15 +574,20 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         // Radial halo is the single most expensive op in this loop. Skip it
         // entirely in heavy mode — the visual impact is minor because the
         // solid fill + connections + arcs still read as a glowing sphere.
+        // At small sizes the halo radius and alpha are both clamped down
+        // hard so each dot stays a crisp pin-prick instead of bleeding
+        // into its neighbours and looking like a smoke cloud.
         if (!heavyMode && sz > 0.5 && alpha > 0.05) {
-          const grd = ctx.createRadialGradient(d.px, d.py, 0, d.px, d.py, sz * (isSmall ? 2 : 4));
-          grd.addColorStop(0, `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${alpha * 0.2})`);
+          const haloRadius = sz * (isSmall ? 1.3 : 4);
+          const haloAlpha = alpha * (isSmall ? 0.12 : 0.2);
+          const grd = ctx.createRadialGradient(d.px, d.py, 0, d.px, d.py, haloRadius);
+          grd.addColorStop(0, `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${haloAlpha})`);
           grd.addColorStop(1, 'transparent');
-          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(d.px, d.py, sz * (isSmall ? 2 : 4), 0, PI2); ctx.fill();
+          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(d.px, d.py, haloRadius, 0, PI2); ctx.fill();
         }
 
         ctx.fillStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${alpha})`;
-        ctx.beginPath(); ctx.arc(d.px, d.py, max(0.3, sz), 0, PI2); ctx.fill();
+        ctx.beginPath(); ctx.arc(d.px, d.py, max(isSmall ? 0.22 : 0.3, sz), 0, PI2); ctx.fill();
 
         if (d.pBoost > 0.5) {
           ctx.fillStyle = `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${(d.pBoost - 0.5) * 0.7})`;
