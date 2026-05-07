@@ -2,7 +2,6 @@
 
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
-import { MiniOrb } from '@/components/profile/MiniOrb';
 import Link from 'next/link';
 
 interface LeaderboardRowProps {
@@ -13,13 +12,9 @@ interface LeaderboardRowProps {
   delta: number;
   isCurrentUser?: boolean;
   index: number;
-  /** Cosmetics — when supplied, the row shows the user's frame, name effect, and mini orb. */
+  /** Cosmetics — when supplied, the row shows the user's frame and name effect. */
   frameId?: string;
   nameEffectId?: string;
-  orbTier?: number;
-  orbBaseColor?: string;
-  orbPulseColor?: string;
-  orbRingColor?: string;
 }
 
 // Roman numerals for the top three — magazine convention shared with
@@ -29,7 +24,6 @@ const romans = ['I', 'II', 'III'];
 export function LeaderboardRow({
   rank, username, avatarUrl, score, delta, isCurrentUser,
   frameId, nameEffectId,
-  orbTier, orbBaseColor, orbPulseColor, orbRingColor,
 }: LeaderboardRowProps) {
   const isPodium = rank <= 3;
   const rankLabel = isPodium ? romans[rank - 1] : String(rank);
@@ -97,15 +91,6 @@ export function LeaderboardRow({
             >
               You
             </span>
-          )}
-          {orbTier !== undefined && (
-            <MiniOrb
-              tier={orbTier}
-              baseColorId={orbBaseColor}
-              pulseColorId={orbPulseColor}
-              ringColorId={orbRingColor}
-              size={16}
-            />
           )}
         </div>
       </Link>

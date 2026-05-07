@@ -409,6 +409,110 @@ body {
 .orb-light-backdrop { opacity: 0; transition: opacity 200ms ease; }
 html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
+/* Full Awaken CTA — the long-road 100% payoff button. Editorial
+   palette (accent red on ink border) with a metallic-shine sweep
+   tearing across the label, a slow halo pulse breathing red light
+   beyond the button edge, and a soft inner highlight that drifts
+   diagonally. Pressed-button feel on tap. */
+@keyframes awaken-cta-halo {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(220, 38, 38, 0.55),
+      0 8px 28px -8px rgba(220, 38, 38, 0.55),
+      inset 0 0 0 0 rgba(255, 255, 255, 0.0);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(220, 38, 38, 0),
+      0 12px 36px -6px rgba(220, 38, 38, 0.85),
+      inset 0 0 18px rgba(255, 255, 255, 0.18);
+  }
+}
+@keyframes awaken-cta-sheen {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.awaken-cta {
+  animation: awaken-cta-halo 2.6s ease-in-out infinite;
+  transition: transform 120ms ease;
+  will-change: box-shadow, transform;
+}
+.awaken-cta:hover { transform: translateY(-1px) scale(1.02); }
+.awaken-cta:active { transform: translateY(0) scale(0.98); }
+.awaken-cta .awaken-cta-label {
+  position: relative;
+  display: inline-block;
+  background-image: linear-gradient(
+    110deg,
+    #ffffff 0%,
+    #ffffff 40%,
+    #fff7f7 48%,
+    #ffd9d9 52%,
+    #ffffff 60%,
+    #ffffff 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: awaken-cta-sheen 3s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.45));
+}
+
+/* Awakening progress bar — the fill carries a slow rightward shine
+   sweep so the bar reads as alive even before it hits 100%. At 100%
+   the fill flips to a brighter red and pulses. */
+.awaken-bar > div::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: awaken-bar-sheen 2.6s linear infinite;
+  pointer-events: none;
+}
+.awaken-bar > div { position: relative; overflow: hidden; }
+@keyframes awaken-bar-sheen {
+  0%   { background-position: -120% 0; }
+  100% { background-position: 220% 0; }
+}
+@keyframes awaken-bar-max-pulse {
+  0%, 100% { filter: brightness(1.0); }
+  50%      { filter: brightness(1.35); }
+}
+.awaken-bar-max > div {
+  animation: awaken-bar-max-pulse 1.6s ease-in-out infinite;
+}
+
+/* Notification bell pill — hairline-rimmed circle in the masthead.
+   Hover lifts and tints the rim toward accent so it reads as a real
+   button instead of a static icon. Unread state pulses the rim
+   accent-red on a slow loop so it draws the eye without flashing. */
+.bell-pill {
+  transition: transform 160ms ease, border-color 200ms ease, background 200ms ease;
+}
+.bell-pill:hover,
+.bell-pill:focus-visible {
+  transform: translateY(0) scale(1.08);
+  border-color: var(--b-accent);
+  outline: none;
+}
+@keyframes bell-unread-rim {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  50%      { box-shadow: 0 0 0 5px rgba(220, 38, 38, 0); }
+}
+.bell-unread {
+  border-color: var(--b-accent) !important;
+  animation: bell-unread-rim 2.2s ease-in-out infinite;
+}
+
 /* Mythic orb aura — a rotating conic-gradient halo that surrounds the
    orb when a mythic-tier base color is equipped. Rotates slowly with
    a soft hue-pulse on top so the four neon stops sweep around the

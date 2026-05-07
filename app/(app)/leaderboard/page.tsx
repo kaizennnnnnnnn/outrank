@@ -13,7 +13,6 @@ import { QueryConstraint, getDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
-import { MiniOrb } from '@/components/profile/MiniOrb';
 import { UserProfile } from '@/types/user';
 import Link from 'next/link';
 import { Masthead } from '@/components/editorial/Masthead';
@@ -340,10 +339,6 @@ export default function LeaderboardPage() {
                         score={score}
                         frameId={u.equippedFrame as string | undefined}
                         nameEffectId={u.equippedNameEffect as string | undefined}
-                        orbTier={(u.orbTier as number) || 1}
-                        orbBaseColor={u.orbBaseColor as string | undefined}
-                        orbPulseColor={u.orbPulseColor as string | undefined}
-                        orbRingColor={u.orbRingColor as string | undefined}
                       />
                     );
                   })}
@@ -373,10 +368,6 @@ export default function LeaderboardPage() {
                         score={score}
                         frameId={u.equippedFrame as string | undefined}
                         nameEffectId={u.equippedNameEffect as string | undefined}
-                        orbTier={(u.orbTier as number) || 1}
-                        orbBaseColor={u.orbBaseColor as string | undefined}
-                        orbPulseColor={u.orbPulseColor as string | undefined}
-                        orbRingColor={u.orbRingColor as string | undefined}
                       />
                     );
                   })}
@@ -406,10 +397,6 @@ export default function LeaderboardPage() {
                         delta={entry.delta}
                         frameId={c.frame}
                         nameEffectId={c.name}
-                        orbTier={c.tier}
-                        orbBaseColor={c.baseColor}
-                        orbPulseColor={c.pulseColor}
-                        orbRingColor={c.ringColor}
                       />
                     );
                   })}
@@ -425,11 +412,10 @@ export default function LeaderboardPage() {
 
 function Row({
   rank, isMe, username, avatarUrl, score, delta,
-  frameId, nameEffectId, orbTier, orbBaseColor, orbPulseColor, orbRingColor,
+  frameId, nameEffectId,
 }: {
   rank: number; isMe: boolean; username: string; avatarUrl: string; score: number; delta?: number;
   frameId?: string; nameEffectId?: string;
-  orbTier?: number; orbBaseColor?: string; orbPulseColor?: string; orbRingColor?: string;
 }) {
   const rankLabel = rank <= 3 ? romans[rank - 1] : String(rank);
   const isPodium = rank <= 3;
@@ -484,15 +470,6 @@ function Row({
             >
               You
             </span>
-          )}
-          {orbTier !== undefined && (
-            <MiniOrb
-              tier={orbTier}
-              baseColorId={orbBaseColor}
-              pulseColorId={orbPulseColor}
-              ringColorId={orbRingColor}
-              size={16}
-            />
           )}
         </div>
       </Link>

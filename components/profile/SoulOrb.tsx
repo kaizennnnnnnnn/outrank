@@ -844,16 +844,39 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       {!interactive ? null : (
       <>
       <AnimatePresence>
+        {/* Awakening progress bar — always visible while the orb is
+            interactive, so the user can see how far they are from the
+            full-awakening unlock. Rendered above the action buttons
+            so the bar and the eventual Full Awaken button read as a
+            stacked unit. */}
+        {interactive && !evolving && !ascending && !awakening && (
+          <div className="mt-3" style={{ width: '100%', maxWidth: 280 }}>
+            <EditorialAwakeningBar awakening={intensity} />
+          </div>
+        )}
+
         {/* Full Awaken takes top billing when available — even ahead of Ascend.
             This is the long-road 100% payoff and should feel like THE button. */}
         {canFullAwaken && !evolving && !ascending && !awakening && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <button
               onClick={(e) => { e.stopPropagation(); setShowFullAwakenConfirm(true); }}
-              className="relative text-sm font-heading font-bold text-white tracking-[0.2em] uppercase px-7 py-3 rounded-xl animate-shop-mythic-border bg-gradient-to-r from-amber-300 via-pink-500 via-fuchsia-500 to-cyan-400 shadow-[0_10px_40px_-6px_rgba(236,72,153,0.95)]"
-              style={{ backgroundSize: '200% 100%', animationDuration: '2.2s' }}
+              className="awaken-cta font-display"
+              style={{
+                position: 'relative',
+                padding: '12px 28px',
+                background: 'var(--b-accent)',
+                color: '#ffffff',
+                border: '1px solid var(--b-ink)',
+                cursor: 'pointer',
+                fontSize: 18,
+                fontWeight: 600,
+                fontStyle: 'italic',
+                letterSpacing: '0.02em',
+                overflow: 'hidden',
+              }}
             >
-              Full Awaken
+              <span className="awaken-cta-label">Full Awaken</span>
             </button>
           </motion.div>
         )}
@@ -1248,5 +1271,72 @@ function FullAwakenConfirmModal({ isOpen, onClose, onConfirm }: {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// ─── Editorial Awakening Bar ────────────────────────────────────────
+//
+// 0-100 progress bar in editorial chrome: hairline ink frame, accent
+// red fill with a slow shine sweep, italic Fraunces percentage label
+// above. Used inline in the orb command surface so the user always
+// sees how far they are from the next full-awakening unlock.
+
+function EditorialAwakeningBar({ awakening }: { awakening: number }) {
+  const pct = Math.max(0, Math.min(100, awakening));
+  const atMax = pct >= 100;
+  return (
+    <div style={{ width: '100%' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 4,
+        }}
+      >
+        <span
+          className="spread"
+          style={{
+            fontSize: 8.5,
+            color: atMax ? 'var(--b-accent)' : 'var(--b-ink-60)',
+            letterSpacing: '0.22em',
+          }}
+        >
+          {atMax ? 'Awakening · Ready' : 'Awakening'}
+        </span>
+        <span
+          className="font-display tabular"
+          style={{
+            fontSize: 14,
+            fontStyle: 'italic',
+            fontWeight: 600,
+            color: atMax ? 'var(--b-accent)' : 'var(--b-ink)',
+            lineHeight: 1,
+          }}
+        >
+          {pct}<span style={{ fontSize: 9, fontStyle: 'normal', color: 'var(--b-ink-60)', marginLeft: 1 }}>%</span>
+        </span>
+      </div>
+      <div
+        className={atMax ? 'awaken-bar awaken-bar-max' : 'awaken-bar'}
+        style={{
+          position: 'relative',
+          height: 6,
+          border: '1px solid var(--b-ink)',
+          background: 'var(--b-paper)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: `${pct}%`,
+            background: 'var(--b-accent)',
+            transition: 'width 600ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        />
+      </div>
+    </div>
   );
 }

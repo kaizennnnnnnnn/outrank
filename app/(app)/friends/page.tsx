@@ -13,7 +13,6 @@ import { PactCreateModal } from '@/components/pacts/PactCreateModal';
 import { useUserPacts } from '@/hooks/usePacts';
 import { FramedAvatar } from '@/components/profile/FramedAvatar';
 import { NamePlate } from '@/components/profile/NamePlate';
-import { MiniOrb } from '@/components/profile/MiniOrb';
 import { getCollection, getDocument, setDocument, updateDocument, removeDocument, createDocument, where, Timestamp } from '@/lib/firestore';
 import { increment } from 'firebase/firestore';
 import { sanitizeUsername } from '@/lib/security';
@@ -463,9 +462,6 @@ export default function FriendsPage() {
                           <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             <NamePlate name={u.username} effectId={uc.equippedNameEffect} size="sm" />
                           </span>
-                          {uc.orbTier !== undefined && (
-                            <MiniOrb tier={uc.orbTier} baseColorId={uc.orbBaseColor} pulseColorId={uc.orbPulseColor} ringColorId={uc.orbRingColor} size={16} />
-                          )}
                         </Link>
                         <div
                           className="font-body tabular"
@@ -529,9 +525,6 @@ export default function FriendsPage() {
                         <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           <NamePlate name={req.profile?.username || 'Unknown user'} effectId={req.profile?.equippedNameEffect} size="sm" />
                         </span>
-                        {req.profile?.orbTier !== undefined && (
-                          <MiniOrb tier={req.profile.orbTier} baseColorId={req.profile.orbBaseColor} pulseColorId={req.profile.orbPulseColor} ringColorId={req.profile.orbRingColor} size={16} />
-                        )}
                       </div>
                       <div
                         className="font-body tabular"
@@ -607,15 +600,6 @@ export default function FriendsPage() {
                               size="sm"
                             />
                           </span>
-                          {friend.profile?.orbTier !== undefined && (
-                            <MiniOrb
-                              tier={friend.profile.orbTier}
-                              baseColorId={friend.profile.orbBaseColor}
-                              pulseColorId={friend.profile.orbPulseColor}
-                              ringColorId={friend.profile.orbRingColor}
-                              size={18}
-                            />
-                          )}
                           {activePact && (
                             <span
                               className="spread"
