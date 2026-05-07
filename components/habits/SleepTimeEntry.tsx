@@ -6,6 +6,10 @@ interface Props {
   /** Called whenever the computed hours change. Caller stores this as
    *  the `value` for the standard log flow. */
   onChange: (hours: number) => void;
+  /** Called whenever the bedtime / wake time strings change. Caller
+   *  uses these to persist the user's preferred sleep window across
+   *  sessions so the next open shows their actual times. */
+  onTimesChange?: (bed: string, wake: string) => void;
   initialBed?: string;  // "HH:MM"
   initialWake?: string; // "HH:MM"
 }
@@ -19,7 +23,7 @@ interface Props {
  * The computed hours flow back to the parent via onChange so the
  * existing log path still writes a numeric value to the log doc.
  */
-export function SleepTimeEntry({ onChange, initialBed = '23:00', initialWake = '07:00' }: Props) {
+export function SleepTimeEntry({ onChange, onTimesChange, initialBed = '23:00', initialWake = '07:00' }: Props) {
   const [bed, setBed] = useState(initialBed);
   const [wake, setWake] = useState(initialWake);
 
@@ -30,6 +34,10 @@ export function SleepTimeEntry({ onChange, initialBed = '23:00', initialWake = '
   useEffect(() => {
     onChange(Number(hours.toFixed(2)));
   }, [hours, onChange]);
+
+  useEffect(() => {
+    onTimesChange?.(bed, wake);
+  }, [bed, wake, onTimesChange]);
 
   return (
     <div className="space-y-3">

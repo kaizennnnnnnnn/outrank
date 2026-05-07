@@ -8,6 +8,7 @@ import { ProofUploader } from './ProofUploader';
 import { UserHabit } from '@/types/habit';
 import { uploadProofImage } from '@/lib/storage';
 import { logHabit } from '@/lib/logHabit';
+import { updateDocument } from '@/lib/firestore';
 import { validateLogValue, sanitizeNote } from '@/lib/security';
 import { getGoalConfig } from '@/constants/categories';
 import { useUIStore } from '@/store/uiStore';
@@ -53,6 +54,15 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
   const [earnedXP, setEarnedXP] = useState(0);
   const [burst, setBurst] = useState(0);
   const [levelUpAt, setLevelUpAt] = useState<number | null>(null);
+
+  // Sleep bed / wake times — read defaults from the user doc so the
+  // picker comes back to the user's last-saved sleep window instead
+  // of resetting to 23:00 / 07:00 every time the modal opens.
+  const userTimes = user as unknown as Record<string, string | undefined>;
+  const initialBedAt = userTimes?.lastSleepBedAt || '23:00';
+  const initialWakeAt = userTimes?.lastSleepWakeAt || '07:00';
+  const [sleepBed, setSleepBed] = useState(initialBedAt);
+  const [sleepWake, setSleepWake] = useState(initialWakeAt);
 
   const config = habit ? getGoalConfig(habit.categorySlug) : null;
 
@@ -105,6 +115,16 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
         username: user.username,
         avatarUrl: user.avatarUrl || '',
       });
+
+      // Persist the user's last-used sleep window so the picker
+      // remembers it on the next open. Fire-and-forget: a failed
+      // write here shouldn't fail the whole log.
+      if (habit.categorySlug === 'sleep') {
+        updateDocument('users', userId, {
+          lastSleepBedAt: sleepBed,
+          lastSleepWakeAt: sleepWake,
+        }).catch(() => { /* ignore */ });
+      }
 
       setEarnedXP(result.xpEarned);
       setShowXP(true);
@@ -264,7 +284,12 @@ export function QuickLogModal({ isOpen, onClose, habit, userId }: QuickLogModalP
 
             {/* Value entry */}
             {habit.categorySlug === 'sleep' ? (
-              <SleepTimeEntry onChange={setValue} />
+              <SleepTimeEntry
+                onChange={setValue}
+                onTimesChange={(b, w) => { setSleepBed(b); setSleepWake(w); }}
+                initialBed={initialBedAt}
+                initialWake={initialWakeAt}
+              />
             ) : (
               <div
                 style={{
