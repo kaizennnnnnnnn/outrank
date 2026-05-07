@@ -400,6 +400,15 @@ body {
   50%      { opacity: 0.3; transform: scale(0.7); }
 }
 
+/* Soul Orb light-theme backdrop. The orb is a particle system designed
+   to glow against empty dark space; on cream paper its outer glow and
+   white-ish core stops blend into the page and the orb reads washed
+   out. Default (Ink) theme hides the backdrop entirely; the Paper
+   theme fades it in so the orb keeps its dark "space pocket" without
+   forcing the page background to flip. */
+.orb-light-backdrop { opacity: 0; transition: opacity 200ms ease; }
+html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
+
 /* Diet quick-link card — clickable affordance. Idle the card sits
    flat with its OPEN pill in plain ink; on hover the card lifts 1px,
    the pill arrow nudges 2px right, and a faint accent wash sweeps in

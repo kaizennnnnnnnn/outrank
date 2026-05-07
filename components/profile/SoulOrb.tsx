@@ -650,6 +650,21 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         className="relative"
         style={{ width: size, height: size }}
       >
+        {/* Light-theme backdrop — the orb is designed to glow against
+            empty space; on cream paper it loses its ground. This soft
+            dark radial pocket is hidden on the default Ink theme via
+            CSS and only fades in under [data-theme='light']. The
+            gradient feathers to transparent at 90% so it doesn't read
+            as a black disc plopped onto the page. */}
+        <div
+          aria-hidden
+          className="orb-light-backdrop absolute pointer-events-none rounded-full"
+          style={{
+            inset: -size * 0.06,
+            background:
+              'radial-gradient(circle, rgba(8,8,16,0.92) 0%, rgba(8,8,16,0.78) 50%, rgba(8,8,16,0.32) 80%, rgba(8,8,16,0) 100%)',
+          }}
+        />
         <div
           className={ascending ? 'animate-ascend-collapse' : ''}
           style={{
@@ -664,6 +679,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
               width: size, height: size, maxWidth: '100%', cursor: 'grab', touchAction: 'none',
               opacity: fadeOut ? 0 : 1,
               transition: 'opacity 0.5s ease-in-out',
+              position: 'relative',
             }}
           />
         </div>
