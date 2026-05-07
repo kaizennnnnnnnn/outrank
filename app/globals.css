@@ -422,42 +422,46 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
    completely flat. Two siblings can carry .shine-alt-offset to flip
    their phase 180°, so when one is red-glowing the other is
    ink-glowing — they "take turns" instead of pulsing in unison. */
-/* Slow sequential glow — text holds steady at ink color while a
-   single coloured halo cycles SLOWLY between black and red. The two
-   colours never overlap in the same frame; each phase sits for
-   ~3 seconds before easing into the next, on a total 9s loop. The
-   .shine-alt-offset modifier flips the cycle 180° so a sibling
-   element is in the opposite phase. */
-@keyframes shine-glow-cycle {
-  0%, 35% {
-    /* Phase A — slow black halo. On Ink (dark page) reads as a
-       weighty vacuum around the text; on Paper (cream) reads as a
-       heavy printed drop. */
-    filter:
-      drop-shadow(0 0 9px rgba(10, 10, 16, 0.95))
-      drop-shadow(0 0 22px rgba(10, 10, 16, 0.65));
-  }
-  55%, 90% {
-    /* Phase B — slow red halo. */
-    filter:
-      drop-shadow(0 0 9px rgba(220, 38, 38, 0.95))
-      drop-shadow(0 0 22px rgba(220, 38, 38, 0.55));
-  }
-  100% {
-    filter:
-      drop-shadow(0 0 9px rgba(10, 10, 16, 0.95))
-      drop-shadow(0 0 22px rgba(10, 10, 16, 0.65));
-  }
+/* Bicolor metallic sweep — a horizontal foil-stamp animation that
+   carries TWO highlights spaced apart in the same gradient: a black
+   band and a red band. As the gradient pans, each highlight passes
+   through the text in turn, so the text reads as ink, then a black
+   metallic stripe sweeps through, then back to ink, then a red
+   metallic stripe sweeps through. Never both at once. The gaps
+   between bands sit on the ink baseline for ~2s each so the user
+   has time to read the text uncolored between sweeps.
+   GPU composited (background-position only). */
+@keyframes shine-metallic-sweep {
+  0%   { background-position: 280% center; }
+  100% { background-position: -280% center; }
 }
 .shine-light {
-  color: var(--b-ink);
-  animation: shine-glow-cycle 9s ease-in-out infinite;
-  will-change: filter;
+  background-image: linear-gradient(
+    105deg,
+    var(--b-ink) 0%,
+    var(--b-ink) 22%,
+    #0a0a10 28%,
+    #0a0a10 32%,
+    var(--b-ink) 38%,
+    var(--b-ink) 60%,
+    #ef4444 67%,
+    #dc2626 70%,
+    #b91c1c 73%,
+    var(--b-ink) 79%,
+    var(--b-ink) 100%
+  );
+  background-size: 280% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine-metallic-sweep 7s linear infinite;
+  will-change: background-position;
 }
-/* Offset variant — flips the cycle so this sibling is in the red
-   phase when the other is in the black phase, and vice versa. */
+/* Offset variant — half-cycle delay so a sibling element runs the
+   bicolor sweep out of phase. When one element shows the red band,
+   the other is between bands at ink. */
 .shine-alt-offset {
-  animation: shine-glow-cycle 9s ease-in-out infinite -4.5s;
+  animation: shine-metallic-sweep 7s linear infinite -3.5s;
 }
 
 /* ─── Orb tier-name animations ─────────────────────────────────────
