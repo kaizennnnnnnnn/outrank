@@ -371,25 +371,30 @@ body {
    across left-to-right on a slow loop. Reads as foil-stamped, sits
    inside the editorial paper grammar without breaking the flat aesthetic.
    GPU-composited (background-position only). */
-/* Each shine now holds the gradient off-canvas for the first 55%
-   of its cycle, then sweeps in the back half. So instead of one
-   continuous loop where a new sweep starts the moment the last
-   one finishes, the text sits quiet for a beat between sweeps. */
+/* Each shine uses a transparent-body gradient over a solid base
+   colour so the gradient can be parked completely off-canvas during
+   the hold phase. background-repeat: no-repeat means once the
+   highlight has swept off-left, only the base colour remains
+   visible until the next cycle. Total cycle = ~14s with a long
+   off-screen rest, a single ~3s sweep, and another long rest. */
 @keyframes metallic-shine-sweep {
-  0%, 55% { background-position: 200% center; }
-  100%    { background-position: -200% center; }
+  0%, 25%  { background-position: 200% center; }   /* hold off-right */
+  55%      { background-position: -100% center; }  /* swept off-left */
+  100%     { background-position: -100% center; }  /* hold off-left */
 }
 .metallic-shine {
   background-image: linear-gradient(
     110deg,
-    var(--b-accent) 0%,
-    var(--b-accent) 42%,
+    transparent 0%,
+    transparent 42%,
     #ffd0d0 49%,
     #ffb3b3 51%,
-    var(--b-accent) 58%,
-    var(--b-accent) 100%
+    transparent 58%,
+    transparent 100%
   );
   background-size: 200% auto;
+  background-repeat: no-repeat;
+  background-color: var(--b-accent);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -435,37 +440,59 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
    between bands sit on the ink baseline for ~2s each so the user
    has time to read the text uncolored between sweeps.
    GPU composited (background-position only). */
+/* Bicolor sweep — two transparent-body gradients stacked over an
+   ink base. The black layer sweeps first, rests off-canvas, then
+   the red layer sweeps, then both rest off-canvas. Comma-separated
+   background-position lets each layer slide independently from
+   the same single keyframe. Cycle = 24s with FOUR distinct
+   beats: black sweep, rest, red sweep, rest. */
 @keyframes shine-metallic-sweep {
-  0%, 50% { background-position: 280% center; }
-  100%    { background-position: -280% center; }
+  /* Both layers parked off-right */
+  0%, 8%   { background-position: 200% center, 200% center; }
+  /* Black sweeps left */
+  20%      { background-position: -100% center, 200% center; }
+  /* Black parked off-left, red still off-right (rest beat) */
+  20%, 50% { background-position: -100% center, 200% center; }
+  /* Red sweeps left */
+  62%      { background-position: -100% center, -100% center; }
+  /* Both parked off-left (rest beat) */
+  62%, 99% { background-position: -100% center, -100% center; }
+  /* Snap both back off-right; both layers off-canvas so the snap is invisible */
+  100%     { background-position: 200% center, 200% center; }
 }
 .shine-light {
-  background-image: linear-gradient(
-    105deg,
-    var(--b-ink) 0%,
-    var(--b-ink) 24%,
-    #0a0a10 28%,
-    #0a0a10 32%,
-    var(--b-ink) 36%,
-    var(--b-ink) 64%,
-    #b91c1c 68%,
-    #991b1b 70%,
-    #7f1d1d 72%,
-    var(--b-ink) 76%,
-    var(--b-ink) 100%
-  );
-  background-size: 280% auto;
+  background-image:
+    linear-gradient(105deg,
+      transparent 0%,
+      transparent 42%,
+      #0a0a10 49%,
+      #0a0a10 51%,
+      transparent 58%,
+      transparent 100%
+    ),
+    linear-gradient(105deg,
+      transparent 0%,
+      transparent 42%,
+      #b91c1c 49%,
+      #991b1b 50%,
+      #b91c1c 51%,
+      transparent 58%,
+      transparent 100%
+    );
+  background-size: 200% 100%, 200% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-color: var(--b-ink);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: shine-metallic-sweep 22s ease-in-out infinite;
+  animation: shine-metallic-sweep 24s ease-in-out infinite;
   will-change: background-position;
 }
-/* Offset variant — half-cycle delay so a sibling element runs the
-   bicolor sweep out of phase. When one element shows the red band,
-   the other is between bands at ink. */
+/* Offset variant — half-cycle delay so a sibling element is in the
+   red beat when this element is in the black beat (and vice versa).
+   Both still get long off-canvas rests between sweeps. */
 .shine-alt-offset {
-  animation: shine-metallic-sweep 22s ease-in-out infinite -11s;
+  animation: shine-metallic-sweep 24s ease-in-out infinite -12s;
 }
 
 /* Tone-shine — single-colour metallic sweep where the highlight
@@ -474,19 +501,22 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
    in its own colour (bronze, silver, gold, platinum, diamond,
    master, grandmaster) with a slow sweep across. */
 @keyframes tone-shine-sweep {
-  0%, 55% { background-position: 200% center; }
-  100%    { background-position: -200% center; }
+  0%, 25%  { background-position: 200% center; }
+  55%      { background-position: -100% center; }
+  100%     { background-position: -100% center; }
 }
 .tone-shine {
   background-image: linear-gradient(
     110deg,
-    var(--tone, var(--b-ink)) 0%,
-    var(--tone, var(--b-ink)) 42%,
+    transparent 0%,
+    transparent 42%,
     rgba(255, 255, 255, 0.78) 50%,
-    var(--tone, var(--b-ink)) 58%,
-    var(--tone, var(--b-ink)) 100%
+    transparent 58%,
+    transparent 100%
   );
   background-size: 200% auto;
+  background-repeat: no-repeat;
+  background-color: var(--tone, var(--b-ink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -547,8 +577,9 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   50%      { opacity: 1.0; }
 }
 @keyframes tier-name-shine {
-  0%, 55% { background-position: 220% center; }
-  100%    { background-position: -220% center; }
+  0%, 25%  { background-position: 220% center; }
+  55%      { background-position: -100% center; }
+  100%     { background-position: -100% center; }
 }
 @keyframes tier-name-prism {
   0%, 100% {
@@ -574,10 +605,17 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   animation: tier-name-flicker 4.5s ease-in-out infinite;
 }
 
+/* Tiers 3-9 share the same transparent-body shine pattern: a thin
+   bright peak rides the gradient, parked off-canvas during the
+   long hold phase. The base colour is set via background-color so
+   the text stays its tier hue while the highlight is off-screen. */
+
 /* Tier 3 — Inferno: warm red sheen */
 .tier-name-3 {
-  background-image: linear-gradient(110deg, #b91c1c 0%, #b91c1c 42%, #fde6cc 50%, #b91c1c 58%, #b91c1c 100%);
+  background-image: linear-gradient(110deg, transparent 0%, transparent 42%, #fde6cc 50%, transparent 58%, transparent 100%);
   background-size: 220% auto;
+  background-repeat: no-repeat;
+  background-color: #b91c1c;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -586,8 +624,10 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
 /* Tier 4 — Phoenix: red→amber sheen + soft warm halo */
 .tier-name-4 {
-  background-image: linear-gradient(110deg, #dc2626 0%, #dc2626 40%, #fde047 50%, #f97316 60%, #dc2626 70%, #dc2626 100%);
+  background-image: linear-gradient(110deg, transparent 0%, transparent 38%, #fde047 50%, #f97316 56%, transparent 64%, transparent 100%);
   background-size: 220% auto;
+  background-repeat: no-repeat;
+  background-color: #dc2626;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -597,8 +637,10 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
 /* Tier 5 — Supernova: white-hot core sheen + bigger halo */
 .tier-name-5 {
-  background-image: linear-gradient(110deg, #b91c1c 0%, #f97316 35%, #ffffff 50%, #f97316 65%, #b91c1c 100%);
+  background-image: linear-gradient(110deg, transparent 0%, transparent 38%, #f97316 46%, #ffffff 50%, #f97316 54%, transparent 62%, transparent 100%);
   background-size: 220% auto;
+  background-repeat: no-repeat;
+  background-color: #b91c1c;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -608,8 +650,10 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
 /* Tier 6 — Galactic: indigo→violet→cyan iridescence */
 .tier-name-6 {
-  background-image: linear-gradient(110deg, #4338ca 0%, #7c3aed 35%, #22d3ee 50%, #7c3aed 65%, #4338ca 100%);
+  background-image: linear-gradient(110deg, transparent 0%, transparent 38%, #7c3aed 46%, #22d3ee 50%, #7c3aed 54%, transparent 62%, transparent 100%);
   background-size: 220% auto;
+  background-repeat: no-repeat;
+  background-color: #4338ca;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -619,8 +663,10 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
 /* Tier 7 — Nebula: magenta→cyan with pink core */
 .tier-name-7 {
-  background-image: linear-gradient(110deg, #9333ea 0%, #ec4899 30%, #fde047 50%, #ec4899 70%, #9333ea 100%);
+  background-image: linear-gradient(110deg, transparent 0%, transparent 36%, #ec4899 46%, #fde047 50%, #ec4899 54%, transparent 64%, transparent 100%);
   background-size: 220% auto;
+  background-repeat: no-repeat;
+  background-color: #9333ea;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -630,8 +676,10 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
 /* Tier 8 — Singularity: violet/pink shimmer + chromatic aberration */
 .tier-name-8 {
-  background-image: linear-gradient(110deg, #1e1b4b 0%, #7c3aed 30%, #f0abfc 50%, #7c3aed 70%, #1e1b4b 100%);
+  background-image: linear-gradient(110deg, transparent 0%, transparent 36%, #7c3aed 46%, #f0abfc 50%, #7c3aed 54%, transparent 64%, transparent 100%);
   background-size: 220% auto;
+  background-repeat: no-repeat;
+  background-color: #1e1b4b;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -641,8 +689,10 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
 /* Tier 9 — Primordial: emerald→cyan→gold prismatic */
 .tier-name-9 {
-  background-image: linear-gradient(110deg, #059669 0%, #22d3ee 30%, #fde047 50%, #22d3ee 70%, #059669 100%);
+  background-image: linear-gradient(110deg, transparent 0%, transparent 36%, #22d3ee 46%, #fde047 50%, #22d3ee 54%, transparent 64%, transparent 100%);
   background-size: 220% auto;
+  background-repeat: no-repeat;
+  background-color: #059669;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
