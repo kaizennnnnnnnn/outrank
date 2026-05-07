@@ -188,3 +188,26 @@ export function getOrbRingColor(id: string): OrbColorSet {
 export function isRainbowColor(id: string | undefined): boolean {
   return !!id && id.includes('rainbow');
 }
+
+// Mythic-tier IDs that should get the rotating chromatic aura
+// treatment. Rainbow has its own per-frame hue cycle so it's
+// excluded — the aura would double up on the effect.
+const MYTHIC_BASE_IDS = new Set([
+  'stargaze', 'eternal', 'quasar', 'nova', 'celestial', 'singularity',
+]);
+const MYTHIC_PULSE_IDS = new Set([
+  'pulse_stargaze', 'pulse_eternal', 'pulse_quasar', 'pulse_cosmic', 'pulse_nova',
+]);
+const MYTHIC_RING_IDS = new Set([
+  'ring_void', 'ring_supernova', 'ring_cosmic', 'ring_celestial', 'ring_eternal',
+]);
+
+export function isMythicBaseColor(id: string | undefined): boolean {
+  return !!id && MYTHIC_BASE_IDS.has(id);
+}
+export function isMythicPulseColor(id: string | undefined): boolean {
+  return !!id && MYTHIC_PULSE_IDS.has(id);
+}
+export function isMythicRingColor(id: string | undefined): boolean {
+  return !!id && MYTHIC_RING_IDS.has(id);
+}

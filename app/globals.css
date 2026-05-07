@@ -409,6 +409,46 @@ body {
 .orb-light-backdrop { opacity: 0; transition: opacity 200ms ease; }
 html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 
+/* Mythic orb aura — a rotating conic-gradient halo that surrounds the
+   orb when a mythic-tier base color is equipped. Rotates slowly with
+   a soft hue-pulse on top so the four neon stops sweep around the
+   orb body, separating mythic visually from legendary. The conic
+   gradient is masked to a ring shape (transparent center, soft outer
+   feather) so it doesn't muddy the orb's own particles. Pure GPU
+   composited (transform + opacity). Per-instance colors are wired in
+   via custom props --m1..--m4. */
+@keyframes mythic-aura-spin {
+  0%   { transform: rotate(0deg)   scale(1); }
+  50%  { transform: rotate(180deg) scale(1.04); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes mythic-aura-breathe {
+  0%, 100% { opacity: 0.55; filter: saturate(1.2); }
+  50%      { opacity: 0.85; filter: saturate(1.6); }
+}
+.mythic-aura {
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    var(--m1, #ff00aa) 0%,
+    var(--m2, #00f0ff) 25%,
+    var(--m3, #fff200) 50%,
+    var(--m4, #39ff14) 75%,
+    var(--m1, #ff00aa) 100%
+  );
+  -webkit-mask-image: radial-gradient(circle, transparent 38%, black 50%, black 80%, transparent 100%);
+  mask-image: radial-gradient(circle, transparent 38%, black 50%, black 80%, transparent 100%);
+  filter: blur(12px) saturate(1.4);
+  animation:
+    mythic-aura-spin 11s linear infinite,
+    mythic-aura-breathe 3.4s ease-in-out infinite;
+  will-change: transform, opacity;
+  mix-blend-mode: screen;
+}
+
 /* Diet quick-link card — clickable affordance. Idle the card sits
    flat with its OPEN pill in plain ink; on hover the card lifts 1px,
    the pill arrow nudges 2px right, and a faint accent wash sweeps in
