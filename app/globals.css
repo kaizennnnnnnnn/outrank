@@ -379,17 +379,17 @@ body {
   background-image: linear-gradient(
     110deg,
     var(--b-accent) 0%,
-    var(--b-accent) 38%,
-    #fff7f7 48%,
-    #ffd9d9 52%,
-    var(--b-accent) 62%,
+    var(--b-accent) 42%,
+    #ffd0d0 49%,
+    #ffb3b3 51%,
+    var(--b-accent) 58%,
     var(--b-accent) 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: metallic-shine-sweep 3.8s linear infinite;
+  animation: metallic-shine-sweep 9s linear infinite;
   will-change: background-position;
 }
 
@@ -439,29 +439,29 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   background-image: linear-gradient(
     105deg,
     var(--b-ink) 0%,
-    var(--b-ink) 22%,
+    var(--b-ink) 24%,
     #0a0a10 28%,
     #0a0a10 32%,
-    var(--b-ink) 38%,
-    var(--b-ink) 60%,
-    #ef4444 67%,
-    #dc2626 70%,
-    #b91c1c 73%,
-    var(--b-ink) 79%,
+    var(--b-ink) 36%,
+    var(--b-ink) 64%,
+    #b91c1c 68%,
+    #991b1b 70%,
+    #7f1d1d 72%,
+    var(--b-ink) 76%,
     var(--b-ink) 100%
   );
   background-size: 280% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: shine-metallic-sweep 7s linear infinite;
+  animation: shine-metallic-sweep 16s linear infinite;
   will-change: background-position;
 }
 /* Offset variant — half-cycle delay so a sibling element runs the
    bicolor sweep out of phase. When one element shows the red band,
    the other is between bands at ink. */
 .shine-alt-offset {
-  animation: shine-metallic-sweep 7s linear infinite -3.5s;
+  animation: shine-metallic-sweep 16s linear infinite -8s;
 }
 
 /* Tone-shine — single-colour metallic sweep where the highlight
@@ -477,16 +477,16 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   background-image: linear-gradient(
     110deg,
     var(--tone, var(--b-ink)) 0%,
-    var(--tone, var(--b-ink)) 38%,
-    #ffffff 50%,
-    var(--tone, var(--b-ink)) 62%,
+    var(--tone, var(--b-ink)) 42%,
+    rgba(255, 255, 255, 0.78) 50%,
+    var(--tone, var(--b-ink)) 58%,
     var(--tone, var(--b-ink)) 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tone-shine-sweep 4.5s linear infinite;
+  animation: tone-shine-sweep 9s linear infinite;
   will-change: background-position;
 }
 
@@ -538,83 +538,83 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 /* Tier 2 — Flame: subtle warm flicker */
 .tier-name-2 {
   color: #d97706;
-  animation: tier-name-flicker 2.6s ease-in-out infinite;
+  animation: tier-name-flicker 4.5s ease-in-out infinite;
 }
 
 /* Tier 3 — Inferno: warm red sheen */
 .tier-name-3 {
-  background-image: linear-gradient(110deg, #b91c1c 0%, #b91c1c 40%, #fef3c7 50%, #b91c1c 60%, #b91c1c 100%);
+  background-image: linear-gradient(110deg, #b91c1c 0%, #b91c1c 42%, #fde6cc 50%, #b91c1c 58%, #b91c1c 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 4.2s linear infinite;
+  animation: tier-name-shine 9s linear infinite;
 }
 
 /* Tier 4 — Phoenix: red→amber sheen + soft warm halo */
 .tier-name-4 {
-  background-image: linear-gradient(110deg, #dc2626 0%, #dc2626 35%, #fde047 48%, #f97316 56%, #dc2626 70%, #dc2626 100%);
+  background-image: linear-gradient(110deg, #dc2626 0%, #dc2626 40%, #fde047 50%, #f97316 60%, #dc2626 70%, #dc2626 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 3.6s linear infinite;
-  filter: drop-shadow(0 0 12px rgba(220, 38, 38, 0.35));
+  animation: tier-name-shine 8s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.25));
 }
 
 /* Tier 5 — Supernova: white-hot core sheen + bigger halo */
 .tier-name-5 {
-  background-image: linear-gradient(110deg, #b91c1c 0%, #f97316 30%, #ffffff 50%, #f97316 70%, #b91c1c 100%);
+  background-image: linear-gradient(110deg, #b91c1c 0%, #f97316 35%, #ffffff 50%, #f97316 65%, #b91c1c 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 3.0s linear infinite;
-  filter: drop-shadow(0 0 16px rgba(253, 224, 71, 0.55));
+  animation: tier-name-shine 7s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(253, 224, 71, 0.4));
 }
 
 /* Tier 6 — Galactic: indigo→violet→cyan iridescence */
 .tier-name-6 {
-  background-image: linear-gradient(110deg, #4338ca 0%, #7c3aed 30%, #22d3ee 50%, #7c3aed 70%, #4338ca 100%);
+  background-image: linear-gradient(110deg, #4338ca 0%, #7c3aed 35%, #22d3ee 50%, #7c3aed 65%, #4338ca 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 2.8s linear infinite;
-  filter: drop-shadow(0 0 14px rgba(124, 58, 237, 0.5));
+  animation: tier-name-shine 6.5s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.35));
 }
 
 /* Tier 7 — Nebula: magenta→cyan with pink core */
 .tier-name-7 {
-  background-image: linear-gradient(110deg, #9333ea 0%, #ec4899 25%, #fde047 50%, #ec4899 75%, #9333ea 100%);
+  background-image: linear-gradient(110deg, #9333ea 0%, #ec4899 30%, #fde047 50%, #ec4899 70%, #9333ea 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 2.4s linear infinite;
-  filter: drop-shadow(0 0 16px rgba(236, 72, 153, 0.55));
+  animation: tier-name-shine 6s linear infinite;
+  filter: drop-shadow(0 0 11px rgba(236, 72, 153, 0.4));
 }
 
 /* Tier 8 — Singularity: violet/pink shimmer + chromatic aberration */
 .tier-name-8 {
-  background-image: linear-gradient(110deg, #1e1b4b 0%, #7c3aed 25%, #f0abfc 50%, #7c3aed 75%, #1e1b4b 100%);
+  background-image: linear-gradient(110deg, #1e1b4b 0%, #7c3aed 30%, #f0abfc 50%, #7c3aed 70%, #1e1b4b 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 2.2s linear infinite, tier-name-prism 3.2s ease-in-out infinite;
-  filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.6));
+  animation: tier-name-shine 5.5s linear infinite, tier-name-prism 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.45));
 }
 
 /* Tier 9 — Primordial: emerald→cyan→gold prismatic */
 .tier-name-9 {
-  background-image: linear-gradient(110deg, #059669 0%, #22d3ee 25%, #fde047 50%, #22d3ee 75%, #059669 100%);
+  background-image: linear-gradient(110deg, #059669 0%, #22d3ee 30%, #fde047 50%, #22d3ee 70%, #059669 100%);
   background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 1.9s linear infinite, tier-name-prism 2.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.65));
+  animation: tier-name-shine 5s linear infinite, tier-name-prism 4.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 13px rgba(34, 211, 238, 0.45));
 }
 
 /* Tier 10 — Transcendent: full prismatic rainbow + heavy aberration */
@@ -631,8 +631,8 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-rainbow 4.5s linear infinite, tier-name-prism 2.0s ease-in-out infinite;
-  filter: drop-shadow(0 0 22px rgba(253, 224, 71, 0.75));
+  animation: tier-name-rainbow 9s linear infinite, tier-name-prism 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 15px rgba(253, 224, 71, 0.55));
 }
 
 /* Full Awaken CTA — kept inside the button itself: an animated
