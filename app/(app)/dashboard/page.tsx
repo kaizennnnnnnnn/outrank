@@ -309,7 +309,7 @@ export default function DashboardPage() {
             style={{
               position: 'relative',
               marginTop: 18,
-              padding: '14px 14px 14px 18px',
+              padding: '14px 14px 14px 14px',
               borderTop: '1px solid var(--b-ink)',
               borderBottom: '1px solid var(--b-ink)',
               background: 'var(--b-paper)',
@@ -321,18 +321,6 @@ export default function DashboardPage() {
               overflow: 'hidden',
             }}
           >
-            {/* accent left stripe */}
-            <span
-              aria-hidden
-              style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: 3,
-                background: 'var(--b-accent)',
-              }}
-            />
             {/* fork-flame mark */}
             <span
               aria-hidden
