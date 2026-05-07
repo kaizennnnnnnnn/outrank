@@ -572,54 +572,145 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   filter: drop-shadow(0 0 22px rgba(253, 224, 71, 0.75));
 }
 
-/* Full Awaken CTA — the long-road 100% payoff button. Editorial
-   palette (accent red on ink border) with a metallic-shine sweep
-   tearing across the label, a slow halo pulse breathing red light
-   beyond the button edge, and a soft inner highlight that drifts
-   diagonally. Pressed-button feel on tap. */
+/* Full Awaken CTA — the long-road 100% payoff button. Cranked to a
+   five-layer pyrotechnic display:
+     1. Rotating conic-gradient halo BEHIND the button (red/orange/gold
+        ring spinning on a 4s loop) so the whole CTA looks like it's
+        burning through atmosphere.
+     2. Animated red→orange→red gradient inside the button so the body
+        itself shifts hue continuously instead of sitting solid.
+     3. Heavy 4-layer pulsing box-shadow that breathes red light and
+        ramps from 0 to a full-bleed halo every 1.8s.
+     4. Faster metallic-shine sweep across the label (1.6s) plus a hot
+        white drop-shadow so the type itself reads as foil.
+     5. Four corner sparks — tiny pseudo-elements that flash in
+        sequence, like the button is throwing off embers.
+   Hover scales + tilts; tap snaps. GPU-composited (transform +
+   background-position + opacity). */
+
 @keyframes awaken-cta-halo {
   0%, 100% {
     box-shadow:
-      0 0 0 0 rgba(220, 38, 38, 0.55),
-      0 8px 28px -8px rgba(220, 38, 38, 0.55),
-      inset 0 0 0 0 rgba(255, 255, 255, 0.0);
+      0 0 0 0 rgba(220, 38, 38, 0.6),
+      0 0 0 0 rgba(249, 115, 22, 0.4),
+      0 14px 36px -6px rgba(220, 38, 38, 0.6),
+      inset 0 0 0 0 rgba(255, 255, 255, 0);
   }
   50% {
     box-shadow:
-      0 0 0 8px rgba(220, 38, 38, 0),
-      0 12px 36px -6px rgba(220, 38, 38, 0.85),
-      inset 0 0 18px rgba(255, 255, 255, 0.18);
+      0 0 0 12px rgba(220, 38, 38, 0),
+      0 0 0 24px rgba(249, 115, 22, 0),
+      0 18px 50px -4px rgba(220, 38, 38, 1.0),
+      inset 0 0 24px rgba(255, 230, 200, 0.28);
   }
 }
 @keyframes awaken-cta-sheen {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
+  0%   { background-position: 220% center; }
+  100% { background-position: -220% center; }
 }
+@keyframes awaken-cta-bg-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+@keyframes awaken-cta-ring-spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes awaken-cta-spark {
+  0%, 100% { opacity: 0; transform: scale(0.4); }
+  50%      { opacity: 1;   transform: scale(1.0); }
+}
+
 .awaken-cta {
-  animation: awaken-cta-halo 2.6s ease-in-out infinite;
+  position: relative;
+  background-image: linear-gradient(
+    100deg,
+    #b91c1c 0%,
+    #dc2626 18%,
+    #ea580c 35%,
+    #dc2626 55%,
+    #b91c1c 75%,
+    #ea580c 90%,
+    #b91c1c 100%
+  ) !important;
+  background-size: 250% 100% !important;
+  animation:
+    awaken-cta-halo 1.8s ease-in-out infinite,
+    awaken-cta-bg-shift 4s ease-in-out infinite;
   transition: transform 120ms ease;
-  will-change: box-shadow, transform;
+  will-change: box-shadow, transform, background-position;
+  isolation: isolate;
 }
-.awaken-cta:hover { transform: translateY(-1px) scale(1.02); }
-.awaken-cta:active { transform: translateY(0) scale(0.98); }
+/* Rotating chromatic outer ring — sits behind the button face */
+.awaken-cta::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 220%;
+  height: 320%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(220, 38, 38, 0.0) 8%,
+    rgba(220, 38, 38, 0.7) 18%,
+    rgba(253, 224, 71, 0.85) 28%,
+    rgba(249, 115, 22, 0.7) 38%,
+    transparent 48%,
+    transparent 52%,
+    rgba(220, 38, 38, 0.6) 62%,
+    rgba(253, 224, 71, 0.7) 72%,
+    rgba(249, 115, 22, 0.6) 82%,
+    transparent 92%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(circle, transparent 32%, black 42%, black 65%, transparent 95%);
+  mask-image: radial-gradient(circle, transparent 32%, black 42%, black 65%, transparent 95%);
+  filter: blur(8px) saturate(1.4);
+  animation: awaken-cta-ring-spin 4s linear infinite;
+  z-index: -1;
+  pointer-events: none;
+}
+/* Four corner sparks — staggered firefly flashes */
+.awaken-cta::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 0%   0%, rgba(253, 224, 71, 0.95) 0%, transparent 8%),
+    radial-gradient(circle at 100% 0%, rgba(255, 230, 200, 0.95) 0%, transparent 8%),
+    radial-gradient(circle at 0%   100%, rgba(255, 230, 200, 0.95) 0%, transparent 8%),
+    radial-gradient(circle at 100% 100%, rgba(253, 224, 71, 0.95) 0%, transparent 8%);
+  animation: awaken-cta-spark 1.4s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+.awaken-cta:hover { transform: translateY(-2px) scale(1.05); }
+.awaken-cta:active { transform: translateY(0) scale(0.96); }
+
 .awaken-cta .awaken-cta-label {
   position: relative;
+  z-index: 1;
   display: inline-block;
   background-image: linear-gradient(
     110deg,
     #ffffff 0%,
-    #ffffff 40%,
-    #fff7f7 48%,
-    #ffd9d9 52%,
-    #ffffff 60%,
+    #ffffff 36%,
+    #fff7f7 46%,
+    #fde68a 50%,
+    #ffd9d9 54%,
+    #ffffff 64%,
     #ffffff 100%
   );
-  background-size: 200% auto;
+  background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: awaken-cta-sheen 3s linear infinite;
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.45));
+  animation: awaken-cta-sheen 1.6s linear infinite;
+  filter:
+    drop-shadow(0 0 6px rgba(255, 255, 255, 0.7))
+    drop-shadow(0 0 14px rgba(253, 224, 71, 0.45));
 }
 
 /* Awakening progress bar — the fill carries a slow rightward shine

@@ -865,7 +865,6 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
               style={{
                 position: 'relative',
                 padding: '12px 28px',
-                background: 'var(--b-accent)',
                 color: '#ffffff',
                 border: '1px solid var(--b-ink)',
                 cursor: 'pointer',
@@ -873,7 +872,6 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
                 fontWeight: 600,
                 fontStyle: 'italic',
                 letterSpacing: '0.02em',
-                overflow: 'hidden',
               }}
             >
               <span className="awaken-cta-label">Full Awaken</span>
