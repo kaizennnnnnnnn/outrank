@@ -422,52 +422,42 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
    completely flat. Two siblings can carry .shine-alt-offset to flip
    their phase 180°, so when one is red-glowing the other is
    ink-glowing — they "take turns" instead of pulsing in unison. */
+/* Slow sequential glow — text holds steady at ink color while a
+   single coloured halo cycles SLOWLY between black and red. The two
+   colours never overlap in the same frame; each phase sits for
+   ~3 seconds before easing into the next, on a total 9s loop. The
+   .shine-alt-offset modifier flips the cycle 180° so a sibling
+   element is in the opposite phase. */
 @keyframes shine-glow-cycle {
-  0%, 100% {
+  0%, 35% {
+    /* Phase A — slow black halo. On Ink (dark page) reads as a
+       weighty vacuum around the text; on Paper (cream) reads as a
+       heavy printed drop. */
     filter:
-      drop-shadow(0 0 8px rgba(220, 38, 38, 0.85))
-      drop-shadow(0 0 18px rgba(220, 38, 38, 0.4));
+      drop-shadow(0 0 9px rgba(10, 10, 16, 0.95))
+      drop-shadow(0 0 22px rgba(10, 10, 16, 0.65));
   }
-  50% {
-    /* Near-black halo so the glow stays visible on both Ink and
-       Paper themes. On Ink (dark page) the dark halo reads as a
-       vacuum/depth around the text; on Paper (cream) it reads as a
-       heavy printed shadow. */
+  55%, 90% {
+    /* Phase B — slow red halo. */
     filter:
-      drop-shadow(0 0 8px rgba(10, 10, 16, 0.95))
-      drop-shadow(0 0 18px rgba(10, 10, 16, 0.55));
+      drop-shadow(0 0 9px rgba(220, 38, 38, 0.95))
+      drop-shadow(0 0 22px rgba(220, 38, 38, 0.55));
   }
-}
-@keyframes shine-stripe-cycle {
-  0%   { background-position: 220% center; }
-  100% { background-position: -220% center; }
+  100% {
+    filter:
+      drop-shadow(0 0 9px rgba(10, 10, 16, 0.95))
+      drop-shadow(0 0 22px rgba(10, 10, 16, 0.65));
+  }
 }
 .shine-light {
-  background-image: linear-gradient(
-    110deg,
-    var(--b-ink) 0%,
-    var(--b-ink) 36%,
-    #dc2626 46%,
-    #ffffff 50%,
-    #0a0a10 54%,
-    var(--b-ink) 64%,
-    var(--b-ink) 100%
-  );
-  background-size: 220% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation:
-    shine-stripe-cycle 4.5s linear infinite,
-    shine-glow-cycle 4s ease-in-out infinite;
-  will-change: background-position, filter;
+  color: var(--b-ink);
+  animation: shine-glow-cycle 9s ease-in-out infinite;
+  will-change: filter;
 }
-/* Offset variant — flips the glow phase 180° so the second element
-   pulses red while the first pulses dark, then they swap. */
+/* Offset variant — flips the cycle so this sibling is in the red
+   phase when the other is in the black phase, and vice versa. */
 .shine-alt-offset {
-  animation:
-    shine-stripe-cycle 4.5s linear infinite -2.25s,
-    shine-glow-cycle 4s ease-in-out infinite -2s;
+  animation: shine-glow-cycle 9s ease-in-out infinite -4.5s;
 }
 
 /* ─── Orb tier-name animations ─────────────────────────────────────
