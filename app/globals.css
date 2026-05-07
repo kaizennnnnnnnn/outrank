@@ -398,7 +398,7 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: metallic-shine-sweep 14s ease-in-out infinite;
+  animation: metallic-shine-sweep 13s ease-in-out infinite;
   will-change: background-position;
 }
 
@@ -485,14 +485,14 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: shine-metallic-sweep 24s ease-in-out infinite;
+  animation: shine-metallic-sweep 22s ease-in-out infinite;
   will-change: background-position;
 }
 /* Offset variant — half-cycle delay so a sibling element is in the
    red beat when this element is in the black beat (and vice versa).
    Both still get long off-canvas rests between sweeps. */
 .shine-alt-offset {
-  animation: shine-metallic-sweep 24s ease-in-out infinite -12s;
+  animation: shine-metallic-sweep 22s ease-in-out infinite -11s;
 }
 
 /* Tone-shine — single-colour metallic sweep where the highlight
@@ -520,7 +520,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tone-shine-sweep 14s ease-in-out infinite;
+  animation: tone-shine-sweep 13s ease-in-out infinite;
   will-change: background-position;
 }
 
@@ -619,7 +619,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 13s ease-in-out infinite;
+  animation: tier-name-shine 12s ease-in-out infinite;
 }
 
 /* Tier 4 — Phoenix: red→amber sheen + soft warm halo */
@@ -631,7 +631,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 12s ease-in-out infinite;
+  animation: tier-name-shine 11s ease-in-out infinite;
   filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.25));
 }
 
@@ -644,7 +644,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 11s ease-in-out infinite;
+  animation: tier-name-shine 10s ease-in-out infinite;
   filter: drop-shadow(0 0 10px rgba(253, 224, 71, 0.4));
 }
 
@@ -657,7 +657,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 10s ease-in-out infinite;
+  animation: tier-name-shine 9s ease-in-out infinite;
   filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.35));
 }
 
@@ -670,7 +670,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 9s ease-in-out infinite;
+  animation: tier-name-shine 8s ease-in-out infinite;
   filter: drop-shadow(0 0 11px rgba(236, 72, 153, 0.4));
 }
 
@@ -683,7 +683,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 8s ease-in-out infinite, tier-name-prism 7s ease-in-out infinite;
+  animation: tier-name-shine 7s ease-in-out infinite, tier-name-prism 6s ease-in-out infinite;
   filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.45));
 }
 
@@ -696,7 +696,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-shine 7.5s ease-in-out infinite, tier-name-prism 6s ease-in-out infinite;
+  animation: tier-name-shine 6.5s ease-in-out infinite, tier-name-prism 5s ease-in-out infinite;
   filter: drop-shadow(0 0 13px rgba(34, 211, 238, 0.45));
 }
 
@@ -714,7 +714,7 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: tier-name-rainbow 13s linear infinite, tier-name-prism 5s ease-in-out infinite;
+  animation: tier-name-rainbow 12s linear infinite, tier-name-prism 4s ease-in-out infinite;
   filter: drop-shadow(0 0 15px rgba(253, 224, 71, 0.55));
 }
 
