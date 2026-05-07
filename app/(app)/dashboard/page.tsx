@@ -211,7 +211,7 @@ export default function DashboardPage() {
                 Level
               </div>
               <div
-                className="font-display tabular shine-light"
+                className="font-display tabular shine-light shine-alt-offset"
                 style={{ fontSize: 64, fontWeight: 500, lineHeight: 0.95, marginTop: 2 }}
               >
                 {level.level}

@@ -413,29 +413,61 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
    Companions to .metallic-shine (red) for headers that want movement
    without recoloring the text away from ink/white. */
 
-/* Soft white sheen — used on the dashboard "Day" word + the level
-   number. Keeps the text in ink/white but drags a faint highlight
-   stripe across it on a long loop so it reads alive. */
-@keyframes shine-sweep-light {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
+/* Dual-glow shine — used on the dashboard "Day" word + the level
+   number. The text itself stays ink-colored; the glow halo behind
+   it cycles between accent red and a deep ink shadow on a 4s loop,
+   so the highlight is clearly visible against any background. The
+   sweep also drifts a hint of red and an even darker stripe across
+   the type itself so the interior of the letters never looks
+   completely flat. Two siblings can carry .shine-alt-offset to flip
+   their phase 180°, so when one is red-glowing the other is
+   ink-glowing — they "take turns" instead of pulsing in unison. */
+@keyframes shine-glow-cycle {
+  0%, 100% {
+    filter:
+      drop-shadow(0 0 8px rgba(220, 38, 38, 0.85))
+      drop-shadow(0 0 18px rgba(220, 38, 38, 0.4));
+  }
+  50% {
+    /* Near-black halo so the glow stays visible on both Ink and
+       Paper themes. On Ink (dark page) the dark halo reads as a
+       vacuum/depth around the text; on Paper (cream) it reads as a
+       heavy printed shadow. */
+    filter:
+      drop-shadow(0 0 8px rgba(10, 10, 16, 0.95))
+      drop-shadow(0 0 18px rgba(10, 10, 16, 0.55));
+  }
+}
+@keyframes shine-stripe-cycle {
+  0%   { background-position: 220% center; }
+  100% { background-position: -220% center; }
 }
 .shine-light {
   background-image: linear-gradient(
     110deg,
     var(--b-ink) 0%,
-    var(--b-ink) 38%,
-    rgba(255, 255, 255, 0.92) 48%,
-    rgba(255, 255, 255, 0.65) 52%,
-    var(--b-ink) 62%,
+    var(--b-ink) 36%,
+    #dc2626 46%,
+    #ffffff 50%,
+    #0a0a10 54%,
+    var(--b-ink) 64%,
     var(--b-ink) 100%
   );
-  background-size: 200% auto;
+  background-size: 220% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: shine-sweep-light 5.5s linear infinite;
-  will-change: background-position;
+  animation:
+    shine-stripe-cycle 4.5s linear infinite,
+    shine-glow-cycle 4s ease-in-out infinite;
+  will-change: background-position, filter;
+}
+/* Offset variant — flips the glow phase 180° so the second element
+   pulses red while the first pulses dark, then they swap. */
+.shine-alt-offset {
+  animation:
+    shine-stripe-cycle 4.5s linear infinite -2.25s,
+    shine-glow-cycle 4s ease-in-out infinite -2s;
 }
 
 /* ─── Orb tier-name animations ─────────────────────────────────────
