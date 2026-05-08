@@ -122,6 +122,7 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
       )}
       {frame.style === 'wreath' && (
         <WreathFrame
+          theme={detectWreathTheme(frame.id)}
           intensity={intensity}
           gradient={linearGradient}
           colors={frame.colors}
@@ -361,9 +362,24 @@ function HaloFrame({ intensity, gradient, accentColor, hotColor, pad }: StylePro
   );
 }
 
-/** WREATH — ring band with orbiting embers around the rim. Each
- *  ember rides on a slow conic orbit AND twinkles individually. */
+/** Wreath theme — derived from the frame id keyword so we can give
+ *  each themed wreath frame its own motion language instead of all
+ *  of them being orbiting dots. */
+type WreathTheme = 'flame' | 'wave' | 'stars' | 'gold' | 'default';
+function detectWreathTheme(frameId: string): WreathTheme {
+  if (/phoenix|inferno/.test(frameId)) return 'flame';
+  if (/tide|abyss/.test(frameId))      return 'wave';
+  if (/stargaze|celestial|ascension|awakened/.test(frameId)) return 'stars';
+  if (/eternal/.test(frameId))         return 'gold';
+  return 'default';
+}
+
+/** WREATH — themed dispatch. Frame.id keyword chooses between
+ *  flame tongues / wave ripples / star pops / gold sheen / orbiting
+ *  embers. Static band is the same across themes; the motion is
+ *  what makes each frame read distinct. */
 function WreathFrame({
+  theme,
   intensity,
   gradient,
   colors,
@@ -373,6 +389,7 @@ function WreathFrame({
   pad,
   size,
 }: {
+  theme: WreathTheme;
   intensity: number;
   gradient: string;
   colors: string[];
@@ -382,9 +399,6 @@ function WreathFrame({
   pad: number;
   size: 'sm' | 'md' | 'lg' | 'xl';
 }) {
-  const emberCount = intensity >= 4 ? 12 : intensity >= 3 ? 8 : 6;
-  const emberSize = size === 'sm' ? 2.5 : size === 'xl' ? 5 : 3.5;
-
   return (
     <>
       <div
@@ -394,7 +408,7 @@ function WreathFrame({
           background: `radial-gradient(circle, ${accentColor}55 0%, ${hotColor}22 45%, transparent 72%)`,
         }}
       />
-      {/* Static ring band — wreath's identity is the embers, not the band */}
+      {/* Static ring band */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
@@ -407,31 +421,179 @@ function WreathFrame({
           style={{ inset: pad, background: 'var(--b-paper)' }}
         />
       </div>
-      {/* Orbiting embers wrapper — slow rotation */}
-      <div className="absolute inset-0 animate-frame-orbit pointer-events-none">
-        {Array.from({ length: emberCount }).map((_, i) => {
-          const angle = (i / emberCount) * Math.PI * 2;
-          const r = outer / 2 + 1;
-          const x = Math.cos(angle) * r + outer / 2;
-          const y = Math.sin(angle) * r + outer / 2;
-          const c = colors[i % colors.length];
-          return (
-            <div
-              key={i}
-              className="absolute rounded-full animate-frame-ember-twinkle"
-              style={{
-                width: emberSize,
-                height: emberSize,
-                left: x - emberSize / 2,
-                top: y - emberSize / 2,
-                background: c,
-                boxShadow: `0 0 8px ${c}, 0 0 2px #ffffffaa`,
-                animationDelay: `${(i / emberCount) * 1.4}s`,
-              }}
-            />
-          );
-        })}
-      </div>
+
+      {theme === 'flame' && (
+        <FlameWreathOverlay outer={outer} colors={colors} intensity={intensity} />
+      )}
+      {theme === 'wave' && (
+        <WaveWreathOverlay outer={outer} colors={colors} intensity={intensity} />
+      )}
+      {theme === 'stars' && (
+        <StarsWreathOverlay outer={outer} colors={colors} intensity={intensity} />
+      )}
+      {theme === 'gold' && (
+        <GoldWreathOverlay hotColor={hotColor} accentColor={accentColor} pad={pad} />
+      )}
+      {theme === 'default' && (
+        <DefaultEmberOverlay outer={outer} colors={colors} intensity={intensity} size={size} />
+      )}
     </>
+  );
+}
+
+/** Flame tongues at fixed rim positions, flickering vertically. */
+function FlameWreathOverlay({ outer, colors, intensity }: { outer: number; colors: string[]; intensity: number }) {
+  const count = intensity >= 4 ? 6 : 5;
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {Array.from({ length: count }).map((_, i) => {
+        const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+        const r = outer / 2;
+        const cx = Math.cos(angle) * r + outer / 2;
+        const cy = Math.sin(angle) * r + outer / 2;
+        const c = colors[i % colors.length];
+        const w = Math.max(3, outer * 0.08);
+        const h = Math.max(6, outer * 0.16);
+        // Each flame is a vertical triangle pointing OUTWARD from
+        // the rim, rotated to align with its angle. transform-origin
+        // is bottom-center so flickering scaleY keeps it rooted.
+        return (
+          <svg
+            key={i}
+            className="absolute animate-frame-flame-flicker"
+            width={w}
+            height={h}
+            viewBox="0 0 10 16"
+            style={{
+              left: cx - w / 2,
+              top: cy - h,
+              transform: `rotate(${(angle * 180) / Math.PI + 90}deg)`,
+              transformOrigin: '50% 100%',
+              animationDelay: `${i * 0.13}s`,
+              filter: `drop-shadow(0 0 4px ${c})`,
+            }}
+          >
+            <path d="M5 0 Q1 6 3 10 Q4 7 5 10 Q6 7 7 10 Q9 6 5 0 Z" fill={c} />
+          </svg>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Wave ripples expanding outward from the rim — sonar-style. */
+function WaveWreathOverlay({ outer, colors, intensity }: { outer: number; colors: string[]; intensity: number }) {
+  const ripples = intensity >= 4 ? 3 : 2;
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {Array.from({ length: ripples }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full animate-frame-wave-ripple"
+          style={{
+            inset: 0,
+            border: `1.5px solid ${colors[i % colors.length]}`,
+            animationDelay: `${(i / ripples) * 1.1}s`,
+            boxShadow: `0 0 14px ${colors[i % colors.length]}66`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Sparkle bursts (× / + glyphs) appearing in place at the rim. */
+function StarsWreathOverlay({ outer, colors, intensity }: { outer: number; colors: string[]; intensity: number }) {
+  const count = intensity >= 4 ? 7 : 5;
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {Array.from({ length: count }).map((_, i) => {
+        // Spread the stars around the rim with a touch of randomness
+        // (deterministic via index so SSR matches client).
+        const angleOffset = (i * 137.5) % 360; // golden-angle distribution
+        const angle = (angleOffset * Math.PI) / 180;
+        const r = outer / 2;
+        const cx = Math.cos(angle) * r + outer / 2;
+        const cy = Math.sin(angle) * r + outer / 2;
+        const c = colors[i % colors.length];
+        const sz = Math.max(5, outer * 0.13);
+        return (
+          <svg
+            key={i}
+            className="absolute animate-frame-star-pop"
+            width={sz}
+            height={sz}
+            viewBox="0 0 12 12"
+            style={{
+              left: cx - sz / 2,
+              top: cy - sz / 2,
+              animationDelay: `${(i / count) * 2.4}s`,
+              filter: `drop-shadow(0 0 4px ${c})`,
+            }}
+          >
+            <path d="M6 0 L6 12 M0 6 L12 6 M2 2 L10 10 M10 2 L2 10" stroke={c} strokeWidth="1.4" strokeLinecap="round" />
+          </svg>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Single bright sheen highlight sweeping around the static band. */
+function GoldWreathOverlay({ hotColor, accentColor, pad }: { hotColor: string; accentColor: string; pad: number }) {
+  return (
+    <div
+      className="absolute inset-0 rounded-full pointer-events-none animate-frame-gold-sheen"
+      style={{
+        background: `conic-gradient(from 0deg, transparent 0%, transparent 35%, ${hotColor}aa 47%, #ffffffdd 50%, ${accentColor}aa 53%, transparent 65%, transparent 100%)`,
+        mask: `radial-gradient(circle, transparent calc(50% - ${pad + 1}px), black calc(50% - ${pad}px), black 50%, transparent 50%)`,
+        WebkitMask: `radial-gradient(circle, transparent calc(50% - ${pad + 1}px), black calc(50% - ${pad}px), black 50%, transparent 50%)`,
+        mixBlendMode: 'screen',
+      }}
+    />
+  );
+}
+
+/** Default ember twinkle — kept for any wreath frame that doesn't
+ *  match a theme keyword. Cuts the dot count in half from before so
+ *  it doesn't read as the same "lots of dots" pattern. */
+function DefaultEmberOverlay({
+  outer,
+  colors,
+  intensity,
+  size,
+}: {
+  outer: number;
+  colors: string[];
+  intensity: number;
+  size: 'sm' | 'md' | 'lg' | 'xl';
+}) {
+  const emberCount = intensity >= 4 ? 6 : 4;
+  const emberSize = size === 'sm' ? 2.5 : size === 'xl' ? 5 : 3.5;
+  return (
+    <div className="absolute inset-0 animate-frame-orbit pointer-events-none">
+      {Array.from({ length: emberCount }).map((_, i) => {
+        const angle = (i / emberCount) * Math.PI * 2;
+        const r = outer / 2 + 1;
+        const x = Math.cos(angle) * r + outer / 2;
+        const y = Math.sin(angle) * r + outer / 2;
+        const c = colors[i % colors.length];
+        return (
+          <div
+            key={i}
+            className="absolute rounded-full animate-frame-ember-twinkle"
+            style={{
+              width: emberSize,
+              height: emberSize,
+              left: x - emberSize / 2,
+              top: y - emberSize / 2,
+              background: c,
+              boxShadow: `0 0 8px ${c}, 0 0 2px #ffffffaa`,
+              animationDelay: `${(i / emberCount) * 1.4}s`,
+            }}
+          />
+        );
+      })}
+    </div>
   );
 }

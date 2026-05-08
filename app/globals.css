@@ -1363,6 +1363,53 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   animation: frame-ember-twinkle 1.6s ease-in-out infinite;
 }
 
+/* ─── Themed wreath motions ─────────────────────────────────────
+   Replace the orbiting-dots default for wreath frames whose theme
+   suits a more distinctive treatment.
+
+   - flame  : vertical flame tongues at fixed rim positions, scale
+              from base + flicker via opacity
+   - wave   : concentric ripples expanding outward from the rim
+   - stars  : sparkle bursts (cross / + glyphs) that fade in and out
+              in place at random rim positions
+   - gold   : a single bright sheen sweeping around the band, no
+              orbiting elements at all
+*/
+@keyframes frame-flame-flicker {
+  0%, 100% { transform: scaleY(0.6) translateY(2px); opacity: 0.55; }
+  50%      { transform: scaleY(1.15) translateY(-2px); opacity: 1; }
+}
+.animate-frame-flame-flicker {
+  animation: frame-flame-flicker 0.9s ease-in-out infinite;
+  transform-origin: bottom center;
+  transform-box: fill-box;
+}
+@keyframes frame-wave-ripple {
+  0%   { transform: scale(0.94); opacity: 0; }
+  20%  { opacity: 0.85; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.animate-frame-wave-ripple {
+  animation: frame-wave-ripple 2.2s ease-out infinite;
+}
+@keyframes frame-star-pop {
+  0%, 100% { transform: scale(0.4) rotate(0deg);   opacity: 0; }
+  20%      { opacity: 0; }
+  35%      { transform: scale(1.3) rotate(180deg); opacity: 1; }
+  60%      { transform: scale(1.1) rotate(220deg); opacity: 0.6; }
+  85%      { opacity: 0; }
+}
+.animate-frame-star-pop {
+  animation: frame-star-pop 2.6s ease-in-out infinite;
+}
+@keyframes frame-gold-sheen-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-frame-gold-sheen {
+  animation: frame-gold-sheen-spin 4.5s linear infinite;
+}
+
 /* --- Mini orb animations --- */
 @keyframes mini-orb-core {
   0%, 100% { filter: brightness(1)    saturate(1.1); transform: scale(1); }
@@ -1436,14 +1483,28 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .animate-name-cosmic { animation: name-cosmic 4s ease-in-out infinite; }
 
+/* Glitch: short cycle (2.4s) with THREE burst windows per loop so
+   the effect actually feels glitchy rather than a once-per-five-
+   seconds blink. Each burst is brief (~0.1s) + immediately settles. */
 @keyframes name-glitch {
-  0%, 84%, 100% { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
-  85%           { text-shadow: -2px 0 #ff00cc, 2px 0 #00e0ff; transform: translateX(-1px); filter: brightness(1.4); }
-  88%           { text-shadow:  2px 0 #ff00cc,-2px 0 #00e0ff; transform: translateX(1px);  filter: brightness(1.6); }
-  90%           { text-shadow: -1px 0 #ff00cc, 1px 0 #00e0ff; transform: translateX(0);    filter: brightness(1.2); }
-  96%           { text-shadow: 0 -1px #ffffff, 0 1px #ff00cc; transform: translateX(0);    filter: brightness(1.3); }
+  0%, 100%                  { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
+  /* Burst 1 ~ 25% */
+  24%                       { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
+  25%                       { text-shadow: -2px 0 #ff00cc, 2px 0 #00e0ff; transform: translateX(-1px); filter: brightness(1.5); }
+  27%                       { text-shadow:  2px 0 #ff00cc,-2px 0 #00e0ff; transform: translateX(1px);  filter: brightness(1.7); }
+  29%                       { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
+  /* Burst 2 ~ 55% */
+  54%                       { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
+  55%                       { text-shadow: -1px 0 #ff00cc, 1px 0 #00e0ff; transform: translateX(0);    filter: brightness(1.3); }
+  57%                       { text-shadow: 0 -1px #ffffff, 0 1px #ff00cc; transform: translateX(-1px); filter: brightness(1.5); }
+  59%                       { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
+  /* Burst 3 ~ 85% */
+  84%                       { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
+  85%                       { text-shadow: -2px 0 #ff00cc, 2px 0 #00e0ff; transform: translateX(1px);  filter: brightness(1.6); }
+  87%                       { text-shadow: 0 -1px #ffffff, 0 1px #ff00cc; transform: translateX(0);    filter: brightness(1.4); }
+  89%                       { text-shadow: 0 0 0 transparent; transform: translateX(0); filter: brightness(1); }
 }
-.animate-name-glitch { animation: name-glitch 4.5s steps(1, end) infinite; }
+.animate-name-glitch { animation: name-glitch 2.4s steps(1, end) infinite; }
 
 @keyframes name-electric {
   0%, 100% { filter: drop-shadow(0 0 2px currentColor); }
