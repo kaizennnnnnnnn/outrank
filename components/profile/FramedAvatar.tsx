@@ -133,22 +133,36 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
           outer={outer}
           pad={pad}
           size={size}
+          // For mythic wreath frames, MythicTreatment runs the show.
+          // Skip the themed wreath overlay so we don't double-render
+          // (e.g., Stargaze got both the wreath stars AND mythic stars).
+          suppressOverlay={isMythic}
         />
       )}
 
-      {/* Mythic-only ritual overlay. One unique signature animation
-          per mythic frame — no shared "dots orbiting" effect; each
-          frame's motif comes from its name (feathers for ascension,
-          prism for rainbow, sunburst for awakened, etc.). */}
+      {/* Mythic-only ritual overlay. Each mythic frame gets its own
+          signature animation. Wrapped in a circular clip so effects
+          stay inside the avatar's footprint and don't bleed into the
+          surrounding nameplate / username. */}
       {isMythic && (
-        <MythicTreatment
-          frameId={frame.id}
-          colors={frame.colors}
-          accentColor={accentColor}
-          hotColor={hotColor}
-          outer={outer}
-          size={size}
-        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            inset: 0,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            zIndex: 5,
+          }}
+        >
+          <MythicTreatment
+            frameId={frame.id}
+            colors={frame.colors}
+            accentColor={accentColor}
+            hotColor={hotColor}
+            outer={outer}
+            size={size}
+          />
+        </div>
       )}
 
       {/* The avatar itself — pixel-pinned to the inner cutout. */}
@@ -405,6 +419,7 @@ function WreathFrame({
   outer,
   pad,
   size,
+  suppressOverlay = false,
 }: {
   theme: WreathTheme;
   intensity: number;
@@ -415,6 +430,7 @@ function WreathFrame({
   outer: number;
   pad: number;
   size: 'sm' | 'md' | 'lg' | 'xl';
+  suppressOverlay?: boolean;
 }) {
   return (
     <>
@@ -439,19 +455,19 @@ function WreathFrame({
         />
       </div>
 
-      {theme === 'flame' && (
+      {!suppressOverlay && theme === 'flame' && (
         <FlameWreathOverlay outer={outer} colors={colors} intensity={intensity} />
       )}
-      {theme === 'wave' && (
+      {!suppressOverlay && theme === 'wave' && (
         <WaveWreathOverlay outer={outer} colors={colors} intensity={intensity} />
       )}
-      {theme === 'stars' && (
+      {!suppressOverlay && theme === 'stars' && (
         <StarsWreathOverlay outer={outer} colors={colors} intensity={intensity} />
       )}
-      {theme === 'gold' && (
+      {!suppressOverlay && theme === 'gold' && (
         <GoldWreathOverlay hotColor={hotColor} accentColor={accentColor} pad={pad} />
       )}
-      {theme === 'default' && (
+      {!suppressOverlay && theme === 'default' && (
         <DefaultEmberOverlay outer={outer} colors={colors} intensity={intensity} size={size} />
       )}
     </>
@@ -596,29 +612,38 @@ function MythicTreatment({ frameId, ...rest }: { frameId: string } & MythicProps
     case 'frame_void':        return <VoidImplosion {...rest} />;
     case 'frame_awakened':    return <AwakenedSunburst {...rest} />;
     case 'frame_pact_holder': return <PactHeartbeat {...rest} />;
+    case 'frame_eclipse':     return <EclipseTransit {...rest} />;
+    case 'frame_tempest':     return <TempestStrike {...rest} />;
+    case 'frame_bloom_myth':  return <BloomPetals {...rest} />;
+    case 'frame_glitch_myth': return <RealityShard {...rest} />;
     default:                  return <DefaultMythicGlow {...rest} />;
   }
 }
 
-/** Ascension — three soft feathers rise from the rim and fade out.
- *  Sits at 10, 12, 2 o'clock; staggered delays sell the cascade. */
+/** Ascension — three soft feathers rise from inside the rim toward
+ *  the top, fully contained within the avatar's circular footprint.
+ *  Each feather lives in the bottom half of the orb and rises only
+ *  to the top half so it never bleeds into the username text. */
 function AscensionFeathers({ colors, outer }: MythicProps) {
   const featherColor1 = colors[0];
   const featherColor2 = colors[1] ?? colors[0];
+  // Three feathers placed across the lower half of the orb, rising
+  // upward through the orb on staggered phases. Positions are inside
+  // the avatar circle so the parent clip keeps them contained.
   const positions = [
-    { angle: -100, delay: 0 },
-    { angle:  -90, delay: 0.9 },
-    { angle:  -80, delay: 1.8 },
+    { x: 0.30, delay: 0 },
+    { x: 0.50, delay: 0.9 },
+    { x: 0.70, delay: 1.8 },
   ];
-  const r = outer / 2;
   return (
     <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
       {positions.map((p, i) => {
-        const rad = (p.angle * Math.PI) / 180;
-        const cx = Math.cos(rad) * r + outer / 2;
-        const cy = Math.sin(rad) * r + outer / 2;
-        const w = Math.max(6, outer * 0.11);
-        const h = Math.max(14, outer * 0.26);
+        const w = Math.max(5, outer * 0.085);
+        const h = Math.max(10, outer * 0.18);
+        // Each feather starts low (~70% down the orb) and rises to
+        // about 25% from the top — stays inside the orb circle.
+        const cx = p.x * outer;
+        const cy = outer * 0.6;
         return (
           <svg
             key={i}
@@ -628,7 +653,7 @@ function AscensionFeathers({ colors, outer }: MythicProps) {
             viewBox="0 0 10 24"
             style={{
               left: cx - w / 2,
-              top: cy - h,
+              top: cy - h / 2,
               animationDelay: `${p.delay}s`,
               filter: `drop-shadow(0 0 4px ${featherColor1})`,
             }}
@@ -638,6 +663,7 @@ function AscensionFeathers({ colors, outer }: MythicProps) {
               fill={i % 2 ? featherColor2 : featherColor1}
               stroke="#ffffffaa"
               strokeWidth="0.4"
+              opacity="0.85"
             />
           </svg>
         );
@@ -821,27 +847,34 @@ function PrismaticRefraction({ outer }: MythicProps) {
   );
 }
 
-/** Stargaze — 8 stars at fixed positions OUTSIDE the rim, each
- *  twinkling individually. Static positions, never orbits. */
+/** Stargaze — 8 stars at fixed positions JUST INSIDE the rim, each
+ *  twinkling individually. Pulled inward from the previous "way
+ *  outside" placement so the field reads as inhabiting the orb's
+ *  own night sky, not the surrounding text. */
 function StargazeField({ colors, outer }: MythicProps) {
-  // Hand-placed positions so the constellation reads as deliberate.
+  // Hand-placed angles around the rim. Distance is now negative
+  // (radial dist BACK toward center) so stars sit between the rim
+  // and the avatar face — fully inside the bounding box.
   const stars = [
-    { angle: -75, dist: 0.62 },
-    { angle: -30, dist: 0.58 },
-    { angle:  20, dist: 0.65 },
-    { angle:  60, dist: 0.55 },
-    { angle: 110, dist: 0.62 },
-    { angle: 155, dist: 0.58 },
-    { angle: 200, dist: 0.6 },
-    { angle: 250, dist: 0.6 },
+    { angle: -75, dist: -0.10 },
+    { angle: -30, dist: -0.08 },
+    { angle:  20, dist: -0.12 },
+    { angle:  60, dist: -0.07 },
+    { angle: 110, dist: -0.10 },
+    { angle: 155, dist: -0.09 },
+    { angle: 200, dist: -0.08 },
+    { angle: 250, dist: -0.11 },
   ];
   const r = outer / 2;
   return (
     <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
       {stars.map((s, i) => {
         const rad = (s.angle * Math.PI) / 180;
-        const cx = Math.cos(rad) * (r + r * s.dist) + outer / 2;
-        const cy = Math.sin(rad) * (r + r * s.dist) + outer / 2;
+        // (r + r * dist) where dist is negative pulls the star
+        // inward from the rim by abs(dist)*r pixels.
+        const radius = r + r * s.dist;
+        const cx = Math.cos(rad) * radius + outer / 2;
+        const cy = Math.sin(rad) * radius + outer / 2;
         const c = i % 3 === 0 ? '#ffffff' : (colors[i % colors.length] || '#ffffff');
         const sz = i % 4 === 0 ? 4 : 2.4;
         return (
@@ -911,8 +944,9 @@ function CelestialConstellation({ colors, outer }: MythicProps) {
   );
 }
 
-/** Void — three concentric rings IMPLODE inward (scale down + fade).
- *  Pure event-horizon energy: things get pulled in. */
+/** Void — three concentric rings IMPLODE inward (scale down + fade)
+ *  starting at the rim and shrinking toward the center. Inset by a
+ *  few px so even at the start scale they sit safely inside. */
 function VoidImplosion({ colors }: MythicProps) {
   const ringColor1 = colors[1] || '#4c1d95';
   const ringColor2 = colors[2] || '#ec4899';
@@ -923,9 +957,8 @@ function VoidImplosion({ colors }: MythicProps) {
         aria-hidden
         className="absolute rounded-full pointer-events-none animate-mythic-void-implode"
         style={{
-          inset: 0,
+          inset: 4,
           border: `2px solid ${ringColor1}`,
-          boxShadow: `0 0 12px ${ringColor1}`,
           zIndex: 2,
         }}
       />
@@ -933,10 +966,9 @@ function VoidImplosion({ colors }: MythicProps) {
         aria-hidden
         className="absolute rounded-full pointer-events-none animate-mythic-void-implode"
         style={{
-          inset: 0,
+          inset: 4,
           border: `2px solid ${ringColor2}`,
           animationDelay: '0.8s',
-          boxShadow: `0 0 12px ${ringColor2}`,
           zIndex: 2,
         }}
       />
@@ -944,7 +976,7 @@ function VoidImplosion({ colors }: MythicProps) {
         aria-hidden
         className="absolute rounded-full pointer-events-none animate-mythic-void-implode"
         style={{
-          inset: 0,
+          inset: 4,
           border: `1px solid ${ringColor3}`,
           animationDelay: '1.6s',
           zIndex: 2,
@@ -954,16 +986,19 @@ function VoidImplosion({ colors }: MythicProps) {
   );
 }
 
-/** Awakened — 12 sunburst rays radiating outward at fixed angles,
- *  each pulsing in/out (length + opacity) on staggered phases. No
- *  rotation — the rays "breathe" rather than orbit. Uses a zero-size
- *  rotation wrapper at center; the ray is positioned absolutely
- *  inside it so it ends up at the rim, pointing outward. */
+/** Awakened — 12 sunburst rays radiating from inside the rim toward
+ *  the rim edge, each pulsing in/out on staggered phases. Rays are
+ *  short and INWARD-pointing so they live entirely inside the
+ *  avatar circle — sun shining INTO you rather than outward. */
 function AwakenedSunburst({ colors, outer }: MythicProps) {
   const rayCount = 12;
   const rayColors = colors.length >= 4 ? colors : [...colors, '#ffffff', '#fde047'];
-  const rayLength = outer * 0.3;
+  const rayLength = Math.max(8, outer * 0.18);
   const rayWidth  = Math.max(2, outer * 0.025);
+  // The base of each ray sits a few px inside the rim. The tip
+  // points TOWARD center (so rays look like beams converging onto
+  // the avatar from the rim). Fully contained.
+  const rimInset = Math.max(2, outer * 0.04);
   return (
     <div className="absolute pointer-events-none" style={{ inset: 0, zIndex: 2 }}>
       {Array.from({ length: rayCount }).map((_, i) => {
@@ -986,10 +1021,11 @@ function AwakenedSunburst({ colors, outer }: MythicProps) {
               style={{
                 position: 'absolute',
                 left: -rayWidth / 2,
-                top: -(outer / 2 + rayLength),
+                top: -(outer / 2 - rimInset),
                 width: rayWidth,
                 height: rayLength,
-                background: `linear-gradient(to top, ${c}, transparent)`,
+                // Bright at the rim end, fading toward center.
+                background: `linear-gradient(to top, transparent, ${c})`,
                 animationDelay: `${(i % 4) * 0.3}s`,
                 filter: `drop-shadow(0 0 4px ${c})`,
               }}
@@ -1039,6 +1075,248 @@ function PactHeartbeat({ outer }: MythicProps) {
       <circle cx={outer / 2} cy={2}        r={3} fill="#ffffff" />
       <circle cx={outer / 2} cy={outer - 2} r={3} fill="#ffffff" />
     </svg>
+  );
+}
+
+/** Eclipse — a dark moon orbits inside the rim, eclipsing whatever
+ *  portion of the rim it's currently passing across. The moon has a
+ *  thin gold corona ring that glows along its leading edge. */
+function EclipseTransit({ outer }: MythicProps) {
+  const moonSize = Math.max(10, outer * 0.18);
+  // Orbit just inside the rim so the moon is always visible inside
+  // the clipped circle and the trailing corona reads as on-rim.
+  const orbitRadius = outer / 2 - moonSize * 0.55;
+  return (
+    <div
+      className="absolute pointer-events-none animate-mythic-eclipse-orbit"
+      style={{ inset: 0, zIndex: 2 }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: moonSize,
+          height: moonSize,
+          marginLeft: -moonSize / 2,
+          marginTop: -moonSize / 2,
+          transform: `translateX(${orbitRadius}px)`,
+        }}
+      >
+        {/* Gold corona ring — thin halo around the moon */}
+        <div
+          aria-hidden
+          className="absolute rounded-full animate-mythic-eclipse-corona"
+          style={{
+            inset: -3,
+            border: '1.5px solid #fde047',
+            boxShadow: '0 0 8px #fde047aa',
+          }}
+        />
+        {/* Dark moon disc */}
+        <div
+          aria-hidden
+          className="absolute rounded-full"
+          style={{
+            inset: 0,
+            background: 'radial-gradient(circle at 35% 35%, #1f1d1c 20%, #0c0a09 80%)',
+            boxShadow: 'inset -2px -2px 4px rgba(0,0,0,0.6)',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Tempest — three lightning bolts strike at fixed positions on the
+ *  rim, flickering in/out at staggered phases. SVG zigzag paths
+ *  drawn from the rim toward the avatar face (so the body extends
+ *  INWARD, never outside the bounding box). */
+function TempestStrike({ outer }: MythicProps) {
+  const positions = [
+    { angle: -90, delay: 0    },
+    { angle:  30, delay: 0.7  },
+    { angle: 150, delay: 1.4  },
+  ];
+  // Bolt anchor sits just inside the rim. Bolt extends from there
+  // toward the orb center.
+  const anchorRadius = outer * 0.42;
+  return (
+    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+      {positions.map((p, i) => {
+        const rad = (p.angle * Math.PI) / 180;
+        const cx = Math.cos(rad) * anchorRadius + outer / 2;
+        const cy = Math.sin(rad) * anchorRadius + outer / 2;
+        const w = Math.max(5, outer * 0.10);
+        const h = Math.max(12, outer * 0.22);
+        // SVG bolt is drawn pointing DOWN by default. Rotate it so
+        // its body extends FROM the rim TOWARD orb center.
+        // For angle=-90 (top): rotation 0 (default down points to center).
+        // For angle=0  (right): rotation -90 (down → left).
+        const rot = -(p.angle + 90);
+        return (
+          <div
+            key={i}
+            className="absolute"
+            style={{
+              left: cx - w / 2,
+              top: cy - h / 2,
+              width: w,
+              height: h,
+              transform: `rotate(${rot}deg)`,
+              transformOrigin: '50% 50%',
+            }}
+          >
+            <svg
+              className="absolute inset-0 animate-mythic-bolt-flash"
+              width={w}
+              height={h}
+              viewBox="0 0 6 18"
+              style={{
+                animationDelay: `${p.delay}s`,
+                filter: 'drop-shadow(0 0 4px #60a5fa) drop-shadow(0 0 2px #fde047)',
+              }}
+            >
+              <path
+                d="M3.4 0 L1 7 L3 7 L0.8 17 L4.5 9 L2.5 9 L4.2 0 Z"
+                fill="#fde047"
+                stroke="#ffffff"
+                strokeWidth="0.4"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Bloom — five petals open and close at fixed rim positions.
+ *  Each petal is anchored at its base (closest to the rim) so the
+ *  scale-bloom unfurls inward without bleeding outside. */
+function BloomPetals({ colors, outer }: MythicProps) {
+  const petalCount = 5;
+  // Petal base sits a few px inside the rim; tip extends inward.
+  const baseRadius = outer * 0.42;
+  return (
+    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+      {Array.from({ length: petalCount }).map((_, i) => {
+        const angle = (i / petalCount) * Math.PI * 2 - Math.PI / 2;
+        const cx = Math.cos(angle) * baseRadius + outer / 2;
+        const cy = Math.sin(angle) * baseRadius + outer / 2;
+        const c = colors[i % colors.length];
+        const sz = Math.max(8, outer * 0.16);
+        const rot = (angle * 180) / Math.PI + 90;
+        return (
+          <div
+            key={i}
+            className="absolute"
+            style={{
+              left: cx - sz / 2,
+              top: cy - sz * 0.05,
+              width: sz,
+              height: sz * 1.4,
+              transform: `rotate(${rot}deg) translateY(-${sz * 0.1}px)`,
+              transformOrigin: '50% 0%',
+            }}
+          >
+            <svg
+              className="absolute inset-0 animate-mythic-petal-bloom"
+              width={sz}
+              height={sz * 1.4}
+              viewBox="0 0 10 14"
+              style={{
+                animationDelay: `${(i / petalCount) * 1.6}s`,
+                transformOrigin: '50% 0%',
+                filter: `drop-shadow(0 0 3px ${c})`,
+              }}
+            >
+              <path
+                d="M5 0 Q1 4 1.5 9 Q2 13 5 14 Q8 13 8.5 9 Q9 4 5 0 Z"
+                fill={c}
+                stroke="#ffffff88"
+                strokeWidth="0.3"
+              />
+              <path d="M5 0 L5 14" stroke="#ffffff66" strokeWidth="0.3" />
+            </svg>
+          </div>
+        );
+      })}
+      {/* Bright center bud where the petals meet at the rim center */}
+      <div
+        aria-hidden
+        className="absolute rounded-full animate-mythic-bloom-center"
+        style={{
+          left: '50%',
+          top: '50%',
+          width: 6,
+          height: 6,
+          marginLeft: -3,
+          marginTop: -3,
+          background: '#ffffff',
+          boxShadow: '0 0 8px #ffffff, 0 0 4px #f9a8d4',
+        }}
+      />
+    </div>
+  );
+}
+
+/** Reality Shard — three thin chromatic borders (cyan / magenta /
+ *  yellow) in the same place as the rim, jittering their position
+ *  on different beats so the avatar reads as glitching. Plus a
+ *  vertical scanline glitch that flashes occasionally. */
+function RealityShard({ outer }: MythicProps) {
+  return (
+    <>
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-glitch-cyan"
+        style={{
+          inset: 1,
+          border: '1.5px solid #22d3ee',
+          mixBlendMode: 'screen',
+          opacity: 0.85,
+          zIndex: 2,
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-glitch-magenta"
+        style={{
+          inset: 1,
+          border: '1.5px solid #ec4899',
+          mixBlendMode: 'screen',
+          opacity: 0.85,
+          zIndex: 2,
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-glitch-yellow"
+        style={{
+          inset: 1,
+          border: '1px solid #fbbf24',
+          mixBlendMode: 'screen',
+          opacity: 0.7,
+          zIndex: 2,
+        }}
+      />
+      {/* Scanline glitch — a thin horizontal bar that occasionally
+          flashes across the avatar at a random vertical position. */}
+      <div
+        aria-hidden
+        className="absolute pointer-events-none animate-mythic-glitch-scan"
+        style={{
+          left: 0,
+          right: 0,
+          height: Math.max(2, outer * 0.04),
+          background: 'linear-gradient(to bottom, transparent, #ffffff, transparent)',
+          mixBlendMode: 'screen',
+          zIndex: 3,
+        }}
+      />
+    </>
   );
 }
 

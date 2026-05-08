@@ -111,6 +111,14 @@ export const PFP_FRAMES: PfpFrame[] = [
   // Earned only by completing a 30-day pact with a friend — both sides
   // get the frame. Hidden from the shop via `grantOnly: true`.
   { id: 'frame_pact_holder', name: 'Pact Holder',     rarity: 'mythic',    colors: ['#fbbf24', '#fde047', '#f97316', '#fbbf24'], style: 'halo',   animated: true, grantOnly: true, description: 'Earned with a friend — survived a 30-day pact together.' },
+
+  // New mythic — each one is a custom motion in MythicTreatment
+  // dispatched off the frame id. Picking non-wreath base styles so
+  // the wreath theme overlay doesn't pile on top.
+  { id: 'frame_eclipse',     name: 'Eclipse Halo',  rarity: 'mythic', colors: ['#0c0a09', '#fde047', '#ffffff'],            style: 'halo',  animated: true, description: 'A solar eclipse. Light, briefly hidden.' },
+  { id: 'frame_tempest',     name: 'Tempest Crown', rarity: 'mythic', colors: ['#1e293b', '#60a5fa', '#fde047', '#ffffff'], style: 'conic', animated: true, description: 'Storm-charged. Lightning at the rim.' },
+  { id: 'frame_bloom_myth',  name: 'Bloom Halo',    rarity: 'mythic', colors: ['#f9a8d4', '#86efac', '#ffffff', '#f472b6'], style: 'halo',  animated: true, description: 'Petals open at every breath.' },
+  { id: 'frame_glitch_myth', name: 'Reality Shard', rarity: 'mythic', colors: ['#22d3ee', '#ec4899', '#fbbf24', '#ffffff'], style: 'conic', animated: true, description: 'Reality, slightly out of phase.' },
 ];
 
 // ---------------------------------------------------------------------------

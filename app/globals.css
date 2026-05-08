@@ -1951,28 +1951,31 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   will-change: stroke-dashoffset, opacity;
 }
 
-/* frame_void — concentric ripples implode INWARD with fade-out, like
-   an event horizon pulling things in. */
+/* frame_void — concentric ripples implode INWARD with fade-out,
+   starting AT the rim (scale 1) and shrinking toward the center,
+   so the rings stay inside the avatar's circular footprint. */
 @keyframes mythic-void-implode {
-  0%   { transform: scale(1.45); opacity: 0; }
-  20%  { opacity: 0.9; }
-  100% { transform: scale(0.5);  opacity: 0; }
+  0%   { transform: scale(1);   opacity: 0; }
+  18%  { opacity: 0.9; }
+  100% { transform: scale(0.4); opacity: 0; }
 }
 .animate-mythic-void-implode {
   animation: mythic-void-implode 2.4s cubic-bezier(0.36, 0, 0.64, 1) infinite;
   will-change: transform, opacity;
 }
 
-/* frame_awakened — 12 sunburst rays radiate from rim, each pulsing
-   in/out (length scaleY + opacity) at staggered phases. */
+/* frame_awakened — 12 sunburst rays radiate INWARD from the rim,
+   pulsing in length + opacity on staggered phases. Origin is the
+   ray's top edge (anchored at the rim) so growing scaleY pushes
+   the inward tip toward center, never past the rim outside. */
 @keyframes mythic-sunburst-ray {
   0%, 100% { opacity: 0.25; transform: scaleY(0.55); }
-  50%      { opacity: 1;    transform: scaleY(1.15); }
+  50%      { opacity: 1;    transform: scaleY(1.0); }
 }
 .animate-mythic-sunburst-ray {
   animation: mythic-sunburst-ray 2.4s ease-in-out infinite;
   will-change: opacity, transform;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 0%;
 }
 
 /* frame_pact_holder — two halves of the rim trade brightness on a
@@ -1992,6 +1995,108 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 .animate-mythic-pact-b {
   animation: mythic-pact-b 1.8s ease-in-out infinite;
   will-change: opacity;
+}
+
+/* frame_eclipse — moon orbits inside the rim, eclipsing portions of
+   it as it passes. Slow, contemplative — astronomical. */
+@keyframes mythic-eclipse-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-mythic-eclipse-orbit {
+  animation: mythic-eclipse-orbit 7s linear infinite;
+  will-change: transform;
+}
+@keyframes mythic-eclipse-corona {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.06); }
+}
+.animate-mythic-eclipse-corona {
+  animation: mythic-eclipse-corona 2.4s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* frame_tempest — lightning bolts strike at the rim, flickering.
+   Sharp on/off rather than smooth fade — reads as electric. */
+@keyframes mythic-bolt-flash {
+  0%, 30%   { opacity: 0; transform: scale(0.5); }
+  35%       { opacity: 1; transform: scale(1.2); }
+  42%       { opacity: 0.3; }
+  48%       { opacity: 1; transform: scale(1.05); }
+  55%, 100% { opacity: 0; transform: scale(0.7); }
+}
+.animate-mythic-bolt-flash {
+  animation: mythic-bolt-flash 2.8s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* frame_bloom_myth — petals scale 0→1→0 from their base anchor at
+   the rim, unfurling inward, then fading. Center bud breathes. */
+@keyframes mythic-petal-bloom {
+  0%, 100% { transform: scaleY(0.15); opacity: 0; }
+  20%      { opacity: 1; }
+  50%      { transform: scaleY(1);    opacity: 1; }
+  80%      { opacity: 0.4; }
+}
+.animate-mythic-petal-bloom {
+  animation: mythic-petal-bloom 3.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@keyframes mythic-bloom-center {
+  0%, 100% { transform: scale(1);   opacity: 0.7; }
+  50%      { transform: scale(1.5); opacity: 1; }
+}
+.animate-mythic-bloom-center {
+  animation: mythic-bloom-center 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* frame_glitch_myth — three RGB rim borders jitter at independent
+   intervals to fake a chromatic-aberration glitch. The cyan layer
+   moves more often than the magenta; yellow rarely shifts at all.
+   Plus a scanline that occasionally rakes vertically across. */
+@keyframes mythic-glitch-cyan {
+  0%, 14%, 100%   { transform: translate(0, 0); }
+  16%             { transform: translate(-2px, 1px); }
+  30%             { transform: translate(0, 0); }
+  56%             { transform: translate(-3px, -1px); }
+  62%             { transform: translate(0, 0); }
+  82%             { transform: translate(-1px, 2px); }
+  88%             { transform: translate(0, 0); }
+}
+.animate-mythic-glitch-cyan {
+  animation: mythic-glitch-cyan 2.4s steps(1, end) infinite;
+  will-change: transform;
+}
+@keyframes mythic-glitch-magenta {
+  0%, 18%, 100% { transform: translate(0, 0); }
+  20%           { transform: translate(2px, -1px); }
+  36%           { transform: translate(0, 0); }
+  64%           { transform: translate(3px, 1px); }
+  72%           { transform: translate(0, 0); }
+}
+.animate-mythic-glitch-magenta {
+  animation: mythic-glitch-magenta 2.6s steps(1, end) infinite;
+  will-change: transform;
+}
+@keyframes mythic-glitch-yellow {
+  0%, 30%, 60%, 100% { transform: translate(0, 0); }
+  32%                { transform: translate(0, -2px); }
+  62%                { transform: translate(1px, 2px); }
+}
+.animate-mythic-glitch-yellow {
+  animation: mythic-glitch-yellow 3.4s steps(1, end) infinite;
+  will-change: transform;
+}
+@keyframes mythic-glitch-scan {
+  0%, 78%   { top: -10%;   opacity: 0; }
+  82%       { top:  20%;   opacity: 0.7; }
+  90%       { top:  70%;   opacity: 0.5; }
+  100%      { top: 110%;   opacity: 0; }
+}
+.animate-mythic-glitch-scan {
+  animation: mythic-glitch-scan 4.6s linear infinite;
+  will-change: top, opacity;
 }
 
 /* ─── Battle pass animations ───────────────────────────────────────
