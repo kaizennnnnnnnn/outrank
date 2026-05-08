@@ -1311,6 +1311,58 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   animation: frame-halo 2.4s ease-in-out infinite;
 }
 
+/* ─── Per-style frame animations ─────────────────────────────────
+   Each frame.style now has its own signature motion so frames
+   differentiate by behaviour, not just colour.
+   - ring sheen : a slow conic-gradient highlight sweep across the
+     ring band, like a brushed-metal flash
+   - double counter-rotate : the existing frame-spin-reverse drives
+     the inner ring; outer keeps frame-spin-fast for opposing motion
+   - halo radial pulse : a heartbeat that radiates outward without
+     rotation, separate from the existing frame-halo (which scales
+     the static halo) — this one fires expanding rings on top
+   - wreath ember-drift : tiny sparks orbit + each one twinkles in
+     and out on a stagger
+*/
+@keyframes frame-ring-sheen {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-frame-ring-sheen {
+  animation: frame-ring-sheen 6s linear infinite;
+}
+
+@keyframes frame-halo-radiate {
+  0%   { transform: scale(0.9); opacity: 0.85; }
+  80%  { transform: scale(1.55); opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.animate-frame-halo-radiate {
+  animation: frame-halo-radiate 2.6s ease-out infinite;
+}
+
+@keyframes frame-conic-spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-frame-conic-spin-slow {
+  animation: frame-conic-spin-slow 8s linear infinite;
+}
+.animate-frame-conic-spin-medium {
+  animation: frame-conic-spin-slow 5s linear infinite;
+}
+.animate-frame-conic-spin-fast {
+  animation: frame-conic-spin-slow 3s linear infinite;
+}
+
+@keyframes frame-ember-twinkle {
+  0%, 100% { transform: scale(0.7); opacity: 0.4; filter: brightness(1); }
+  50%      { transform: scale(1.4); opacity: 1;   filter: brightness(1.6); }
+}
+.animate-frame-ember-twinkle {
+  animation: frame-ember-twinkle 1.6s ease-in-out infinite;
+}
+
 /* --- Mini orb animations --- */
 @keyframes mini-orb-core {
   0%, 100% { filter: brightness(1)    saturate(1.1); transform: scale(1); }

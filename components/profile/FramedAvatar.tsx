@@ -27,9 +27,10 @@ const sizeBase: Record<string, number> = {
 };
 
 /**
- * Visual-intensity tier derived from rarity. Higher tier = more animated
- * layers. Common/Rare stay static even if `animated` is true; Mythic gets
- * everything plus an extra aurora/hue-rotate wash.
+ * Visual-intensity tier derived from rarity. Controls scale of the
+ * effects (glow strength, particle count) but NOT the motion type —
+ * motion is dispatched by frame.style so every style reads as its
+ * own design language. Rarity just turns the dial up.
  */
 const intensityOf = (rarity: CosmeticRarity, animated: boolean): number => {
   if (!animated) return 0;
@@ -41,13 +42,17 @@ const intensityOf = (rarity: CosmeticRarity, animated: boolean): number => {
 };
 
 /**
- * Avatar wrapped in a cosmetic frame. Avatar sits flush — no black gap.
- * Animation layers scale with the frame's rarity:
- *   0  common          → static ring
- *   1  rare            → ring + soft halo
- *   2  epic            → + slow spin / pulse
- *   3  legendary       → + counter-rotating conic + orbiting sparks
- *   4  mythic          → + aurora hue-rotate wash + extra spin layer
+ * Avatar wrapped in a cosmetic frame. Each frame.style picks a
+ * distinctive motion that differentiates it from the others by
+ * BEHAVIOUR, not just colour:
+ *
+ *   ring    — solid band, optional slow conic sheen sweep
+ *   double  — two concentric bands counter-rotating (outer cw, inner ccw)
+ *   conic   — a single ring made of the conic-gradient, spinning
+ *   halo    — static base ring + heartbeat radial pulse rings expanding
+ *   wreath  — orbiting ember dots around the rim that twinkle in/out
+ *
+ * Rarity layers (mythic adds an aurora hue-shift wash on top).
  */
 export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Props) {
   const frame = getFrame(frameId);
@@ -61,16 +66,12 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
 
   const intensity = intensityOf(frame.rarity, !!frame.animated);
 
-  const gradient = frame.colors.length === 1
+  const linearGradient = frame.colors.length === 1
     ? frame.colors[0]
-    : frame.style === 'conic'
-      ? `conic-gradient(from 0deg, ${frame.colors.join(', ')}, ${frame.colors[0]})`
-      : `linear-gradient(135deg, ${frame.colors.join(', ')})`;
-
+    : `linear-gradient(135deg, ${frame.colors.join(', ')})`;
   const conicGradient = `conic-gradient(from 0deg, ${frame.colors.join(', ')}, ${frame.colors[0]})`;
   const hotColor = frame.colors[frame.colors.length - 1];
   const accentColor = frame.colors[0];
-  const sparkCount = size === 'sm' ? 4 : size === 'md' ? 5 : 6;
 
   return (
     <div
@@ -81,141 +82,58 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
       )}
       style={{ width: outer, height: outer }}
     >
-      {/* Soft halo — shown from rare upward */}
-      {intensity >= 1 && (
-        <div
-          className={cn('absolute rounded-full pointer-events-none', intensity >= 2 && 'animate-frame-halo')}
-          style={{
-            inset: -Math.max(4, pad),
-            background: `radial-gradient(circle, ${accentColor}55 0%, ${hotColor}22 45%, transparent 72%)`,
-          }}
+      {frame.style === 'ring' && (
+        <RingFrame
+          intensity={intensity}
+          gradient={linearGradient}
+          conic={conicGradient}
+          accentColor={accentColor}
+          hotColor={hotColor}
+          pad={pad}
         />
       )}
-
-      {/* Counter-rotating conic under-layer — legendary + mythic */}
-      {intensity >= 3 && (
-        <div
-          className="absolute inset-0 rounded-full animate-frame-spin-reverse pointer-events-none"
-          style={{
-            background: conicGradient,
-            opacity: 0.55,
-            filter: 'blur(1px) saturate(1.4)',
-          }}
-        />
-      )}
-
-      {/* Extra fast spin layer — mythic only */}
-      {intensity >= 4 && (
-        <div
-          className="absolute -inset-[2px] rounded-full animate-frame-spin-xfast pointer-events-none"
-          style={{
-            background: conicGradient,
-            opacity: 0.35,
-            filter: 'blur(2px) saturate(1.6)',
-          }}
-        />
-      )}
-
-      {/* Outer frame */}
-      <div
-        className={cn(
-          'absolute inset-0 rounded-full',
-          intensity >= 2 && frame.style === 'conic' && 'animate-frame-spin-fast',
-          intensity >= 2 && frame.style !== 'conic' && 'animate-frame-pulse',
-        )}
-        style={{
-          background: gradient,
-          boxShadow: `0 0 22px -2px ${hotColor}cc, 0 0 6px ${accentColor}88`,
-          padding: frame.style === 'double' ? pad / 2 : 0,
-        }}
-      >
-        {/* Inner cut-out — sized to match the avatar exactly (no gap).
-            Uses paper so the cutout reads as the page background in the
-            editorial Direction B v2 layout. */}
-        <div
-          className="absolute rounded-full"
-          style={{ inset: pad, background: 'var(--b-paper)' }}
-        />
-      </div>
-
-      {/* Double-ring inner band */}
       {frame.style === 'double' && (
-        <div
-          className={cn(
-            'absolute rounded-full',
-            intensity >= 3 && 'animate-frame-spin-reverse',
-          )}
-          style={{
-            inset: pad - 2,
-            background: gradient,
-          }}
-        >
-          <div
-            className="absolute rounded-full"
-            style={{ inset: 2, background: 'var(--b-paper)' }}
-          />
-        </div>
+        <DoubleFrame
+          intensity={intensity}
+          gradient={linearGradient}
+          conic={conicGradient}
+          accentColor={accentColor}
+          hotColor={hotColor}
+          pad={pad}
+        />
       )}
-
-      {/* Wreath — mini sparks around the rim, orbiting on epic+ */}
+      {frame.style === 'conic' && (
+        <ConicFrame
+          intensity={intensity}
+          conic={conicGradient}
+          accentColor={accentColor}
+          hotColor={hotColor}
+          pad={pad}
+        />
+      )}
+      {frame.style === 'halo' && (
+        <HaloFrame
+          intensity={intensity}
+          gradient={linearGradient}
+          accentColor={accentColor}
+          hotColor={hotColor}
+          pad={pad}
+        />
+      )}
       {frame.style === 'wreath' && (
-        <div className={cn('absolute inset-0', intensity >= 2 && 'animate-frame-orbit')}>
-          {Array.from({ length: 8 }).map((_, i) => {
-            const angle = (i / 8) * Math.PI * 2;
-            const r = outer / 2 - 1;
-            const x = Math.cos(angle) * r + outer / 2;
-            const y = Math.sin(angle) * r + outer / 2;
-            const c = frame.colors[i % frame.colors.length];
-            return (
-              <div
-                key={i}
-                className="absolute w-1.5 h-1.5 rounded-full"
-                style={{
-                  left: x - 3,
-                  top: y - 3,
-                  background: c,
-                  boxShadow: `0 0 8px ${c}, 0 0 2px #fff`,
-                }}
-              />
-            );
-          })}
-        </div>
+        <WreathFrame
+          intensity={intensity}
+          gradient={linearGradient}
+          colors={frame.colors}
+          accentColor={accentColor}
+          hotColor={hotColor}
+          outer={outer}
+          pad={pad}
+          size={size}
+        />
       )}
 
-      {/* Orbiting sparks — legendary + mythic on non-wreath frames */}
-      {intensity >= 3 && frame.style !== 'wreath' && (
-        <div className="absolute inset-0 animate-frame-orbit pointer-events-none">
-          {Array.from({ length: sparkCount }).map((_, i) => {
-            const angle = (i / sparkCount) * Math.PI * 2;
-            const r = outer / 2 + 2;
-            const x = Math.cos(angle) * r + outer / 2;
-            const y = Math.sin(angle) * r + outer / 2;
-            const c = frame.colors[i % frame.colors.length];
-            const sz = size === 'sm' ? 3 : size === 'xl' ? 5 : 4;
-            return (
-              <div
-                key={i}
-                className="absolute rounded-full animate-frame-spark"
-                style={{
-                  width: sz,
-                  height: sz,
-                  left: x - sz / 2,
-                  top: y - sz / 2,
-                  background: c,
-                  boxShadow: `0 0 10px ${c}, 0 0 4px #ffffffaa`,
-                  animationDelay: `${i * 0.15}s`,
-                }}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {/* The avatar itself — absolutely positioned to match the inner cutout
-          pixel-for-pixel. Using inline-flex/items-center for centering had a
-          subtle vertical offset on some browsers (caused by inline baseline
-          metrics on the Avatar's `inline-flex` wrapper). Pinning via `inset`
-          and giving the wrapper explicit size eliminates the drift. */}
+      {/* The avatar itself — pixel-pinned to the inner cutout. */}
       <div
         className="absolute z-10 flex items-center justify-center leading-none"
         style={{
@@ -227,5 +145,293 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
         <Avatar src={src} alt={alt} size={size} />
       </div>
     </div>
+  );
+}
+
+interface StyleProps {
+  intensity: number;
+  gradient?: string;
+  conic?: string;
+  accentColor: string;
+  hotColor: string;
+  pad: number;
+}
+
+/** RING — clean band. Common is static; rare gets a soft halo glow;
+ *  epic+ adds a slow conic-gradient sheen sweep over the ring. */
+function RingFrame({ intensity, gradient, conic, accentColor, hotColor, pad }: StyleProps) {
+  return (
+    <>
+      {intensity >= 1 && (
+        <div
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            inset: -Math.max(4, pad),
+            background: `radial-gradient(circle, ${accentColor}55 0%, ${hotColor}22 45%, transparent 72%)`,
+            opacity: 0.7,
+          }}
+        />
+      )}
+      {/* Solid band */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: gradient,
+          boxShadow: `0 0 22px -2px ${hotColor}aa, 0 0 6px ${accentColor}66`,
+        }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{ inset: pad, background: 'var(--b-paper)' }}
+        />
+      </div>
+      {/* Conic sheen sweep — only on epic+ for differentiation */}
+      {intensity >= 2 && (
+        <div
+          className="absolute inset-0 rounded-full pointer-events-none animate-frame-ring-sheen"
+          style={{
+            background: conic,
+            opacity: 0.55,
+            mixBlendMode: 'screen',
+            mask: `radial-gradient(circle, transparent ${`calc(50% - ${pad + 1}px)`}, black ${`calc(50% - ${pad}px)`}, black 50%, transparent 50%)`,
+            WebkitMask: `radial-gradient(circle, transparent ${`calc(50% - ${pad + 1}px)`}, black ${`calc(50% - ${pad}px)`}, black 50%, transparent 50%)`,
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+/** DOUBLE — two concentric rings. Outer rotates CW; inner rotates
+ *  CCW. The contrast in motion is what makes it feel different from
+ *  the others. */
+function DoubleFrame({ intensity, gradient, conic, accentColor, hotColor, pad }: StyleProps) {
+  return (
+    <>
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: -Math.max(4, pad),
+          background: `radial-gradient(circle, ${accentColor}55 0%, ${hotColor}22 45%, transparent 72%)`,
+          opacity: 0.6,
+        }}
+      />
+      {/* Outer ring — CW slow spin */}
+      <div
+        className={cn(
+          'absolute inset-0 rounded-full',
+          intensity >= 2 && 'animate-frame-conic-spin-slow',
+        )}
+        style={{
+          background: conic,
+          boxShadow: `0 0 22px -2px ${hotColor}cc, 0 0 6px ${accentColor}88`,
+        }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{ inset: Math.max(2, pad / 2), background: 'var(--b-paper)' }}
+        />
+      </div>
+      {/* Inner ring — CCW faster, opposite direction is the signature */}
+      <div
+        className={cn(
+          'absolute rounded-full',
+          intensity >= 2 && 'animate-frame-spin-reverse',
+        )}
+        style={{
+          inset: pad - 1,
+          background: gradient,
+        }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{ inset: 2, background: 'var(--b-paper)' }}
+        />
+      </div>
+    </>
+  );
+}
+
+/** CONIC — full conic gradient ring spinning. Speed scales with
+ *  rarity. Mythic adds a counter-spinning blurred outer halo. */
+function ConicFrame({ intensity, conic, accentColor, hotColor, pad }: StyleProps) {
+  const spinClass =
+    intensity >= 4 ? 'animate-frame-conic-spin-fast'
+    : intensity >= 3 ? 'animate-frame-conic-spin-medium'
+    : 'animate-frame-conic-spin-slow';
+
+  return (
+    <>
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: -Math.max(4, pad),
+          background: `radial-gradient(circle, ${accentColor}55 0%, ${hotColor}22 45%, transparent 72%)`,
+          opacity: 0.7,
+        }}
+      />
+      {/* Counter-rotating blurred halo — mythic only */}
+      {intensity >= 4 && (
+        <div
+          className="absolute -inset-[3px] rounded-full pointer-events-none animate-frame-spin-reverse"
+          style={{
+            background: conic,
+            opacity: 0.45,
+            filter: 'blur(2px) saturate(1.4)',
+          }}
+        />
+      )}
+      {/* Main spinning conic ring */}
+      <div
+        className={cn('absolute inset-0 rounded-full', spinClass)}
+        style={{
+          background: conic,
+          boxShadow: `0 0 22px -2px ${hotColor}cc, 0 0 6px ${accentColor}88`,
+        }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{ inset: pad, background: 'var(--b-paper)' }}
+        />
+      </div>
+    </>
+  );
+}
+
+/** HALO — static ring + heartbeat radial pulse rings expanding
+ *  outward from the avatar. No rotation; the motion is the pulse. */
+function HaloFrame({ intensity, gradient, accentColor, hotColor, pad }: StyleProps) {
+  return (
+    <>
+      {/* Outer pulse rings — multiple staggered for legendary+ */}
+      {intensity >= 2 && (
+        <>
+          <div
+            className="absolute rounded-full pointer-events-none animate-frame-halo-radiate"
+            style={{
+              inset: -2,
+              border: `2px solid ${accentColor}`,
+              boxShadow: `0 0 18px ${hotColor}88`,
+            }}
+          />
+          {intensity >= 3 && (
+            <div
+              className="absolute rounded-full pointer-events-none animate-frame-halo-radiate"
+              style={{
+                inset: -2,
+                border: `1.5px solid ${hotColor}`,
+                animationDelay: '1.3s',
+              }}
+            />
+          )}
+          {intensity >= 4 && (
+            <div
+              className="absolute rounded-full pointer-events-none animate-frame-halo-radiate"
+              style={{
+                inset: -2,
+                border: `1px solid ${accentColor}`,
+                animationDelay: '0.65s',
+              }}
+            />
+          )}
+        </>
+      )}
+      {/* Soft static halo glow behind the ring */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: -Math.max(4, pad),
+          background: `radial-gradient(circle, ${accentColor}66 0%, ${hotColor}22 45%, transparent 72%)`,
+        }}
+      />
+      {/* Ring band — static, no rotation */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: gradient,
+          boxShadow: `0 0 24px -2px ${hotColor}cc, 0 0 8px ${accentColor}aa`,
+        }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{ inset: pad, background: 'var(--b-paper)' }}
+        />
+      </div>
+    </>
+  );
+}
+
+/** WREATH — ring band with orbiting embers around the rim. Each
+ *  ember rides on a slow conic orbit AND twinkles individually. */
+function WreathFrame({
+  intensity,
+  gradient,
+  colors,
+  accentColor,
+  hotColor,
+  outer,
+  pad,
+  size,
+}: {
+  intensity: number;
+  gradient: string;
+  colors: string[];
+  accentColor: string;
+  hotColor: string;
+  outer: number;
+  pad: number;
+  size: 'sm' | 'md' | 'lg' | 'xl';
+}) {
+  const emberCount = intensity >= 4 ? 12 : intensity >= 3 ? 8 : 6;
+  const emberSize = size === 'sm' ? 2.5 : size === 'xl' ? 5 : 3.5;
+
+  return (
+    <>
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          inset: -Math.max(4, pad),
+          background: `radial-gradient(circle, ${accentColor}55 0%, ${hotColor}22 45%, transparent 72%)`,
+        }}
+      />
+      {/* Static ring band — wreath's identity is the embers, not the band */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: gradient,
+          boxShadow: `0 0 22px -2px ${hotColor}cc, 0 0 6px ${accentColor}88`,
+        }}
+      >
+        <div
+          className="absolute rounded-full"
+          style={{ inset: pad, background: 'var(--b-paper)' }}
+        />
+      </div>
+      {/* Orbiting embers wrapper — slow rotation */}
+      <div className="absolute inset-0 animate-frame-orbit pointer-events-none">
+        {Array.from({ length: emberCount }).map((_, i) => {
+          const angle = (i / emberCount) * Math.PI * 2;
+          const r = outer / 2 + 1;
+          const x = Math.cos(angle) * r + outer / 2;
+          const y = Math.sin(angle) * r + outer / 2;
+          const c = colors[i % colors.length];
+          return (
+            <div
+              key={i}
+              className="absolute rounded-full animate-frame-ember-twinkle"
+              style={{
+                width: emberSize,
+                height: emberSize,
+                left: x - emberSize / 2,
+                top: y - emberSize / 2,
+                background: c,
+                boxShadow: `0 0 8px ${c}, 0 0 2px #ffffffaa`,
+                animationDelay: `${(i / emberCount) * 1.4}s`,
+              }}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }
