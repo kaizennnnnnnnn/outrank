@@ -695,6 +695,21 @@ function SignupStep({
     // Seed all 5 pillars with derived goals
     const goals = derivePillarGoals(draft);
     await seedAllPillars(uid, goals);
+
+    // Auto-pick a starter gym program based on onboarding answers so
+    // the user lands on /gym with a tailored routine instead of an
+    // empty picker. They can switch / build their own later.
+    try {
+      const { selectProgram, recommendProgram } = await import('@/lib/gym');
+      const recommendedId = recommendProgram({
+        experienceLevel:    draft.experienceLevel,
+        exerciseLocation:   draft.exerciseLocation,
+        workoutDaysPerWeek: draft.workoutDaysPerWeek,
+      });
+      await selectProgram(uid, recommendedId);
+    } catch {
+      // Non-fatal: the user can still pick from /gym manually.
+    }
   };
 
   const handleEmailSignup = async () => {

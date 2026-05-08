@@ -67,12 +67,15 @@ export function ActiveWorkoutSession({ workoutId, workout }: Props) {
     setConfirmFinish(false);
     setCompleting(true);
     try {
+      const userAny = user as unknown as Record<string, unknown>;
+      const customProgram = userAny.customProgram as import('@/types/gym').Program | undefined;
       await completeWorkout({
         userId: user.uid,
         workoutId,
         workout: { ...workout, exercises },
         username: user.username,
         avatarUrl: user.avatarUrl || '',
+        customProgram,
       });
       haptic('success');
       setBurst((n) => n + 1);

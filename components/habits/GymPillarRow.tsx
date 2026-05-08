@@ -7,6 +7,7 @@ import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { CheckCircleFullIcon } from '@/components/ui/AppIcons';
 import { StreakFlame } from './StreakFlame';
 import { useGymState } from '@/hooks/useGymState';
+import { useAuth } from '@/hooks/useAuth';
 import { getProgram } from '@/constants/gymPrograms';
 import { getTodaysDay } from '@/lib/gym';
 
@@ -30,9 +31,17 @@ interface Props {
  * stripe in the gym category color (red). No orange glow.
  */
 export function GymPillarRow({ habit, isLoggedToday }: Props) {
+  const { user } = useAuth();
   const { state } = useGymState();
-  const today = getTodaysDay(state);
-  const program = state?.activeProgramId ? getProgram(state.activeProgramId) : null;
+  const userAny = user as unknown as Record<string, unknown> | null;
+  const customProgram = userAny?.customProgram as import('@/types/gym').Program | undefined;
+  const today = getTodaysDay(state, customProgram);
+  const program =
+    state?.activeProgramId === 'custom'
+      ? customProgram ?? null
+      : state?.activeProgramId
+        ? getProgram(state.activeProgramId)
+        : null;
 
   return (
     <Link href="/gym" className="block">

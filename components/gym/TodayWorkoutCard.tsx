@@ -32,7 +32,11 @@ export function TodayWorkoutCard({ program, day, dayIndex }: Props) {
     if (!user) return;
     setStarting(true);
     try {
-      const id = await startWorkout(user.uid, program.id, dayIndex);
+      // Pass the custom program through so 'custom' resolves to the
+      // user-built schedule when starting the workout.
+      const userAny = user as unknown as Record<string, unknown>;
+      const customProgram = userAny.customProgram as import('@/types/gym').Program | undefined;
+      const id = await startWorkout(user.uid, program.id, dayIndex, customProgram);
       router.push(`/gym/workout/${id}`);
     } catch {
       addToast({ type: 'error', message: 'Could not start workout' });

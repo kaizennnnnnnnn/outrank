@@ -45,7 +45,11 @@ export default function GymPage() {
     );
   }
 
-  const today = getTodaysDay(state);
+  // Resolve custom program off the user doc when activeProgramId is
+  // 'custom' — getTodaysDay needs it to find the right schedule.
+  const userAny = user as unknown as Record<string, unknown> | null;
+  const customProgram = userAny?.customProgram as import('@/types/gym').Program | undefined;
+  const today = getTodaysDay(state, customProgram);
   if (!today) {
     return (
       <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>

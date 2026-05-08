@@ -39,6 +39,36 @@ import {
 export const GYM_WORKOUTS_COLLECTION = 'gymWorkouts';
 
 /**
+ * Pick a starter program based on the user's onboarding answers.
+ *
+ * Heuristic:
+ * 1. exerciseLocation === 'bodyweight' OR no equipment → calisthenics rr-3
+ * 2. experienceLevel === 'never' / 'beginner' → fb-3 (full body) regardless
+ *    of days unless the user explicitly committed to 6 sessions/week
+ * 3. workoutDaysPerWeek >= 6 → ppl-6
+ * 4. workoutDaysPerWeek 4-5 → ul-4
+ * 5. anything else → fb-3
+ *
+ * The function is total — it always returns a valid PROGRAM id.
+ */
+export function recommendProgram(profile: {
+  experienceLevel?: 'never' | 'beginner' | 'intermediate' | 'advanced';
+  exerciseLocation?: 'commercial' | 'small_gym' | 'garage' | 'home' | 'bodyweight';
+  workoutDaysPerWeek?: number;
+}): string {
+  if (profile.exerciseLocation === 'bodyweight') return 'rr-3';
+
+  const days = profile.workoutDaysPerWeek ?? 3;
+  const isBeginner =
+    profile.experienceLevel === 'never' || profile.experienceLevel === 'beginner';
+
+  if (isBeginner && days < 6) return 'fb-3';
+  if (days >= 6) return 'ppl-6';
+  if (days >= 4) return 'ul-4';
+  return 'fb-3';
+}
+
+/**
  * Persist the user's chosen program + path. Resets dayIndex to 0 so
  * the first workout starts at the program's first day. Workout
  * history is kept across program changes — switching programs is
@@ -55,6 +85,36 @@ export async function selectProgram(userId: string, programId: string): Promise<
 }
 
 /**
+ * Persist a user-built custom program AND set it as the active
+ * program. The Program is stashed at users/{uid}.customProgram (one
+ * per user) and the active program id is set to the literal string
+ * 'custom'. Lookup helpers (resolveProgram, getTodaysDay) read the
+ * program off the user doc when the id is 'custom'.
+ */
+export async function selectCustomProgram(userId: string, program: Program): Promise<void> {
+  // Force the id to 'custom' regardless of what the caller passed so
+  // the activeProgramId discriminator stays predictable.
+  const stamped: Program = { ...program, id: 'custom' };
+  await updateDoc(doc(db, 'users', userId), {
+    customProgram: stamped,
+    'gym.activeProgramId': 'custom',
+    'gym.currentDayIndex': 0,
+    'gym.path': stamped.path,
+  });
+}
+
+/**
+ * Resolve a program id against either the static catalog or the
+ * user's custom program (when id === 'custom'). Returns undefined if
+ * neither matches.
+ */
+export function resolveProgram(programId: string | null | undefined, customProgram?: Program | null): Program | undefined {
+  if (!programId) return undefined;
+  if (programId === 'custom') return customProgram || undefined;
+  return getProgram(programId);
+}
+
+/**
  * Clear the active program. The page re-renders into the picker on
  * next snapshot — used by the "Switch program" affordance.
  */
@@ -66,12 +126,17 @@ export async function clearActiveProgram(userId: string): Promise<void> {
 
 /**
  * The day that should be performed next. Returns null if the user has
- * no active program or the program has been removed.
+ * no active program or the program has been removed. Pass the user's
+ * customProgram so id='custom' can resolve.
  */
-export function getTodaysDay(state: UserGymState | null): { program: Program; day: ProgramDay; dayIndex: number } | null {
+export function getTodaysDay(
+  state: UserGymState | null,
+  customProgram?: Program | null,
+): { program: Program; day: ProgramDay; dayIndex: number } | null {
   if (!state?.activeProgramId) return null;
-  const program = getProgram(state.activeProgramId);
+  const program = resolveProgram(state.activeProgramId, customProgram);
   if (!program) return null;
+  if (program.schedule.length === 0) return null;
   const dayIndex = ((state.currentDayIndex || 0) % program.schedule.length + program.schedule.length) % program.schedule.length;
   return { program, day: program.schedule[dayIndex], dayIndex };
 }
@@ -82,8 +147,12 @@ export function getTodaysDay(state: UserGymState | null): { program: Program; da
  * canonical exercise list. Sets default to one row per prescribed set
  * (so the user can fill in reps/weight as they go).
  */
-export function instantiateWorkout(programId: string, dayIndex: number): Omit<Workout, 'id'> {
-  const program = getProgram(programId);
+export function instantiateWorkout(
+  programId: string,
+  dayIndex: number,
+  customProgram?: Program | null,
+): Omit<Workout, 'id'> {
+  const program = resolveProgram(programId, customProgram);
   if (!program) throw new Error(`Unknown program: ${programId}`);
   const day = program.schedule[dayIndex];
   if (!day) throw new Error(`Day ${dayIndex} not in ${programId}`);
@@ -120,8 +189,13 @@ export function instantiateWorkout(programId: string, dayIndex: number): Omit<Wo
  * Create a fresh workout doc and return its id. The caller routes to
  * the active-session page using this id.
  */
-export async function startWorkout(userId: string, programId: string, dayIndex: number): Promise<string> {
-  const draft = instantiateWorkout(programId, dayIndex);
+export async function startWorkout(
+  userId: string,
+  programId: string,
+  dayIndex: number,
+  customProgram?: Program | null,
+): Promise<string> {
+  const draft = instantiateWorkout(programId, dayIndex, customProgram);
   const ref = await addDoc(collection(db, `${GYM_WORKOUTS_COLLECTION}/${userId}/items`), draft);
   return ref.id;
 }
@@ -157,8 +231,9 @@ export async function completeWorkout(args: {
   workout: Workout;
   username: string;
   avatarUrl: string;
+  customProgram?: Program | null;
 }) {
-  const { userId, workoutId, workout, username, avatarUrl } = args;
+  const { userId, workoutId, workout, username, avatarUrl, customProgram } = args;
 
   // Compute aggregates from completed sets only.
   let totalVolume = 0;
@@ -178,11 +253,10 @@ export async function completeWorkout(args: {
     totalSets,
   });
 
-  // Advance the program cycle. Read program (length + path) from
-  // constants so we set the user's gym.path correctly — caller used
-  // to pass programPath, which was hardcoded to 'lift' on the
-  // session page and miscategorised calisthenics users.
-  const program = getProgram(workout.programId);
+  // Advance the program cycle. Resolve the program against the
+  // static catalog OR the user's custom program (when programId is
+  // 'custom') so cycles work for both.
+  const program = resolveProgram(workout.programId, customProgram);
   const scheduleLen = program?.schedule.length || 1;
   const path = program?.path || 'lift';
   await updateDoc(doc(db, 'users', userId), {
