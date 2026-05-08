@@ -134,19 +134,6 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
         />
       )}
 
-      {/* Mythic-only halo — chromatic aberration + wide star trail
-          + cosmic dust wash. Renders on top of every base style so
-          mythic frames read distinct from legendary even when they
-          share the same style. */}
-      {frame.rarity === 'mythic' && (
-        <MythicHalo
-          colors={frame.colors}
-          outer={outer}
-          accentColor={accentColor}
-          hotColor={hotColor}
-        />
-      )}
-
       {/* The avatar itself — pixel-pinned to the inner cutout. */}
       <div
         className="absolute z-10 flex items-center justify-center leading-none"
@@ -564,114 +551,6 @@ function GoldWreathOverlay({ hotColor, accentColor, pad }: { hotColor: string; a
         mixBlendMode: 'screen',
       }}
     />
-  );
-}
-
-/** Mythic-only halo overlay. Layers on top of every base style
- *  (ring/double/conic/halo/wreath) when frame.rarity === 'mythic'
- *  so mythic frames are visibly distinct from legendary even when
- *  they share the same style. Three layers, each with its own
- *  motion language so the halo never reads as a single rotating
- *  ring:
- *  - cosmic-dust wash : soft conic-gradient halo behind everything
- *  - chromatic aberration ring : two thin offset borders rotating
- *    opposite directions, mimicking a prism diffraction
- *  - wide star trail : 4 sparkles orbiting at 1.6x frame radius
- */
-function MythicHalo({
-  colors,
-  outer,
-  accentColor,
-  hotColor,
-}: {
-  colors: string[];
-  outer: number;
-  accentColor: string;
-  hotColor: string;
-}) {
-  const conic = colors.length > 1
-    ? `conic-gradient(from 0deg, ${colors.join(', ')}, ${colors[0]})`
-    : `conic-gradient(from 0deg, ${accentColor}, ${hotColor}, ${accentColor})`;
-  // Star trail at 1.6x radius — 4 sparkles at 0/90/180/270, each
-  // twinkling on a stagger.
-  const trailRadius = outer * 0.8;
-  return (
-    <>
-      {/* Cosmic-dust wash — soft conic blur behind the frame */}
-      <div
-        aria-hidden
-        className="absolute pointer-events-none mythic-cosmic-wash"
-        style={{
-          inset: -Math.round(outer * 0.18),
-          borderRadius: '50%',
-          background: conic,
-          filter: 'blur(14px) saturate(1.2)',
-          opacity: 0.32,
-          mixBlendMode: 'screen',
-          zIndex: -1,
-        }}
-      />
-      {/* Chromatic aberration — two thin offset borders rotating
-          opposite directions. The slight 1.5px lateral offset
-          gives the prism-diffraction look without animating blur. */}
-      <div
-        aria-hidden
-        className="absolute pointer-events-none mythic-aberration-cw"
-        style={{
-          inset: -3,
-          borderRadius: '50%',
-          border: `1.5px solid ${colors[0]}`,
-          transform: 'translateX(1.5px)',
-          opacity: 0.55,
-          mixBlendMode: 'screen',
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute pointer-events-none mythic-aberration-ccw"
-        style={{
-          inset: -3,
-          borderRadius: '50%',
-          border: `1.5px solid ${colors[colors.length - 1] || hotColor}`,
-          transform: 'translateX(-1.5px)',
-          opacity: 0.55,
-          mixBlendMode: 'screen',
-        }}
-      />
-      {/* Wide star trail — 4 sparkles orbiting at 1.6x frame radius */}
-      <div
-        aria-hidden
-        className="absolute pointer-events-none mythic-trail-orbit"
-        style={{
-          inset: 0,
-          width: '100%',
-          height: '100%',
-        }}
-      >
-        {[0, 90, 180, 270].map((deg, i) => {
-          const rad = (deg * Math.PI) / 180;
-          const cx = Math.cos(rad) * trailRadius + outer / 2;
-          const cy = Math.sin(rad) * trailRadius + outer / 2;
-          const c = colors[i % colors.length];
-          const sz = 4;
-          return (
-            <span
-              key={deg}
-              className="absolute rounded-full animate-frame-ember-twinkle"
-              style={{
-                width: sz,
-                height: sz,
-                left: cx - sz / 2,
-                top: cy - sz / 2,
-                background: c,
-                boxShadow: `0 0 8px ${c}, 0 0 2px #ffffffbb`,
-                animationDelay: `${i * 0.4}s`,
-              }}
-            />
-          );
-        })}
-      </div>
-    </>
   );
 }
 
