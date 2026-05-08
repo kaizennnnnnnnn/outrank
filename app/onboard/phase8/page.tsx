@@ -696,17 +696,16 @@ function SignupStep({
     const goals = derivePillarGoals(draft);
     await seedAllPillars(uid, goals);
 
-    // Auto-pick a starter gym program based on onboarding answers so
-    // the user lands on /gym with a tailored routine instead of an
-    // empty picker. They can switch / build their own later.
+    // Build a routine tailored from the FULL onboarding draft —
+    // duration, equipment, goals, struggles, last-worked muscles
+    // are all consumed by buildTailoredProgram. The result is saved
+    // as the user's customProgram and set as their active program,
+    // so the first /gym visit shows a routine they can already
+    // recognise as theirs.
     try {
-      const { selectProgram, recommendProgram } = await import('@/lib/gym');
-      const recommendedId = recommendProgram({
-        experienceLevel:    draft.experienceLevel,
-        exerciseLocation:   draft.exerciseLocation,
-        workoutDaysPerWeek: draft.workoutDaysPerWeek,
-      });
-      await selectProgram(uid, recommendedId);
+      const { selectCustomProgram, buildTailoredProgram } = await import('@/lib/gym');
+      const { program } = buildTailoredProgram(draft);
+      await selectCustomProgram(uid, program);
     } catch {
       // Non-fatal: the user can still pick from /gym manually.
     }
