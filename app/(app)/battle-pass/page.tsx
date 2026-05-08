@@ -11,6 +11,7 @@ import { useUIStore } from '@/store/uiStore';
 import { Button } from '@/components/ui/Button';
 import { Masthead } from '@/components/editorial/Masthead';
 import { BLockGlyph } from '@/components/editorial/BGlyphs';
+import { getFrame, getNameEffect } from '@/constants/cosmetics';
 
 export default function BattlePassPage() {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ export default function BattlePassPage() {
   const claimed = (userRaw?.claimedPassTiers as number[]) || [];
 
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [missionsOpen, setMissionsOpen] = useState(false);
 
   const todayStr = new Date().toDateString();
   const weekStr = isoWeekKey();
@@ -258,220 +260,613 @@ export default function BattlePassPage() {
             </div>
           </div>
 
-          {/* Premium banner — locked */}
+          {/* Action row — Missions toggle + Premium upsell, side by side */}
           <div
             style={{
-              marginTop: 14,
-              padding: '10px 14px',
-              border: '1px dashed var(--b-rule)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              justifyContent: 'center',
-              color: 'var(--b-ink-60)',
-            }}
-          >
-            <BLockGlyph size={12} />
-            <span
-              className="spread"
-              style={{ fontSize: 9 }}
-            >
-              Premium Track — coming soon
-            </span>
-          </div>
-
-          {/* Missions section */}
-          <MissionsPanel
-            missions={MISSIONS}
-            progressFor={missionProgress}
-            claimedFor={missionClaimed}
-            onClaim={handleClaimMission}
-            claimingId={claiming}
-          />
-
-          {/* Section header for tiers */}
-          <div
-            style={{
-              marginTop: 28,
-              paddingTop: 12,
-              borderTop: '1px solid var(--b-ink)',
-              display: 'flex',
-              alignItems: 'baseline',
-              justifyContent: 'space-between',
-              marginBottom: 8,
-            }}
-          >
-            <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
-              The Tier Ladder
-            </div>
-            <div
-              className="font-mono tabular"
-              style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
-            >
-              § {String(SEASON_PASS_TIERS).padStart(2, '0')}
-            </div>
-          </div>
-
-          {/* Column header */}
-          <div
-            style={{
+              marginTop: 16,
               display: 'grid',
-              gridTemplateColumns: '40px 1fr 1fr',
+              gridTemplateColumns: '1fr 1fr',
               gap: 8,
-              padding: '6px 0',
-              borderBottom: '1px solid var(--b-rule)',
             }}
           >
-            <div />
-            <div
-              className="spread"
-              style={{ fontSize: 8, color: 'var(--b-ink-60)', textAlign: 'center' }}
+            <button
+              onClick={() => setMissionsOpen((v) => !v)}
+              className="font-body"
+              style={{
+                padding: '12px 14px',
+                background: missionsOpen ? 'var(--b-ink)' : 'transparent',
+                color: missionsOpen ? 'var(--b-paper)' : 'var(--b-ink)',
+                border: '1px solid var(--b-ink)',
+                cursor: 'pointer',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+              aria-expanded={missionsOpen}
             >
-              Free
-            </div>
+              <span>Missions</span>
+              {(() => {
+                const ready = MISSIONS.filter((m) => !missionClaimed(m) && missionProgress(m) >= m.goal).length;
+                if (ready === 0) return null;
+                return (
+                  <span
+                    className="font-mono tabular"
+                    style={{
+                      background: 'var(--b-accent)',
+                      color: '#ffffff',
+                      padding: '0 6px',
+                      borderRadius: 999,
+                      fontSize: 9,
+                      letterSpacing: '0.06em',
+                      lineHeight: '16px',
+                      minWidth: 16,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {ready}
+                  </span>
+                );
+              })()}
+            </button>
             <div
-              className="spread"
-              style={{ fontSize: 8, color: 'var(--b-ink-40)', textAlign: 'center' }}
+              className="font-body"
+              style={{
+                padding: '12px 14px',
+                background:
+                  'linear-gradient(135deg, color-mix(in srgb, #fbbf24 16%, var(--b-paper)), color-mix(in srgb, var(--b-accent) 12%, var(--b-paper)))',
+                border: '1px solid #fbbf24',
+                color: 'var(--b-ink)',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
             >
-              Premium
+              <BLockGlyph size={12} />
+              <span>Premium · Soon</span>
             </div>
           </div>
 
-          {/* Tier rows */}
-          {tiers.map(({ free, premium }) => {
-            const reached = free.tier <= currentTier;
-            const freeKey = `${free.tier}-free`;
-            const premKey = `${free.tier}-premium`;
-            const freeClaimed = claimedSet().has(freeKey);
-            const premClaimedFlag = claimedSet().has(premKey);
-            const isMilestone = free.tier % 10 === 0 || free.tier === 60;
-            return (
-              <div
-                key={free.tier}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '40px 1fr 1fr',
-                  gap: 8,
-                  padding: '10px 0',
-                  borderBottom: isMilestone ? '1px solid var(--b-ink)' : '1px solid var(--b-rule)',
-                  opacity: reached ? 1 : 0.55,
-                }}
-              >
-                {/* Tier number */}
-                <div
-                  className="font-display tabular"
-                  style={{
-                    fontSize: isMilestone ? 22 : 16,
-                    fontStyle: isMilestone ? 'italic' : 'normal',
-                    fontWeight: 500,
-                    textAlign: 'center',
-                    color: reached
-                      ? (isMilestone ? 'var(--b-accent)' : 'var(--b-ink)')
-                      : 'var(--b-ink-40)',
-                  }}
-                >
-                  {free.tier}
-                </div>
-                <RewardCell
-                  row={free}
-                  reached={reached}
-                  claimed={freeClaimed}
-                  locked={false}
-                  onClaim={() => handleClaim(free)}
-                  claiming={claiming === freeKey}
-                />
-                <RewardCell
-                  row={premium}
-                  reached={reached}
-                  claimed={premClaimedFlag}
-                  locked={!isPremium}
-                  onClaim={() => handleClaim(premium)}
-                  claiming={claiming === premKey}
-                />
-              </div>
-            );
-          })}
+          {/* Missions section — only when toggled open */}
+          {missionsOpen && (
+            <MissionsPanel
+              missions={MISSIONS}
+              progressFor={missionProgress}
+              claimedFor={missionClaimed}
+              onClaim={handleClaimMission}
+              claimingId={claiming}
+            />
+          )}
+
+          {/* Tier ladder — vertical spine with reward art */}
+          <TierLadder
+            tiers={tiers}
+            currentTier={currentTier}
+            isPremium={isPremium}
+            claimed={claimedSet()}
+            onClaim={handleClaim}
+            claiming={claiming}
+          />
         </div>
       </div>
     </div>
   );
 }
 
-function RewardCell({
-  row, reached, claimed, locked, onClaim, claiming,
+// ─── Tier ladder ──────────────────────────────────────────────────
+
+const TIER_RANK_LABEL: Record<PassRow['rank'], string> = {
+  minor:    'Tier',
+  medium:   'Milestone',
+  major:    'Major',
+  capstone: 'Capstone',
+};
+
+function TierLadder({
+  tiers,
+  currentTier,
+  isPremium,
+  claimed,
+  onClaim,
+  claiming,
 }: {
-  row: PassRow; reached: boolean; claimed: boolean; locked: boolean; onClaim: () => void; claiming: boolean;
+  tiers: { free: PassRow; premium: PassRow }[];
+  currentTier: number;
+  isPremium: boolean;
+  claimed: Set<string>;
+  onClaim: (row: PassRow) => void;
+  claiming: string | null;
 }) {
-  const isPremium = row.track === 'premium';
+  return (
+    <section style={{ marginTop: 28 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        <div className="font-display" style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500 }}>
+          The Ladder
+        </div>
+        <div
+          className="font-mono tabular"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.14em' }}
+        >
+          {currentTier} / {SEASON_PASS_TIERS}
+        </div>
+      </div>
+
+      {/* Column legend */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 44px 1fr',
+          gap: 8,
+          padding: '4px 0 8px',
+          borderBottom: '1px solid var(--b-rule)',
+          marginBottom: 4,
+        }}
+      >
+        <div className="spread" style={{ fontSize: 8, color: 'var(--b-ink-60)' }}>
+          Free Track
+        </div>
+        <div className="spread" style={{ fontSize: 8, color: 'var(--b-ink-40)', textAlign: 'center' }}>
+          Tier
+        </div>
+        <div
+          className="spread"
+          style={{ fontSize: 8, color: '#fbbf24', textAlign: 'right', letterSpacing: '0.22em' }}
+        >
+          Premium ★
+        </div>
+      </div>
+
+      {tiers.map(({ free, premium }) => {
+        const reached = free.tier <= currentTier;
+        const isMilestone = free.tier === 60 || free.tier === 50 || free.tier === 40 || free.tier === 30 || free.tier === 20 || free.tier === 10;
+        const isCapstone = free.rank === 'capstone';
+        const freeKey = `${free.tier}-free`;
+        const premKey = `${free.tier}-premium`;
+        const freeClaimed = claimed.has(freeKey);
+        const premClaimedFlag = claimed.has(premKey);
+        return (
+          <TierRow
+            key={free.tier}
+            free={free}
+            premium={premium}
+            reached={reached}
+            isMilestone={isMilestone}
+            isCapstone={isCapstone}
+            freeClaimed={freeClaimed}
+            premClaimedFlag={premClaimedFlag}
+            premiumLocked={!isPremium}
+            onClaimFree={() => onClaim(free)}
+            onClaimPremium={() => onClaim(premium)}
+            claimingFree={claiming === freeKey}
+            claimingPremium={claiming === premKey}
+          />
+        );
+      })}
+    </section>
+  );
+}
+
+function TierRow({
+  free,
+  premium,
+  reached,
+  isMilestone,
+  isCapstone,
+  freeClaimed,
+  premClaimedFlag,
+  premiumLocked,
+  onClaimFree,
+  onClaimPremium,
+  claimingFree,
+  claimingPremium,
+}: {
+  free: PassRow;
+  premium: PassRow;
+  reached: boolean;
+  isMilestone: boolean;
+  isCapstone: boolean;
+  freeClaimed: boolean;
+  premClaimedFlag: boolean;
+  premiumLocked: boolean;
+  onClaimFree: () => void;
+  onClaimPremium: () => void;
+  claimingFree: boolean;
+  claimingPremium: boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 44px 1fr',
+        gap: 8,
+        padding: '10px 0',
+        position: 'relative',
+        borderBottom: isMilestone ? '1px solid var(--b-ink)' : '1px solid var(--b-rule)',
+        opacity: reached ? 1 : 0.65,
+      }}
+    >
+      {/* Spine — vertical accent line up the center connecting tiers */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: 'calc(50% - 0.5px)',
+          top: 0,
+          bottom: 0,
+          width: 1,
+          background: reached ? 'var(--b-accent)' : 'var(--b-rule)',
+        }}
+      />
+
+      <RewardCell
+        row={free}
+        side="free"
+        reached={reached}
+        claimed={freeClaimed}
+        locked={false}
+        onClaim={onClaimFree}
+        claiming={claimingFree}
+      />
+
+      {/* Tier marker */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <div
+          className="font-display tabular"
+          style={{
+            fontSize: isCapstone ? 28 : isMilestone ? 22 : 15,
+            fontStyle: isMilestone ? 'italic' : 'normal',
+            fontWeight: 500,
+            lineHeight: 1,
+            color: reached
+              ? (isMilestone ? 'var(--b-accent)' : 'var(--b-ink)')
+              : 'var(--b-ink-40)',
+            background: 'var(--b-paper)',
+            padding: isMilestone ? '6px 0' : '3px 0',
+            minWidth: isMilestone ? 36 : 26,
+            textAlign: 'center',
+          }}
+        >
+          {free.tier}
+        </div>
+        {isMilestone && (
+          <span
+            className="spread"
+            style={{
+              fontSize: 7.5,
+              color: reached ? 'var(--b-accent)' : 'var(--b-ink-40)',
+              marginTop: 2,
+              letterSpacing: '0.18em',
+              background: 'var(--b-paper)',
+              padding: '1px 4px',
+            }}
+          >
+            {isCapstone ? '★' : 'M'}
+          </span>
+        )}
+      </div>
+
+      <RewardCell
+        row={premium}
+        side="premium"
+        reached={reached}
+        claimed={premClaimedFlag}
+        locked={premiumLocked}
+        onClaim={onClaimPremium}
+        claiming={claimingPremium}
+      />
+    </div>
+  );
+}
+
+function RewardCell({
+  row, side, reached, claimed, locked, onClaim, claiming,
+}: {
+  row: PassRow;
+  side: 'free' | 'premium';
+  reached: boolean;
+  claimed: boolean;
+  locked: boolean;
+  onClaim: () => void;
+  claiming: boolean;
+}) {
+  const isPremium = side === 'premium';
+  const isCapstone = row.rank === 'capstone';
+  const isMajor = row.rank === 'major';
+
+  // Premium track gets a subtle gold-tinted background and a gold
+  // border so it reads as the upgraded path even before unlock.
+  // Free track stays on plain paper with a hairline ink border.
+  const baseBg = isPremium
+    ? 'linear-gradient(135deg, color-mix(in srgb, #fbbf24 8%, var(--b-paper)), color-mix(in srgb, #fbbf24 3%, var(--b-paper)))'
+    : 'var(--b-paper)';
+  const borderColor = isPremium ? '#d97706' : 'var(--b-ink)';
+  const claimedBg = isPremium
+    ? 'linear-gradient(135deg, color-mix(in srgb, #10b981 16%, var(--b-paper)), color-mix(in srgb, #fbbf24 6%, var(--b-paper)))'
+    : 'color-mix(in srgb, #10b981 10%, var(--b-paper))';
+
   return (
     <div
       style={{
         position: 'relative',
-        padding: '8px 10px',
-        border: '1px solid var(--b-rule)',
-        background: claimed
-          ? 'rgba(16,185,129,0.06)'
-          : reached
-            ? 'transparent'
-            : 'transparent',
-        opacity: locked ? 0.45 : 1,
+        padding: isCapstone ? '10px 12px' : '8px 10px',
+        border: `1px solid ${claimed ? '#10b981' : borderColor}`,
+        borderLeft: isPremium && !claimed
+          ? '3px solid #fbbf24'
+          : !isPremium && !claimed
+            ? '3px solid var(--b-ink)'
+            : `1px solid ${claimed ? '#10b981' : borderColor}`,
+        background: claimed ? claimedBg : baseBg,
+        opacity: locked ? 0.55 : 1,
+        textAlign: isPremium ? 'right' : 'left',
+        // Direction reverses the cell so the icon ends up on the inner
+        // side of the spine for premium, outer for free.
+        display: 'flex',
+        flexDirection: isPremium ? 'row-reverse' : 'row',
+        alignItems: 'flex-start',
+        gap: 10,
       }}
     >
       {locked && (
-        <div style={{ position: 'absolute', top: 4, right: 4, color: 'var(--b-ink-40)' }}>
-          <BLockGlyph size={10} />
-        </div>
-      )}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
-        <span
-          className="spread"
+        <div
           style={{
-            fontSize: 8,
-            color: isPremium ? 'var(--b-ink-40)' : 'var(--b-ink-60)',
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            color: '#fbbf24',
+            zIndex: 2,
           }}
         >
-          {row.rank === 'capstone' ? 'Capstone' : row.rank === 'major' ? 'Major' : row.rank === 'medium' ? 'Milestone' : 'Free'}
-        </span>
-        {claimed && (
+          <BLockGlyph size={11} />
+        </div>
+      )}
+
+      {/* Reward art — fragment shard, frame swatch, name effect chip,
+          or capstone crown depending on the reward type. */}
+      <RewardArt row={row} isPremium={isPremium} size={isCapstone ? 44 : isMajor ? 36 : 28} />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Eyebrow line — premium gets gold, free gets ink-60 */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: isPremium ? 'flex-end' : 'flex-start',
+            gap: 6,
+          }}
+        >
           <span
             className="spread"
-            style={{ fontSize: 8, color: '#10b981' }}
+            style={{
+              fontSize: 7.5,
+              color: isPremium ? '#fbbf24' : 'var(--b-ink-60)',
+              letterSpacing: '0.22em',
+            }}
           >
-            ✓
+            {isPremium ? '★ Premium' : TIER_RANK_LABEL[row.rank]}
           </span>
-        )}
-      </div>
-      <div
-        className="font-display tabular"
-        style={{
-          fontSize: 16,
-          fontStyle: 'italic',
-          fontWeight: 500,
-          marginTop: 2,
-          color: claimed ? 'var(--b-ink-60)' : 'var(--b-ink)',
-        }}
-      >
-        +{row.fragments}
-      </div>
-      {row.extra && (
+          {claimed && (
+            <span className="spread" style={{ fontSize: 7.5, color: '#10b981' }}>
+              ✓ Claimed
+            </span>
+          )}
+        </div>
+
+        {/* Reward main line: italic display fragments + small unit */}
         <div
-          className="font-body"
+          className="font-display tabular"
           style={{
-            fontSize: 10,
-            color: 'var(--b-ink-60)',
-            marginTop: 1,
-            lineHeight: 1.3,
+            fontSize: isCapstone ? 22 : isMajor ? 18 : 16,
+            fontStyle: 'italic',
+            fontWeight: 500,
+            lineHeight: 1.05,
+            marginTop: 2,
+            color: claimed
+              ? 'var(--b-ink-60)'
+              : isPremium
+                ? '#fbbf24'
+                : 'var(--b-ink)',
           }}
         >
-          {row.extra}
+          +{row.fragments}
+          <span
+            className="font-body"
+            style={{
+              fontSize: 9,
+              fontStyle: 'normal',
+              fontWeight: 600,
+              color: 'var(--b-ink-60)',
+              marginLeft: 4,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Frag
+          </span>
         </div>
-      )}
-      {reached && !claimed && !locked && (
-        <Button size="sm" className="w-full mt-2" loading={claiming} onClick={onClaim}>
-          Claim
-        </Button>
-      )}
+
+        {row.extra && (
+          <div
+            className="font-body"
+            style={{
+              fontSize: 10,
+              color: claimed ? 'var(--b-ink-40)' : 'var(--b-ink)',
+              marginTop: 3,
+              lineHeight: 1.35,
+              fontStyle: 'italic',
+            }}
+          >
+            {row.extra}
+          </div>
+        )}
+
+        {reached && !claimed && !locked && (
+          <Button
+            size="sm"
+            className="w-full mt-2"
+            loading={claiming}
+            onClick={onClaim}
+            variant={isPremium ? 'primary' : 'secondary'}
+          >
+            Claim
+          </Button>
+        )}
+      </div>
     </div>
+  );
+}
+
+/**
+ * Visual representation of a tier reward. Frame cosmetic → small
+ * gradient ring matching the frame's colors. Name effect cosmetic →
+ * a stamped name-effect chip. Pure fragments → shard SVG. Capstone
+ * gets a crowned shard. Premium track tints toward gold.
+ */
+function RewardArt({
+  row,
+  isPremium,
+  size,
+}: {
+  row: PassRow;
+  isPremium: boolean;
+  size: number;
+}) {
+  const isCapstone = row.rank === 'capstone';
+  const cosmetic = row.cosmetic;
+
+  // Frame cosmetic
+  if (cosmetic && cosmetic.startsWith('frame_')) {
+    const frame = getFrame(cosmetic);
+    const grad = frame.colors.length > 1
+      ? `conic-gradient(from 0deg, ${frame.colors.join(', ')}, ${frame.colors[0]})`
+      : frame.colors[0] || 'var(--b-ink)';
+    return (
+      <div
+        aria-hidden
+        style={{
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: grad,
+          flexShrink: 0,
+          padding: 3,
+          boxShadow: isCapstone
+            ? `0 0 18px ${frame.colors[0]}66, 0 0 6px ${frame.colors[1] || frame.colors[0]}88`
+            : 'none',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            background: 'var(--b-paper)',
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Name effect cosmetic — render a tiny name-effect chip
+  if (cosmetic && cosmetic.startsWith('name_')) {
+    const eff = getNameEffect(cosmetic);
+    const grad = eff.colors.length > 1
+      ? `linear-gradient(110deg, ${eff.colors.join(', ')})`
+      : eff.colors[0] || 'var(--b-ink)';
+    return (
+      <div
+        aria-hidden
+        style={{
+          width: size,
+          height: size,
+          flexShrink: 0,
+          border: '1px solid var(--b-ink)',
+          background: 'var(--b-paper)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-fraunces), Georgia, serif',
+            fontSize: Math.round(size * 0.45),
+            fontStyle: 'italic',
+            fontWeight: 600,
+            background: grad,
+            backgroundSize: '200% 100%',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent',
+            lineHeight: 1,
+          }}
+        >
+          Aa
+        </span>
+      </div>
+    );
+  }
+
+  // Pure fragment reward — shard SVG. Premium tints gold; capstone
+  // gets a faint accent halo.
+  const stroke = isPremium ? '#fbbf24' : isCapstone ? 'var(--b-accent)' : 'var(--b-ink)';
+  const fill = isPremium
+    ? 'color-mix(in srgb, #fbbf24 22%, transparent)'
+    : isCapstone
+      ? 'color-mix(in srgb, var(--b-accent) 18%, transparent)'
+      : 'transparent';
+  return (
+    <svg
+      aria-hidden
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      style={{
+        flexShrink: 0,
+        filter: isCapstone ? 'drop-shadow(0 0 6px rgba(220,38,38,0.45))' : 'none',
+      }}
+    >
+      <path
+        d="M16 3 L24 10 L20 28 L12 28 L8 10 Z"
+        stroke={stroke}
+        strokeWidth="1.4"
+        fill={fill}
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16 3 L16 28 M8 10 L24 10 M12 28 L24 10 M20 28 L8 10"
+        stroke={stroke}
+        strokeWidth="0.6"
+        fill="none"
+        opacity="0.55"
+      />
+    </svg>
   );
 }
 
