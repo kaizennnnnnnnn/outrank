@@ -4,7 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeed } from '@/hooks/useFeed';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Avatar } from '@/components/ui/Avatar';
+import { FramedAvatar } from '@/components/profile/FramedAvatar';
+import { NamePlate } from '@/components/profile/NamePlate';
 import { formatRelativeTime } from '@/lib/utils';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -512,20 +513,24 @@ function LeadDispatch({
         padding: '14px 0',
       }}
     >
-      <header style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Link href={`/profile/${item.actorUsername}`}>
-          <Avatar size="sm" src={cosm.avatarUrl ?? item.actorAvatar} />
+      <header style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <Link href={`/profile/${item.actorUsername}`} aria-label={`Open ${item.actorUsername}'s profile`}>
+          <FramedAvatar
+            src={cosm.avatarUrl ?? item.actorAvatar}
+            alt={item.actorUsername}
+            size="md"
+            frameId={cosm.frame}
+          />
         </Link>
-        <div style={{ flex: 1, lineHeight: 1.2 }}>
+        <div style={{ flex: 1, lineHeight: 1.2, minWidth: 0 }}>
           <Link
             href={`/profile/${item.actorUsername}`}
-            className="font-display"
-            style={{ fontSize: 13, fontWeight: 500, color: 'var(--b-ink)', textDecoration: 'none' }}
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}
           >
-            <em style={{ fontStyle: 'italic' }}>{item.actorUsername}</em>
+            <NamePlate name={item.actorUsername} effectId={cosm.name} size="sm" />
             <span
               className="font-body"
-              style={{ color: 'var(--b-ink-60)', fontStyle: 'normal', marginLeft: 6, fontSize: 10 }}
+              style={{ color: 'var(--b-ink-60)', fontStyle: 'normal', fontSize: 10 }}
             >
               {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
             </span>
@@ -719,7 +724,7 @@ function CompactDispatch({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '20px 24px 1fr auto',
+          gridTemplateColumns: '20px 38px 1fr auto',
           gap: 10,
           alignItems: 'flex-start',
         }}
@@ -727,8 +732,13 @@ function CompactDispatch({
         <span style={{ color: 'var(--b-ink)', marginTop: 1 }}>
           <Glyph size={18} />
         </span>
-        <Link href={`/profile/${item.actorUsername}`}>
-          <Avatar size="sm" src={cosm.avatarUrl ?? item.actorAvatar} />
+        <Link href={`/profile/${item.actorUsername}`} aria-label={`Open ${item.actorUsername}'s profile`}>
+          <FramedAvatar
+            src={cosm.avatarUrl ?? item.actorAvatar}
+            alt={item.actorUsername}
+            size="sm"
+            frameId={cosm.frame}
+          />
         </Link>
         <div
           className="font-body"
@@ -736,15 +746,9 @@ function CompactDispatch({
         >
           <Link
             href={`/profile/${item.actorUsername}`}
-            className="font-display"
-            style={{
-              fontStyle: 'italic',
-              fontWeight: 500,
-              color: 'var(--b-ink)',
-              textDecoration: 'none',
-            }}
+            style={{ textDecoration: 'none' }}
           >
-            {item.actorUsername}
+            <NamePlate name={item.actorUsername} effectId={cosm.name} size="sm" />
           </Link>{' '}
           {actionText(item)}
           {meta && (
