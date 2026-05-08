@@ -524,6 +524,39 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   will-change: background-position;
 }
 
+/* Onboarding figure animations — used by the FIG. 01-05 visuals on
+   phase 4 (insight cards + trajectory + forecast). Each figure has
+   path strokes that draw in, dots that pulse, or bars that rise.
+   Pure GPU (stroke-dashoffset / opacity / transform). */
+@keyframes fig-draw {
+  from { stroke-dashoffset: var(--len, 600); }
+  to   { stroke-dashoffset: 0; }
+}
+.fig-draw-in {
+  stroke-dasharray: var(--len, 600);
+  stroke-dashoffset: var(--len, 600);
+  animation: fig-draw 2.4s ease-out forwards;
+  animation-delay: 0.3s;
+}
+@keyframes fig-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.6); }
+}
+.fig-pulse {
+  animation: fig-pulse 2.6s ease-in-out infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes fig-bar-rise {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+.fig-bar-rise {
+  animation: fig-bar-rise 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  transform-origin: bottom;
+  transform-box: fill-box;
+}
+
 /* Mythic orb pulse — a contained CSS-filter animation on the orb
    canvas that breathes saturation and brightness slowly so the
    neon palette feels alive. Pure GPU (filter-only, no layout).
