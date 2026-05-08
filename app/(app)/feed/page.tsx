@@ -488,6 +488,26 @@ interface DispatchActionProps {
   onToggleComments: () => void;
 }
 
+/**
+ * Letter-grade for a published recap. Driven by distinct pillars
+ * logged (the headline metric) plus a small bonus for proof
+ * coverage. Pure: same input -> same grade. Returns letter + tone
+ * colour for the badge render.
+ */
+function gradeRecap(item: FeedItem): { letter: string; tone: string; tier: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F' } | null {
+  if (item.type !== 'recap') return null;
+  const pl = (item as unknown as { pillarsLogged?: number }).pillarsLogged ?? 0;
+  const proof = (item as unknown as { proofCount?: number }).proofCount ?? 0;
+  const logCount = (item as unknown as { logCount?: number }).logCount ?? 0;
+  const proofRate = logCount > 0 ? proof / logCount : 0;
+  if (pl >= 5 && proofRate >= 0.5) return { letter: 'A+', tier: 'A+', tone: 'var(--b-accent)' };
+  if (pl >= 5)                     return { letter: 'A',  tier: 'A',  tone: 'var(--b-accent)' };
+  if (pl >= 4)                     return { letter: 'B',  tier: 'B',  tone: 'var(--b-ink)' };
+  if (pl >= 3)                     return { letter: 'C',  tier: 'C',  tone: 'var(--b-ink)' };
+  if (pl >= 2)                     return { letter: 'D',  tier: 'D',  tone: 'var(--b-ink-60)' };
+  return { letter: 'F', tier: 'F', tone: 'var(--b-ink-60)' };
+}
+
 function LeadDispatch({
   item, cosm, reactions, currentUid, onReact, commentsOpen, onToggleComments,
 }: { item: FeedItem; cosm: ActorCosm } & DispatchActionProps) {
@@ -505,6 +525,7 @@ function LeadDispatch({
   const detailHref = item.type === 'recap' && recapDate ? `/recap/${item.actorId}/${recapDate}` : null;
   const proofCount = (item as unknown as { proofCount?: number }).proofCount ?? 0;
   const heroProofUrl = (item as unknown as { heroProofUrl?: string }).heroProofUrl;
+  const grade = gradeRecap(item);
 
   return (
     <article
@@ -542,6 +563,7 @@ function LeadDispatch({
             {eyebrow}
           </div>
         </div>
+        {grade && <RecapGradeBadge grade={grade} />}
       </header>
       <h2
         className="font-display"
@@ -621,21 +643,30 @@ function LeadDispatch({
           onClick={onToggleComments}
           className="font-body"
           style={{
-            background: 'transparent',
-            border: 'none',
+            background: commentsOpen ? 'var(--b-ink)' : 'transparent',
+            border: '1px solid var(--b-ink)',
             cursor: 'pointer',
-            padding: 0,
+            padding: '8px 14px',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 5,
-            fontSize: 11,
-            color: commentsOpen ? 'var(--b-accent)' : 'var(--b-ink-60)',
+            gap: 7,
+            fontSize: 12,
+            fontWeight: 600,
+            color: commentsOpen ? 'var(--b-paper)' : 'var(--b-ink)',
+            letterSpacing: '0.04em',
           }}
         >
-          <BCommentGlyph size={13} />
-          <span className="tabular">{commentCount}</span>
-          <span style={{ marginLeft: 2, fontSize: 10, letterSpacing: '0.04em' }}>
-            {commentsOpen ? 'hide' : 'comment'}
+          <BCommentGlyph size={15} />
+          <span className="tabular" style={{ fontWeight: 700 }}>{commentCount}</span>
+          <span
+            className="spread"
+            style={{
+              fontSize: 9,
+              letterSpacing: '0.16em',
+              color: commentsOpen ? 'var(--b-paper)' : 'var(--b-ink-60)',
+            }}
+          >
+            {commentsOpen ? 'Hide' : 'Comment'}
           </span>
         </button>
       </div>
@@ -705,6 +736,7 @@ function CompactDispatch({
   item, cosm, reactions, currentUid, onReact, commentsOpen, onToggleComments,
 }: { item: FeedItem; cosm: ActorCosm } & DispatchActionProps) {
   const Glyph = glyphForType(item);
+  const grade = gradeRecap(item);
   const meta  = item.type === 'levelup'
     ? `Lv. ${(item as unknown as { newLevel?: number }).newLevel ?? '?'}`
     : item.type === 'duel_win'
@@ -765,12 +797,31 @@ function CompactDispatch({
             </div>
           )}
         </div>
-        <span
-          className="font-mono tabular"
-          style={{ fontSize: 10, color: 'var(--b-ink-40)', marginTop: 2 }}
-        >
-          {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, marginTop: 2 }}>
+          {grade && (
+            <span
+              className="font-display tabular"
+              aria-label={`Recap grade ${grade.letter}`}
+              style={{
+                fontSize: 12,
+                fontStyle: 'italic',
+                fontWeight: 600,
+                color: grade.tone,
+                border: `1px solid ${grade.tone}`,
+                padding: '0 5px',
+                lineHeight: 1.3,
+              }}
+            >
+              {grade.letter}
+            </span>
+          )}
+          <span
+            className="font-mono tabular"
+            style={{ fontSize: 10, color: 'var(--b-ink-40)' }}
+          >
+            {item.createdAt?.toDate ? formatRelativeTime(item.createdAt.toDate()) : ''}
+          </span>
+        </div>
       </div>
 
       {/* View day link — recap items only */}
@@ -819,19 +870,25 @@ function CompactDispatch({
           onClick={onToggleComments}
           className="font-body"
           style={{
-            background: 'transparent',
-            border: 'none',
+            background: commentsOpen ? 'var(--b-ink)' : 'transparent',
+            border: '1px solid var(--b-rule)',
             cursor: 'pointer',
-            padding: 0,
+            padding: '5px 10px',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 4,
-            fontSize: 10,
-            color: commentsOpen ? 'var(--b-accent)' : 'var(--b-ink-60)',
+            gap: 5,
+            fontSize: 11,
+            color: commentsOpen ? 'var(--b-paper)' : 'var(--b-ink)',
           }}
         >
-          <BCommentGlyph size={11} />
-          <span className="tabular">{commentCount}</span>
+          <BCommentGlyph size={13} />
+          <span className="tabular" style={{ fontWeight: 600 }}>{commentCount}</span>
+          <span
+            className="spread"
+            style={{ fontSize: 8, letterSpacing: '0.16em', color: commentsOpen ? 'var(--b-paper)' : 'var(--b-ink-60)' }}
+          >
+            {commentsOpen ? 'Hide' : 'Reply'}
+          </span>
         </button>
       </div>
 
@@ -841,6 +898,62 @@ function CompactDispatch({
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * Big italic Fraunces letter grade for the lead recap card. Sits in
+ * the top-right of the header. Hairline-rimmed square in the
+ * grade's tone colour.
+ */
+function RecapGradeBadge({
+  grade,
+}: {
+  grade: { letter: string; tone: string; tier: 'A+' | 'A' | 'B' | 'C' | 'D' | 'F' };
+}) {
+  const isTopGrade = grade.tier === 'A+' || grade.tier === 'A';
+  return (
+    <div
+      aria-label={`Recap grade ${grade.letter}`}
+      style={{
+        flexShrink: 0,
+        width: 56,
+        height: 56,
+        border: `1px solid ${grade.tone}`,
+        borderTop: `2px solid ${grade.tone}`,
+        background: 'var(--b-paper)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        boxShadow: isTopGrade ? `0 0 0 1px ${grade.tone}33` : undefined,
+      }}
+    >
+      <span
+        className="spread"
+        style={{
+          fontSize: 7,
+          color: grade.tone,
+          letterSpacing: '0.18em',
+          marginBottom: 1,
+        }}
+      >
+        Grade
+      </span>
+      <span
+        className="font-display tabular"
+        style={{
+          fontSize: grade.letter.length === 2 ? 24 : 30,
+          fontStyle: 'italic',
+          fontWeight: 600,
+          lineHeight: 1,
+          color: grade.tone,
+        }}
+      >
+        {grade.letter}
+      </span>
+    </div>
   );
 }
 
