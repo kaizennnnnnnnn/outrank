@@ -77,10 +77,19 @@ export default function OrbPage() {
   // The three useEffect hooks above already sync localTier /
   // localCharges / localAwakening from the Firestore snapshot
   // (per CLAUDE.md "evolve once, lose two charges" gotcha).
+  // SoulOrb's evolve animation runs 3.0s and calls back in here
+  // (the onEvolve hook) at the 2.5s mark — i.e. AFTER the spin and
+  // mid-white-flash. We need ~700ms more for the orb to fade back
+  // in before the loot modal pops, otherwise the modal lands mid-
+  // animation and the "proper evolution" effect is wasted. Same
+  // budget covers the page's bottom EVOLVE button path (no orb
+  // spin there yet, but the small delay reads as a polite beat).
   const handleEvolve = async () => {
     if (localCharges <= 0) return;
     const ownedCosmetics = (userAny as unknown as { ownedCosmetics?: string[] } | null)?.ownedCosmetics ?? [];
     const loot = rollOrbLoot(ownedCosmetics);
+    const startedAt = Date.now();
+    const POST_WRITE_DELAY_MS = 700;
     try {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment, arrayUnion } = await import('firebase/firestore');
@@ -103,7 +112,9 @@ export default function OrbPage() {
         updates.ownedCosmetics = arrayUnion(loot.cosmeticId);
       }
       await updateDocument('users', user.uid, updates);
-      setLootReveal(loot);
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, POST_WRITE_DELAY_MS - elapsed);
+      window.setTimeout(() => setLootReveal(loot), remaining);
     } catch {
       addToast({ type: 'error', message: 'Evolution failed — try again' });
     }

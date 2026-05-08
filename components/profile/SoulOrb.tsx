@@ -98,20 +98,21 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     setEvolving(true);
     evolveRef.current = true;
     evolveTimeRef.current = 0;
-    // Phase 1: animation plays (0-2.2s)
-    // Phase 2: fade out (2.2s)
-    setTimeout(() => setFadeOut(true), 2200);
-    // Phase 3: switch tier while faded (2.7s)
+    // Phase 1 (0-2.0s): wobble-up + spin builds with flash bloom
+    //                   growing in the background
+    // Phase 2 (2.0-2.4s): canvas fades to white as the bloom peaks
+    setTimeout(() => setFadeOut(true), 2000);
+    // Phase 3 (2.5s): tier swap behind the white peak — invisible
     setTimeout(() => {
       onEvolve?.();
-    }, 2700);
-    // Phase 4: fade back in (3s)
+    }, 2500);
+    // Phase 4 (3.0s): canvas fades back in at scale 1
     setTimeout(() => {
       setFadeOut(false);
       setEvolving(false);
       evolveRef.current = false;
       evolveTimeRef.current = 0;
-    }, 3200);
+    }, 3000);
   }, [canEvolve, onEvolve]);
 
   useEffect(() => {
@@ -699,6 +700,45 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
             }}
           />
         </div>
+
+        {/* Evolve bloom — radial white flash that grows from the orb
+            center, peaks at the tier-swap moment, then fades. The
+            white peak is what hides the tier swap from the eye. */}
+        {evolving && (
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-flash"
+            style={{
+              background:
+                'radial-gradient(circle, #ffffff 0%, #fef3c7 22%, #fde68a 45%, rgba(253,224,71,0.4) 65%, transparent 85%)',
+              mixBlendMode: 'screen',
+              transformOrigin: 'center',
+            }}
+          />
+        )}
+
+        {/* Evolve shockwaves — three staggered rings expanding at the
+            apex of the white bloom. Pure border + transform; no box
+            shadow animation so the compositor stays happy. */}
+        {evolving && (
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-shockwave"
+              style={{ border: '3px solid #ffffff', animationDelay: '1.5s' }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-shockwave"
+              style={{ border: '2px solid #fde68a', animationDelay: '1.8s' }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-shockwave"
+              style={{ border: '2px solid #f9a8d4', animationDelay: '2.1s' }}
+            />
+          </>
+        )}
 
         {/* Ascension flash overlay — bloom of white/gold at collapse */}
         {ascending && (

@@ -73,6 +73,8 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
   const hotColor = frame.colors[frame.colors.length - 1];
   const accentColor = frame.colors[0];
 
+  const isMythic = frame.rarity === 'mythic';
+
   return (
     <div
       className={cn(
@@ -130,6 +132,20 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
           hotColor={hotColor}
           outer={outer}
           pad={pad}
+          size={size}
+        />
+      )}
+
+      {/* Mythic-only ritual overlay — runic glyph orbit, energy arcs,
+          chromatic rim split, sparkle drift. Layered ON TOP so each
+          mythic frame still inherits its base style identity, but
+          carries unmistakable extra ceremony. */}
+      {isMythic && (
+        <MythicTreatment
+          colors={frame.colors}
+          accentColor={accentColor}
+          hotColor={hotColor}
+          outer={outer}
           size={size}
         />
       )}
@@ -551,6 +567,186 @@ function GoldWreathOverlay({ hotColor, accentColor, pad }: { hotColor: string; a
         mixBlendMode: 'screen',
       }}
     />
+  );
+}
+
+/** Mythic ritual overlay. Layered above every base style for
+ *  rarity === 'mythic'. Five distinct, simultaneous effects:
+ *
+ *    1. Outer rune ring — 8 small SVG diamond glyphs orbiting just
+ *       outside the rim on a slow CW rotation. Each glyph counter-
+ *       rotates in place so it always faces "up" relative to its
+ *       orbit.
+ *    2. Energy arcs — 3 short luminous arcs at the rim that flicker
+ *       in/out at staggered intervals (2.6s cycle, ~0.8s on, ~1.8s off).
+ *    3. Chromatic rim split — two thin colored circles (cyan + magenta)
+ *       offset ±1.5px from the ring on opposing rotations to fake a
+ *       prismatic refraction.
+ *    4. Sparkle drift — 6 small sparkle dots orbiting at 1.5x the
+ *       outer radius, each twinkling on its own phase.
+ *    5. Inner halo pulse — soft radial glow inside the ring that
+ *       breathes outward on a slow cadence.
+ *
+ *  All transforms / opacity / mask only. No filter:hue-rotate, no
+ *  animated box-shadow — those killed shop FPS in the prior pass. */
+function MythicTreatment({
+  colors,
+  accentColor,
+  hotColor,
+  outer,
+  size,
+}: {
+  colors: string[];
+  accentColor: string;
+  hotColor: string;
+  outer: number;
+  size: 'sm' | 'md' | 'lg' | 'xl';
+}) {
+  const tertiary = colors[Math.floor(colors.length / 2)] || hotColor;
+  const cyanish    = '#00ffe1';
+  const magentaish = '#ff00d4';
+
+  // 8 runes evenly placed around the rim, just outside it.
+  const runeCount = 8;
+  const orbitRadius = outer / 2 + Math.max(4, outer * 0.06);
+  const runeSize = size === 'sm' ? 4 : size === 'xl' ? 9 : 6;
+
+  // 6 sparkles drift further out at 1.5x radius.
+  const sparkleCount = 6;
+  const sparkleRadius = outer / 2 + Math.max(8, outer * 0.18);
+  const sparkleSize = size === 'sm' ? 1.8 : size === 'xl' ? 3.5 : 2.6;
+
+  return (
+    <>
+      {/* Inner halo pulse — sits behind everything, breathes outward */}
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-inner-pulse"
+        style={{
+          inset: '12%',
+          background: `radial-gradient(circle, ${accentColor}88 0%, ${hotColor}33 50%, transparent 78%)`,
+          mixBlendMode: 'screen',
+          zIndex: 1,
+        }}
+      />
+
+      {/* Chromatic aberration — cyan ring offset right + slow CW spin */}
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-rim-cyan"
+        style={{
+          inset: -3,
+          border: `1px solid ${cyanish}`,
+          opacity: 0.5,
+          mixBlendMode: 'screen',
+        }}
+      />
+      {/* Chromatic aberration — magenta ring offset left + CCW spin */}
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-rim-magenta"
+        style={{
+          inset: -3,
+          border: `1px solid ${magentaish}`,
+          opacity: 0.5,
+          mixBlendMode: 'screen',
+        }}
+      />
+
+      {/* Energy arcs at the rim — three short luminous arcs that
+          flicker in/out. Each arc is a thin curved div positioned
+          at a cardinal point, masked to a quarter-arc. */}
+      {[0, 120, 240].map((deg, i) => {
+        const arcColor = colors[i % colors.length] || accentColor;
+        return (
+          <div
+            key={`arc-${deg}`}
+            aria-hidden
+            className="absolute pointer-events-none animate-mythic-arc-flicker"
+            style={{
+              inset: -2,
+              transform: `rotate(${deg}deg)`,
+              animationDelay: `${i * 0.85}s`,
+              borderRadius: '50%',
+              border: `2px solid transparent`,
+              borderTopColor: arcColor,
+              borderRightColor: arcColor,
+              boxShadow: `0 0 8px ${arcColor}aa`,
+              mixBlendMode: 'screen',
+            }}
+          />
+        );
+      })}
+
+      {/* Outer rune ring — diamond glyphs orbiting just outside rim */}
+      <div
+        aria-hidden
+        className="absolute pointer-events-none animate-mythic-rune-orbit"
+        style={{
+          inset: 0,
+          width: outer,
+          height: outer,
+        }}
+      >
+        {Array.from({ length: runeCount }).map((_, i) => {
+          const angle = (i / runeCount) * Math.PI * 2;
+          const cx = Math.cos(angle) * orbitRadius + outer / 2;
+          const cy = Math.sin(angle) * orbitRadius + outer / 2;
+          const c = colors[i % colors.length];
+          return (
+            <div
+              key={`rune-${i}`}
+              className="absolute animate-mythic-rune-counter"
+              style={{
+                left: cx - runeSize / 2,
+                top: cy - runeSize / 2,
+                width: runeSize,
+                height: runeSize,
+                background: c,
+                transform: 'rotate(45deg)',
+                boxShadow: `0 0 5px ${c}`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Sparkle drift — small dots orbiting further out, each
+          twinkling individually on top of the orbit rotation. */}
+      <div
+        aria-hidden
+        className="absolute pointer-events-none animate-mythic-spark-orbit"
+        style={{
+          inset: 0,
+          width: outer,
+          height: outer,
+        }}
+      >
+        {Array.from({ length: sparkleCount }).map((_, i) => {
+          // Golden-angle distribution so the dots don't line up with
+          // the runes; deterministic so SSR matches client.
+          const angle = (i * 137.508 * Math.PI) / 180;
+          const cx = Math.cos(angle) * sparkleRadius + outer / 2;
+          const cy = Math.sin(angle) * sparkleRadius + outer / 2;
+          const c = i % 3 === 0 ? '#ffffff' : (colors[i % colors.length] || tertiary);
+          return (
+            <div
+              key={`spark-${i}`}
+              className="absolute rounded-full animate-mythic-spark-twinkle"
+              style={{
+                left: cx - sparkleSize / 2,
+                top: cy - sparkleSize / 2,
+                width: sparkleSize,
+                height: sparkleSize,
+                background: c,
+                boxShadow: `0 0 6px ${c}`,
+                animationDelay: `${(i / sparkleCount) * 1.8}s`,
+              }}
+            />
+          );
+        })}
+      </div>
+    </>
   );
 }
 

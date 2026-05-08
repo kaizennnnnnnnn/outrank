@@ -568,20 +568,50 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .orb-mythic-pulse { animation: orb-mythic-pulse 3.4s ease-in-out infinite; }
 
-/* Orb evolve spin — old slot-machine wind-up: starts fast, slows
-   down with ease-out cubic, total ~2.2s, two full revolutions plus
-   a touch of overshoot. Runs on the canvas wrapper (not the canvas
-   itself) so it composes cleanly with the per-frame canvas spin
-   that already happens in the renderer's evolve phase. */
+/* Orb evolve spin — proper Pokemon-style evolution: 1) wobble-up
+   with growing scale (anticipation), 2) hard rapid spin (windup),
+   3) brief overshoot, 4) settle. Total 3.0s; the canvas behind it
+   fades to white at the apex via .animate-orb-evolve-flash so the
+   tier-swap is masked by the bloom. Runs on the canvas wrapper. */
 @keyframes orb-evolving-spin {
-  0%   { transform: rotate(0deg)   scale(1); }
-  60%  { transform: rotate(620deg) scale(1.04); }
-  85%  { transform: rotate(740deg) scale(1.0); }
-  100% { transform: rotate(720deg) scale(1.0); }
+  0%   { transform: rotate(0deg)    scale(1); }
+  18%  { transform: rotate(35deg)   scale(1.04); }
+  35%  { transform: rotate(-25deg)  scale(1.07); }
+  55%  { transform: rotate(540deg)  scale(1.14); }
+  78%  { transform: rotate(1100deg) scale(1.10); }
+  90%  { transform: rotate(1090deg) scale(1.0); }
+  100% { transform: rotate(1080deg) scale(1.0); }
 }
 .orb-evolving-spin {
-  animation: orb-evolving-spin 2.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: orb-evolving-spin 3s cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
+}
+
+/* Evolve flash bloom — radial white gradient that grows from the
+   orb center, peaks at ~75% (the moment the canvas fades out and
+   the tier swaps), then fades. Sits over the orb on its own div. */
+@keyframes orb-evolve-flash {
+  0%   { opacity: 0;   transform: scale(0.4); }
+  35%  { opacity: 0.4; transform: scale(0.7); }
+  70%  { opacity: 1;   transform: scale(1.4); }
+  85%  { opacity: 0.7; transform: scale(1.6); }
+  100% { opacity: 0;   transform: scale(1.7); }
+}
+.animate-orb-evolve-flash {
+  animation: orb-evolve-flash 3s cubic-bezier(0.4, 0, 0.6, 1);
+  will-change: opacity, transform;
+}
+
+/* Evolve shockwave — three staggered rings expanding outward at the
+   moment of the white flash. Each ring shrinks border + fades. */
+@keyframes orb-evolve-shockwave {
+  0%   { opacity: 0;    transform: scale(0.7); border-width: 3px; }
+  20%  { opacity: 0.85; }
+  100% { opacity: 0;    transform: scale(2.2); border-width: 1px; }
+}
+.animate-orb-evolve-shockwave {
+  animation: orb-evolve-shockwave 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
 /* Loot reveal entrance — slides up + fades in with a subtle scale.
@@ -1813,4 +1843,87 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .animate-notif-dot-pulse {
   animation: notif-dot-pulse 1.4s ease-in-out infinite;
+}
+
+/* ─── Mythic frame treatment ───────────────────────────────────────
+   Mythic rarity gets layered effects ON TOP of the base frame.style
+   so each mythic frame still reads as ring/halo/wreath, but with a
+   distinct ritual quality legendary doesn't have:
+
+     - mythic-rune-orbit:   8 small SVG glyph runes orbit slowly OUTSIDE the rim
+     - mythic-rune-counter: each rune counter-rotates in place so glyphs face out
+     - mythic-arc-flicker:  short energy arcs at the rim flicker in/out
+     - mythic-spark-orbit:  faint sparkle dots drift around at 1.5x radius
+     - mythic-spark-twinkle:each sparkle pulses size + opacity
+     - mythic-inner-pulse:  inner halo breathes from center outward
+     - mythic-rim-cyan / -magenta: chromatic-aberration thin colored borders
+       offset on opposing rotations to fake a refraction shimmer
+   All transform / opacity / mask only — GPU-friendly. */
+
+@keyframes mythic-rune-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-mythic-rune-orbit { animation: mythic-rune-orbit 16s linear infinite; will-change: transform; }
+
+@keyframes mythic-rune-counter {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+.animate-mythic-rune-counter { animation: mythic-rune-counter 16s linear infinite; will-change: transform; }
+
+@keyframes mythic-arc-flicker {
+  0%, 12%   { opacity: 0; transform: scale(0.85); }
+  18%       { opacity: 1; transform: scale(1.05); }
+  28%       { opacity: 0.7; }
+  38%, 100% { opacity: 0; transform: scale(0.95); }
+}
+.animate-mythic-arc-flicker {
+  animation: mythic-arc-flicker 2.6s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes mythic-spark-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-mythic-spark-orbit {
+  animation: mythic-spark-orbit 9s linear infinite;
+  will-change: transform;
+}
+
+@keyframes mythic-spark-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.6); }
+  50%      { opacity: 1;   transform: scale(1.1); }
+}
+.animate-mythic-spark-twinkle {
+  animation: mythic-spark-twinkle 1.8s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes mythic-inner-pulse {
+  0%, 100% { opacity: 0.18; transform: scale(0.85); }
+  50%      { opacity: 0.45; transform: scale(1.08); }
+}
+.animate-mythic-inner-pulse {
+  animation: mythic-inner-pulse 3.2s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+@keyframes mythic-rim-cyan-spin {
+  from { transform: rotate(0deg)    translateX(1.5px); }
+  to   { transform: rotate(360deg)  translateX(1.5px); }
+}
+.animate-mythic-rim-cyan {
+  animation: mythic-rim-cyan-spin 7s linear infinite;
+  will-change: transform;
+}
+
+@keyframes mythic-rim-magenta-spin {
+  from { transform: rotate(0deg)    translateX(-1.5px); }
+  to   { transform: rotate(-360deg) translateX(-1.5px); }
+}
+.animate-mythic-rim-magenta {
+  animation: mythic-rim-magenta-spin 9s linear infinite;
+  will-change: transform;
 }
