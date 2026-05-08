@@ -98,20 +98,20 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     setEvolving(true);
     evolveRef.current = true;
     evolveTimeRef.current = 0;
-    // Phase 1: animation plays (0-2.2s)
-    // Phase 2: fade out (2.2s)
-    setTimeout(() => setFadeOut(true), 2200);
-    // Phase 3: switch tier while faded (2.7s)
+    // Phase 1: spin runs visibly (0-2500ms via .orb-evolving-spin)
+    // Phase 2: fade out (2500ms)
+    setTimeout(() => setFadeOut(true), 2500);
+    // Phase 3: tier swap while faded (2900ms)
     setTimeout(() => {
       onEvolve?.();
-    }, 2700);
-    // Phase 4: fade back in (3s)
+    }, 2900);
+    // Phase 4: fade back in (3300ms total)
     setTimeout(() => {
       setFadeOut(false);
       setEvolving(false);
       evolveRef.current = false;
       evolveTimeRef.current = 0;
-    }, 3200);
+    }, 3300);
   }, [canEvolve, onEvolve]);
 
   useEffect(() => {

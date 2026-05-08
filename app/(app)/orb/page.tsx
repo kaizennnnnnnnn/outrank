@@ -81,6 +81,12 @@ export default function OrbPage() {
     if (localCharges <= 0) return;
     const ownedCosmetics = (userAny as unknown as { ownedCosmetics?: string[] } | null)?.ownedCosmetics ?? [];
     const loot = rollOrbLoot(ownedCosmetics);
+    // Time the whole sequence so the reward modal NEVER appears
+    // mid-spin. The SoulOrb's evolve animation runs ~3200ms (spin
+    // 0-2500ms, fade-out 2500-3000ms, fade-in 3000-3200ms). We hold
+    // the modal until the orb has fully respawned.
+    const startedAt = Date.now();
+    const TOTAL_SEQUENCE_MS = 3400;
     try {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment, arrayUnion } = await import('firebase/firestore');
@@ -103,7 +109,9 @@ export default function OrbPage() {
         updates.ownedCosmetics = arrayUnion(loot.cosmeticId);
       }
       await updateDocument('users', user.uid, updates);
-      setLootReveal(loot);
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, TOTAL_SEQUENCE_MS - elapsed);
+      window.setTimeout(() => setLootReveal(loot), remaining);
     } catch {
       addToast({ type: 'error', message: 'Evolution failed — try again' });
     }

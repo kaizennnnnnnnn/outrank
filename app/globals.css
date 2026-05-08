@@ -568,19 +568,21 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .orb-mythic-pulse { animation: orb-mythic-pulse 3.4s ease-in-out infinite; }
 
-/* Orb evolve spin — old slot-machine wind-up: starts fast, slows
-   down with ease-out cubic, total ~2.2s, two full revolutions plus
-   a touch of overshoot. Runs on the canvas wrapper (not the canvas
-   itself) so it composes cleanly with the per-frame canvas spin
-   that already happens in the renderer's evolve phase. */
+/* Orb evolve spin — three full revolutions over 2.5s with a tight
+   final overshoot + settle. Easing: aggressive ease-out so the
+   first revolution is fast and the last decelerates visibly into
+   the new tier, like a slot reel locking into its result. The
+   transform-only animation runs on the canvas wrapper so it
+   composes cleanly with the per-frame canvas spin. */
 @keyframes orb-evolving-spin {
-  0%   { transform: rotate(0deg)   scale(1); }
-  60%  { transform: rotate(620deg) scale(1.04); }
-  85%  { transform: rotate(740deg) scale(1.0); }
-  100% { transform: rotate(720deg) scale(1.0); }
+  0%   { transform: rotate(0deg)    scale(1); }
+  35%  { transform: rotate(720deg)  scale(1.03); }
+  70%  { transform: rotate(1040deg) scale(1.06); }
+  88%  { transform: rotate(1100deg) scale(1.02); }
+  100% { transform: rotate(1080deg) scale(1.0); }
 }
 .orb-evolving-spin {
-  animation: orb-evolving-spin 2.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: orb-evolving-spin 2.5s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
 }
 
@@ -1361,6 +1363,52 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .animate-frame-ember-twinkle {
   animation: frame-ember-twinkle 1.6s ease-in-out infinite;
+}
+
+/* ─── Mythic-only halo overlay ──────────────────────────────────
+   Layered on top of any base style (ring/double/conic/halo/wreath)
+   when the frame is mythic, so mythic frames read distinct from
+   legendary even when both share the same base style.
+
+   Three components rendered in MythicHalo:
+   - chromatic-aberration ring : two thin offset borders (red + cyan)
+     1.5px on either side of the frame edge, rotating opposite
+     directions — mimics a prism/lens diffraction without animating
+     blur (which is paint-heavy).
+   - wide outer star trail : 4 sparkle dots orbiting at 1.6x the
+     frame radius, individually twinkling on a stagger.
+   - subtle cosmic-dust wash : a soft conic-gradient halo behind
+     everything, rotating at a different speed to break sync.
+*/
+@keyframes mythic-aberration-cw {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+@keyframes mythic-aberration-ccw {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(-360deg); }
+}
+.mythic-aberration-cw {
+  animation: mythic-aberration-cw 7s linear infinite;
+}
+.mythic-aberration-ccw {
+  animation: mythic-aberration-ccw 9s linear infinite;
+}
+
+@keyframes mythic-cosmic-wash-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.mythic-cosmic-wash {
+  animation: mythic-cosmic-wash-spin 14s linear infinite;
+}
+
+@keyframes mythic-trail-orbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.mythic-trail-orbit {
+  animation: mythic-trail-orbit 10s linear infinite;
 }
 
 /* ─── Themed wreath motions ─────────────────────────────────────
