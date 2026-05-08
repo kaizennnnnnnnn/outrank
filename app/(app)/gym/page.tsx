@@ -11,6 +11,8 @@ import { getTodaysDay, clearActiveProgram } from '@/lib/gym';
 import { useUIStore } from '@/store/uiStore';
 import { useState } from 'react';
 import { Masthead } from '@/components/editorial/Masthead';
+import type { Program } from '@/types/gym';
+import { getExercise } from '@/constants/exercises';
 
 export default function GymPage() {
   const { user } = useAuth();
@@ -108,6 +110,13 @@ export default function GymPage() {
           <div style={{ marginTop: 18 }}>
             <TodayWorkoutCard program={today.program} day={today.day} dayIndex={today.dayIndex} />
           </div>
+
+          {/* Full routine — every day in the cycle, today highlighted */}
+          <RoutineCycleView
+            program={today.program}
+            currentDayIndex={today.dayIndex}
+            isCustom={state.activeProgramId === 'custom'}
+          />
 
           {/* History */}
           <section style={{ marginTop: 24 }}>
@@ -223,5 +232,184 @@ export default function GymPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Full routine cycle — every day in the active program laid out as
+ * an editorial scannable list. Today's day is marked with an accent
+ * eyebrow + filled-in left rule. Custom programs get an Edit link
+ * to /gym/custom; static programs offer "Build your own" instead.
+ */
+function RoutineCycleView({
+  program,
+  currentDayIndex,
+  isCustom,
+}: {
+  program: Program;
+  currentDayIndex: number;
+  isCustom: boolean;
+}) {
+  return (
+    <section style={{ marginTop: 24 }}>
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 8,
+          gap: 8,
+        }}
+      >
+        <div className="font-display" style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}>
+          Full routine
+        </div>
+        <Link
+          href="/gym/custom"
+          className="font-body"
+          style={{
+            fontSize: 9,
+            color: 'var(--b-accent)',
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
+            fontWeight: 700,
+          }}
+        >
+          {isCustom ? 'Edit routine →' : 'Build your own →'}
+        </Link>
+      </div>
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink-60)',
+          margin: '0 0 12px',
+          lineHeight: 1.5,
+        }}
+      >
+        {program.daysPerWeek}-day cycle. Days advance in order — skipping a calendar day doesn&rsquo;t skip a workout.
+      </p>
+
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        {program.schedule.map((day, idx) => {
+          const isToday = idx === currentDayIndex;
+          return (
+            <li
+              key={idx}
+              style={{
+                position: 'relative',
+                padding: '12px 0 12px 14px',
+                borderBottom: '1px solid var(--b-rule)',
+                borderLeft: isToday ? '3px solid var(--b-accent)' : '3px solid transparent',
+                background: isToday ? 'color-mix(in srgb, var(--b-accent) 5%, var(--b-paper))' : 'transparent',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+                  <span
+                    className="font-mono tabular"
+                    style={{
+                      fontSize: 9,
+                      color: isToday ? 'var(--b-accent)' : 'var(--b-ink-40)',
+                      letterSpacing: '0.04em',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span
+                    className="font-display"
+                    style={{
+                      fontSize: 16,
+                      fontStyle: 'italic',
+                      fontWeight: 500,
+                      lineHeight: 1.15,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {day.name}
+                  </span>
+                </div>
+                {isToday && (
+                  <span
+                    className="spread"
+                    style={{
+                      fontSize: 9,
+                      color: 'var(--b-accent)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Today
+                  </span>
+                )}
+              </div>
+              {day.exercises.length > 0 ? (
+                <ul style={{ listStyle: 'none', margin: '6px 0 0', padding: 0 }}>
+                  {day.exercises.map((ex, j) => {
+                    const meta = getExercise(ex.exerciseId);
+                    return (
+                      <li
+                        key={j}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr auto',
+                          alignItems: 'baseline',
+                          gap: 8,
+                          padding: '3px 0',
+                        }}
+                      >
+                        <span
+                          className="font-body"
+                          style={{
+                            fontSize: 12,
+                            color: 'var(--b-ink)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {meta?.name || ex.exerciseId}
+                        </span>
+                        <span
+                          className="font-mono tabular"
+                          style={{
+                            fontSize: 10,
+                            color: 'var(--b-ink-60)',
+                            letterSpacing: '0.04em',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {ex.sets} × {ex.repsMin}
+                          {ex.repsMax !== ex.repsMin ? `–${ex.repsMax}` : ''}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p
+                  className="font-body"
+                  style={{ fontSize: 11, color: 'var(--b-ink-40)', margin: '6px 0 0', fontStyle: 'italic' }}
+                >
+                  — rest day —
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
