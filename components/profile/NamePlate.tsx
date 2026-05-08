@@ -35,12 +35,17 @@ const animClassMap: Record<NameAnimation, string> = {
   ghost:          'animate-name-ghost',
   molten:         'animate-name-molten',
   aurora:         'animate-name-aurora',
+  quantum:        'animate-name-quantum',
+  mercury:        'animate-name-mercury',
+  supernova:      'animate-name-supernova',
+  frostbite:      'animate-name-frostbite',
 };
 
 // Animations that need the gradient to move laterally (oversize background).
 const needsWideBackground = new Set<NameAnimation>([
   'shimmer', 'rainbow-shift', 'cosmic', 'inferno', 'holographic',
   'mythic', 'ember', 'molten', 'aurora',
+  'mercury', 'supernova', 'frostbite',
 ]);
 
 // Animations whose drop-shadow should track the current color (use text color
@@ -48,6 +53,7 @@ const needsWideBackground = new Set<NameAnimation>([
 // fill color drive the shadow.
 const usesCurrentColorShadow = new Set<NameAnimation>([
   'pulse', 'electric', 'prismatic', 'void', 'ghost', 'cosmic',
+  'quantum',
 ]);
 
 /**

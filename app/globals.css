@@ -1608,6 +1608,67 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .animate-name-aurora { animation: name-aurora 4.5s ease-in-out infinite; }
 
+/* ─── Name effects v2 — four new mythic signatures ─────────────────
+   Each one is a distinct *behavior*, not just a color shift, so the
+   four read as completely different cosmetics next to each other in
+   a feed. */
+
+/* Quantum — letters phase in and out of existence with rapid micro
+   jitter (sub-pixel translateX + subtle skewX) and an opacity flutter.
+   Reads as "uncertain", "not fully here". Drop-shadow tracks the
+   current color so it works on any palette. */
+@keyframes name-quantum {
+  0%, 100% { transform: translateX(0)      skewX(0deg);    opacity: 1;    filter: drop-shadow(0 0 4px currentColor); }
+  9%       { transform: translateX(-0.5px) skewX(-0.4deg); opacity: 0.8;  filter: drop-shadow(0 0 6px currentColor); }
+  18%      { transform: translateX(0.5px)  skewX(0.4deg);  opacity: 1;    filter: drop-shadow(0 0 4px currentColor); }
+  27%      { transform: translateX(-0.3px) skewX(0deg);    opacity: 0.65; filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 2px #ffffff); }
+  36%      { transform: translateX(0.4px)  skewX(0.3deg);  opacity: 1;    filter: drop-shadow(0 0 4px currentColor); }
+  50%      { transform: translateX(0)      skewX(-0.5deg); opacity: 0.85; filter: drop-shadow(0 0 7px currentColor); }
+  64%      { transform: translateX(-0.5px) skewX(0deg);    opacity: 1;    filter: drop-shadow(0 0 4px currentColor); }
+  78%      { transform: translateX(0.3px)  skewX(0.2deg);  opacity: 0.7;  filter: drop-shadow(0 0 9px currentColor) drop-shadow(0 0 2px #ffffff); }
+  90%      { transform: translateX(-0.4px) skewX(-0.3deg); opacity: 1;    filter: drop-shadow(0 0 5px currentColor); }
+}
+.animate-name-quantum { animation: name-quantum 1.6s linear infinite; }
+
+/* Liquid Mercury — fast metallic chrome flow. Wide silver-to-black-
+   to-silver gradient sweeps across with a bright white sheen +
+   brightness pulse. Distinct from molten because the sheen is sharp
+   and the cycle is fast — it reads as polished metal, not liquid. */
+@keyframes name-mercury {
+  0%   { background-position: -120% 50%; filter: brightness(1.05) drop-shadow(0 0 4px #cbd5e1); }
+  35%  { background-position:   80% 50%; filter: brightness(1.55) drop-shadow(0 0 12px #ffffff) drop-shadow(0 0 3px #94a3b8); }
+  60%  { background-position:  150% 50%; filter: brightness(1.2)  drop-shadow(0 0 5px #cbd5e1); }
+  100% { background-position:  300% 50%; filter: brightness(1.05) drop-shadow(0 0 4px #cbd5e1); }
+}
+.animate-name-mercury { animation: name-mercury 2.4s linear infinite; }
+
+/* Supernova — most of the cycle is calm, then a hard brightness
+   build-up at ~75% culminating in a blinding flash at ~84%. Slight
+   scale bump at the peak adds the explosive feel. After the burst
+   fades back over the remaining cycle. */
+@keyframes name-supernova {
+  0%, 100% { background-position:  0% 50%; filter: brightness(1.05) drop-shadow(0 0 4px #f97316);                                              transform: scale(1); }
+  60%      { background-position: 50% 50%; filter: brightness(1.2)  drop-shadow(0 0 7px #fde047);                                              transform: scale(1); }
+  76%      { background-position: 80% 50%; filter: brightness(1.6)  drop-shadow(0 0 16px #fde047) drop-shadow(0 0 4px #ffffff);                transform: scale(1.015); }
+  84%      { background-position: 100% 50%; filter: brightness(2.4) drop-shadow(0 0 32px #ffffff) drop-shadow(0 0 14px #fde047) drop-shadow(0 0 4px #f97316); transform: scale(1.04); }
+  92%      { background-position: 130% 50%; filter: brightness(1.4) drop-shadow(0 0 14px #f97316);                                             transform: scale(1.01); }
+}
+.animate-name-supernova { animation: name-supernova 4.4s ease-in-out infinite; }
+
+/* Frostbite — cold blue gradient drifts slowly, but is interrupted
+   by sharp white sparkle bursts at staggered moments — like ice
+   crystals catching the light. Two separate bursts per cycle so it
+   never looks rhythmic. */
+@keyframes name-frostbite {
+  0%, 100% { background-position:   0% 50%; filter: brightness(1.1)  drop-shadow(0 0 4px #06b6d4); }
+  18%      { background-position:  35% 50%; filter: brightness(1.55) drop-shadow(0 0 12px #ffffff) drop-shadow(0 0 4px #67e8f9); }
+  24%      { background-position:  45% 50%; filter: brightness(1.1)  drop-shadow(0 0 4px #06b6d4); }
+  50%      { background-position: 100% 50%; filter: brightness(1.25) drop-shadow(0 0 7px #67e8f9); }
+  68%      { background-position: 130% 50%; filter: brightness(1.6)  drop-shadow(0 0 14px #ffffff) drop-shadow(0 0 4px #cffafe); }
+  74%      { background-position: 140% 50%; filter: brightness(1.1)  drop-shadow(0 0 4px #06b6d4); }
+}
+.animate-name-frostbite { animation: name-frostbite 3.8s ease-in-out infinite; }
+
 /* --- Extended frame animations (premium tier) --- */
 
 /* `frame-aurora` used to animate hue-rotate which re-rasterizes on every

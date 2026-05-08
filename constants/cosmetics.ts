@@ -22,7 +22,12 @@ export type NameAnimation =
   | 'ember'
   | 'ghost'
   | 'molten'
-  | 'aurora';
+  | 'aurora'
+  // Mythic v2 — four new signature animations
+  | 'quantum'
+  | 'mercury'
+  | 'supernova'
+  | 'frostbite';
 
 export interface PfpFrame {
   id: string;
@@ -124,7 +129,7 @@ export const PFP_FRAMES: PfpFrame[] = [
 // ---------------------------------------------------------------------------
 // NAME EFFECTS
 //
-// Counts: Common 1 · Rare 9 · Epic 7 · Legendary 7 · Mythic 9
+// Counts: Common 1 · Rare 9 · Epic 7 · Legendary 11 · Mythic 15
 // Higher rarities get crazier animations (cosmic, glitch, prismatic,
 // holographic, mythic). Rare only gets static gradients. Epic gets subtle
 // pulse/shimmer. Legendary gets dramatic (electric, inferno, aurora, molten).
@@ -162,6 +167,12 @@ export const NAME_EFFECTS: NameEffect[] = [
   { id: 'name_solar',      name: 'Solar Flare',  rarity: 'legendary', colors: ['#fde047', '#f97316', '#dc2626'],       animated: 'electric',   description: 'Corona bursts.' },
   { id: 'name_tide',       name: 'Tide',         rarity: 'legendary', colors: ['#0369a1', '#22d3ee', '#ffffff'],       animated: 'molten',     description: 'Flowing deep ocean.' },
   { id: 'name_nebula_leg', name: 'Nebula',       rarity: 'legendary', colors: ['#7c3aed', '#ec4899', '#22d3ee'],       animated: 'aurora',     description: 'Interstellar dust cloud.' },
+  // Legendary v2 — four new entries reusing existing animation modes
+  // with fresh palettes so they each read distinct.
+  { id: 'name_venom',      name: 'Venom',        rarity: 'legendary', colors: ['#86efac', '#16a34a', '#bef264', '#15803d'], animated: 'pulse',    description: 'Glowing in the dark. Best not touched.' },
+  { id: 'name_sandstorm',  name: 'Sandstorm',    rarity: 'legendary', colors: ['#fbbf24', '#fef3c7', '#a16207', '#fde68a'], animated: 'molten',   description: 'Wind-blown gold. Always moving.' },
+  { id: 'name_glacier',    name: 'Glacier',      rarity: 'legendary', colors: ['#7dd3fc', '#bae6fd', '#0ea5e9', '#e0f2fe'], animated: 'aurora',   description: 'Slow, ancient ice.' },
+  { id: 'name_radium',     name: 'Radium',       rarity: 'legendary', colors: ['#a3e635', '#facc15', '#bef264'],            animated: 'electric', description: 'Glowing hot. Faintly humming.' },
 
   // ---- MYTHIC (top tier: cosmic / prismatic / holographic / glitch / void / mythic) ----
   { id: 'name_rainbow',    name: 'Rainbow',      rarity: 'mythic',    colors: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'], animated: 'rainbow-shift', description: 'Every color, cycling.' },
@@ -174,6 +185,14 @@ export const NAME_EFFECTS: NameEffect[] = [
   { id: 'name_glitch',     name: 'Glitch',       rarity: 'mythic',    colors: ['#ff00cc', '#ffffff', '#00e0ff'],       animated: 'glitch',     description: 'Reality.exe has stopped working.' },
   { id: 'name_mythic_rad', name: 'Radiance',     rarity: 'mythic',    colors: ['#fef3c7', '#fbbf24', '#ec4899', '#a855f7', '#fef3c7'], animated: 'mythic', description: 'Light that cannot be contained.' },
   { id: 'name_awakened',   name: 'Awakened',     rarity: 'mythic',    colors: ['#fef3c7', '#fde047', '#f9a8d4', '#c084fc', '#22d3ee', '#fde047'], animated: 'mythic', description: 'Earned at 100% awakening — the full spectrum.' },
+  // Mythic v2 — five new signature treatments. The first four use
+  // brand-new animations (quantum / mercury / supernova / frostbite);
+  // stardust reuses the existing 'mythic' anim with a sparklier palette.
+  { id: 'name_quantum',    name: 'Quantum',      rarity: 'mythic',    colors: ['#06b6d4', '#a78bfa', '#f0abfc', '#22d3ee'],                       animated: 'quantum',   description: 'Existing in multiple places at once.' },
+  { id: 'name_mercury',    name: 'Liquid Mercury', rarity: 'mythic',  colors: ['#94a3b8', '#ffffff', '#1f2937', '#cbd5e1', '#ffffff', '#475569'], animated: 'mercury',   description: 'Pure chrome. Never still.' },
+  { id: 'name_supernova',  name: 'Supernova',    rarity: 'mythic',    colors: ['#7f1d1d', '#dc2626', '#fde047', '#ffffff', '#fde047'],            animated: 'supernova', description: 'A star ending. Blinding.' },
+  { id: 'name_frostbite',  name: 'Frostbite',    rarity: 'mythic',    colors: ['#0e7490', '#06b6d4', '#cffafe', '#67e8f9', '#ffffff'],            animated: 'frostbite', description: 'Crystalline. Cold enough to cut.' },
+  { id: 'name_stardust',   name: 'Stardust',     rarity: 'mythic',    colors: ['#c084fc', '#ffffff', '#fbbf24', '#a78bfa', '#fde68a', '#ffffff'], animated: 'mythic',    description: 'Made of the same stuff as stars.' },
 ];
 
 export function getFrame(id: string | undefined | null): PfpFrame {
