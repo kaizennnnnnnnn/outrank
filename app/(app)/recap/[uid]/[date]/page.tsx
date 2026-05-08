@@ -30,6 +30,7 @@ export default function RecapDetailPage({ params }: PageProps) {
   }
 
   if (!recap) {
+    const isOwner = user?.uid === uid;
     return (
       <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
         <div className="max-w-2xl mx-auto" style={{ padding: '60px 22px', textAlign: 'center' }}>
@@ -37,16 +38,18 @@ export default function RecapDetailPage({ params }: PageProps) {
             className="font-display"
             style={{ fontSize: 28, fontStyle: 'italic', fontWeight: 500, marginBottom: 6 }}
           >
-            Record not found.
+            {isOwner ? 'Nothing logged.' : 'Record not found.'}
           </p>
           <p
             className="font-body"
             style={{ fontSize: 12, color: 'var(--b-ink-60)' }}
           >
-            This day hasn&rsquo;t been published, or you can&rsquo;t see it.
+            {isOwner
+              ? <>No habits were logged on <span className="font-mono tabular">{date}</span>.</>
+              : 'This day hasn’t been published, or you can’t see it.'}
           </p>
           <Link
-            href="/feed"
+            href={isOwner ? '/history' : '/feed'}
             className="font-body"
             style={{
               display: 'inline-block',
@@ -61,7 +64,7 @@ export default function RecapDetailPage({ params }: PageProps) {
               textDecoration: 'none',
             }}
           >
-            Back to feed →
+            {isOwner ? 'Back to archive →' : 'Back to feed →'}
           </Link>
         </div>
       </div>

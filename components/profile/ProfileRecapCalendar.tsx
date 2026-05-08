@@ -11,6 +11,10 @@ interface Props {
   isOwner: boolean;
 }
 
+/**
+ * Compact recap calendar for the profile page. The full-page version
+ * lives at /history (linked from the header strip below for owners).
+ */
 export function ProfileRecapCalendar({ uid, isOwner }: Props) {
   const [monthDate, setMonthDate] = useState(() => {
     const d = new Date();
@@ -51,6 +55,23 @@ export function ProfileRecapCalendar({ uid, isOwner }: Props) {
           >
             {totalRecaps} this month
             {totalXP > 0 && <span> · +{totalXP.toLocaleString()} XP</span>}
+            {isOwner && (
+              <>
+                {' · '}
+                <Link
+                  href="/history"
+                  className="font-body"
+                  style={{
+                    color: 'var(--b-accent)',
+                    fontWeight: 700,
+                    textDecoration: 'underline',
+                    textUnderlineOffset: 2,
+                  }}
+                >
+                  view archive →
+                </Link>
+              </>
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

@@ -43,6 +43,7 @@ const SECONDARY: NavLink[] = [
   { href: '/town',      label: 'The Town' },
   { href: '/diet',      label: 'The Plate' },
   { href: '/habits',    label: 'Roster' },
+  { href: '/history',   label: 'The Archive' },
   { href: '/settings',  label: 'Settings' },
 ];
 
