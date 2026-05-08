@@ -111,6 +111,15 @@ export default function GymPage() {
             <TodayWorkoutCard program={today.program} day={today.day} dayIndex={today.dayIndex} />
           </div>
 
+          {/* Mon-Sun calendar projection — pins each cycle day to a
+              real weekday so the user can see "I lift Mon/Wed/Fri".
+              Reads workoutDays off the user doc; falls back to a
+              sensible default spread based on daysPerWeek. */}
+          <WeeklyScheduleView
+            program={today.program}
+            workoutDays={(userAny?.workoutDays as Array<'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat'> | undefined) ?? null}
+          />
+
           {/* Full routine — every day in the cycle, today highlighted */}
           <RoutineCycleView
             program={today.program}
@@ -410,6 +419,258 @@ function RoutineCycleView({
           );
         })}
       </ul>
+    </section>
+  );
+}
+
+// ─── Weekly schedule view ─────────────────────────────────────────
+//
+// Projects the active cycle onto Mon-Sun based on the user's chosen
+// workout days. If they didn't pin specific days during onboarding,
+// we spread daysPerWeek across the week with sensible defaults.
+// Today's column is marked with aria-current and an accent border.
+// Cycle advancement is still completion-based (not calendar-based) —
+// a missed Tuesday doesn't bump Wednesday's prescription. The view
+// is a planning surface, not a hard schedule.
+
+type DayKey = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+
+const WEEKDAY_ORDER: DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const WEEKDAY_LABEL: Record<DayKey, string> = {
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
+  sun: 'Sun',
+};
+const WEEKDAY_LONG: Record<DayKey, string> = {
+  mon: 'Monday',
+  tue: 'Tuesday',
+  wed: 'Wednesday',
+  thu: 'Thursday',
+  fri: 'Friday',
+  sat: 'Saturday',
+  sun: 'Sunday',
+};
+
+/** Default day-spread when the user didn't pick specific days. */
+function defaultWorkoutDays(count: number): DayKey[] {
+  switch (Math.max(0, Math.min(7, count))) {
+    case 0: return [];
+    case 1: return ['wed'];
+    case 2: return ['mon', 'thu'];
+    case 3: return ['mon', 'wed', 'fri'];
+    case 4: return ['mon', 'tue', 'thu', 'fri'];
+    case 5: return ['mon', 'tue', 'wed', 'thu', 'fri'];
+    case 6: return ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    case 7: return [...WEEKDAY_ORDER];
+    default: return ['mon', 'wed', 'fri'];
+  }
+}
+
+function todayDayKey(): DayKey {
+  // JS getDay: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const d = new Date().getDay();
+  return (['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as DayKey[])[d];
+}
+
+function WeeklyScheduleView({
+  program,
+  workoutDays,
+}: {
+  program: Program;
+  workoutDays: DayKey[] | null;
+}) {
+  const cycleLen = program.schedule.length;
+  if (cycleLen === 0) return null;
+
+  // Resolve workout-day pins. If the user picked specific days, take
+  // those (clamped to cycle length). Otherwise, spread cycle across
+  // the week by daysPerWeek.
+  const pinnedDays: DayKey[] = (() => {
+    if (workoutDays && workoutDays.length > 0) {
+      return WEEKDAY_ORDER.filter((d) => workoutDays.includes(d)).slice(0, cycleLen);
+    }
+    return defaultWorkoutDays(program.daysPerWeek).slice(0, cycleLen);
+  })();
+
+  // Mapping from weekday → cycle day index (or null for rest).
+  const dayMap: Record<DayKey, number | null> = {
+    mon: null, tue: null, wed: null, thu: null, fri: null, sat: null, sun: null,
+  };
+  pinnedDays.forEach((d, i) => {
+    dayMap[d] = i;
+  });
+
+  const today = todayDayKey();
+
+  return (
+    <section style={{ marginTop: 24 }} aria-labelledby="weekly-heading">
+      <div
+        style={{
+          paddingTop: 12,
+          borderTop: '1px solid var(--b-ink)',
+          display: 'flex',
+          alignItems: 'baseline',
+          justifyContent: 'space-between',
+          marginBottom: 6,
+          gap: 8,
+        }}
+      >
+        <h2
+          id="weekly-heading"
+          className="font-display"
+          style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, margin: 0 }}
+        >
+          This week
+        </h2>
+        <span
+          className="font-mono tabular"
+          style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.08em', textTransform: 'uppercase' }}
+        >
+          Mon → Sun
+        </span>
+      </div>
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink-60)',
+          margin: '0 0 12px',
+          lineHeight: 1.5,
+        }}
+      >
+        Your cycle pinned to weekdays. Cycle advances when you finish a workout — skipping a day
+        doesn&rsquo;t skip a cycle position.
+      </p>
+
+      <ol
+        style={{
+          listStyle: 'none',
+          margin: 0,
+          padding: '8px 0',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 4,
+          borderTop: '1px solid var(--b-rule)',
+          borderBottom: '1px solid var(--b-rule)',
+        }}
+      >
+        {WEEKDAY_ORDER.map((dKey) => {
+          const cycleIdx = dayMap[dKey];
+          const day = cycleIdx !== null ? program.schedule[cycleIdx] : null;
+          const isToday = dKey === today;
+          const isWorkout = day !== null;
+
+          return (
+            <li
+              key={dKey}
+              aria-current={isToday ? 'date' : undefined}
+              aria-label={`${WEEKDAY_LONG[dKey]}${isToday ? ' (today)' : ''}: ${
+                isWorkout ? `${day!.name}, ${day!.exercises.length} exercises` : 'rest day'
+              }`}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                padding: '8px 4px',
+                border: isToday ? '1px solid var(--b-accent)' : '1px solid transparent',
+                background: isToday ? 'color-mix(in srgb, var(--b-accent) 7%, var(--b-paper))' : 'transparent',
+                minHeight: 92,
+                position: 'relative',
+              }}
+            >
+              <span
+                className="spread"
+                style={{
+                  fontSize: 9,
+                  color: isToday ? 'var(--b-accent)' : 'var(--b-ink-60)',
+                  letterSpacing: '0.16em',
+                }}
+              >
+                {WEEKDAY_LABEL[dKey]}
+              </span>
+              <span
+                aria-hidden
+                className="font-mono tabular"
+                style={{
+                  fontSize: 8.5,
+                  color: 'var(--b-ink-40)',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {(() => {
+                  // Compute the calendar date for THIS weekday in the
+                  // current week (Mon-anchored).
+                  const now = new Date();
+                  const todayJsDay = now.getDay() === 0 ? 7 : now.getDay(); // 1..7, Mon=1
+                  const targetJsDay = WEEKDAY_ORDER.indexOf(dKey) + 1;       // 1..7, Mon=1
+                  const offset = targetJsDay - todayJsDay;
+                  const target = new Date(now);
+                  target.setDate(target.getDate() + offset);
+                  return String(target.getDate()).padStart(2, '0');
+                })()}
+              </span>
+
+              {isWorkout && day ? (
+                <>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: 'var(--b-accent)',
+                      marginTop: 2,
+                    }}
+                  />
+                  <span
+                    className="font-display"
+                    style={{
+                      fontSize: 10.5,
+                      fontStyle: 'italic',
+                      fontWeight: 500,
+                      lineHeight: 1.15,
+                      textAlign: 'center',
+                      color: 'var(--b-ink)',
+                      marginTop: 2,
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {day.name}
+                  </span>
+                  <span
+                    className="font-mono tabular"
+                    style={{
+                      fontSize: 8.5,
+                      color: 'var(--b-ink-60)',
+                      letterSpacing: '0.04em',
+                      marginTop: 'auto',
+                    }}
+                  >
+                    {day.exercises.length} ex
+                  </span>
+                </>
+              ) : (
+                <span
+                  className="font-body"
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--b-ink-40)',
+                    fontStyle: 'italic',
+                    marginTop: 'auto',
+                  }}
+                >
+                  rest
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }
