@@ -603,25 +603,27 @@ function RewardCell({
   // Premium track gets a subtle gold-tinted background and a gold
   // border so it reads as the upgraded path even before unlock.
   // Free track stays on plain paper with a hairline ink border.
+  // Claimed state uses muted ink (not green) so the "filed away"
+  // treatment matches the editorial palette instead of clashing with
+  // it. The cell overall takes a subtle paper-2 wash + ink-60 border.
   const baseBg = isPremium
     ? 'linear-gradient(135deg, color-mix(in srgb, #fbbf24 8%, var(--b-paper)), color-mix(in srgb, #fbbf24 3%, var(--b-paper)))'
     : 'var(--b-paper)';
   const borderColor = isPremium ? '#d97706' : 'var(--b-ink)';
-  const claimedBg = isPremium
-    ? 'linear-gradient(135deg, color-mix(in srgb, #10b981 16%, var(--b-paper)), color-mix(in srgb, #fbbf24 6%, var(--b-paper)))'
-    : 'color-mix(in srgb, #10b981 10%, var(--b-paper))';
+  const claimedBg = 'var(--b-paper-2, color-mix(in srgb, var(--b-ink) 8%, var(--b-paper)))';
+  const claimedAccent = 'var(--b-ink-60)';
 
   return (
     <div
       style={{
         position: 'relative',
         padding: isCapstone ? '10px 12px' : '8px 10px',
-        border: `1px solid ${claimed ? '#10b981' : borderColor}`,
-        borderLeft: isPremium && !claimed
-          ? '3px solid #fbbf24'
-          : !isPremium && !claimed
-            ? '3px solid var(--b-ink)'
-            : `1px solid ${claimed ? '#10b981' : borderColor}`,
+        border: `1px solid ${claimed ? claimedAccent : borderColor}`,
+        borderLeft: claimed
+          ? `3px solid ${claimedAccent}`
+          : isPremium
+            ? '3px solid #fbbf24'
+            : '3px solid var(--b-ink)',
         background: claimed ? claimedBg : baseBg,
         opacity: locked ? 0.55 : 1,
         textAlign: isPremium ? 'right' : 'left',
@@ -631,6 +633,8 @@ function RewardCell({
         flexDirection: isPremium ? 'row-reverse' : 'row',
         alignItems: 'flex-start',
         gap: 10,
+        minWidth: 0,
+        overflow: 'hidden',
       }}
     >
       {locked && (
@@ -649,7 +653,11 @@ function RewardCell({
 
       {/* Reward art — fragment shard, frame swatch, name effect chip,
           or capstone crown depending on the reward type. */}
-      <RewardArt row={row} isPremium={isPremium} size={isCapstone ? 44 : isMajor ? 36 : 28} />
+      <RewardArt
+        row={row}
+        isPremium={isPremium}
+        size={isCapstone ? 38 : isMajor ? 30 : 24}
+      />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Eyebrow line — premium gets gold, free gets ink-60 */}
@@ -672,7 +680,7 @@ function RewardCell({
             {isPremium ? '★ Premium' : TIER_RANK_LABEL[row.rank]}
           </span>
           {claimed && (
-            <span className="spread" style={{ fontSize: 7.5, color: '#10b981' }}>
+            <span className="spread" style={{ fontSize: 7.5, color: claimedAccent }}>
               ✓ Claimed
             </span>
           )}
@@ -720,6 +728,8 @@ function RewardCell({
               marginTop: 3,
               lineHeight: 1.35,
               fontStyle: 'italic',
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word',
             }}
           >
             {row.extra}
@@ -948,8 +958,8 @@ function MissionCard({
         position: 'relative',
         padding: '12px 14px',
         border: ready ? `1px solid ${accent.color}` : '1px solid var(--b-rule)',
-        borderLeft: `3px solid ${claimed ? '#10b981' : accent.color}`,
-        background: claimed ? 'rgba(16,185,129,0.04)' : 'transparent',
+        borderLeft: `3px solid ${claimed ? 'var(--b-ink-60)' : accent.color}`,
+        background: claimed ? 'var(--b-paper-2, color-mix(in srgb, var(--b-ink) 6%, var(--b-paper)))' : 'transparent',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
@@ -1029,7 +1039,7 @@ function MissionCard({
             style={{
               height: '100%',
               width: `${Math.max(2, pct)}%`,
-              background: claimed ? '#10b981' : accent.color,
+              background: claimed ? 'var(--b-ink-60)' : accent.color,
               transition: 'width 500ms',
             }}
           />
@@ -1040,7 +1050,7 @@ function MissionCard({
         {claimed ? (
           <p
             className="spread"
-            style={{ fontSize: 9, color: '#10b981', textAlign: 'center', padding: '4px 0' }}
+            style={{ fontSize: 9, color: 'var(--b-ink-60)', textAlign: 'center', padding: '4px 0' }}
           >
             Claimed ✓
           </p>
