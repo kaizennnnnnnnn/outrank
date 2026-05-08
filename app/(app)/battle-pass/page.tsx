@@ -175,13 +175,14 @@ export default function BattlePassPage() {
                 <span style={{ color: 'var(--b-ink-60)' }}> / {SEASON_PASS_XP_PER_TIER}</span>
                 <span style={{ color: 'var(--b-ink-60)' }}> Pass XP</span>
               </div>
-              {/* Tier progress bar — hairline + filled */}
+              {/* Tier progress bar — hairline + filled with running shine */}
               <div
                 style={{
                   marginTop: 6,
-                  height: 2,
+                  height: 4,
                   background: 'var(--b-rule)',
                   position: 'relative',
+                  overflow: 'hidden',
                 }}
               >
                 <div
@@ -190,8 +191,16 @@ export default function BattlePassPage() {
                     width: `${Math.max(2, tierProgress)}%`,
                     background: 'var(--b-accent)',
                     transition: 'width 700ms',
+                    position: 'relative',
+                    overflow: 'hidden',
                   }}
-                />
+                >
+                  <div
+                    aria-hidden
+                    className="bp-bar-shine"
+                    style={{ position: 'absolute', inset: 0 }}
+                  />
+                </div>
               </div>
               <div
                 className="font-body"
@@ -202,8 +211,8 @@ export default function BattlePassPage() {
             </div>
             <div style={{ textAlign: 'center' }}>
               <div
-                className="font-display tabular"
-                style={{ fontSize: 38, fontStyle: 'italic', fontWeight: 500, lineHeight: 1, color: 'var(--b-accent)' }}
+                className="font-display tabular bp-numeral-shine"
+                style={{ fontSize: 38, fontStyle: 'italic', fontWeight: 500, lineHeight: 1 }}
               >
                 {currentTier}
               </div>
@@ -220,9 +229,10 @@ export default function BattlePassPage() {
           <div style={{ marginTop: 12 }}>
             <div
               style={{
-                height: 4,
+                height: 5,
                 background: 'var(--b-rule)',
                 position: 'relative',
+                overflow: 'hidden',
               }}
             >
               <div
@@ -230,8 +240,16 @@ export default function BattlePassPage() {
                   height: '100%',
                   width: `${Math.max(2, seasonProgress)}%`,
                   background: 'var(--b-ink)',
+                  position: 'relative',
+                  overflow: 'hidden',
                 }}
-              />
+              >
+                <div
+                  aria-hidden
+                  className="bp-bar-shine-soft"
+                  style={{ position: 'absolute', inset: 0 }}
+                />
+              </div>
               {[10, 20, 30, 40, 50].map((n) => (
                 <span
                   key={n}
@@ -295,7 +313,7 @@ export default function BattlePassPage() {
                 if (ready === 0) return null;
                 return (
                   <span
-                    className="font-mono tabular"
+                    className="font-mono tabular animate-notif-dot-pulse"
                     style={{
                       background: 'var(--b-accent)',
                       color: '#ffffff',
@@ -314,8 +332,10 @@ export default function BattlePassPage() {
               })()}
             </button>
             <div
-              className="font-body"
+              className="font-body bp-premium-pill"
               style={{
+                position: 'relative',
+                overflow: 'hidden',
                 padding: '12px 14px',
                 background:
                   'linear-gradient(135deg, color-mix(in srgb, #fbbf24 16%, var(--b-paper)), color-mix(in srgb, var(--b-accent) 12%, var(--b-paper)))',
@@ -331,8 +351,16 @@ export default function BattlePassPage() {
                 gap: 8,
               }}
             >
+              {/* Ambient gold sheen sweeping across the pill */}
+              <div
+                aria-hidden
+                className="bp-premium-shimmer"
+                style={{ position: 'absolute', inset: 0, zIndex: 0 }}
+              />
               <BLockGlyph size={12} />
-              <span>Premium · Soon</span>
+              <span style={{ position: 'relative', zIndex: 1 }}>
+                Premium · <span className="bp-star-twinkle" style={{ color: '#fbbf24' }}>★</span> Soon
+              </span>
             </div>
           </div>
 
@@ -503,16 +531,19 @@ function TierRow({
         opacity: reached ? 1 : 0.65,
       }}
     >
-      {/* Spine — vertical accent line up the center connecting tiers */}
+      {/* Spine — vertical accent line up the center connecting tiers.
+          Reached tiers get an animated red flow; unreached stay
+          static hairline rule. */}
       <div
         aria-hidden
+        className={reached ? 'bp-spine' : ''}
         style={{
           position: 'absolute',
-          left: 'calc(50% - 0.5px)',
+          left: 'calc(50% - 1px)',
           top: 0,
           bottom: 0,
-          width: 1,
-          background: reached ? 'var(--b-accent)' : 'var(--b-rule)',
+          width: 2,
+          background: reached ? undefined : 'var(--b-rule)',
         }}
       />
 
@@ -538,7 +569,7 @@ function TierRow({
         }}
       >
         <div
-          className="font-display tabular"
+          className={`font-display tabular ${isMilestone && reached ? 'bp-milestone-breathe' : ''}`}
           style={{
             fontSize: isCapstone ? 28 : isMilestone ? 22 : 15,
             fontStyle: isMilestone ? 'italic' : 'normal',
@@ -599,36 +630,63 @@ function RewardCell({
   const isPremium = side === 'premium';
   const isCapstone = row.rank === 'capstone';
   const isMajor = row.rank === 'major';
+  const ready = reached && !claimed && !locked;
 
-  // Premium track gets a subtle gold-tinted background and a gold
-  // border so it reads as the upgraded path even before unlock.
-  // Free track stays on plain paper with a hairline ink border.
-  // Claimed state uses muted ink (not green) so the "filed away"
-  // treatment matches the editorial palette instead of clashing with
-  // it. The cell overall takes a subtle paper-2 wash + ink-60 border.
+  // Premium gets a static gold-tinted bg + gold border + a moving
+  // gold sheen layered on top. Free stays plain paper with hairline
+  // ink border.
+  // Claimed FREE flips to RED — fits the editorial accent and reads
+  // unmistakably as "this is yours". Claimed PREMIUM stays in its
+  // gold lane (deeper amber tint).
   const baseBg = isPremium
-    ? 'linear-gradient(135deg, color-mix(in srgb, #fbbf24 8%, var(--b-paper)), color-mix(in srgb, #fbbf24 3%, var(--b-paper)))'
+    ? 'linear-gradient(135deg, color-mix(in srgb, #fbbf24 10%, var(--b-paper)), color-mix(in srgb, #fbbf24 4%, var(--b-paper)))'
     : 'var(--b-paper)';
   const borderColor = isPremium ? '#d97706' : 'var(--b-ink)';
-  const claimedBg = 'var(--b-paper-2, color-mix(in srgb, var(--b-ink) 8%, var(--b-paper)))';
-  const claimedAccent = 'var(--b-ink-60)';
+
+  const claimedFreeBg     = 'color-mix(in srgb, var(--b-accent) 9%, var(--b-paper))';
+  const claimedFreeBorder = 'var(--b-accent)';
+  const claimedFreeText   = 'var(--b-accent)';
+
+  const claimedPremBg     = 'color-mix(in srgb, #fbbf24 18%, var(--b-paper))';
+  const claimedPremBorder = '#d97706';
+  const claimedPremText   = '#b45309';
+
+  const cellBorder = claimed
+    ? (isPremium ? claimedPremBorder : claimedFreeBorder)
+    : borderColor;
+  const cellBg = claimed
+    ? (isPremium ? claimedPremBg : claimedFreeBg)
+    : baseBg;
+  const eyebrowColor = claimed
+    ? (isPremium ? claimedPremText : claimedFreeText)
+    : (isPremium ? '#fbbf24' : 'var(--b-ink-60)');
+  const fragmentColor = claimed
+    ? (isPremium ? claimedPremText : claimedFreeText)
+    : (isPremium ? '#fbbf24' : 'var(--b-ink)');
+
+  // Animated layers selected by state. Claimed-free pulses red border;
+  // ready cells lift up gently to attract the tap.
+  const cellAnim = claimed && !isPremium
+    ? 'bp-claimed-red'
+    : ready
+      ? 'bp-ready-pulse'
+      : '';
 
   return (
     <div
+      className={cellAnim}
       style={{
         position: 'relative',
         padding: isCapstone ? '10px 12px' : '8px 10px',
-        border: `1px solid ${claimed ? claimedAccent : borderColor}`,
+        border: `1px solid ${cellBorder}`,
         borderLeft: claimed
-          ? `3px solid ${claimedAccent}`
+          ? `3px solid ${cellBorder}`
           : isPremium
             ? '3px solid #fbbf24'
             : '3px solid var(--b-ink)',
-        background: claimed ? claimedBg : baseBg,
+        background: cellBg,
         opacity: locked ? 0.55 : 1,
         textAlign: isPremium ? 'right' : 'left',
-        // Direction reverses the cell so the icon ends up on the inner
-        // side of the spine for premium, outer for free.
         display: 'flex',
         flexDirection: isPremium ? 'row-reverse' : 'row',
         alignItems: 'flex-start',
@@ -637,6 +695,17 @@ function RewardCell({
         overflow: 'hidden',
       }}
     >
+      {/* Premium-only ambient gold shimmer — sweeping diagonal across
+          the cell bg. Sits behind everything; unclaimed only so a
+          claimed cell isn't oversold. */}
+      {isPremium && !claimed && !locked && (
+        <div
+          aria-hidden
+          className="bp-premium-shimmer"
+          style={{ position: 'absolute', inset: 0, zIndex: 0 }}
+        />
+      )}
+
       {locked && (
         <div
           style={{
@@ -653,14 +722,17 @@ function RewardCell({
 
       {/* Reward art — fragment shard, frame swatch, name effect chip,
           or capstone crown depending on the reward type. */}
-      <RewardArt
-        row={row}
-        isPremium={isPremium}
-        size={isCapstone ? 38 : isMajor ? 30 : 24}
-      />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <RewardArt
+          row={row}
+          isPremium={isPremium}
+          size={isCapstone ? 38 : isMajor ? 30 : 24}
+        />
+      </div>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Eyebrow line — premium gets gold, free gets ink-60 */}
+      <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
+        {/* Eyebrow line — premium gets gold, free gets ink-60. When
+            claimed, free flips red, premium flips amber. */}
         <div
           style={{
             display: 'flex',
@@ -673,14 +745,16 @@ function RewardCell({
             className="spread"
             style={{
               fontSize: 7.5,
-              color: isPremium ? '#fbbf24' : 'var(--b-ink-60)',
+              color: eyebrowColor,
               letterSpacing: '0.22em',
             }}
           >
-            {isPremium ? '★ Premium' : TIER_RANK_LABEL[row.rank]}
+            {isPremium
+              ? <><span className="bp-star-twinkle">★</span> Premium</>
+              : TIER_RANK_LABEL[row.rank]}
           </span>
           {claimed && (
-            <span className="spread" style={{ fontSize: 7.5, color: claimedAccent }}>
+            <span className="spread" style={{ fontSize: 7.5, color: eyebrowColor, fontWeight: 700 }}>
               ✓ Claimed
             </span>
           )}
@@ -695,11 +769,12 @@ function RewardCell({
             fontWeight: 500,
             lineHeight: 1.05,
             marginTop: 2,
-            color: claimed
-              ? 'var(--b-ink-60)'
-              : isPremium
-                ? '#fbbf24'
-                : 'var(--b-ink)',
+            color: fragmentColor,
+            textDecoration: claimed ? 'line-through' : 'none',
+            textDecorationThickness: '1px',
+            textDecorationColor: claimed
+              ? (isPremium ? `${claimedPremText}99` : `${claimedFreeText}99`)
+              : 'transparent',
           }}
         >
           +{row.fragments}
@@ -709,10 +784,11 @@ function RewardCell({
               fontSize: 9,
               fontStyle: 'normal',
               fontWeight: 600,
-              color: 'var(--b-ink-60)',
+              color: claimed ? eyebrowColor : 'var(--b-ink-60)',
               marginLeft: 4,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
+              textDecoration: 'none',
             }}
           >
             Frag
@@ -724,19 +800,22 @@ function RewardCell({
             className="font-body"
             style={{
               fontSize: 10,
-              color: claimed ? 'var(--b-ink-40)' : 'var(--b-ink)',
+              color: claimed
+                ? (isPremium ? claimedPremText : claimedFreeText)
+                : 'var(--b-ink)',
               marginTop: 3,
               lineHeight: 1.35,
               fontStyle: 'italic',
               overflowWrap: 'anywhere',
               wordBreak: 'break-word',
+              opacity: claimed ? 0.85 : 1,
             }}
           >
             {row.extra}
           </div>
         )}
 
-        {reached && !claimed && !locked && (
+        {ready && (
           <Button
             size="sm"
             className="w-full mt-2"
@@ -770,7 +849,7 @@ function RewardArt({
   const isCapstone = row.rank === 'capstone';
   const cosmetic = row.cosmetic;
 
-  // Frame cosmetic
+  // Frame cosmetic — slow-spinning conic swatch with capstone halo.
   if (cosmetic && cosmetic.startsWith('frame_')) {
     const frame = getFrame(cosmetic);
     const grad = frame.colors.length > 1
@@ -780,30 +859,48 @@ function RewardArt({
       <div
         aria-hidden
         style={{
+          position: 'relative',
           width: size,
           height: size,
-          borderRadius: '50%',
-          background: grad,
           flexShrink: 0,
-          padding: 3,
-          boxShadow: isCapstone
-            ? `0 0 18px ${frame.colors[0]}66, 0 0 6px ${frame.colors[1] || frame.colors[0]}88`
-            : 'none',
         }}
       >
+        {isCapstone && (
+          <div
+            className="bp-capstone-halo"
+            style={{
+              position: 'absolute',
+              inset: -size * 0.25,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${frame.colors[0]}55 0%, ${frame.colors[1] || frame.colors[0]}22 50%, transparent 78%)`,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
         <div
+          className="bp-swatch-spin"
           style={{
             width: '100%',
             height: '100%',
             borderRadius: '50%',
-            background: 'var(--b-paper)',
+            background: grad,
+            padding: 3,
           }}
-        />
+        >
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              background: 'var(--b-paper)',
+            }}
+          />
+        </div>
       </div>
     );
   }
 
-  // Name effect cosmetic — render a tiny name-effect chip
+  // Name effect cosmetic — chip with sweeping gradient on the "Aa".
   if (cosmetic && cosmetic.startsWith('name_')) {
     const eff = getNameEffect(cosmetic);
     const grad = eff.colors.length > 1
@@ -813,6 +910,7 @@ function RewardArt({
       <div
         aria-hidden
         style={{
+          position: 'relative',
           width: size,
           height: size,
           flexShrink: 0,
@@ -821,10 +919,27 @@ function RewardArt({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          overflow: 'hidden',
         }}
       >
+        {isCapstone && (
+          <div
+            className="bp-capstone-halo"
+            style={{
+              position: 'absolute',
+              inset: -size * 0.3,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${eff.colors[0]}66 0%, transparent 70%)`,
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+        )}
         <span
+          className="metallic-shine"
           style={{
+            position: 'relative',
+            zIndex: 1,
             fontFamily: 'var(--font-fraunces), Georgia, serif',
             fontSize: Math.round(size * 0.45),
             fontStyle: 'italic',
@@ -843,40 +958,76 @@ function RewardArt({
     );
   }
 
-  // Pure fragment reward — shard SVG. Premium tints gold; capstone
-  // gets a faint accent halo.
+  // Pure fragment reward — shard SVG with periodic glint sweep.
+  // Premium tints gold; capstone gets an accent halo behind it.
   const stroke = isPremium ? '#fbbf24' : isCapstone ? 'var(--b-accent)' : 'var(--b-ink)';
   const fill = isPremium
     ? 'color-mix(in srgb, #fbbf24 22%, transparent)'
     : isCapstone
       ? 'color-mix(in srgb, var(--b-accent) 18%, transparent)'
       : 'transparent';
+  const haloColor = isPremium ? '#fbbf24' : 'var(--b-accent)';
   return (
-    <svg
+    <div
       aria-hidden
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
       style={{
+        position: 'relative',
+        width: size,
+        height: size,
         flexShrink: 0,
-        filter: isCapstone ? 'drop-shadow(0 0 6px rgba(220,38,38,0.45))' : 'none',
       }}
     >
-      <path
-        d="M16 3 L24 10 L20 28 L12 28 L8 10 Z"
-        stroke={stroke}
-        strokeWidth="1.4"
-        fill={fill}
-        strokeLinejoin="round"
+      {isCapstone && (
+        <div
+          className="bp-capstone-halo"
+          style={{
+            position: 'absolute',
+            inset: -size * 0.3,
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${haloColor}55 0%, transparent 70%)`,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 32 32"
+        style={{ position: 'relative', zIndex: 1, display: 'block' }}
+      >
+        <defs>
+          <clipPath id={`shard-${row.tier}-${row.track}`}>
+            <path d="M16 3 L24 10 L20 28 L12 28 L8 10 Z" />
+          </clipPath>
+        </defs>
+        <path
+          d="M16 3 L24 10 L20 28 L12 28 L8 10 Z"
+          stroke={stroke}
+          strokeWidth="1.4"
+          fill={fill}
+          strokeLinejoin="round"
+        />
+        <path
+          d="M16 3 L16 28 M8 10 L24 10 M12 28 L24 10 M20 28 L8 10"
+          stroke={stroke}
+          strokeWidth="0.6"
+          fill="none"
+          opacity="0.55"
+        />
+      </svg>
+      {/* Glint sweep — clipped to the shard outline so the highlight
+          only flashes within the gem facets, not the cell padding. */}
+      <div
+        className="bp-fragment-glint"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          clipPath: 'polygon(50% 9%, 75% 31%, 62.5% 87%, 37.5% 87%, 25% 31%)',
+          zIndex: 2,
+          pointerEvents: 'none',
+        }}
       />
-      <path
-        d="M16 3 L16 28 M8 10 L24 10 M12 28 L24 10 M20 28 L8 10"
-        stroke={stroke}
-        strokeWidth="0.6"
-        fill="none"
-        opacity="0.55"
-      />
-    </svg>
+    </div>
   );
 }
 
@@ -954,6 +1105,7 @@ function MissionCard({
 
   return (
     <div
+      className={ready ? 'bp-mission-ready' : ''}
       style={{
         position: 'relative',
         padding: '12px 14px',
@@ -1034,15 +1186,25 @@ function MissionCard({
           <span>{progress} / {mission.goal}</span>
           <span>{Math.floor(pct)}%</span>
         </div>
-        <div style={{ height: 2, background: 'var(--b-rule)' }}>
+        <div style={{ height: 3, background: 'var(--b-rule)', position: 'relative', overflow: 'hidden' }}>
           <div
             style={{
               height: '100%',
               width: `${Math.max(2, pct)}%`,
               background: claimed ? 'var(--b-ink-60)' : accent.color,
               transition: 'width 500ms',
+              position: 'relative',
+              overflow: 'hidden',
             }}
-          />
+          >
+            {!claimed && (
+              <div
+                aria-hidden
+                className="bp-bar-shine"
+                style={{ position: 'absolute', inset: 0 }}
+              />
+            )}
+          </div>
         </div>
       </div>
 

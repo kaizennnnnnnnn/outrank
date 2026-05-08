@@ -1993,3 +1993,197 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   animation: mythic-pact-b 1.8s ease-in-out infinite;
   will-change: opacity;
 }
+
+/* ─── Battle pass animations ───────────────────────────────────────
+   Editorial polish for the season-pass page — none of these animate
+   filter or box-shadow so the long ladder stays smooth on scroll. */
+
+/* Filled-bar shine sweep — runs over the red tier-progress fill. */
+@keyframes bp-bar-shine {
+  0%   { background-position: -180% 0; }
+  100% { background-position:  280% 0; }
+}
+.bp-bar-shine {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255,255,255,0.55) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: bp-bar-shine 3.2s linear infinite;
+}
+
+/* Season-wide ink bar — slower, softer sheen so it doesn't fight
+   the foreground tier bar above it. */
+.bp-bar-shine-soft {
+  background-image: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255,255,255,0.35) 50%,
+    transparent 65%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: bp-bar-shine 5.5s linear infinite;
+}
+
+/* Vertical spine — gradient pulse flows down the center column. */
+@keyframes bp-spine-flow {
+  0%   { background-position: 0 -100%; }
+  100% { background-position: 0  200%; }
+}
+.bp-spine {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--b-accent) 35%,
+    rgba(255,255,255,0.6) 50%,
+    var(--b-accent) 65%,
+    transparent 100%
+  );
+  background-size: 100% 60%;
+  background-repeat: no-repeat;
+  animation: bp-spine-flow 4.8s ease-in-out infinite;
+}
+
+/* Premium cell ambient gold shimmer — slow diagonal sweep across the
+   cell background. Layered on top of the static gold tint. */
+@keyframes bp-premium-shimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position:  250% 0; }
+}
+.bp-premium-shimmer {
+  background-image: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(251,191,36,0.45) 50%,
+    transparent 62%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  animation: bp-premium-shimmer 5s linear infinite;
+}
+
+/* Premium "Soon" pill — gold border breathes + sheen sweeps the bg.
+   Two layered animations (breathing border via box-shadow inset is
+   fine on a single element; the sheen is its own pseudo-style). */
+@keyframes bp-premium-pill-breathe {
+  0%, 100% {
+    border-color: #fbbf24;
+    box-shadow: inset 0 0 0 1px rgba(251,191,36,0.35);
+  }
+  50% {
+    border-color: #fde68a;
+    box-shadow: inset 0 0 0 1px rgba(253,230,138,0.85);
+  }
+}
+.bp-premium-pill {
+  animation: bp-premium-pill-breathe 2.6s ease-in-out infinite;
+}
+
+/* Claimed-red border pulse — runs on free-track CLAIMED cells so the
+   red ✓ status reads as alive, not just colored. Breathes the border
+   alpha, not the cell shadow, so it stays GPU-cheap on long lists. */
+@keyframes bp-claimed-red {
+  0%, 100% { border-color: var(--b-accent); }
+  50%      { border-color: color-mix(in srgb, var(--b-accent) 65%, var(--b-paper)); }
+}
+.bp-claimed-red { animation: bp-claimed-red 3.2s ease-in-out infinite; }
+
+/* Mission-ready border pulse — softer than claimed-red, on missions
+   that are ready to claim. Color comes from the kind tint, set by
+   the ready cell via inline style + CSS var. */
+@keyframes bp-mission-ready {
+  0%, 100% { transform: scale(1);    box-shadow: inset 0 0 0 0 transparent; }
+  50%      { transform: scale(1.005); }
+}
+.bp-mission-ready { animation: bp-mission-ready 1.6s ease-in-out infinite; }
+
+/* Milestone tier number — italic numerals breathe at milestone tiers
+   (10, 20, 30…) so they stand out from the minor tiers. */
+@keyframes bp-milestone-breathe {
+  0%, 100% { transform: scale(1);    text-shadow: 0 0 0 transparent; }
+  50%      { transform: scale(1.06); text-shadow: 0 0 12px color-mix(in srgb, var(--b-accent) 60%, transparent); }
+}
+.bp-milestone-breathe { animation: bp-milestone-breathe 2.8s ease-in-out infinite; }
+
+/* Ready-to-claim cell — staggered breathing border + a faint glow.
+   The cell border is already set inline; this overrides the alpha
+   on a 1.4s cadence to read as "tap me". */
+@keyframes bp-ready-pulse {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1px); }
+}
+.bp-ready-pulse { animation: bp-ready-pulse 1.6s ease-in-out infinite; }
+
+/* Frame-swatch reward art — slow conic rotation of the swatch
+   gradient so the reward feels alive, even before unlock. */
+@keyframes bp-swatch-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.bp-swatch-spin { animation: bp-swatch-spin 14s linear infinite; }
+
+/* Fragment shard glint — a single white sweep across the SVG every
+   few seconds, applied to the wrapper via overflow:hidden + a moving
+   linear gradient pseudo-layer. */
+@keyframes bp-fragment-glint {
+  0%, 70%, 100% { background-position: -150% 0; }
+  85%           { background-position:  250% 0; }
+}
+.bp-fragment-glint {
+  background-image: linear-gradient(
+    115deg,
+    transparent 40%,
+    rgba(255,255,255,0.55) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: bp-fragment-glint 4.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Big tier numeral — italic Fraunces breathes very slowly. Used for
+   the "1 / 60" current-tier display. */
+@keyframes bp-numeral-shine {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.bp-numeral-shine {
+  background: linear-gradient(
+    100deg,
+    var(--b-accent) 0%,
+    color-mix(in srgb, var(--b-accent) 60%, #fbbf24) 35%,
+    #fbbf24 50%,
+    color-mix(in srgb, var(--b-accent) 60%, #fbbf24) 65%,
+    var(--b-accent) 100%
+  );
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: bp-numeral-shine 4s ease-in-out infinite;
+}
+
+/* Premium STAR ★ glyph in the eyebrow — slow twinkle. */
+@keyframes bp-star-twinkle {
+  0%, 100% { opacity: 0.8; transform: scale(1)    rotate(0deg); }
+  25%      { opacity: 1;   transform: scale(1.18) rotate(45deg); }
+  50%      { opacity: 0.7; transform: scale(0.95) rotate(0deg); }
+  75%      { opacity: 1;   transform: scale(1.12) rotate(-45deg); }
+}
+.bp-star-twinkle {
+  display: inline-block;
+  animation: bp-star-twinkle 2.4s ease-in-out infinite;
+}
+
+/* Capstone reward — slow halo breath behind the icon. */
+@keyframes bp-capstone-halo {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50%      { opacity: 0.85; transform: scale(1.08); }
+}
+.bp-capstone-halo { animation: bp-capstone-halo 3.4s ease-in-out infinite; }
