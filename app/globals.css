@@ -1845,85 +1845,151 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   animation: notif-dot-pulse 1.4s ease-in-out infinite;
 }
 
-/* ─── Mythic frame treatment ───────────────────────────────────────
-   Mythic rarity gets layered effects ON TOP of the base frame.style
-   so each mythic frame still reads as ring/halo/wreath, but with a
-   distinct ritual quality legendary doesn't have:
+/* ─── Mythic frame treatments — one custom motion per frame ────────
+   Each of the 10 mythic frames gets its OWN named animation rather
+   than a shared "dots orbiting" effect. Frame ID dispatches in
+   FramedAvatar.tsx pick the right keyframe + JSX combo. All effects
+   are transform / opacity / SVG-stroke only so they stay GPU-cheap. */
 
-     - mythic-rune-orbit:   8 small SVG glyph runes orbit slowly OUTSIDE the rim
-     - mythic-rune-counter: each rune counter-rotates in place so glyphs face out
-     - mythic-arc-flicker:  short energy arcs at the rim flicker in/out
-     - mythic-spark-orbit:  faint sparkle dots drift around at 1.5x radius
-     - mythic-spark-twinkle:each sparkle pulses size + opacity
-     - mythic-inner-pulse:  inner halo breathes from center outward
-     - mythic-rim-cyan / -magenta: chromatic-aberration thin colored borders
-       offset on opposing rotations to fake a refraction shimmer
-   All transform / opacity / mask only — GPU-friendly. */
-
-@keyframes mythic-rune-orbit {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+/* frame_ascension — three soft feathers rise from the rim and fade. */
+@keyframes mythic-feather-rise {
+  0%   { transform: translateY(8%)   scale(0.85); opacity: 0; }
+  20%  { opacity: 1; }
+  60%  { transform: translateY(-30%) scale(1);    opacity: 0.85; }
+  100% { transform: translateY(-50%) scale(0.9);  opacity: 0; }
 }
-.animate-mythic-rune-orbit { animation: mythic-rune-orbit 16s linear infinite; will-change: transform; }
-
-@keyframes mythic-rune-counter {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(-360deg); }
+.animate-mythic-feather-rise {
+  animation: mythic-feather-rise 3.2s ease-out infinite;
+  will-change: transform, opacity;
 }
-.animate-mythic-rune-counter { animation: mythic-rune-counter 16s linear infinite; will-change: transform; }
 
-@keyframes mythic-arc-flicker {
-  0%, 12%   { opacity: 0; transform: scale(0.85); }
-  18%       { opacity: 1; transform: scale(1.05); }
-  28%       { opacity: 0.7; }
-  38%, 100% { opacity: 0; transform: scale(0.95); }
+/* frame_rainbow — narrow color streaks fan out from the top, fading
+   in/out at staggered times. Looks like white light through a prism. */
+@keyframes mythic-prism-fan {
+  0%, 12%   { opacity: 0; transform: scaleY(0.6); }
+  30%       { opacity: 1; transform: scaleY(1.1); }
+  60%       { opacity: 0.7; }
+  78%, 100% { opacity: 0; transform: scaleY(0.7); }
 }
-.animate-mythic-arc-flicker {
-  animation: mythic-arc-flicker 2.6s ease-in-out infinite;
+.animate-mythic-prism-fan {
+  animation: mythic-prism-fan 2.4s ease-in-out infinite;
   will-change: opacity, transform;
 }
 
-@keyframes mythic-spark-orbit {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+/* frame_eternal — gold and black opposite arcs trade brightness in
+   an infinite cycle. No rotation; the duality is the motion. */
+@keyframes mythic-eternal-gold {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
 }
-.animate-mythic-spark-orbit {
-  animation: mythic-spark-orbit 9s linear infinite;
+@keyframes mythic-eternal-dark {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1; }
+}
+.animate-mythic-eternal-gold {
+  animation: mythic-eternal-gold 4.4s ease-in-out infinite;
+  will-change: opacity;
+}
+.animate-mythic-eternal-dark {
+  animation: mythic-eternal-dark 4.4s ease-in-out infinite;
+  will-change: opacity;
+}
+
+/* frame_cosmic — pulsing nebula center + a slow spiral pinwheel. */
+@keyframes mythic-cosmic-core {
+  0%, 100% { opacity: 0.45; transform: scale(0.7); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+.animate-mythic-cosmic-core {
+  animation: mythic-cosmic-core 3.4s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+@keyframes mythic-cosmic-spiral {
+  from { transform: rotate(0deg)   scale(1); }
+  to   { transform: rotate(360deg) scale(1); }
+}
+.animate-mythic-cosmic-spiral {
+  animation: mythic-cosmic-spiral 22s linear infinite;
   will-change: transform;
 }
 
-@keyframes mythic-spark-twinkle {
-  0%, 100% { opacity: 0.2; transform: scale(0.6); }
+/* frame_prismatic — three thin RGB beams refract outward from one
+   point at the top, each at a slightly different angle, pulsing on
+   their own beat so the beams "split" white light apart. */
+@keyframes mythic-prism-beam {
+  0%, 20%   { opacity: 0;   transform: scaleY(0.5); }
+  35%       { opacity: 1;   transform: scaleY(1.0); }
+  55%       { opacity: 0.7; transform: scaleY(1.05); }
+  80%, 100% { opacity: 0;   transform: scaleY(0.6); }
+}
+.animate-mythic-prism-beam {
+  animation: mythic-prism-beam 2.8s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* frame_stargaze — static stars twinkling individually, no orbit. */
+@keyframes mythic-star-twinkle {
+  0%, 100% { opacity: 0.1; transform: scale(0.45); }
   50%      { opacity: 1;   transform: scale(1.1); }
 }
-.animate-mythic-spark-twinkle {
-  animation: mythic-spark-twinkle 1.8s ease-in-out infinite;
+.animate-mythic-star-twinkle {
+  animation: mythic-star-twinkle 2.2s ease-in-out infinite;
   will-change: opacity, transform;
 }
 
-@keyframes mythic-inner-pulse {
-  0%, 100% { opacity: 0.18; transform: scale(0.85); }
-  50%      { opacity: 0.45; transform: scale(1.08); }
+/* frame_celestial — constellation lines DRAW IN, hold, then erase.
+   Powered by stroke-dashoffset on the SVG path. */
+@keyframes mythic-constellation-draw {
+  0%   { stroke-dashoffset: 100%; opacity: 0; }
+  15%  { opacity: 1; }
+  60%  { stroke-dashoffset: 0%;   opacity: 1; }
+  85%  { opacity: 1; }
+  100% { stroke-dashoffset: -100%; opacity: 0; }
 }
-.animate-mythic-inner-pulse {
-  animation: mythic-inner-pulse 3.2s ease-in-out infinite;
+.animate-mythic-constellation-draw {
+  animation: mythic-constellation-draw 7s ease-in-out infinite;
+  will-change: stroke-dashoffset, opacity;
+}
+
+/* frame_void — concentric ripples implode INWARD with fade-out, like
+   an event horizon pulling things in. */
+@keyframes mythic-void-implode {
+  0%   { transform: scale(1.45); opacity: 0; }
+  20%  { opacity: 0.9; }
+  100% { transform: scale(0.5);  opacity: 0; }
+}
+.animate-mythic-void-implode {
+  animation: mythic-void-implode 2.4s cubic-bezier(0.36, 0, 0.64, 1) infinite;
+  will-change: transform, opacity;
+}
+
+/* frame_awakened — 12 sunburst rays radiate from rim, each pulsing
+   in/out (length scaleY + opacity) at staggered phases. */
+@keyframes mythic-sunburst-ray {
+  0%, 100% { opacity: 0.25; transform: scaleY(0.55); }
+  50%      { opacity: 1;    transform: scaleY(1.15); }
+}
+.animate-mythic-sunburst-ray {
+  animation: mythic-sunburst-ray 2.4s ease-in-out infinite;
   will-change: opacity, transform;
+  transform-origin: 50% 100%;
 }
 
-@keyframes mythic-rim-cyan-spin {
-  from { transform: rotate(0deg)    translateX(1.5px); }
-  to   { transform: rotate(360deg)  translateX(1.5px); }
+/* frame_pact_holder — two halves of the rim trade brightness on a
+   slow heartbeat, representing the bond between two pact-holders. */
+@keyframes mythic-pact-a {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
 }
-.animate-mythic-rim-cyan {
-  animation: mythic-rim-cyan-spin 7s linear infinite;
-  will-change: transform;
+@keyframes mythic-pact-b {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
 }
-
-@keyframes mythic-rim-magenta-spin {
-  from { transform: rotate(0deg)    translateX(-1.5px); }
-  to   { transform: rotate(-360deg) translateX(-1.5px); }
+.animate-mythic-pact-a {
+  animation: mythic-pact-a 1.8s ease-in-out infinite;
+  will-change: opacity;
 }
-.animate-mythic-rim-magenta {
-  animation: mythic-rim-magenta-spin 9s linear infinite;
-  will-change: transform;
+.animate-mythic-pact-b {
+  animation: mythic-pact-b 1.8s ease-in-out infinite;
+  will-change: opacity;
 }

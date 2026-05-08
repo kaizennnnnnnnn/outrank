@@ -136,12 +136,13 @@ export function FramedAvatar({ src, alt, size = 'md', frameId, className }: Prop
         />
       )}
 
-      {/* Mythic-only ritual overlay — runic glyph orbit, energy arcs,
-          chromatic rim split, sparkle drift. Layered ON TOP so each
-          mythic frame still inherits its base style identity, but
-          carries unmistakable extra ceremony. */}
+      {/* Mythic-only ritual overlay. One unique signature animation
+          per mythic frame — no shared "dots orbiting" effect; each
+          frame's motif comes from its name (feathers for ascension,
+          prism for rainbow, sunburst for awakened, etc.). */}
       {isMythic && (
         <MythicTreatment
+          frameId={frame.id}
           colors={frame.colors}
           accentColor={accentColor}
           hotColor={hotColor}
@@ -570,183 +571,491 @@ function GoldWreathOverlay({ hotColor, accentColor, pad }: { hotColor: string; a
   );
 }
 
-/** Mythic ritual overlay. Layered above every base style for
- *  rarity === 'mythic'. Five distinct, simultaneous effects:
- *
- *    1. Outer rune ring — 8 small SVG diamond glyphs orbiting just
- *       outside the rim on a slow CW rotation. Each glyph counter-
- *       rotates in place so it always faces "up" relative to its
- *       orbit.
- *    2. Energy arcs — 3 short luminous arcs at the rim that flicker
- *       in/out at staggered intervals (2.6s cycle, ~0.8s on, ~1.8s off).
- *    3. Chromatic rim split — two thin colored circles (cyan + magenta)
- *       offset ±1.5px from the ring on opposing rotations to fake a
- *       prismatic refraction.
- *    4. Sparkle drift — 6 small sparkle dots orbiting at 1.5x the
- *       outer radius, each twinkling on its own phase.
- *    5. Inner halo pulse — soft radial glow inside the ring that
- *       breathes outward on a slow cadence.
- *
- *  All transforms / opacity / mask only. No filter:hue-rotate, no
- *  animated box-shadow — those killed shop FPS in the prior pass. */
-function MythicTreatment({
-  colors,
-  accentColor,
-  hotColor,
-  outer,
-  size,
-}: {
+/** Mythic ritual overlay. Dispatches on frame.id so each mythic
+ *  frame gets a hand-crafted signature motion that matches its
+ *  name (feathers rising for Ascension, prism beams for Rainbow,
+ *  black-hole implosion for Void, etc.). All effects are SVG +
+ *  transform/opacity only — GPU-friendly and don't share keyframes
+ *  across frames so no two read alike. */
+type MythicProps = {
   colors: string[];
   accentColor: string;
   hotColor: string;
   outer: number;
   size: 'sm' | 'md' | 'lg' | 'xl';
-}) {
-  const tertiary = colors[Math.floor(colors.length / 2)] || hotColor;
-  const cyanish    = '#00ffe1';
-  const magentaish = '#ff00d4';
+};
+function MythicTreatment({ frameId, ...rest }: { frameId: string } & MythicProps) {
+  switch (frameId) {
+    case 'frame_ascension':   return <AscensionFeathers {...rest} />;
+    case 'frame_rainbow':     return <RainbowPrism {...rest} />;
+    case 'frame_eternal':     return <EternalDuality {...rest} />;
+    case 'frame_cosmic':      return <CosmicNebula {...rest} />;
+    case 'frame_prismatic':   return <PrismaticRefraction {...rest} />;
+    case 'frame_stargaze':    return <StargazeField {...rest} />;
+    case 'frame_celestial':   return <CelestialConstellation {...rest} />;
+    case 'frame_void':        return <VoidImplosion {...rest} />;
+    case 'frame_awakened':    return <AwakenedSunburst {...rest} />;
+    case 'frame_pact_holder': return <PactHeartbeat {...rest} />;
+    default:                  return <DefaultMythicGlow {...rest} />;
+  }
+}
 
-  // 8 runes evenly placed around the rim, just outside it.
-  const runeCount = 8;
-  const orbitRadius = outer / 2 + Math.max(4, outer * 0.06);
-  const runeSize = size === 'sm' ? 4 : size === 'xl' ? 9 : 6;
-
-  // 6 sparkles drift further out at 1.5x radius.
-  const sparkleCount = 6;
-  const sparkleRadius = outer / 2 + Math.max(8, outer * 0.18);
-  const sparkleSize = size === 'sm' ? 1.8 : size === 'xl' ? 3.5 : 2.6;
-
+/** Ascension — three soft feathers rise from the rim and fade out.
+ *  Sits at 10, 12, 2 o'clock; staggered delays sell the cascade. */
+function AscensionFeathers({ colors, outer }: MythicProps) {
+  const featherColor1 = colors[0];
+  const featherColor2 = colors[1] ?? colors[0];
+  const positions = [
+    { angle: -100, delay: 0 },
+    { angle:  -90, delay: 0.9 },
+    { angle:  -80, delay: 1.8 },
+  ];
+  const r = outer / 2;
   return (
-    <>
-      {/* Inner halo pulse — sits behind everything, breathes outward */}
-      <div
-        aria-hidden
-        className="absolute rounded-full pointer-events-none animate-mythic-inner-pulse"
-        style={{
-          inset: '12%',
-          background: `radial-gradient(circle, ${accentColor}88 0%, ${hotColor}33 50%, transparent 78%)`,
-          mixBlendMode: 'screen',
-          zIndex: 1,
-        }}
-      />
+    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+      {positions.map((p, i) => {
+        const rad = (p.angle * Math.PI) / 180;
+        const cx = Math.cos(rad) * r + outer / 2;
+        const cy = Math.sin(rad) * r + outer / 2;
+        const w = Math.max(6, outer * 0.11);
+        const h = Math.max(14, outer * 0.26);
+        return (
+          <svg
+            key={i}
+            className="absolute animate-mythic-feather-rise"
+            width={w}
+            height={h}
+            viewBox="0 0 10 24"
+            style={{
+              left: cx - w / 2,
+              top: cy - h,
+              animationDelay: `${p.delay}s`,
+              filter: `drop-shadow(0 0 4px ${featherColor1})`,
+            }}
+          >
+            <path
+              d="M5 1 Q1 6 1.5 14 Q3 22 5 23 Q7 22 8.5 14 Q9 6 5 1 Z M5 4 L5 23"
+              fill={i % 2 ? featherColor2 : featherColor1}
+              stroke="#ffffffaa"
+              strokeWidth="0.4"
+            />
+          </svg>
+        );
+      })}
+    </div>
+  );
+}
 
-      {/* Chromatic aberration — cyan ring offset right + slow CW spin */}
-      <div
-        aria-hidden
-        className="absolute rounded-full pointer-events-none animate-mythic-rim-cyan"
-        style={{
-          inset: -3,
-          border: `1px solid ${cyanish}`,
-          opacity: 0.5,
-          mixBlendMode: 'screen',
-        }}
-      />
-      {/* Chromatic aberration — magenta ring offset left + CCW spin */}
-      <div
-        aria-hidden
-        className="absolute rounded-full pointer-events-none animate-mythic-rim-magenta"
-        style={{
-          inset: -3,
-          border: `1px solid ${magentaish}`,
-          opacity: 0.5,
-          mixBlendMode: 'screen',
-        }}
-      />
-
-      {/* Energy arcs at the rim — three short luminous arcs that
-          flicker in/out. Each arc is a thin curved div positioned
-          at a cardinal point, masked to a quarter-arc. */}
-      {[0, 120, 240].map((deg, i) => {
-        const arcColor = colors[i % colors.length] || accentColor;
+/** Rainbow — five colored beam-streaks fan outward from the top of
+ *  the rim like white light through a prism. Beams pulse in/out on
+ *  staggered phases so the spectrum "sparkles" rather than spinning. */
+function RainbowPrism({ colors, outer }: MythicProps) {
+  const beamColors = colors.length >= 5
+    ? colors
+    : ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'];
+  // Five beams fanning out from the top center — angles -40 to +40
+  const angles = [-40, -20, 0, 20, 40];
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2, borderRadius: '50%' }}>
+      {angles.map((a, i) => {
+        const w = Math.max(2, outer * 0.04);
+        const h = outer * 0.55;
         return (
           <div
-            key={`arc-${deg}`}
-            aria-hidden
-            className="absolute pointer-events-none animate-mythic-arc-flicker"
+            key={i}
+            className="absolute animate-mythic-prism-fan"
             style={{
-              inset: -2,
-              transform: `rotate(${deg}deg)`,
-              animationDelay: `${i * 0.85}s`,
-              borderRadius: '50%',
-              border: `2px solid transparent`,
-              borderTopColor: arcColor,
-              borderRightColor: arcColor,
-              boxShadow: `0 0 8px ${arcColor}aa`,
-              mixBlendMode: 'screen',
+              left: '50%',
+              top: 0,
+              width: w,
+              height: h,
+              marginLeft: -w / 2,
+              transformOrigin: '50% 100%',
+              transform: `translateY(-30%) rotate(${a}deg)`,
+              background: `linear-gradient(to top, ${beamColors[i]}, transparent)`,
+              animationDelay: `${i * 0.2}s`,
+              filter: `drop-shadow(0 0 3px ${beamColors[i]})`,
             }}
           />
         );
       })}
+    </div>
+  );
+}
 
-      {/* Outer rune ring — diamond glyphs orbiting just outside rim */}
+/** Eternal — top semicircle gold, bottom semicircle black. Their
+ *  brightness trades on a slow infinite cycle. The duality IS the
+ *  motion — no rotation, no orbiting. */
+function EternalDuality({ outer }: MythicProps) {
+  const gold = '#fbbf24';
+  const dark = '#0c0a09';
+  return (
+    <svg
+      className="absolute inset-0 pointer-events-none"
+      width={outer}
+      height={outer}
+      viewBox={`0 0 ${outer} ${outer}`}
+      style={{ zIndex: 2 }}
+    >
+      {/* Top gold half */}
+      <path
+        className="animate-mythic-eternal-gold"
+        d={`M ${outer / 2 - outer / 2 + 2} ${outer / 2} A ${outer / 2 - 2} ${outer / 2 - 2} 0 0 1 ${outer - 2} ${outer / 2}`}
+        fill="none"
+        stroke={gold}
+        strokeWidth="3"
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 4px ${gold})` }}
+      />
+      {/* Bottom dark half */}
+      <path
+        className="animate-mythic-eternal-dark"
+        d={`M 2 ${outer / 2} A ${outer / 2 - 2} ${outer / 2 - 2} 0 0 0 ${outer - 2} ${outer / 2}`}
+        fill="none"
+        stroke={dark}
+        strokeWidth="3"
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 4px ${gold}66)` }}
+      />
+      {/* Hairline diamond sigil where the two halves meet, marking
+          the cycle's pivot. */}
+      <circle cx={2} cy={outer / 2} r={2.5} fill={gold} />
+      <circle cx={outer - 2} cy={outer / 2} r={2.5} fill={gold} />
+    </svg>
+  );
+}
+
+/** Cosmic — pulsing nebula at center + a slow spiral pinwheel.
+ *  Reads as a galaxy rather than dots in a circle. */
+function CosmicNebula({ colors, outer }: MythicProps) {
+  const purple = colors[1] || '#7c3aed';
+  const pink   = colors[2] || '#ec4899';
+  const cyan   = colors[3] || '#22d3ee';
+  return (
+    <>
+      {/* Pulsing nebula core */}
       <div
         aria-hidden
-        className="absolute pointer-events-none animate-mythic-rune-orbit"
+        className="absolute rounded-full pointer-events-none animate-mythic-cosmic-core"
         style={{
-          inset: 0,
-          width: outer,
-          height: outer,
+          inset: '20%',
+          background: `radial-gradient(circle, #ffffff 0%, ${pink}cc 25%, ${purple}88 55%, transparent 80%)`,
+          mixBlendMode: 'screen',
+          zIndex: 1,
         }}
-      >
-        {Array.from({ length: runeCount }).map((_, i) => {
-          const angle = (i / runeCount) * Math.PI * 2;
-          const cx = Math.cos(angle) * orbitRadius + outer / 2;
-          const cy = Math.sin(angle) * orbitRadius + outer / 2;
-          const c = colors[i % colors.length];
-          return (
-            <div
-              key={`rune-${i}`}
-              className="absolute animate-mythic-rune-counter"
-              style={{
-                left: cx - runeSize / 2,
-                top: cy - runeSize / 2,
-                width: runeSize,
-                height: runeSize,
-                background: c,
-                transform: 'rotate(45deg)',
-                boxShadow: `0 0 5px ${c}`,
-              }}
-            />
-          );
-        })}
-      </div>
-
-      {/* Sparkle drift — small dots orbiting further out, each
-          twinkling individually on top of the orbit rotation. */}
+      />
+      {/* Slow spiral pinwheel — single conic gradient masked to two
+          opposing thin arms; rotation makes them sweep without the
+          dots-in-circle feeling. */}
       <div
         aria-hidden
-        className="absolute pointer-events-none animate-mythic-spark-orbit"
+        className="absolute inset-0 rounded-full pointer-events-none animate-mythic-cosmic-spiral"
         style={{
-          inset: 0,
-          width: outer,
-          height: outer,
+          background: `conic-gradient(from 0deg,
+            transparent 0%,
+            ${cyan}99 8%,
+            transparent 18%,
+            transparent 50%,
+            ${pink}99 58%,
+            transparent 68%,
+            transparent 100%)`,
+          opacity: 0.55,
+          mixBlendMode: 'screen',
+          mask: 'radial-gradient(circle, transparent 28%, black 32%, black 70%, transparent 78%)',
+          WebkitMask: 'radial-gradient(circle, transparent 28%, black 32%, black 70%, transparent 78%)',
+          zIndex: 2,
         }}
-      >
-        {Array.from({ length: sparkleCount }).map((_, i) => {
-          // Golden-angle distribution so the dots don't line up with
-          // the runes; deterministic so SSR matches client.
-          const angle = (i * 137.508 * Math.PI) / 180;
-          const cx = Math.cos(angle) * sparkleRadius + outer / 2;
-          const cy = Math.sin(angle) * sparkleRadius + outer / 2;
-          const c = i % 3 === 0 ? '#ffffff' : (colors[i % colors.length] || tertiary);
-          return (
-            <div
-              key={`spark-${i}`}
-              className="absolute rounded-full animate-mythic-spark-twinkle"
-              style={{
-                left: cx - sparkleSize / 2,
-                top: cy - sparkleSize / 2,
-                width: sparkleSize,
-                height: sparkleSize,
-                background: c,
-                boxShadow: `0 0 6px ${c}`,
-                animationDelay: `${(i / sparkleCount) * 1.8}s`,
-              }}
-            />
-          );
-        })}
-      </div>
+      />
     </>
+  );
+}
+
+/** Prismatic — three thin RGB beams refract from one point at the
+ *  top of the rim, each pulsing on its own beat. Like white light
+ *  splitting through a prism, fully static positions. */
+function PrismaticRefraction({ outer }: MythicProps) {
+  const beams = [
+    { color: '#ff3366', angle: -25 },
+    { color: '#33ff88', angle:   0 },
+    { color: '#3366ff', angle:  25 },
+  ];
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2, borderRadius: '50%' }}>
+      {beams.map((b, i) => {
+        const w = Math.max(2, outer * 0.05);
+        const h = outer * 0.7;
+        return (
+          <div
+            key={i}
+            className="absolute animate-mythic-prism-beam"
+            style={{
+              left: '50%',
+              top: '8%',
+              width: w,
+              height: h,
+              marginLeft: -w / 2,
+              transformOrigin: '50% 0%',
+              transform: `rotate(${b.angle}deg)`,
+              background: `linear-gradient(to bottom, ${b.color}, ${b.color}77 60%, transparent)`,
+              animationDelay: `${i * 0.4}s`,
+              filter: `drop-shadow(0 0 3px ${b.color})`,
+            }}
+          />
+        );
+      })}
+      {/* Single white pinpoint at the prism's apex */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          left: '50%',
+          top: '8%',
+          width: 4,
+          height: 4,
+          marginLeft: -2,
+          marginTop: -2,
+          background: '#ffffff',
+          boxShadow: '0 0 6px #ffffff',
+        }}
+      />
+    </div>
+  );
+}
+
+/** Stargaze — 8 stars at fixed positions OUTSIDE the rim, each
+ *  twinkling individually. Static positions, never orbits. */
+function StargazeField({ colors, outer }: MythicProps) {
+  // Hand-placed positions so the constellation reads as deliberate.
+  const stars = [
+    { angle: -75, dist: 0.62 },
+    { angle: -30, dist: 0.58 },
+    { angle:  20, dist: 0.65 },
+    { angle:  60, dist: 0.55 },
+    { angle: 110, dist: 0.62 },
+    { angle: 155, dist: 0.58 },
+    { angle: 200, dist: 0.6 },
+    { angle: 250, dist: 0.6 },
+  ];
+  const r = outer / 2;
+  return (
+    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+      {stars.map((s, i) => {
+        const rad = (s.angle * Math.PI) / 180;
+        const cx = Math.cos(rad) * (r + r * s.dist) + outer / 2;
+        const cy = Math.sin(rad) * (r + r * s.dist) + outer / 2;
+        const c = i % 3 === 0 ? '#ffffff' : (colors[i % colors.length] || '#ffffff');
+        const sz = i % 4 === 0 ? 4 : 2.4;
+        return (
+          <div
+            key={i}
+            className="absolute rounded-full animate-mythic-star-twinkle"
+            style={{
+              left: cx - sz / 2,
+              top: cy - sz / 2,
+              width: sz,
+              height: sz,
+              background: c,
+              boxShadow: `0 0 5px ${c}, 0 0 2px #ffffff`,
+              animationDelay: `${(i / stars.length) * 2.2}s`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** Celestial — connect-the-dots constellation: stars at fixed
+ *  positions, an SVG line traces between them by drawing in via
+ *  stroke-dashoffset, holds, then erases backward. */
+function CelestialConstellation({ colors, outer }: MythicProps) {
+  const lineColor = colors[1] || '#ffffff';
+  // Five stars forming a "W" / Cassiopeia-style constellation
+  const stars = [
+    { x: 0.18, y: 0.78 },
+    { x: 0.32, y: 0.30 },
+    { x: 0.50, y: 0.62 },
+    { x: 0.68, y: 0.30 },
+    { x: 0.82, y: 0.78 },
+  ];
+  const points = stars.map(s => `${s.x * outer},${s.y * outer}`);
+  const pathD = `M ${points[0]} L ${points[1]} L ${points[2]} L ${points[3]} L ${points[4]}`;
+  return (
+    <svg
+      className="absolute inset-0 pointer-events-none"
+      width={outer}
+      height={outer}
+      viewBox={`0 0 ${outer} ${outer}`}
+      style={{ zIndex: 2 }}
+    >
+      <path
+        d={pathD}
+        className="animate-mythic-constellation-draw"
+        fill="none"
+        stroke={lineColor}
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeDasharray="100%"
+        style={{ filter: `drop-shadow(0 0 3px ${lineColor})` }}
+      />
+      {stars.map((s, i) => (
+        <circle
+          key={i}
+          cx={s.x * outer}
+          cy={s.y * outer}
+          r={2}
+          fill="#ffffff"
+          style={{ filter: `drop-shadow(0 0 3px ${lineColor})` }}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Void — three concentric rings IMPLODE inward (scale down + fade).
+ *  Pure event-horizon energy: things get pulled in. */
+function VoidImplosion({ colors }: MythicProps) {
+  const ringColor1 = colors[1] || '#4c1d95';
+  const ringColor2 = colors[2] || '#ec4899';
+  const ringColor3 = colors[3] || '#f5d0fe';
+  return (
+    <>
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-void-implode"
+        style={{
+          inset: 0,
+          border: `2px solid ${ringColor1}`,
+          boxShadow: `0 0 12px ${ringColor1}`,
+          zIndex: 2,
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-void-implode"
+        style={{
+          inset: 0,
+          border: `2px solid ${ringColor2}`,
+          animationDelay: '0.8s',
+          boxShadow: `0 0 12px ${ringColor2}`,
+          zIndex: 2,
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute rounded-full pointer-events-none animate-mythic-void-implode"
+        style={{
+          inset: 0,
+          border: `1px solid ${ringColor3}`,
+          animationDelay: '1.6s',
+          zIndex: 2,
+        }}
+      />
+    </>
+  );
+}
+
+/** Awakened — 12 sunburst rays radiating outward at fixed angles,
+ *  each pulsing in/out (length + opacity) on staggered phases. No
+ *  rotation — the rays "breathe" rather than orbit. Uses a zero-size
+ *  rotation wrapper at center; the ray is positioned absolutely
+ *  inside it so it ends up at the rim, pointing outward. */
+function AwakenedSunburst({ colors, outer }: MythicProps) {
+  const rayCount = 12;
+  const rayColors = colors.length >= 4 ? colors : [...colors, '#ffffff', '#fde047'];
+  const rayLength = outer * 0.3;
+  const rayWidth  = Math.max(2, outer * 0.025);
+  return (
+    <div className="absolute pointer-events-none" style={{ inset: 0, zIndex: 2 }}>
+      {Array.from({ length: rayCount }).map((_, i) => {
+        const angle = (i / rayCount) * 360;
+        const c = rayColors[i % rayColors.length];
+        return (
+          <div
+            key={i}
+            className="absolute"
+            style={{
+              left: '50%',
+              top: '50%',
+              width: 0,
+              height: 0,
+              transform: `rotate(${angle}deg)`,
+            }}
+          >
+            <div
+              className="animate-mythic-sunburst-ray"
+              style={{
+                position: 'absolute',
+                left: -rayWidth / 2,
+                top: -(outer / 2 + rayLength),
+                width: rayWidth,
+                height: rayLength,
+                background: `linear-gradient(to top, ${c}, transparent)`,
+                animationDelay: `${(i % 4) * 0.3}s`,
+                filter: `drop-shadow(0 0 4px ${c})`,
+              }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Pact Holder — left and right halves of the rim trade brightness
+ *  in a synchronized heartbeat, representing the bond between two
+ *  pact-holders breathing in sync. */
+function PactHeartbeat({ outer }: MythicProps) {
+  const gold  = '#fbbf24';
+  const amber = '#f97316';
+  return (
+    <svg
+      className="absolute inset-0 pointer-events-none"
+      width={outer}
+      height={outer}
+      viewBox={`0 0 ${outer} ${outer}`}
+      style={{ zIndex: 2 }}
+    >
+      {/* Left half — gold */}
+      <path
+        className="animate-mythic-pact-a"
+        d={`M ${outer / 2} 2 A ${outer / 2 - 2} ${outer / 2 - 2} 0 0 0 ${outer / 2} ${outer - 2}`}
+        fill="none"
+        stroke={gold}
+        strokeWidth="3"
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 5px ${gold})` }}
+      />
+      {/* Right half — amber */}
+      <path
+        className="animate-mythic-pact-b"
+        d={`M ${outer / 2} 2 A ${outer / 2 - 2} ${outer / 2 - 2} 0 0 1 ${outer / 2} ${outer - 2}`}
+        fill="none"
+        stroke={amber}
+        strokeWidth="3"
+        strokeLinecap="round"
+        style={{ filter: `drop-shadow(0 0 5px ${amber})` }}
+      />
+      {/* Two pact-points where the halves meet */}
+      <circle cx={outer / 2} cy={2}        r={3} fill="#ffffff" />
+      <circle cx={outer / 2} cy={outer - 2} r={3} fill="#ffffff" />
+    </svg>
+  );
+}
+
+/** Default mythic — soft inner pulse only, used for any future
+ *  mythic frame ID we haven't custom-designed yet. */
+function DefaultMythicGlow({ accentColor, hotColor }: MythicProps) {
+  return (
+    <div
+      aria-hidden
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        inset: '15%',
+        background: `radial-gradient(circle, ${accentColor}aa 0%, ${hotColor}55 50%, transparent 78%)`,
+        mixBlendMode: 'screen',
+        zIndex: 1,
+      }}
+    />
   );
 }
 
