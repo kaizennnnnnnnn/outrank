@@ -28,7 +28,7 @@ export default function OnboardPhase7Page() {
   const { draft, update, hydrated } = useOnboardingDraft();
   const [step, setStep] = useState(0);
 
-  const isPro = draft.tier === 'pro';
+  const isPro = draft.tier === 'pro' || draft.tier === 'pro-weekly';
 
   const next = () => {
     // Free users skip the trial + payment steps and go straight to Phase 8.
@@ -104,7 +104,7 @@ function renderFooter(
     (step === 2);
 
   const labels: Record<number, string> = {
-    0: draft.tier === 'pro' ? 'Start free trial' : 'Continue free',
+    0: draft.tier === 'free' ? 'Continue free' : 'Start free trial',
     1: 'Continue',
     2: 'Start 7-day free trial',
   };
@@ -151,121 +151,178 @@ const FREE_FEATURES = [
   'Basic orb customization',
 ];
 
-function PlanPickerStep({
-  value,
-  onChange,
-}: {
-  value?: Tier;
-  onChange: (v: Tier) => void;
-}) {
+interface PlanCardProps {
+  tier: Tier;
+  selected: boolean;
+  onSelect: () => void;
+  ribbon?: string;
+  name: string;
+  period: string;
+  price: string;
+  unit: string;
+  subnote: string;
+  icon: React.ReactNode;
+  features?: string[];
+  compact?: boolean;
+  highlight?: boolean;
+}
+
+function PlanCard({
+  selected,
+  onSelect,
+  ribbon,
+  name,
+  period,
+  price,
+  unit,
+  subnote,
+  icon,
+  features,
+  compact,
+  highlight,
+}: PlanCardProps) {
   return (
-    <div className="flex flex-col flex-1">
-      <div className="text-center">
+    <button
+      onClick={onSelect}
+      style={{
+        position: 'relative',
+        width: '100%',
+        textAlign: 'left',
+        padding: compact ? '12px 14px' : '16px',
+        background: selected
+          ? 'color-mix(in srgb, var(--b-accent) 7%, var(--b-paper))'
+          : 'var(--b-paper)',
+        border: selected ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
+        borderLeft: selected
+          ? '3px solid var(--b-accent)'
+          : (highlight ? '3px solid var(--b-ink)' : '3px solid transparent'),
+        cursor: 'pointer',
+        color: 'var(--b-ink)',
+        overflow: 'hidden',
+        transition: 'background 200ms ease, border-color 200ms ease',
+      }}
+    >
+      {ribbon && (
         <div
           className="spread"
-          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
-        >
-          Choose your path
-        </div>
-        <h2
-          className="font-display"
           style={{
-            fontSize: 28,
-            fontWeight: 500,
-            lineHeight: 1.05,
-            margin: '8px 0 0',
+            fontSize: 9,
+            color: 'var(--b-accent)',
+            marginBottom: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
           }}
         >
-          How do you want to{' '}
-          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>start</em>?
-        </h2>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18 }}>
-        {/* PRO card */}
-        <button
-          onClick={() => onChange('pro')}
-          style={{
-            position: 'relative',
-            width: '100%',
-            textAlign: 'left',
-            padding: 16,
-            background: 'transparent',
-            border: value === 'pro' ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
-            borderLeft: value === 'pro' ? '3px solid var(--b-accent)' : '3px solid var(--b-ink)',
-            cursor: 'pointer',
-            color: 'var(--b-ink)',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Eyebrow ribbon */}
-          <div
-            className="spread"
+          <span
+            aria-hidden
             style={{
-              fontSize: 9,
-              color: 'var(--b-accent)',
-              marginBottom: 10,
+              display: 'inline-block',
+              width: 14,
+              height: 1,
+              background: 'var(--b-accent)',
             }}
-          >
-            Best value · 7 days free
-          </div>
+          />
+          {ribbon}
+        </div>
+      )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr auto',
+          alignItems: 'center',
+          gap: 12,
+        }}
+      >
+        {/* Icon medallion */}
+        <div
+          style={{
+            width: compact ? 32 : 38,
+            height: compact ? 32 : 38,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: selected ? '1px solid var(--b-accent)' : '1px solid var(--b-ink)',
+            color: selected ? 'var(--b-accent)' : 'var(--b-ink)',
+          }}
+        >
+          <span style={{ display: 'inline-flex' }}>{icon}</span>
+        </div>
+
+        {/* Name + period eyebrow */}
+        <div style={{ minWidth: 0 }}>
+          {period && (
             <div
+              className="spread"
               style={{
-                width: 36,
-                height: 36,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                border: '1px solid var(--b-ink)',
-                color: 'var(--b-ink)',
+                fontSize: 8,
+                color: selected ? 'var(--b-accent)' : 'var(--b-ink-60)',
+                marginBottom: 2,
               }}
             >
-              <span style={{ display: 'inline-flex' }}>
-                <TrophyIconFull size={18} />
-              </span>
+              {period}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p
-                className="font-display"
+          )}
+          <div
+            className="font-display"
+            style={{
+              fontSize: compact ? 16 : 20,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              color: 'var(--b-ink)',
+              lineHeight: 1.05,
+            }}
+          >
+            {name}
+          </div>
+        </div>
+
+        {/* Price block */}
+        <div style={{ textAlign: 'right' }}>
+          <div
+            className="font-display tabular"
+            style={{
+              fontSize: compact ? 18 : 22,
+              fontWeight: 600,
+              color: selected ? 'var(--b-accent)' : 'var(--b-ink)',
+              lineHeight: 1,
+            }}
+          >
+            {price}
+            {unit && (
+              <span
+                className="font-body"
                 style={{
-                  fontSize: 18,
-                  fontStyle: 'italic',
-                  fontWeight: 500,
-                  color: 'var(--b-ink)',
-                  margin: 0,
-                  lineHeight: 1.1,
+                  fontSize: 10,
+                  fontWeight: 400,
+                  color: 'var(--b-ink-60)',
+                  marginLeft: 2,
                 }}
               >
-                Outrank Pro
-              </p>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
-                <span
-                  className="font-display"
-                  style={{ fontSize: 15, fontWeight: 500, color: 'var(--b-ink)' }}
-                >
-                  $9.99
-                </span>
-                <span
-                  className="font-body"
-                  style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
-                >
-                  / month after trial
-                </span>
-              </div>
-            </div>
-            {value === 'pro' && (
-              <span style={{ color: 'var(--b-accent)', display: 'inline-flex', flexShrink: 0 }}>
-                <CheckCircleFullIcon size={20} />
+                {unit}
               </span>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Hairline divider */}
-          <div style={{ borderTop: '1px solid var(--b-rule)', margin: '12px 0' }} />
+      {/* Subnote */}
+      <div
+        className="font-body"
+        style={{
+          marginTop: compact ? 4 : 8,
+          fontSize: 10.5,
+          color: 'var(--b-ink-60)',
+          letterSpacing: '0.02em',
+        }}
+      >
+        {subnote}
+      </div>
 
+      {features && features.length > 0 && (
+        <>
+          <div style={{ borderTop: '1px solid var(--b-rule)', margin: '12px 0 10px' }} />
           <ul
             style={{
               display: 'grid',
@@ -277,7 +334,7 @@ function PlanPickerStep({
               padding: 0,
             }}
           >
-            {PRO_FEATURES.map((f) => (
+            {features.map((f) => (
               <li
                 key={f}
                 className="font-body"
@@ -290,74 +347,110 @@ function PlanPickerStep({
                   color: 'var(--b-ink)',
                 }}
               >
-                <span style={{ color: 'var(--b-accent)', display: 'inline-flex', marginTop: 2, flexShrink: 0 }}>
+                <span
+                  style={{
+                    color: 'var(--b-accent)',
+                    display: 'inline-flex',
+                    marginTop: 2,
+                    flexShrink: 0,
+                  }}
+                >
                   <CheckCircleFullIcon size={11} />
                 </span>
                 <span>{f}</span>
               </li>
             ))}
           </ul>
-        </button>
+        </>
+      )}
+    </button>
+  );
+}
 
-        {/* FREE card */}
-        <button
-          onClick={() => onChange('free')}
+function PlanPickerStep({
+  value,
+  onChange,
+}: {
+  value?: Tier;
+  onChange: (v: Tier) => void;
+}) {
+  return (
+    <div className="flex flex-col flex-1">
+      <div className="text-center">
+        <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+          Choose your path
+        </div>
+        <h2
+          className="font-display"
+          style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.05, margin: '8px 0 0' }}
+        >
+          How do you want to{' '}
+          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>start</em>?
+        </h2>
+        <p
+          className="font-body"
           style={{
-            width: '100%',
-            textAlign: 'left',
-            padding: 14,
-            background: 'transparent',
-            border: value === 'free' ? '1px solid var(--b-accent)' : '1px solid var(--b-rule)',
-            borderLeft: value === 'free' ? '3px solid var(--b-accent)' : '3px solid transparent',
-            cursor: 'pointer',
-            color: 'var(--b-ink)',
+            fontSize: 12,
+            color: 'var(--b-ink-60)',
+            margin: '8px auto 0',
+            maxWidth: 320,
+            lineHeight: 1.5,
+            fontStyle: 'italic',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                border: '1px solid var(--b-rule)',
-                color: 'var(--b-ink-60)',
-              }}
-            >
-              <span style={{ display: 'inline-flex' }}>
-                <BoltFullIcon size={16} />
-              </span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p
-                className="font-display"
-                style={{
-                  fontSize: 16,
-                  fontStyle: 'italic',
-                  fontWeight: 500,
-                  color: value === 'free' ? 'var(--b-ink)' : 'var(--b-ink-60)',
-                  margin: 0,
-                  lineHeight: 1.1,
-                }}
-              >
-                Free
-              </p>
-              <p
-                className="font-body"
-                style={{ fontSize: 11, color: 'var(--b-ink-60)', margin: '4px 0 0' }}
-              >
-                Forever · no card · core features
-              </p>
-            </div>
-            {value === 'free' && (
-              <span style={{ color: 'var(--b-accent)', display: 'inline-flex' }}>
-                <CheckCircleFullIcon size={18} />
-              </span>
-            )}
-          </div>
-        </button>
+          7 days free, either way. Pick the rhythm that fits.
+        </p>
+      </div>
+
+      {/* MONTHLY (best-value) — full feature card */}
+      <div style={{ marginTop: 18 }}>
+        <PlanCard
+          tier="pro"
+          selected={value === 'pro'}
+          onSelect={() => onChange('pro')}
+          ribbon="Best value · 7 days free"
+          name="Outrank Pro"
+          period="Monthly"
+          price="$9.99"
+          unit="/mo"
+          subnote="≈ $2.30 / week · cancel anytime"
+          icon={<TrophyIconFull size={18} />}
+          features={PRO_FEATURES}
+          highlight
+        />
+      </div>
+
+      {/* WEEKLY — same Pro features, shorter commitment */}
+      <div style={{ marginTop: 10 }}>
+        <PlanCard
+          tier="pro-weekly"
+          selected={value === 'pro-weekly'}
+          onSelect={() => onChange('pro-weekly')}
+          ribbon="7 days free · Weekly"
+          name="Outrank Pro"
+          period="Weekly"
+          price="$3.99"
+          unit="/week"
+          subnote="Cancel anytime · same features as monthly"
+          icon={<FireIcon size={18} />}
+          compact
+        />
+      </div>
+
+      {/* FREE — compact */}
+      <div style={{ marginTop: 10 }}>
+        <PlanCard
+          tier="free"
+          selected={value === 'free'}
+          onSelect={() => onChange('free')}
+          name="Free"
+          period=""
+          price="$0"
+          unit=""
+          subnote="Forever · no card · core features"
+          icon={<BoltFullIcon size={16} />}
+          compact
+        />
       </div>
 
       <p
@@ -373,7 +466,8 @@ function PlanPickerStep({
         Cancel anytime. No charge during your free trial.
       </p>
 
-      {/* Hidden but keeps the FREE_FEATURES export usage from being unused */}
+      {/* Keep FREE_FEATURES referenced so the eslint unused-export rule
+          doesn't flag it; we may render this list elsewhere later. */}
       <span style={{ display: 'none' }} aria-hidden>
         {FREE_FEATURES.join(',')}
       </span>

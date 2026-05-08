@@ -11,19 +11,23 @@ import { ActiveLiftersGlobe } from '@/components/onboarding/ActiveLiftersGlobe';
 import { BestLift } from '@/types/onboarding';
 
 /**
- * Phase 6 — First rank reveal.
+ * Phase 6 — Best lift + active-lifters globe.
  *
- * Five steps:
+ * Three steps:
  *   0. "Great choice!" — personal plan recap interlude
  *   1. Pick best lift + reps/weight (exercise carousel + ScrollPicker)
- *   2. Rank reveal — big badge animation with percentile
- *   3. Projected rank — "You can reach Champion by [date]"
- *   4. Active lifters globe — animated dot count
+ *   2. Active lifters globe — animated dot count
  *
- * Hand-off goes to /onboard/phase7 (placeholder).
+ * The lift is stored in the onboarding draft (no rank assigned) so it
+ * later surfaces on the user's profile as a shareable, editable stat.
+ * Hand-off goes to /onboard/phase7.
  */
 
-const TOTAL_STEPS = 5;
+// Three steps after dropping per-lift ranks: plan recap, best lift,
+// active-lifters globe. The lift the user picks is saved to the
+// onboarding draft as bestLifts (no rank assignment) so it can later
+// surface on their profile and be edited / shared.
+const TOTAL_STEPS = 3;
 
 // Exercise catalog — each has a unit (reps for bodyweight, kg/lbs for
 // weight) and a thresholds array mapping rank tier index → minimum
@@ -43,20 +47,6 @@ interface ExerciseDef {
   pickerStep: number;
 }
 
-// Each rank now has a richer color set: a primary, a darker base
-// for shadow stops, and a brighter highlight for top sheen — gives
-// the metallic depth instead of a flat hex tint.
-const RANKS = [
-  { name: 'Iron',     color: '#94a3b8', dark: '#475569', light: '#e2e8f0', percentile: 25 },
-  { name: 'Bronze',   color: '#b45309', dark: '#78350f', light: '#fbbf24', percentile: 50 },
-  { name: 'Silver',   color: '#cbd5e1', dark: '#64748b', light: '#f8fafc', percentile: 70 },
-  { name: 'Gold',     color: '#fbbf24', dark: '#92400e', light: '#fef3c7', percentile: 85 },
-  { name: 'Platinum', color: '#22d3ee', dark: '#0e7490', light: '#ecfeff', percentile: 93 },
-  { name: 'Diamond',  color: '#60a5fa', dark: '#1e40af', light: '#eff6ff', percentile: 97 },
-  { name: 'Master',   color: '#a855f7', dark: '#581c87', light: '#f3e8ff', percentile: 99 },
-  { name: 'Champion', color: '#fb923c', dark: '#7c2d12', light: '#fef3c7', percentile: 99.7 },
-] as const;
-
 const EXERCISES: ExerciseDef[] = [
   { id: 'pushups',  name: 'Push Ups',     unitKind: 'reps',   thresholds: [0, 6, 16, 31, 51, 76, 101, 151],     defaultValue: 20,  pickerMax: 250, pickerStep: 1 },
   { id: 'pullups',  name: 'Pull Ups',     unitKind: 'reps',   thresholds: [0, 2, 6, 11, 16, 21, 26, 36],         defaultValue: 8,   pickerMax: 60,  pickerStep: 1 },
@@ -65,14 +55,6 @@ const EXERCISES: ExerciseDef[] = [
   { id: 'squat',    name: 'Squat',        unitKind: 'weight', thresholds: [0, 40, 70, 100, 130, 160, 190, 230],  defaultValue: 80,  pickerMax: 350, pickerStep: 5 },
   { id: 'deadlift', name: 'Deadlift',     unitKind: 'weight', thresholds: [0, 50, 90, 130, 170, 200, 230, 270],  defaultValue: 100, pickerMax: 400, pickerStep: 5 },
 ];
-
-function rankIndexFor(ex: ExerciseDef, value: number): number {
-  let idx = 0;
-  for (let i = 0; i < ex.thresholds.length; i++) {
-    if (value >= ex.thresholds[i]) idx = i;
-  }
-  return idx;
-}
 
 // Shared editorial CTA — filled-ink footer button matching phase3's renderFooter.
 function EditorialCTA({
@@ -127,7 +109,6 @@ export default function OnboardPhase6Page() {
   const [pickerValue, setPickerValue] = useState(EXERCISES[0].defaultValue);
 
   const exercise = EXERCISES[exerciseIndex];
-  const rankIdx = rankIndexFor(exercise, pickerValue);
 
   // Reset picker default when exercise changes (so user doesn't keep
   // their squat weight when they swipe to push ups)
@@ -137,7 +118,9 @@ export default function OnboardPhase6Page() {
 
   const next = () => {
     if (step < TOTAL_STEPS - 1) {
-      // Save the best lift on the rank-reveal transition (step 1 → 2)
+      // Save the best lift when leaving the lift-picker step. No rank
+      // is computed — the lift just lives on the user's profile as a
+      // shareable stat.
       if (step === 1) {
         const lift: BestLift = {
           exercise: exercise.id,
@@ -168,32 +151,8 @@ export default function OnboardPhase6Page() {
     );
   }
 
-  // Step 2 (rank reveal) and 3 (projection) and 4 (globe) render
-  // standalone — they don't use the normal wizard footer because they
-  // have their own bespoke animations + CTAs.
+  // Step 2 (active-lifters globe) renders standalone with its own CTA.
   if (step === 2) {
-    return (
-      <RankRevealStep
-        exercise={exercise}
-        value={pickerValue}
-        rankIdx={rankIdx}
-        onContinue={next}
-        onBack={back}
-        step={step}
-      />
-    );
-  }
-  if (step === 3) {
-    return (
-      <ProjectedRankStep
-        rankIdx={rankIdx}
-        onContinue={next}
-        onBack={back}
-        step={step}
-      />
-    );
-  }
-  if (step === 4) {
     return (
       <ActiveLiftersGlobeStep
         onContinue={next}
@@ -211,7 +170,7 @@ export default function OnboardPhase6Page() {
       showBack
       footer={
         <EditorialCTA onClick={next}>
-          {step === 0 ? 'Continue →' : 'Get my rank →'}
+          {step === 0 ? 'Continue →' : 'Save my best lift →'}
         </EditorialCTA>
       }
     >
@@ -307,7 +266,7 @@ function BestLiftStep({
           className="spread"
           style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
         >
-          First rank
+          For your profile
         </div>
         <h2
           className="font-display"
@@ -579,528 +538,6 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
 }
 
 // ─── Step 2: Rank reveal ─────────────────────────────────────────────────────
-
-function RankRevealStep({
-  exercise,
-  value,
-  rankIdx,
-  onContinue,
-  onBack,
-  step,
-}: {
-  exercise: ExerciseDef;
-  value: number;
-  rankIdx: number;
-  onContinue: () => void;
-  onBack: () => void;
-  step: number;
-}) {
-  const rank = RANKS[rankIdx];
-  const [revealed, setRevealed] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setRevealed(true), 200);
-    return () => clearTimeout(t);
-  }, []);
-
-  return (
-    <WizardShell
-      step={step}
-      totalSteps={TOTAL_STEPS}
-      onBack={onBack}
-      showBack
-      footer={
-        <EditorialCTA
-          onClick={onContinue}
-          motionInitial={{ opacity: 0 }}
-          motionAnimate={{ opacity: revealed ? 1 : 0 }}
-          motionTransition={{ delay: 1.4, duration: 0.5 }}
-        >
-          Continue →
-        </EditorialCTA>
-      }
-    >
-      <div className="flex flex-col items-center text-center flex-1 justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4 }}
-          className="spread"
-          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
-        >
-          {exercise.name} — {value} {exercise.unitKind === 'reps' ? 'reps' : 'kg'}
-        </motion.div>
-
-        {/* Big rank badge with reveal animation — keeps the metallic SVG
-            since the badge itself IS the artwork; only the surrounding
-            chrome (halo blur, neon shadow) is removed for editorial. */}
-        <div className="relative mt-6">
-          {/* Sparkle rays */}
-          <motion.svg
-            initial={{ opacity: 0, rotate: -30, scale: 0.6 }}
-            animate={{ opacity: revealed ? 0.5 : 0, rotate: 0, scale: 1 }}
-            transition={{ delay: 0.5, duration: 0.9, ease: 'easeOut' }}
-            width="300"
-            height="300"
-            viewBox="0 0 100 100"
-            className="absolute inset-0 m-auto"
-          >
-            {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-              <line
-                key={angle}
-                x1="50"
-                y1="50"
-                x2="50"
-                y2="2"
-                stroke="var(--b-ink-40)"
-                strokeWidth="0.8"
-                strokeLinecap="round"
-                opacity="0.5"
-                transform={`rotate(${angle} 50 50)`}
-              />
-            ))}
-          </motion.svg>
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0, rotate: -15 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ delay: 0.4, type: 'spring', stiffness: 180, damping: 14 }}
-            className="relative"
-          >
-            <RankBadgeBig rank={rank} />
-          </motion.div>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.5 }}
-        >
-          <h2
-            className="font-display"
-            style={{
-              fontSize: 38,
-              fontStyle: 'italic',
-              fontWeight: 500,
-              lineHeight: 1.05,
-              marginTop: 24,
-              color: 'var(--b-ink)',
-            }}
-          >
-            <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{rank.name}</em>
-          </h2>
-          <p
-            className="font-body"
-            style={{
-              fontSize: 13,
-              color: 'var(--b-ink-60)',
-              marginTop: 12,
-              lineHeight: 1.6,
-            }}
-          >
-            You&apos;re in the top{' '}
-            <span style={{ color: 'var(--b-ink)', fontWeight: 700 }}>
-              {(100 - rank.percentile).toFixed(rank.percentile >= 99 ? 1 : 0)}%
-            </span>{' '}
-            of {exercise.name.toLowerCase()} lifters worldwide.
-          </p>
-          <p
-            className="font-body"
-            style={{
-              fontSize: 11,
-              color: 'var(--b-ink-40)',
-              marginTop: 12,
-              maxWidth: 320,
-              marginInline: 'auto',
-              fontStyle: 'italic',
-              lineHeight: 1.5,
-            }}
-          >
-            That&apos;s your{' '}
-            <em style={{ color: 'var(--b-accent)', fontWeight: 600 }}>Strength rank</em>. Sleep, hydration, focus and steps each get their own.
-          </p>
-        </motion.div>
-      </div>
-    </WizardShell>
-  );
-}
-
-function RankBadgeBig({ rank }: { rank: typeof RANKS[number] }) {
-  const idx = RANKS.indexOf(rank);
-  const hasCrown = idx >= 4;
-  const id = `big-${rank.name}`;
-  return (
-    <svg width="260" height="280" viewBox="0 0 260 280" fill="none">
-      <defs>
-        {/* Outer face — uses dark→primary→light→primary→dark for the
-            polished metal sheen running diagonally across the badge. */}
-        <linearGradient id={`${id}-face`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%"   stopColor={rank.dark} />
-          <stop offset="22%"  stopColor={rank.color} />
-          <stop offset="42%"  stopColor={rank.light} />
-          <stop offset="58%"  stopColor={rank.light} />
-          <stop offset="78%"  stopColor={rank.color} />
-          <stop offset="100%" stopColor={rank.dark} />
-        </linearGradient>
-        {/* Inner facet — concave look with lighter mid */}
-        <linearGradient id={`${id}-inner`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#14130f" />
-          <stop offset="50%"  stopColor={rank.dark} stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#14130f" />
-        </linearGradient>
-        {/* Inner gem — radial */}
-        <radialGradient id={`${id}-gem`} cx="40%" cy="35%" r="70%">
-          <stop offset="0%"   stopColor="#ffffff" />
-          <stop offset="15%"  stopColor={rank.light} />
-          <stop offset="50%"  stopColor={rank.color} />
-          <stop offset="85%"  stopColor={rank.dark} />
-          <stop offset="100%" stopColor="#14130f" />
-        </radialGradient>
-        {/* Top facet specular */}
-        <linearGradient id={`${id}-shine`} x1="0" y1="0" x2="0.6" y2="1">
-          <stop offset="0%"  stopColor="#ffffff" stopOpacity="0.85" />
-          <stop offset="55%" stopColor="#ffffff" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-        </linearGradient>
-        {/* Wing — feather-style multi-stop */}
-        <linearGradient id={`${id}-wing`} x1="0" y1="0" x2="1" y2="0.7">
-          <stop offset="0%"   stopColor={rank.light} />
-          <stop offset="30%"  stopColor={rank.color} />
-          <stop offset="65%"  stopColor={rank.color} stopOpacity="0.6" />
-          <stop offset="100%" stopColor={rank.dark} stopOpacity="0.1" />
-        </linearGradient>
-        {/* Banner ribbon */}
-        <linearGradient id={`${id}-banner`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor={rank.light} stopOpacity="0.6" />
-          <stop offset="25%"  stopColor={rank.color} />
-          <stop offset="100%" stopColor={rank.dark} />
-        </linearGradient>
-      </defs>
-
-      {/* Decorative star sparkles around the badge */}
-      {[
-        [40, 60], [220, 60], [30, 200], [230, 200], [130, 30], [130, 230],
-      ].map(([cx, cy], i) => (
-        <g key={i} opacity={0.5 + (i % 2) * 0.3}>
-          <path
-            d={`M ${cx} ${cy - 4} L ${cx + 1.2} ${cy - 1} L ${cx + 4} ${cy} L ${cx + 1.2} ${cy + 1} L ${cx} ${cy + 4} L ${cx - 1.2} ${cy + 1} L ${cx - 4} ${cy} L ${cx - 1.2} ${cy - 1} Z`}
-            fill={rank.light}
-          />
-        </g>
-      ))}
-
-      {/* Wing flourishes — bigger, layered feathers (no neon glow shadow) */}
-      <g>
-        {/* Left wing — primary feather */}
-        <path
-          d="M 12 132 Q 30 96 80 110 Q 64 126 88 142 Q 56 144 26 140 Q 14 136 12 132 Z"
-          fill={`url(#${id}-wing)`}
-        />
-        {/* Feather division lines */}
-        <path d="M 16 130 Q 40 116 78 112" stroke={rank.light} strokeWidth="0.9" fill="none" opacity="0.75" strokeLinecap="round" />
-        <path d="M 22 136 Q 50 126 82 124" stroke={rank.light} strokeWidth="0.7" fill="none" opacity="0.6" strokeLinecap="round" />
-        <path d="M 28 142 Q 56 136 86 138" stroke={rank.light} strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
-        {/* Feather tips */}
-        <path d="M 14 128 L 6 120 L 20 132 Z" fill={rank.color} />
-        <path d="M 20 138 L 14 134 L 26 142 Z" fill={rank.color} />
-        <path d="M 26 146 L 22 144 L 30 148 Z" fill={rank.color} opacity="0.85" />
-      </g>
-      <g>
-        {/* Right wing — mirror */}
-        <path
-          d="M 248 132 Q 230 96 180 110 Q 196 126 172 142 Q 204 144 234 140 Q 246 136 248 132 Z"
-          fill={`url(#${id}-wing)`}
-        />
-        <path d="M 244 130 Q 220 116 182 112" stroke={rank.light} strokeWidth="0.9" fill="none" opacity="0.75" strokeLinecap="round" />
-        <path d="M 238 136 Q 210 126 178 124" stroke={rank.light} strokeWidth="0.7" fill="none" opacity="0.6" strokeLinecap="round" />
-        <path d="M 232 142 Q 204 136 174 138" stroke={rank.light} strokeWidth="0.6" fill="none" opacity="0.5" strokeLinecap="round" />
-        <path d="M 246 128 L 254 120 L 240 132 Z" fill={rank.color} />
-        <path d="M 240 138 L 246 134 L 234 142 Z" fill={rank.color} />
-        <path d="M 234 146 L 238 144 L 230 148 Z" fill={rank.color} opacity="0.85" />
-      </g>
-
-      {/* Hex badge — premium multi-layer (no drop-shadow) */}
-      <g>
-        {/* Outer hex face — metallic gradient */}
-        <path
-          d="M 130 56 L 184 88 L 184 164 L 130 196 L 76 164 L 76 88 Z"
-          fill={`url(#${id}-face)`}
-          stroke={rank.dark}
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-        {/* Engraved bevel */}
-        <path
-          d="M 130 64 L 178 92 L 178 160 L 130 188 L 82 160 L 82 92 Z"
-          fill="none"
-          stroke={rank.light}
-          strokeWidth="0.8"
-          opacity="0.6"
-          strokeLinejoin="round"
-        />
-        {/* Inner inset hex */}
-        <path
-          d="M 130 76 L 168 100 L 168 152 L 130 176 L 92 152 L 92 100 Z"
-          fill={`url(#${id}-inner)`}
-          stroke={rank.color}
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        {/* Engraved facet cuts on outer hex */}
-        <path
-          d="M 130 56 L 130 76 M 184 88 L 168 100 M 184 164 L 168 152 M 130 196 L 130 176 M 76 164 L 92 152 M 76 88 L 92 100"
-          stroke={rank.light}
-          strokeWidth="1"
-          opacity="0.7"
-        />
-        {/* Top-left specular shine on face */}
-        <path
-          d="M 130 56 L 184 88 L 130 100 L 76 88 Z"
-          fill={`url(#${id}-shine)`}
-        />
-
-        {/* Inner gem — large central jewel */}
-        <circle cx="130" cy="128" r="30" fill={`url(#${id}-gem)`} stroke={rank.dark} strokeWidth="1.5" />
-        {/* Gem facet lines (cut crystal look) */}
-        <path d="M 130 100 L 152 116 L 144 144 L 116 144 L 108 116 Z"
-          fill="none" stroke={rank.light} strokeWidth="0.6" opacity="0.55" />
-        <path d="M 130 100 L 130 144 M 108 116 L 152 144 M 108 144 L 152 116"
-          stroke={rank.light} strokeWidth="0.4" opacity="0.4" />
-        {/* Gem inner shine */}
-        <ellipse cx="121" cy="118" rx="8" ry="5" fill="#ffffff" opacity="0.55" />
-        <ellipse cx="125" cy="115" rx="3" ry="2" fill="#ffffff" opacity="0.85" />
-
-        {/* Rank initial — embossed */}
-        <text
-          x="130"
-          y="142"
-          textAnchor="middle"
-          fontSize="32"
-          fontWeight="bold"
-          fontFamily="ui-monospace,monospace"
-          fill={rank.dark}
-        >
-          {rank.name[0]}
-        </text>
-
-        {/* Tier dot indicators */}
-        <g>
-          {Array.from({ length: 5 }).map((_, i) => {
-            const filled = i < Math.min(5, idx + 1);
-            return (
-              <circle
-                key={i}
-                cx={114 + i * 8}
-                cy={170}
-                r="2.4"
-                fill={filled ? rank.color : '#1a1a2e'}
-                stroke={filled ? rank.light : '#1a1a2e'}
-                strokeWidth="0.7"
-              />
-            );
-          })}
-        </g>
-      </g>
-
-      {/* Crown — top tiers */}
-      {hasCrown && (
-        <g>
-          {/* Base band */}
-          <rect x="100" y="42" width="60" height="9" rx="1.5" fill="#fbbf24" stroke="#7c2d12" strokeWidth="0.7" />
-          <line x1="100" y1="44" x2="160" y2="44" stroke="#fef3c7" strokeWidth="0.6" opacity="0.8" />
-          {/* Five spires with shading */}
-          <path d="M 104 42 L 108 24 L 112 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          <path d="M 116 42 L 120 18 L 124 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          <path d="M 134 42 L 138 18 L 142 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          <path d="M 146 42 L 150 24 L 154 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          {/* Tallest center spire with jewel */}
-          <path d="M 124 42 L 130 6 L 136 42 Z" fill="#fde047" stroke="#7c2d12" strokeWidth="0.5" />
-          <circle cx="130" cy="14" r="5" fill="#ef4444" stroke="#fde047" strokeWidth="1" />
-          <ellipse cx="128" cy="12" rx="1.8" ry="1.2" fill="#ffffff" opacity="0.8" />
-          {/* Side jewels */}
-          <circle cx="106" cy="46.5" r="1.8" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.4" />
-          <circle cx="154" cy="46.5" r="1.8" fill="#3b82f6" stroke="#fef3c7" strokeWidth="0.4" />
-        </g>
-      )}
-
-      {/* Banner ribbon — bigger (no neon shadow) */}
-      <g>
-        <path
-          d="M 80 202 L 180 202 L 174 232 L 130 222 L 86 232 Z"
-          fill={`url(#${id}-banner)`}
-          stroke={rank.dark}
-          strokeWidth="1.4"
-          strokeLinejoin="round"
-        />
-        {/* Banner highlight stripe */}
-        <path d="M 80 202 L 180 202 L 178 207 L 82 207 Z" fill={rank.light} opacity="0.4" />
-        {/* End folds */}
-        <path d="M 80 202 L 72 216 L 86 220 Z" fill={rank.dark} />
-        <path d="M 180 202 L 188 216 L 174 220 Z" fill={rank.dark} />
-        <text
-          x="130"
-          y="220"
-          textAnchor="middle"
-          fontSize="12"
-          fontWeight="bold"
-          fontFamily="ui-monospace,monospace"
-          fill="#ffffff"
-          letterSpacing="3"
-        >
-          {rank.name.toUpperCase()}
-        </text>
-      </g>
-    </svg>
-  );
-}
-
-// ─── Step 3: Projected rank ──────────────────────────────────────────────────
-
-function ProjectedRankStep({
-  rankIdx,
-  onContinue,
-  onBack,
-  step,
-}: {
-  rankIdx: number;
-  onContinue: () => void;
-  onBack: () => void;
-  step: number;
-}) {
-  const current = RANKS[rankIdx];
-  const targetIdx = Math.min(rankIdx + 1, RANKS.length - 1);
-  const target = RANKS[targetIdx];
-
-  // ETA — 8 weeks ahead of today
-  const eta = new Date();
-  eta.setDate(eta.getDate() + 56);
-  const etaStr = eta.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-
-  return (
-    <WizardShell
-      step={step}
-      totalSteps={TOTAL_STEPS}
-      onBack={onBack}
-      showBack
-      footer={<EditorialCTA onClick={onContinue}>Continue →</EditorialCTA>}
-    >
-      <div className="flex flex-col flex-1 justify-center text-center px-1">
-        <div
-          className="spread"
-          style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
-        >
-          Projected progress
-        </div>
-        <h2
-          className="font-display"
-          style={{
-            fontSize: 32,
-            fontStyle: 'italic',
-            fontWeight: 500,
-            lineHeight: 1.05,
-            marginTop: 8,
-            color: 'var(--b-ink)',
-          }}
-        >
-          You can reach{' '}
-          <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>{target.name}</em>
-          {' '}by{' '}
-          <em style={{ fontStyle: 'italic', color: 'var(--b-ink)' }}>{etaStr}</em>.
-        </h2>
-
-        {/* Current → target visual */}
-        <div className="mt-10 flex items-center justify-center gap-2">
-          <div className="flex flex-col items-center">
-            <div style={{ opacity: 0.5 }}>
-              <RankBadgeMini rank={current} size={84} />
-            </div>
-            <div
-              className="spread"
-              style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 8 }}
-            >
-              Now
-            </div>
-          </div>
-
-          {/* Arrow with progress dots */}
-          <div className="flex flex-col items-center mb-6">
-            <div className="flex items-center gap-1">
-              {[0, 1, 2, 3].map((i) => (
-                <span
-                  key={i}
-                  className="block"
-                  style={{
-                    width: 6,
-                    height: 1,
-                    background: 'var(--b-ink)',
-                    opacity: 0.3 + i * 0.2,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center">
-            <motion.div
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <RankBadgeMini rank={target} size={100} />
-            </motion.div>
-            <div
-              className="spread"
-              style={{ fontSize: 9, color: 'var(--b-accent)', marginTop: 8 }}
-            >
-              Goal
-            </div>
-          </div>
-        </div>
-
-        <p
-          className="font-body"
-          style={{
-            fontSize: 13,
-            color: 'var(--b-ink-60)',
-            marginTop: 32,
-            maxWidth: 360,
-            marginInline: 'auto',
-            lineHeight: 1.6,
-          }}
-        >
-          You have{' '}
-          <em style={{ color: 'var(--b-accent)', fontWeight: 600, fontStyle: 'italic' }}>amazing potential</em>. Every pillar — strength, sleep, water, focus, steps — climbs the same way. Show up, rank up.
-        </p>
-      </div>
-    </WizardShell>
-  );
-}
-
-function RankBadgeMini({ rank, size }: { rank: typeof RANKS[number]; size: number }) {
-  return (
-    <svg width={size} height={size * 1.1} viewBox="0 0 100 110" fill="none">
-      <defs>
-        <linearGradient id={`rbm-${rank.name}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"  stopColor={rank.light} />
-          <stop offset="25%" stopColor={rank.color} />
-          <stop offset="100%" stopColor={rank.dark} />
-        </linearGradient>
-      </defs>
-      <g>
-        <path
-          d="M 50 12 L 80 32 L 80 78 L 50 98 L 20 78 L 20 32 Z"
-          fill={`url(#rbm-${rank.name})`}
-          stroke={rank.dark}
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        <text x="50" y="68" textAnchor="middle" fontSize="28" fontWeight="bold" fontFamily="ui-monospace,monospace" fill="#ffffff">
-          {rank.name[0]}
-        </text>
-      </g>
-    </svg>
-  );
-}
-
-// ─── Step 4: Active lifters globe ────────────────────────────────────────────
 
 function ActiveLiftersGlobeStep({
   onContinue,

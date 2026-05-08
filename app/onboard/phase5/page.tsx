@@ -1184,45 +1184,120 @@ function MuscleSilhouette({ muscle, active }: SilhouetteProps) {
   // We keep a subtle weight bump on active so the silhouette reads stronger.
   const opacity = active ? 1 : 0.85;
 
+  // The body uses one continuous outline path (head + neck + torso +
+  // arms + legs as a single silhouette) so the figure reads as a real
+  // human shape, then per-muscle accent overlays paint just the
+  // muscle group in the active card's hot colour. Anatomical-ish
+  // proportions: head ~1/8 of height, shoulder span ~1/4 figure
+  // width, torso tapers to a hip slightly narrower than shoulders.
+  const bodyPath =
+    // Start: top of head
+    'M 28 3 ' +
+    // Head right side curving down to jaw
+    'C 32 3 35 6 35 10 C 35 13 33 15 31 16 ' +
+    // Neck right
+    'L 31 18 ' +
+    // Right shoulder cap
+    'C 36 18 40 21 41 25 ' +
+    // Right upper arm down to elbow
+    'L 42 38 ' +
+    // Right forearm down to wrist
+    'L 43 52 ' +
+    // Wrist outer
+    'C 43 55 41 55 40 53 ' +
+    // Forearm inner up to elbow
+    'L 38.5 38 ' +
+    // Right side of torso — taper to hip
+    'L 35 50 ' +
+    // Hip line — small inward dip
+    'L 34 53 ' +
+    // Right leg outer down to ankle
+    'L 35 76 ' +
+    // Right foot top
+    'C 35 78 32 78 31 76 ' +
+    // Right inner leg up to crotch
+    'L 30 53 ' +
+    // Crotch
+    'L 26 53 ' +
+    // Left inner leg down
+    'L 25 76 ' +
+    // Left foot
+    'C 25 78 21 78 21 76 ' +
+    'L 21 53 ' +
+    // Left hip dip
+    'L 21 50 ' +
+    // Left torso side up
+    'L 17.5 38 ' +
+    // Left forearm inner down
+    'L 16 53 ' +
+    'C 15 55 13 55 13 52 ' +
+    // Left forearm outer up
+    'L 14 38 ' +
+    // Left upper arm up
+    'L 15 25 ' +
+    // Left shoulder cap
+    'C 16 21 20 18 25 18 ' +
+    // Neck left
+    'L 25 16 ' +
+    // Head left side
+    'C 23 15 21 13 21 10 C 21 6 24 3 28 3 ' +
+    'Z';
+
   return (
     <svg width="48" height="80" viewBox="0 0 56 80" fill="none" className="flex-shrink-0" style={{ opacity }}>
-      {/* Head */}
-      <circle cx="28" cy="9" r="6" fill={dim} />
-      {/* Neck */}
-      <rect x="26" y="14" width="4" height="3" fill={dim} />
+      {/* Body outline silhouette */}
+      <path d={bodyPath} fill={dim} />
 
-      {/* Shoulders / deltoids */}
-      <ellipse cx="17" cy="20" rx="4" ry="3.5" fill={isThis('shoulders') ? HOT : dim} />
-      <ellipse cx="39" cy="20" rx="4" ry="3.5" fill={isThis('shoulders') ? HOT : dim} />
-
-      {/* Torso — base in dim ink, replaced by accent if muscle === 'back' */}
-      <path
-        d="M 18 19 L 38 19 L 36 48 L 20 48 Z"
-        fill={isThis('back') ? HOT : dim}
-      />
-      {/* Chest highlight on top of torso */}
-      {isThis('chest') && (
+      {/* Per-muscle accent overlays — drawn on top of the dim
+          silhouette so only the active muscle group flips to hot. */}
+      {isThis('shoulders') && (
         <>
-          <ellipse cx="23" cy="26" rx="5" ry="4" fill={HOT} />
-          <ellipse cx="33" cy="26" rx="5" ry="4" fill={HOT} />
+          {/* Left + right deltoid caps */}
+          <path d="M 15 25 C 16 21 20 18 25 18 L 25 22 C 22 22 19 24 18 28 Z" fill={HOT} />
+          <path d="M 41 25 C 40 21 36 18 31 18 L 31 22 C 34 22 37 24 38 28 Z" fill={HOT} />
         </>
       )}
-      {/* Abs highlight */}
-      {isThis('abs') && (
-        <rect x="24" y="30" width="8" height="16" rx="1" fill={HOT} />
+
+      {isThis('chest') && (
+        <>
+          {/* Two pec ovals with a sternum gap down the middle */}
+          <ellipse cx="23.5" cy="26" rx="4.2" ry="3.4" fill={HOT} />
+          <ellipse cx="32.5" cy="26" rx="4.2" ry="3.4" fill={HOT} />
+        </>
       )}
 
-      {/* Arms */}
-      <rect x="13" y="20" width="3.5" height="28" rx="1.5" fill={isThis('arms') ? HOT : dim} />
-      <rect x="39.5" y="20" width="3.5" height="28" rx="1.5" fill={isThis('arms') ? HOT : dim} />
+      {isThis('abs') && (
+        // Six-pack rectangle with hint of segmentation via two darker dividers
+        <g>
+          <rect x="24" y="30" width="8" height="18" rx="1.2" fill={HOT} />
+          <line x1="28" y1="32" x2="28" y2="46" stroke="var(--b-paper)" strokeOpacity="0.35" strokeWidth="0.6" />
+          <line x1="24" y1="36" x2="32" y2="36" stroke="var(--b-paper)" strokeOpacity="0.35" strokeWidth="0.6" />
+          <line x1="24" y1="42" x2="32" y2="42" stroke="var(--b-paper)" strokeOpacity="0.35" strokeWidth="0.6" />
+        </g>
+      )}
 
-      {/* Legs */}
-      <rect x="20" y="48" width="6" height="28" rx="1.5" fill={isThis('legs') ? HOT : dim} />
-      <rect x="30" y="48" width="6" height="28" rx="1.5" fill={isThis('legs') ? HOT : dim} />
+      {isThis('back') && (
+        // Lat sweep — paint torso area in hot, leave shoulders + arms in dim
+        <path d="M 18 22 L 38 22 L 35 50 L 21 50 Z" fill={HOT} />
+      )}
 
-      {/* Feet */}
-      <ellipse cx="23" cy="77" rx="3.5" ry="1.5" fill={dim} />
-      <ellipse cx="33" cy="77" rx="3.5" ry="1.5" fill={dim} />
+      {isThis('arms') && (
+        <>
+          {/* Right upper + forearm */}
+          <path d="M 38.5 25 L 42 25 L 43 52 C 43 55 41 55 40 53 L 38.5 38 Z" fill={HOT} />
+          {/* Left upper + forearm */}
+          <path d="M 17.5 25 L 14 25 L 13 52 C 13 55 15 55 16 53 L 17.5 38 Z" fill={HOT} />
+        </>
+      )}
+
+      {isThis('legs') && (
+        <>
+          {/* Right quad + lower leg */}
+          <path d="M 30 53 L 34 53 L 35 76 C 35 78 32 78 31 76 Z" fill={HOT} />
+          {/* Left quad + lower leg */}
+          <path d="M 22 53 L 26 53 L 25 76 C 25 78 21 78 21 76 Z" fill={HOT} />
+        </>
+      )}
     </svg>
   );
 }

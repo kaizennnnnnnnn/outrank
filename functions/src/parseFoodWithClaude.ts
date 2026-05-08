@@ -236,7 +236,7 @@ export const parseFoodWithClaude = functions
     // Tier check — read users/{uid}.tier (set during signup)
     const userSnap = await db.doc(`users/${uid}`).get();
     const tier = (userSnap.data()?.tier as string | undefined) ?? 'free';
-    const isPro = tier === 'pro';
+    const isPro = tier === 'pro' || tier === 'pro-weekly';
 
     // Rate limit — throws resource-exhausted if over
     const quota = await consumeQuota(uid, isPro);

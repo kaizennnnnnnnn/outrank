@@ -74,7 +74,9 @@ export type MuscleKey =
 
 export type DayKey = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
 
-export type Tier = 'free' | 'pro';
+// 'pro' stays as the monthly tier for backwards compatibility with
+// existing user docs; 'pro-weekly' is the new short-term tier.
+export type Tier = 'free' | 'pro' | 'pro-weekly';
 
 export interface BestLift {
   exercise: string;
