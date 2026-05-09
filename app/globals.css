@@ -568,51 +568,136 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .orb-mythic-pulse { animation: orb-mythic-pulse 3.4s ease-in-out infinite; }
 
-/* Orb evolve spin — proper Pokemon-style evolution: 1) wobble-up
-   with growing scale (anticipation), 2) hard rapid spin (windup),
-   3) brief overshoot, 4) settle. Total 3.0s; the canvas behind it
-   fades to white at the apex via .animate-orb-evolve-flash so the
-   tier-swap is masked by the bloom. Runs on the canvas wrapper. */
+/* Orb evolve spin — fast windup then explosion. The orb accelerates
+   into a 6-revolution spin (peak at ~1.5s), then a sharp compress-
+   and-release at ~78% syncs with the explosion bloom. Total 2s. */
 @keyframes orb-evolving-spin {
   0%   { transform: rotate(0deg)    scale(1); }
-  18%  { transform: rotate(35deg)   scale(1.04); }
-  35%  { transform: rotate(-25deg)  scale(1.07); }
-  55%  { transform: rotate(540deg)  scale(1.14); }
-  78%  { transform: rotate(1100deg) scale(1.10); }
-  90%  { transform: rotate(1090deg) scale(1.0); }
-  100% { transform: rotate(1080deg) scale(1.0); }
+  10%  { transform: rotate(120deg)  scale(1.04); }
+  25%  { transform: rotate(540deg)  scale(1.07); }
+  45%  { transform: rotate(1260deg) scale(1.10); }
+  65%  { transform: rotate(1980deg) scale(1.12); }
+  76%  { transform: rotate(2160deg) scale(1.14); }
+  82%  { transform: rotate(2160deg) scale(0.92); }   /* compress */
+  88%  { transform: rotate(2160deg) scale(1.06); }   /* burst */
+  100% { transform: rotate(2160deg) scale(1.0); }    /* settle */
 }
 .orb-evolving-spin {
-  animation: orb-evolving-spin 3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: orb-evolving-spin 2s cubic-bezier(0.4, 0, 0.55, 1);
   will-change: transform;
 }
 
-/* Evolve flash bloom — radial white gradient that grows from the
-   orb center, peaks at ~75% (the moment the canvas fades out and
-   the tier swaps), then fades. Sits over the orb on its own div. */
+/* Evolve flash bloom — sits dark for the spin-up, then SLAMS open at
+   ~78% with a peak-bright pulse, then fades. The fast onset is what
+   reads as an explosion rather than a slow grow. */
 @keyframes orb-evolve-flash {
-  0%   { opacity: 0;   transform: scale(0.4); }
-  35%  { opacity: 0.4; transform: scale(0.7); }
-  70%  { opacity: 1;   transform: scale(1.4); }
-  85%  { opacity: 0.7; transform: scale(1.6); }
-  100% { opacity: 0;   transform: scale(1.7); }
+  0%, 70% { opacity: 0;   transform: scale(0.3); }
+  76%     { opacity: 0.6; transform: scale(0.9); }
+  80%     { opacity: 1;   transform: scale(1.5); }
+  88%     { opacity: 0.85; transform: scale(2.0); }
+  100%    { opacity: 0;   transform: scale(2.4); }
 }
 .animate-orb-evolve-flash {
-  animation: orb-evolve-flash 3s cubic-bezier(0.4, 0, 0.6, 1);
+  animation: orb-evolve-flash 2s cubic-bezier(0.18, 1.0, 0.3, 1);
   will-change: opacity, transform;
 }
 
-/* Evolve shockwave — three staggered rings expanding outward at the
-   moment of the white flash. Each ring shrinks border + fades. */
+/* Evolve shockwave — sharp explosion ring expanding past the rim
+   right at the burst moment. Three staggered copies stack to
+   read as multiple ripples blasting outward. */
 @keyframes orb-evolve-shockwave {
-  0%   { opacity: 0;    transform: scale(0.7); border-width: 3px; }
-  20%  { opacity: 0.85; }
-  100% { opacity: 0;    transform: scale(2.2); border-width: 1px; }
+  0%, 72% { opacity: 0;   transform: scale(0.5); border-width: 4px; }
+  80%     { opacity: 1;   transform: scale(1.2); border-width: 3px; }
+  100%    { opacity: 0;   transform: scale(2.8); border-width: 1px; }
 }
 .animate-orb-evolve-shockwave {
-  animation: orb-evolve-shockwave 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: orb-evolve-shockwave 1.4s cubic-bezier(0.12, 1, 0.3, 1);
   will-change: opacity, transform;
 }
+
+/* Evolve burst particles — 8 sparkle dots fly outward radially at
+   the explosion moment. Each is positioned in a wrapper rotated to
+   a different cardinal/diagonal direction; the keyframe just moves
+   the dot from center toward the rim along its local -y axis.
+   Distance is parameterised via --burst-distance so the same
+   keyframe scales with the orb's size. */
+@keyframes orb-evolve-burst {
+  0%, 72% { opacity: 0;   transform: translateY(0)  scale(0.4); }
+  80%     { opacity: 1;   transform: translateY(calc(var(--burst-distance, 60px) * -0.4)) scale(1.6); }
+  92%     { opacity: 0.6; transform: translateY(calc(var(--burst-distance, 60px) * -0.85)) scale(0.7); }
+  100%    { opacity: 0;   transform: translateY(calc(var(--burst-distance, 60px) * -1.05)) scale(0.3); }
+}
+.animate-orb-evolve-burst {
+  animation: orb-evolve-burst 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* Loot reveal — premium ornaments. The modal carries a number of
+   layered effects so it reads as a chest-opening moment rather than
+   a generic toast: corner diamonds rotate slowly, the illustration's
+   halo breathes, the rarity stripe shines, and a slow sparkle drift
+   plays in the backdrop. All transform / opacity / background-pos
+   so the modal stays GPU-cheap on lower-end phones. */
+
+@keyframes loot-corner-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.loot-corner-spin { animation: loot-corner-spin 14s linear infinite; }
+
+@keyframes loot-corner-spin-rev {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+.loot-corner-spin-rev { animation: loot-corner-spin-rev 14s linear infinite; }
+
+/* Halo behind the hero illustration — breathes outward to the
+   rarity color. Sits at z-index 0 inside the framed plinth so the
+   icon stays readable on top. */
+@keyframes loot-halo-breathe {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50%      { opacity: 0.95; transform: scale(1.08); }
+}
+.loot-halo-breathe { animation: loot-halo-breathe 2.6s ease-in-out infinite; }
+
+/* Hero illustration body — slow lift + scale to feel like the
+   reward is "presented" rather than just sitting there. */
+@keyframes loot-hero-rise {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.86); }
+  60%  { opacity: 1; transform: translateY(-3px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.loot-hero-rise { animation: loot-hero-rise 700ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Rarity-stripe shine — a white sheen sweeps across the colored
+   top stripe a couple of times after the modal opens, then settles.
+   Drives attention to the rarity at the moment of reveal. */
+@keyframes loot-stripe-shine {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  300% 0; }
+}
+.loot-stripe-shine {
+  background-image: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255,255,255,0.85) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: loot-stripe-shine 2.8s linear infinite;
+}
+
+/* Backdrop sparkle drift — a small star-like dot floats up and
+   slowly fades, looped. Six instances with different delays read
+   as a continuous celebration. */
+@keyframes loot-sparkle-drift {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.6); }
+  20%  { opacity: 1; transform: translateY(-4px) scale(1); }
+  80%  { opacity: 0.7; transform: translateY(-32px) scale(0.95); }
+  100% { opacity: 0; transform: translateY(-46px) scale(0.5); }
+}
+.loot-sparkle-drift { animation: loot-sparkle-drift 3.4s ease-out infinite; }
 
 /* Loot reveal entrance — slides up + fades in with a subtle scale.
    Slow enough to read as a deliberate flourish, not a flash. */

@@ -77,19 +77,18 @@ export default function OrbPage() {
   // The three useEffect hooks above already sync localTier /
   // localCharges / localAwakening from the Firestore snapshot
   // (per CLAUDE.md "evolve once, lose two charges" gotcha).
-  // SoulOrb's evolve animation runs 3.0s and calls back in here
-  // (the onEvolve hook) at the 2.5s mark — i.e. AFTER the spin and
-  // mid-white-flash. We need ~700ms more for the orb to fade back
-  // in before the loot modal pops, otherwise the modal lands mid-
-  // animation and the "proper evolution" effect is wasted. Same
-  // budget covers the page's bottom EVOLVE button path (no orb
-  // spin there yet, but the small delay reads as a polite beat).
+  // SoulOrb's evolve animation runs 2.0s end-to-end: rapid spin
+  // (1.5s), explosion burst with shockwaves + flying sparkles
+  // (1.5s-1.65s), tier swap masked by the white flash (1.65s),
+  // canvas fade back in (1.65-2.0s). The onEvolve callback fires
+  // here at 1.65s; we wait ~400ms more so the modal lands AFTER the
+  // orb has resettled to the new tier rather than during the flash.
   const handleEvolve = async () => {
     if (localCharges <= 0) return;
     const ownedCosmetics = (userAny as unknown as { ownedCosmetics?: string[] } | null)?.ownedCosmetics ?? [];
     const loot = rollOrbLoot(ownedCosmetics);
     const startedAt = Date.now();
-    const POST_WRITE_DELAY_MS = 700;
+    const POST_WRITE_DELAY_MS = 400;
     try {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment, arrayUnion } = await import('firebase/firestore');
@@ -521,12 +520,25 @@ function OrbLootReveal({
 }) {
   if (!loot) return null;
   const c = lootColors(loot.rarity);
+
+  // 6 sparkles drift up through the modal background. Hand-placed
+  // x positions + delays so they're spread across the panel and
+  // never all sparkle at the same instant.
+  const sparkles = [
+    { x: '12%', delay: '0s'    },
+    { x: '34%', delay: '0.6s'  },
+    { x: '52%', delay: '1.4s'  },
+    { x: '68%', delay: '2.1s'  },
+    { x: '84%', delay: '2.8s'  },
+    { x: '22%', delay: '1.0s'  },
+  ];
+
   return (
     <div
       onClick={onClose}
       className="dir-b fixed inset-0 z-50 flex items-center justify-center px-6"
       style={{
-        background: 'rgba(0,0,0,0.78)',
+        background: `radial-gradient(circle at 50% 45%, ${c.color}22 0%, rgba(0,0,0,0.78) 50%, rgba(0,0,0,0.92) 100%)`,
         backdropFilter: 'blur(6px)',
       }}
     >
@@ -537,24 +549,77 @@ function OrbLootReveal({
           background: 'var(--b-paper)',
           color: 'var(--b-ink)',
           border: '1px solid var(--b-ink)',
-          borderTop: `3px solid ${c.color}`,
-          padding: '20px 22px 22px',
-          animation: 'orb-loot-reveal-in 480ms cubic-bezier(0.16, 1, 0.3, 1)',
+          padding: '24px 24px 22px',
+          animation: 'orb-loot-reveal-in 520ms cubic-bezier(0.16, 1, 0.3, 1)',
+          overflow: 'hidden',
+          // Soft rarity-color ambient glow inside the panel — a faint
+          // wash from the top so the whole modal feels lit by the
+          // reward's color rather than just the top stripe.
+          boxShadow: `0 24px 60px -12px rgba(0,0,0,0.55), 0 0 0 1px ${c.color}33, inset 0 64px 80px -40px ${c.color}33`,
         }}
       >
+        {/* Top rarity stripe with a running shine so the reveal beat
+            keeps moving even after the entrance settles. */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 4,
+            background: c.color,
+            overflow: 'hidden',
+          }}
+        >
+          <div className="loot-stripe-shine" style={{ position: 'absolute', inset: 0 }} />
+        </div>
+
+        {/* Corner ornaments — four small diamond glyphs that spin
+            slowly. Two CW, two CCW so the eye never settles. */}
+        <CornerDiamond color={c.color} pos="tl" reverse={false} />
+        <CornerDiamond color={c.color} pos="tr" reverse />
+        <CornerDiamond color={c.color} pos="bl" reverse />
+        <CornerDiamond color={c.color} pos="br" reverse={false} />
+
+        {/* Backdrop sparkle drift — small white-yellow dots floating
+            up. Sits behind the content. */}
+        {sparkles.map((s, i) => (
+          <div
+            key={i}
+            aria-hidden
+            className="loot-sparkle-drift"
+            style={{
+              position: 'absolute',
+              left: s.x,
+              bottom: 12,
+              width: 4,
+              height: 4,
+              borderRadius: '50%',
+              background: i % 2 === 0 ? '#ffffff' : c.color,
+              boxShadow: `0 0 6px ${c.color}aa, 0 0 2px #ffffff`,
+              animationDelay: s.delay,
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        ))}
+
         {/* Eyebrow rule + spread caps */}
         <div
           style={{
+            position: 'relative',
+            zIndex: 2,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'baseline',
             borderBottom: '1px solid var(--b-rule)',
             paddingBottom: 6,
-            marginBottom: 12,
+            marginBottom: 14,
           }}
         >
-          <span className="spread" style={{ fontSize: 9, color: c.color }}>
-            Evolution Reward
+          <span className="spread" style={{ fontSize: 9, color: c.color, letterSpacing: '0.24em' }}>
+            ★ Evolution Reward
           </span>
           <span
             className="font-mono tabular"
@@ -565,15 +630,18 @@ function OrbLootReveal({
               textTransform: 'uppercase',
             }}
           >
-            Rarity · {c.name}
+            Rarity · <span style={{ color: c.color, fontWeight: 700 }}>{c.name}</span>
           </span>
         </div>
 
-        {/* Headline */}
+        {/* Headline — italic Fraunces with a metallic shine in the
+            rarity color. */}
         <h3
           className="font-display"
           style={{
-            fontSize: 28,
+            position: 'relative',
+            zIndex: 2,
+            fontSize: 30,
             fontWeight: 500,
             lineHeight: 1.05,
             margin: 0,
@@ -581,11 +649,25 @@ function OrbLootReveal({
             letterSpacing: '-0.01em',
           }}
         >
-          <em style={{ fontStyle: 'italic', color: c.color }}>{loot.label}</em>
+          <em
+            style={{
+              fontStyle: 'italic',
+              background: `linear-gradient(110deg, ${c.color} 0%, ${c.color}cc 35%, #ffffff 50%, ${c.color}cc 65%, ${c.color} 100%)`,
+              backgroundSize: '220% 100%',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              animation: 'loot-stripe-shine 4.5s linear infinite',
+            }}
+          >
+            {loot.label}
+          </em>
         </h3>
         <p
           className="font-body"
           style={{
+            position: 'relative',
+            zIndex: 2,
             fontSize: 12,
             color: 'var(--b-ink-60)',
             textAlign: 'center',
@@ -598,42 +680,55 @@ function OrbLootReveal({
           {loot.detail}
         </p>
 
-        {/* Hero illustration — hairline-framed orb */}
+        {/* Hero illustration — bigger plinth (110×110) with breathing
+            radial halo behind the icon and a small rise-in animation. */}
         <div
           style={{
+            position: 'relative',
+            zIndex: 2,
             display: 'flex',
             justifyContent: 'center',
-            margin: '18px 0 14px',
+            margin: '20px 0 14px',
           }}
         >
           <div
+            className="loot-hero-rise"
             style={{
-              width: 96,
-              height: 96,
-              border: '1px solid var(--b-ink)',
+              position: 'relative',
+              width: 110,
+              height: 110,
+              border: `1px solid ${c.color}`,
               background: 'var(--b-paper)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              position: 'relative',
+              boxShadow: `0 10px 30px -8px ${c.color}55, inset 0 0 0 1px var(--b-paper)`,
             }}
           >
+            {/* Breathing rarity halo — sits at z 0 inside the plinth */}
             <div
               aria-hidden
+              className="loot-halo-breathe"
               style={{
                 position: 'absolute',
-                inset: 1,
-                background: `radial-gradient(circle at 35% 30%, ${c.color}33, transparent 70%)`,
+                inset: 4,
+                background: `radial-gradient(circle at 50% 45%, ${c.color}66 0%, ${c.color}22 45%, transparent 75%)`,
                 pointerEvents: 'none',
+                zIndex: 0,
               }}
             />
-            <OrbLootIcon loot={loot} color={c.color} />
+            {/* Icon on top of the halo */}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <OrbLootIcon loot={loot} color={c.color} />
+            </div>
           </div>
         </div>
 
         {/* Reward chips — editorial hairline tiles */}
         <div
           style={{
+            position: 'relative',
+            zIndex: 2,
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
@@ -653,15 +748,17 @@ function OrbLootReveal({
           onClick={onClose}
           className="font-body"
           style={{
-            marginTop: 18,
+            position: 'relative',
+            zIndex: 2,
+            marginTop: 20,
             width: '100%',
-            padding: '12px 16px',
+            padding: '13px 16px',
             border: '1px solid var(--b-ink)',
             background: 'var(--b-ink)',
             color: 'var(--b-paper)',
             fontWeight: 700,
             fontSize: 11,
-            letterSpacing: '0.18em',
+            letterSpacing: '0.2em',
             textTransform: 'uppercase',
             cursor: 'pointer',
           }}
@@ -670,6 +767,40 @@ function OrbLootReveal({
         </button>
       </div>
     </div>
+  );
+}
+
+// Small rotating diamond ornament parked in one of the modal's four
+// inside corners. Adds an "expensive" feel without doing much work.
+function CornerDiamond({
+  color,
+  pos,
+  reverse,
+}: {
+  color:   string;
+  pos:     'tl' | 'tr' | 'bl' | 'br';
+  reverse: boolean;
+}) {
+  const offset = 9;
+  const sty: React.CSSProperties = {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    background: 'transparent',
+    border: `1px solid ${color}`,
+    pointerEvents: 'none',
+    zIndex: 1,
+  };
+  if (pos === 'tl') { sty.top = offset; sty.left  = offset; }
+  if (pos === 'tr') { sty.top = offset; sty.right = offset; }
+  if (pos === 'bl') { sty.bottom = offset; sty.left  = offset; }
+  if (pos === 'br') { sty.bottom = offset; sty.right = offset; }
+  return (
+    <div
+      aria-hidden
+      className={reverse ? 'loot-corner-spin-rev' : 'loot-corner-spin'}
+      style={sty}
+    />
   );
 }
 

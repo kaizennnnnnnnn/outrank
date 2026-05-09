@@ -98,21 +98,21 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     setEvolving(true);
     evolveRef.current = true;
     evolveTimeRef.current = 0;
-    // Phase 1 (0-2.0s): wobble-up + spin builds with flash bloom
-    //                   growing in the background
-    // Phase 2 (2.0-2.4s): canvas fades to white as the bloom peaks
-    setTimeout(() => setFadeOut(true), 2000);
-    // Phase 3 (2.5s): tier swap behind the white peak — invisible
+    // Phase 1 (0-1.5s): rapid spin accelerating, scale grows to 1.14
+    // Phase 2 (1.5-1.65s): EXPLOSION — flash + shockwaves + burst dots
+    //                      canvas fades to white as the bloom peaks
+    setTimeout(() => setFadeOut(true), 1500);
+    // Phase 3 (1.65s): tier swap masked behind the white peak
     setTimeout(() => {
       onEvolve?.();
-    }, 2500);
-    // Phase 4 (3.0s): canvas fades back in at scale 1
+    }, 1650);
+    // Phase 4 (2.0s): canvas fades back in at the new tier
     setTimeout(() => {
       setFadeOut(false);
       setEvolving(false);
       evolveRef.current = false;
       evolveTimeRef.current = 0;
-    }, 3000);
+    }, 2000);
   }, [canEvolve, onEvolve]);
 
   useEffect(() => {
@@ -701,44 +701,83 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
           />
         </div>
 
-        {/* Evolve bloom — radial white flash that grows from the orb
-            center, peaks at the tier-swap moment, then fades. The
-            white peak is what hides the tier swap from the eye. */}
+        {/* Evolve bloom — radial white flash that SLAMS open at the
+            apex of the spin (~78% through) and dissipates outward.
+            The fast onset reads as an explosion rather than a grow. */}
         {evolving && (
           <div
             aria-hidden
             className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-flash"
             style={{
               background:
-                'radial-gradient(circle, #ffffff 0%, #fef3c7 22%, #fde68a 45%, rgba(253,224,71,0.4) 65%, transparent 85%)',
+                'radial-gradient(circle, #ffffff 0%, #fef3c7 18%, #fde68a 40%, rgba(253,224,71,0.5) 60%, rgba(249,168,212,0.25) 80%, transparent 95%)',
               mixBlendMode: 'screen',
               transformOrigin: 'center',
             }}
           />
         )}
 
-        {/* Evolve shockwaves — three staggered rings expanding at the
-            apex of the white bloom. Pure border + transform; no box
-            shadow animation so the compositor stays happy. */}
+        {/* Evolve shockwaves — three staggered rings blast outward at
+            the explosion moment. Pure border + transform; no box-shadow
+            animation. Delays compress the gap so the rings fire as a
+            tight burst rather than a slow ripple. */}
         {evolving && (
           <>
             <div
               aria-hidden
               className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-shockwave"
-              style={{ border: '3px solid #ffffff', animationDelay: '1.5s' }}
+              style={{ border: '3px solid #ffffff' }}
             />
             <div
               aria-hidden
               className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-shockwave"
-              style={{ border: '2px solid #fde68a', animationDelay: '1.8s' }}
+              style={{ border: '2px solid #fde68a', animationDelay: '0.12s' }}
             />
             <div
               aria-hidden
               className="absolute inset-0 pointer-events-none rounded-full animate-orb-evolve-shockwave"
-              style={{ border: '2px solid #f9a8d4', animationDelay: '2.1s' }}
+              style={{ border: '2px solid #f9a8d4', animationDelay: '0.22s' }}
             />
           </>
         )}
+
+        {/* Burst particles — 8 sparkle dots fly outward radially at
+            the explosion peak. Each wrapper rotates to its cardinal
+            direction; the inner dot animates translateY along the
+            rotated -y axis (= radially outward in world coords).
+            --burst-distance scales with the orb size. */}
+        {evolving && Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={`burst-${i}`}
+            aria-hidden
+            className="absolute pointer-events-none"
+            style={{
+              left: '50%',
+              top: '50%',
+              width: 0,
+              height: 0,
+              transform: `rotate(${i * 45}deg)`,
+              zIndex: 6,
+            }}
+          >
+            <div
+              className="rounded-full animate-orb-evolve-burst"
+              style={{
+                position: 'absolute',
+                left: -4,
+                top: -4,
+                width: 8,
+                height: 8,
+                background: i % 2 === 0 ? '#ffffff' : '#fde047',
+                boxShadow:
+                  i % 2 === 0
+                    ? '0 0 12px #fde047, 0 0 4px #ffffff'
+                    : '0 0 10px #f9a8d4, 0 0 4px #ffffff',
+                ['--burst-distance' as string]: `${size * 0.5}px`,
+              } as React.CSSProperties}
+            />
+          </div>
+        ))}
 
         {/* Ascension flash overlay — bloom of white/gold at collapse */}
         {ascending && (
