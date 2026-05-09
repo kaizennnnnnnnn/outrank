@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboardingDraft } from '@/hooks/useOnboardingDraft';
+import { useAuth } from '@/hooks/useAuth';
 import { WizardShell } from '@/components/onboarding/WizardShell';
 import { PhoenixMascot } from '@/components/onboarding/PhoenixMascot';
 import { registerWithEmail, loginWithGoogle } from '@/lib/auth';
@@ -635,6 +636,14 @@ function SignupStep({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Existing users (re-onboarding to fill in the new tailoring
+  // questions) hit this step already authenticated. The signup
+  // form would fail for them — instead we offer a single "save my
+  // answers" button that applies the draft to their existing user
+  // doc and continues to the welcome step.
+  const { user: authUser } = useAuth();
+  const reonboarding = !!authUser;
+
   // Apply onboarding draft to a fresh user doc + seed pillars. Runs
   // after either email/password OR Google auth completes.
   const applyDraft = async (uid: string) => {
@@ -756,6 +765,75 @@ function SignupStep({
   };
 
   const canSubmit = !loading && !!email && password.length >= 8;
+
+  // Existing-user path — they're already signed in, so just write the
+  // draft fields to their user doc + flip onboardingCompleted, no
+  // account creation needed. This is what runs when an existing user
+  // gets pushed through the funnel by the AuthGuard re-onboarding gate.
+  const handleReonboardingSave = async () => {
+    if (loading || !authUser) return;
+    setLoading(true);
+    try {
+      await applyDraft(authUser.uid);
+      addToast({ type: 'success', message: 'Plan updated. Welcome back.' });
+      onSuccess();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not save your answers';
+      addToast({ type: 'error', message: msg });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (reonboarding) {
+    return (
+      <div className="flex flex-col flex-1">
+        <div className="text-center mt-2">
+          <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+            Last step
+          </div>
+          <h2
+            className="font-display"
+            style={{
+              fontSize: 28,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              lineHeight: 1.05,
+              margin: '8px 0 0',
+              maxWidth: 440,
+              marginInline: 'auto',
+            }}
+          >
+            Your plan is{' '}
+            <em style={{ fontStyle: 'italic', color: 'var(--b-accent)' }}>ready to be saved</em>.
+          </h2>
+          <p
+            className="font-body"
+            style={{
+              fontSize: 13,
+              color: 'var(--b-ink-60)',
+              marginTop: 12,
+              maxWidth: 360,
+              marginInline: 'auto',
+              lineHeight: 1.6,
+            }}
+          >
+            We&apos;ll write your answers to your existing account, rebuild your routine, and recompute your calories. No new account needed.
+          </p>
+        </div>
+
+        <div className="mt-8 max-w-md mx-auto w-full">
+          <Button
+            className="w-full h-12"
+            onClick={handleReonboardingSave}
+            disabled={loading}
+          >
+            {loading ? 'Saving…' : 'Save & continue →'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col flex-1">

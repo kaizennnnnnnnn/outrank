@@ -7,7 +7,7 @@ import { formatRelativeTime } from '@/lib/utils';
 import {
   UsersFullIcon, HandshakeIcon, SwordsCrossIcon, CheckCircleFullIcon,
   StarIcon, TrophyIconFull, ChartBarIcon, FireIcon, MedalIcon,
-  ArrowUpIcon, FlagIcon, CrownIcon, ClockIcon,
+  ArrowUpIcon, FlagIcon, CrownIcon, ClockIcon, SparklesIcon,
 } from '@/components/ui/AppIcons';
 import { ReactNode } from 'react';
 
@@ -32,6 +32,7 @@ const typeIconMap: Record<string, ReactNode> = {
   weekly_recap:          <ChartBarIcon size={16} />,
   league_winner:         <CrownIcon size={16} />,
   friend_logged:         <ClockIcon size={16} />,
+  admin_announcement:    <SparklesIcon size={16} />,
 };
 
 const defaultIcon = <StarIcon size={16} />;
