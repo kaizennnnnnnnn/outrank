@@ -1,4 +1,5 @@
 // onLogCreated removed — XP/streaks/leaderboards handled client-side in logHabit.ts
+// Runtime: nodejs22 (firebase-functions ^7, firebase-admin ^13)
 export { onUserCreated } from './onUserCreated';
 export { onFriendAccepted } from './onFriendAccepted';
 export { scheduledStreaks, streakReminder } from './scheduledStreaks';

@@ -16,7 +16,7 @@
  * below is sized to comfortably exceed that with few-shot examples.)
  */
 
-import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 import Anthropic from '@anthropic-ai/sdk';
 
