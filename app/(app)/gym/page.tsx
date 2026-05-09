@@ -77,6 +77,44 @@ export default function GymPage() {
     }
   };
 
+  // Re-run buildTailoredProgram from the answers stored on the user
+  // doc (written by phase 8 onboarding). Each field is optional in
+  // OnboardingDraft so a partially-filled doc still produces a
+  // sensible plan — buildTailoredProgram has its own defaults.
+  const [tailoring, setTailoring] = useState(false);
+  const handleAutoTailor = async () => {
+    if (!user) return;
+    setTailoring(true);
+    try {
+      const u = userAny as Record<string, unknown> | null;
+      const draft = {
+        experienceLevel:    u?.experienceLevel,
+        goals:              u?.goals,
+        sex:                u?.sex,
+        height:             u?.height,
+        weight:             u?.weight,
+        age:                u?.age,
+        struggles:          u?.struggles,
+        energyLevels:       u?.energyLevels,
+        exerciseLocation:   u?.exerciseLocation,
+        equipment:          u?.equipment,
+        workoutDuration:    u?.workoutDuration,
+        workoutDaysPerWeek: u?.workoutDaysPerWeek,
+        workoutDays:        u?.workoutDays,
+        lastMuscles:        u?.lastMuscles,
+      } as Parameters<typeof import('@/lib/gym').buildTailoredProgram>[0];
+
+      const { selectCustomProgram, buildTailoredProgram } = await import('@/lib/gym');
+      const { program } = buildTailoredProgram(draft);
+      await selectCustomProgram(user.uid, program);
+      addToast({ type: 'success', message: 'New plan built from your answers.' });
+    } catch {
+      addToast({ type: 'error', message: 'Could not build plan' });
+    } finally {
+      setTailoring(false);
+    }
+  };
+
   return (
     <div className="dir-b min-h-screen" style={{ background: 'var(--b-paper)', color: 'var(--b-ink)' }}>
       <div className="max-w-2xl mx-auto pb-32">
@@ -84,28 +122,37 @@ export default function GymPage() {
 
         <div style={{ padding: '0 22px' }}>
           {/* Editorial header */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div>
-              <div className="spread" style={{ fontSize: 9, color: '#ef4444' }}>
-                Gym · Active Program
-              </div>
-              <h1
-                className="font-display"
-                style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
-              >
-                <em style={{ fontStyle: 'italic' }}>{today.program.name}</em>
-              </h1>
-              <p
-                className="font-body tabular"
-                style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
-              >
-                {today.program.audience} · {state.totalWorkouts || 0} workouts logged
-              </p>
+          <div>
+            <div className="spread" style={{ fontSize: 9, color: '#ef4444' }}>
+              Gym · Active Program
             </div>
-            <Button variant="ghost" size="sm" onClick={handleSwitch} disabled={switching}>
-              Switch program
-            </Button>
+            <h1
+              className="font-display"
+              style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, margin: '2px 0 4px' }}
+            >
+              <em style={{ fontStyle: 'italic' }}>{today.program.name}</em>
+            </h1>
+            <p
+              className="font-body tabular"
+              style={{ fontSize: 11, color: 'var(--b-ink-60)' }}
+            >
+              {today.program.audience} · {state.totalWorkouts || 0} workouts logged
+            </p>
           </div>
+
+          {/* Plan controls — three high-visibility actions for taking
+              charge of the routine. Sits right below the header so it's
+              the first thing the user sees after the program name.
+                Build my week  -> /gym/custom (manual builder)
+                Tailor for me  -> rebuild from onboarding answers
+                Switch program -> clear active + show program picker */}
+          <PlanControls
+            isCustom={state.activeProgramId === 'custom'}
+            onTailor={handleAutoTailor}
+            tailoring={tailoring}
+            onSwitch={handleSwitch}
+            switching={switching}
+          />
 
           <div style={{ marginTop: 18 }}>
             <TodayWorkoutCard program={today.program} day={today.day} dayIndex={today.dayIndex} />
@@ -815,5 +862,210 @@ function WeeklyScheduleView({
         })}
       </ul>
     </section>
+  );
+}
+
+/** Three high-visibility plan controls. The middle "Tailor for me"
+ *  cell is the primary action (red filled bg) — it's the smartest
+ *  one-tap default. The two outer cells are hairline-bordered so
+ *  the trio reads as a 1-2-1 hierarchy without being a wall of red. */
+function PlanControls({
+  isCustom,
+  onTailor,
+  tailoring,
+  onSwitch,
+  switching,
+}: {
+  isCustom:  boolean;
+  onTailor:  () => void;
+  tailoring: boolean;
+  onSwitch:  () => void;
+  switching: boolean;
+}) {
+  return (
+    <section style={{ marginTop: 18 }} aria-label="Plan controls">
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}>
+        Plan controls
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
+        }}
+      >
+        {/* 1. Manual builder — link to /gym/custom */}
+        <Link
+          href="/gym/custom"
+          aria-label="Build your own week of workouts"
+          style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '14px 8px',
+            border: '1px solid var(--b-ink)',
+            background: 'transparent',
+            color: 'var(--b-ink)',
+            textDecoration: 'none',
+            cursor: 'pointer',
+            minHeight: 92,
+            textAlign: 'center',
+          }}
+        >
+          <PlanGlyphBuild size={26} />
+          <span
+            className="font-display"
+            style={{
+              fontSize: 13,
+              fontStyle: 'italic',
+              fontWeight: 600,
+              lineHeight: 1.1,
+            }}
+          >
+            Build my week
+          </span>
+          <span
+            className="spread"
+            style={{
+              fontSize: 7.5,
+              color: 'var(--b-ink-60)',
+              letterSpacing: '0.16em',
+            }}
+          >
+            {isCustom ? 'Edit yours' : 'Pick every day'}
+          </span>
+        </Link>
+
+        {/* 2. Auto-tailor — primary action */}
+        <button
+          onClick={onTailor}
+          disabled={tailoring}
+          aria-label="Build a tailored plan from my onboarding answers"
+          style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '14px 8px',
+            border: '1px solid var(--b-accent)',
+            background: tailoring ? 'var(--b-accent)' : 'var(--b-accent)',
+            color: '#ffffff',
+            cursor: tailoring ? 'wait' : 'pointer',
+            minHeight: 92,
+            textAlign: 'center',
+            fontFamily: 'inherit',
+          }}
+        >
+          <PlanGlyphTailor size={26} />
+          <span
+            className="font-display"
+            style={{
+              fontSize: 13,
+              fontStyle: 'italic',
+              fontWeight: 600,
+              lineHeight: 1.1,
+            }}
+          >
+            {tailoring ? 'Building…' : 'Tailor for me'}
+          </span>
+          <span
+            className="spread"
+            style={{
+              fontSize: 7.5,
+              color: 'rgba(255,255,255,0.85)',
+              letterSpacing: '0.16em',
+            }}
+          >
+            From your answers
+          </span>
+        </button>
+
+        {/* 3. Switch program — clear active, show picker */}
+        <button
+          onClick={onSwitch}
+          disabled={switching}
+          aria-label="Switch to a different program"
+          style={{
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '14px 8px',
+            border: '1px solid var(--b-ink)',
+            background: 'transparent',
+            color: 'var(--b-ink)',
+            cursor: switching ? 'wait' : 'pointer',
+            minHeight: 92,
+            textAlign: 'center',
+            fontFamily: 'inherit',
+          }}
+        >
+          <PlanGlyphSwitch size={26} />
+          <span
+            className="font-display"
+            style={{
+              fontSize: 13,
+              fontStyle: 'italic',
+              fontWeight: 600,
+              lineHeight: 1.1,
+            }}
+          >
+            {switching ? 'Switching…' : 'Switch program'}
+          </span>
+          <span
+            className="spread"
+            style={{
+              fontSize: 7.5,
+              color: 'var(--b-ink-60)',
+              letterSpacing: '0.16em',
+            }}
+          >
+            Browse routines
+          </span>
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Plan-control glyphs ─────────────────────────────────────── */
+
+function PlanGlyphBuild({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="1" />
+      <path d="M3 9 H21" />
+      <path d="M9 4 V20" />
+      <path d="M9 14.5 H14.5 M11.75 12 V17" />
+    </svg>
+  );
+}
+
+function PlanGlyphTailor({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 3 L5 7 M3 5 L7 5" />
+      <path d="M19 17 L19 21 M17 19 L21 19" />
+      <path d="M14 4 L20 10 L10 20 L4 14 Z" />
+      <path d="M14 4 L10 8" opacity="0.5" />
+    </svg>
+  );
+}
+
+function PlanGlyphSwitch({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8 H20" />
+      <path d="M16 4 L20 8 L16 12" />
+      <path d="M20 16 H4" />
+      <path d="M8 12 L4 16 L8 20" />
+    </svg>
   );
 }
