@@ -91,9 +91,9 @@ export function showBrowserNotification(title: string, body: string, onClick?: s
 
   const notification = new Notification(title, {
     body,
-    // Large icon — brand-red bg + white phoenix.
-    icon: '/notification-icon.svg',
-    // Badge — small status-bar icon. White silhouette on transparent.
+    // Large right-side icon — colored phoenix render.
+    icon: '/icon-192.png',
+    // Small left-side badge — red bg + white phoenix silhouette.
     badge: '/notification-badge.svg',
     silent: false,
   } as NotificationOptions);
