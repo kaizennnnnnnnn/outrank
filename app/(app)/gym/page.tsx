@@ -20,6 +20,7 @@ export default function GymPage() {
   const { workouts, loading: historyLoading } = useWorkoutHistory(8);
   const addToast = useUIStore((s) => s.addToast);
   const [switching, setSwitching] = useState(false);
+  const [tailoring, setTailoring] = useState(false);
 
   if (!user || loading) {
     return (
@@ -81,7 +82,6 @@ export default function GymPage() {
   // doc (written by phase 8 onboarding). Each field is optional in
   // OnboardingDraft so a partially-filled doc still produces a
   // sensible plan — buildTailoredProgram has its own defaults.
-  const [tailoring, setTailoring] = useState(false);
   const handleAutoTailor = async () => {
     if (!user) return;
     setTailoring(true);
@@ -884,9 +884,21 @@ function PlanControls({
 }) {
   return (
     <section style={{ marginTop: 18 }} aria-label="Plan controls">
-      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 8 }}>
+      <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)', marginBottom: 2 }}>
         Plan controls
       </div>
+      <p
+        className="font-body"
+        style={{
+          fontSize: 11,
+          color: 'var(--b-ink-60)',
+          margin: '0 0 10px',
+          fontStyle: 'italic',
+          lineHeight: 1.4,
+        }}
+      >
+        Three ways to set your week — make it yourself, let us build it from your answers, or browse another routine.
+      </p>
       <div
         style={{
           display: 'grid',
@@ -897,7 +909,7 @@ function PlanControls({
         {/* 1. Manual builder — link to /gym/custom */}
         <Link
           href="/gym/custom"
-          aria-label="Build your own week of workouts"
+          aria-label="Plan your own week — pick exercises day by day"
           style={{
             position: 'relative',
             display: 'flex',
@@ -905,17 +917,17 @@ function PlanControls({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 6,
-            padding: '14px 8px',
+            padding: '16px 8px',
             border: '1px solid var(--b-ink)',
             background: 'transparent',
             color: 'var(--b-ink)',
             textDecoration: 'none',
             cursor: 'pointer',
-            minHeight: 92,
+            minHeight: 104,
             textAlign: 'center',
           }}
         >
-          <PlanGlyphBuild size={26} />
+          <PlanGlyphBuild size={28} />
           <span
             className="font-display"
             style={{
@@ -925,7 +937,7 @@ function PlanControls({
               lineHeight: 1.1,
             }}
           >
-            Build my week
+            Plan it myself
           </span>
           <span
             className="spread"
@@ -935,7 +947,7 @@ function PlanControls({
               letterSpacing: '0.16em',
             }}
           >
-            {isCustom ? 'Edit yours' : 'Pick every day'}
+            {isCustom ? 'Edit yours' : 'Build day by day'}
           </span>
         </Link>
 
@@ -943,7 +955,7 @@ function PlanControls({
         <button
           onClick={onTailor}
           disabled={tailoring}
-          aria-label="Build a tailored plan from my onboarding answers"
+          aria-label="Auto-tailor a plan from my onboarding answers"
           style={{
             position: 'relative',
             display: 'flex',
@@ -951,17 +963,22 @@ function PlanControls({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 6,
-            padding: '14px 8px',
+            padding: '16px 8px',
             border: '1px solid var(--b-accent)',
-            background: tailoring ? 'var(--b-accent)' : 'var(--b-accent)',
+            background: tailoring
+              ? 'color-mix(in srgb, var(--b-accent) 70%, var(--b-ink))'
+              : 'var(--b-accent)',
             color: '#ffffff',
             cursor: tailoring ? 'wait' : 'pointer',
-            minHeight: 92,
+            minHeight: 104,
             textAlign: 'center',
             fontFamily: 'inherit',
+            boxShadow: tailoring
+              ? 'none'
+              : '0 1px 0 rgba(0,0,0,0.12), 0 6px 14px color-mix(in srgb, var(--b-accent) 30%, transparent)',
           }}
         >
-          <PlanGlyphTailor size={26} />
+          <PlanGlyphTailor size={28} />
           <span
             className="font-display"
             style={{
@@ -971,7 +988,7 @@ function PlanControls({
               lineHeight: 1.1,
             }}
           >
-            {tailoring ? 'Building…' : 'Tailor for me'}
+            {tailoring ? 'Building…' : 'Auto-tailor'}
           </span>
           <span
             className="spread"
@@ -997,17 +1014,17 @@ function PlanControls({
             alignItems: 'center',
             justifyContent: 'center',
             gap: 6,
-            padding: '14px 8px',
+            padding: '16px 8px',
             border: '1px solid var(--b-ink)',
             background: 'transparent',
             color: 'var(--b-ink)',
             cursor: switching ? 'wait' : 'pointer',
-            minHeight: 92,
+            minHeight: 104,
             textAlign: 'center',
             fontFamily: 'inherit',
           }}
         >
-          <PlanGlyphSwitch size={26} />
+          <PlanGlyphSwitch size={28} />
           <span
             className="font-display"
             style={{
