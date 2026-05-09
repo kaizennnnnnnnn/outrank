@@ -38,15 +38,16 @@ export const onNotificationCreated = functions.firestore
         if (prefs && prefs[category] === false) return;
       }
 
-      // ICON  = the BIG icon shown on the right side of the notification.
-      //         Can be colored — Android shows it as-is. /icon-192.png
-      //         is the colored phoenix render.
-      // BADGE = the SMALL icon in the status bar / left of the notification
-      //         shade. Android renders ONLY the alpha channel, system-tinting
-      //         the silhouette to match the OS. This must be a white-on-
-      //         transparent silhouette — a colored icon would render as a
-      //         solid black square (which is what was happening before).
-      const appIcon = 'https://outrank-ten.vercel.app/icon-192.png';
+      // ICON  = the BIG icon shown on the right side of the notification
+      //         in the Android shade. Brand-red bg + white phoenix —
+      //         matches how Threads/WhatsApp/Twitter use their brand
+      //         color behind the mark.
+      // BADGE = the SMALL icon in the status bar / left of the
+      //         notification card. Android renders ONLY the alpha
+      //         channel and system-tints the silhouette, so this MUST
+      //         be a white-on-transparent silhouette (a colored icon
+      //         would render as a solid black square).
+      const appIcon = 'https://outrank-ten.vercel.app/notification-icon.svg';
       const badgeIcon = 'https://outrank-ten.vercel.app/notification-badge.svg';
 
       const message: admin.messaging.Message = {

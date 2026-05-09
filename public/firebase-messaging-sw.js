@@ -22,11 +22,10 @@ messaging.onBackgroundMessage((payload) => {
     const title = 'Outrank';
     const options = {
       body: payload.data?.message || 'New notification',
-      icon: '/icon-192.png',
-      // Badge = small status-bar icon. Must be a white silhouette on
-      // transparent — Android only reads the alpha channel and
-      // system-tints the result. icon-192.png is colored, so using
-      // it here would render as a solid black square.
+      // Large icon — brand-red bg + white phoenix silhouette.
+      icon: '/notification-icon.svg',
+      // Badge — white silhouette on transparent. Android only reads
+      // the alpha channel and system-tints the silhouette.
       badge: '/notification-badge.svg',
     };
     self.registration.showNotification(title, options);

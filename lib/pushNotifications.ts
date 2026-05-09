@@ -91,9 +91,9 @@ export function showBrowserNotification(title: string, body: string, onClick?: s
 
   const notification = new Notification(title, {
     body,
-    icon: '/icon-192.png',
-    // Badge = small status-bar icon. Must be a white silhouette on
-    // transparent — Android only reads the alpha channel.
+    // Large icon — brand-red bg + white phoenix.
+    icon: '/notification-icon.svg',
+    // Badge — small status-bar icon. White silhouette on transparent.
     badge: '/notification-badge.svg',
     silent: false,
   } as NotificationOptions);
