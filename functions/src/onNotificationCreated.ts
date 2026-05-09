@@ -38,7 +38,16 @@ export const onNotificationCreated = functions.firestore
         if (prefs && prefs[category] === false) return;
       }
 
+      // ICON  = the BIG icon shown on the right side of the notification.
+      //         Can be colored — Android shows it as-is. /icon-192.png
+      //         is the colored phoenix render.
+      // BADGE = the SMALL icon in the status bar / left of the notification
+      //         shade. Android renders ONLY the alpha channel, system-tinting
+      //         the silhouette to match the OS. This must be a white-on-
+      //         transparent silhouette — a colored icon would render as a
+      //         solid black square (which is what was happening before).
       const appIcon = 'https://outrank-ten.vercel.app/icon-192.png';
+      const badgeIcon = 'https://outrank-ten.vercel.app/notification-badge.svg';
 
       const message: admin.messaging.Message = {
         token: userData.fcmToken,
@@ -66,7 +75,7 @@ export const onNotificationCreated = functions.firestore
           headers: { Urgency: 'high' },
           notification: {
             icon: appIcon,
-            badge: appIcon,
+            badge: badgeIcon,
             vibrate: [200, 100, 200],
             // Explicitly drop any image
             requireInteraction: false,
