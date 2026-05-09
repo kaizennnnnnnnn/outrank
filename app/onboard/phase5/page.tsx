@@ -773,9 +773,13 @@ function DaysStep({
   const setCount = (n: number) => {
     update({ workoutDaysPerWeek: n, workoutDays: undefined });
   };
+  // Capped at 5 selected days so every plan retains ≥2 rest days.
+  // If the user already has 5 picked and tries to add a 6th, ignore.
   const toggleDay = (d: DayKey) => {
     const current = draft.workoutDays || [];
-    const next = current.includes(d) ? current.filter((x) => x !== d) : [...current, d];
+    const isOn = current.includes(d);
+    if (!isOn && current.length >= 5) return;
+    const next = isOn ? current.filter((x) => x !== d) : [...current, d];
     update({ workoutDays: next, workoutDaysPerWeek: undefined });
   };
 
@@ -830,7 +834,7 @@ function DaysStep({
             gap: 10,
           }}
         >
-          {[2, 3, 4, 5, 6, 7].map((n) => {
+          {[1, 2, 3, 4, 5].map((n) => {
             const active = draft.workoutDaysPerWeek === n;
             return (
               <button
@@ -877,6 +881,20 @@ function DaysStep({
           })}
         </div>
       ) : (
+        <>
+        <p
+          className="font-body"
+          style={{
+            fontSize: 11,
+            color: 'var(--b-ink-60)',
+            marginBottom: 10,
+            lineHeight: 1.4,
+            textAlign: 'center',
+            fontStyle: 'italic',
+          }}
+        >
+          Pick up to 5 — we always reserve at least 2 rest days for recovery.
+        </p>
         <div
           style={{
             display: 'grid',
@@ -917,6 +935,7 @@ function DaysStep({
             );
           })}
         </div>
+        </>
       )}
     </div>
   );

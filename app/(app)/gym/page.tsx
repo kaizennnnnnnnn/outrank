@@ -455,19 +455,50 @@ const WEEKDAY_LONG: Record<DayKey, string> = {
   sun: 'Sunday',
 };
 
-/** Default day-spread when the user didn't pick specific days. */
+/** Default day-spread when the user didn't pick specific days.
+ *  Capped at 5 days so every plan reserves at least 2 rest days. */
 function defaultWorkoutDays(count: number): DayKey[] {
-  switch (Math.max(0, Math.min(7, count))) {
+  switch (Math.max(0, Math.min(5, count))) {
     case 0: return [];
     case 1: return ['wed'];
     case 2: return ['mon', 'thu'];
     case 3: return ['mon', 'wed', 'fri'];
     case 4: return ['mon', 'tue', 'thu', 'fri'];
     case 5: return ['mon', 'tue', 'wed', 'thu', 'fri'];
-    case 6: return ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    case 7: return [...WEEKDAY_ORDER];
     default: return ['mon', 'wed', 'fri'];
   }
+}
+
+/** Pretty muscle-group labels for the week-plan view. */
+const MUSCLE_LABEL: Record<string, string> = {
+  chest:      'Chest',
+  back:       'Back',
+  shoulders:  'Shoulders',
+  biceps:     'Biceps',
+  triceps:    'Triceps',
+  quads:      'Quads',
+  hamstrings: 'Hamstrings',
+  glutes:     'Glutes',
+  calves:     'Calves',
+  core:       'Core',
+  forearms:   'Forearms',
+  'full-body': 'Full body',
+};
+
+/** Derive the day's primary muscle groups from its exercises. Used
+ *  by the week plan so each day reads "Chest · Shoulders · Triceps"
+ *  instead of just "Push" — explicit for new lifters. */
+function muscleGroupsFor(day: { exercises: Array<{ exerciseId: string }> }): string[] {
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const ex of day.exercises) {
+    const meta = getExercise(ex.exerciseId);
+    if (!meta?.primaryMuscle) continue;
+    if (seen.has(meta.primaryMuscle)) continue;
+    seen.add(meta.primaryMuscle);
+    ordered.push(MUSCLE_LABEL[meta.primaryMuscle] ?? meta.primaryMuscle);
+  }
+  return ordered;
 }
 
 function todayDayKey(): DayKey {
@@ -506,6 +537,10 @@ function WeeklyScheduleView({
 
   const today = todayDayKey();
 
+  // Count workout vs rest days for the section subtitle.
+  const workoutCount = pinnedDays.length;
+  const restCount = 7 - workoutCount;
+
   return (
     <section style={{ marginTop: 24 }} aria-labelledby="weekly-heading">
       <div
@@ -515,22 +550,22 @@ function WeeklyScheduleView({
           display: 'flex',
           alignItems: 'baseline',
           justifyContent: 'space-between',
-          marginBottom: 6,
+          marginBottom: 4,
           gap: 8,
         }}
       >
         <h2
           id="weekly-heading"
           className="font-display"
-          style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500, margin: 0 }}
+          style={{ fontSize: 22, fontStyle: 'italic', fontWeight: 500, margin: 0 }}
         >
-          This week
+          Your week plan
         </h2>
         <span
           className="font-mono tabular"
           style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.08em', textTransform: 'uppercase' }}
         >
-          Mon → Sun
+          {workoutCount} train · {restCount} rest
         </span>
       </div>
       <p
@@ -538,24 +573,20 @@ function WeeklyScheduleView({
         style={{
           fontSize: 11,
           color: 'var(--b-ink-60)',
-          margin: '0 0 12px',
+          margin: '4px 0 12px',
           lineHeight: 1.5,
         }}
       >
-        Your cycle pinned to weekdays. Cycle advances when you finish a workout — skipping a day
-        doesn&rsquo;t skip a cycle position.
+        Each day below shows the muscles you&rsquo;ll hit, or a rest day for recovery. Cycle advances
+        only when you finish a workout — skipping a day doesn&rsquo;t skip a cycle position.
       </p>
 
-      <ol
+      <ul
         style={{
           listStyle: 'none',
           margin: 0,
-          padding: '8px 0',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 4,
+          padding: 0,
           borderTop: '1px solid var(--b-rule)',
-          borderBottom: '1px solid var(--b-rule)',
         }}
       >
         {WEEKDAY_ORDER.map((dKey) => {
@@ -563,114 +594,226 @@ function WeeklyScheduleView({
           const day = cycleIdx !== null ? program.schedule[cycleIdx] : null;
           const isToday = dKey === today;
           const isWorkout = day !== null;
+          const muscles = isWorkout && day ? muscleGroupsFor(day) : [];
+
+          // Compute the calendar date for THIS weekday in the current
+          // (Mon-anchored) week so each row carries an actual date.
+          const dateNum = (() => {
+            const now = new Date();
+            const todayJsDay = now.getDay() === 0 ? 7 : now.getDay();
+            const targetJsDay = WEEKDAY_ORDER.indexOf(dKey) + 1;
+            const offset = targetJsDay - todayJsDay;
+            const target = new Date(now);
+            target.setDate(target.getDate() + offset);
+            return String(target.getDate()).padStart(2, '0');
+          })();
 
           return (
             <li
               key={dKey}
               aria-current={isToday ? 'date' : undefined}
               aria-label={`${WEEKDAY_LONG[dKey]}${isToday ? ' (today)' : ''}: ${
-                isWorkout ? `${day!.name}, ${day!.exercises.length} exercises` : 'rest day'
+                isWorkout
+                  ? `${day!.name} — ${muscles.length > 0 ? muscles.join(', ') : `${day!.exercises.length} exercises`}`
+                  : 'rest day'
               }`}
               style={{
-                display: 'flex',
-                flexDirection: 'column',
+                display: 'grid',
+                gridTemplateColumns: '54px 1fr auto',
+                gap: 12,
                 alignItems: 'center',
-                gap: 4,
-                padding: '8px 4px',
-                border: isToday ? '1px solid var(--b-accent)' : '1px solid transparent',
-                background: isToday ? 'color-mix(in srgb, var(--b-accent) 7%, var(--b-paper))' : 'transparent',
-                minHeight: 92,
-                position: 'relative',
+                padding: '12px 12px',
+                borderBottom: '1px solid var(--b-rule)',
+                borderLeft: isToday
+                  ? '3px solid var(--b-accent)'
+                  : isWorkout
+                    ? '3px solid color-mix(in srgb, var(--b-accent) 35%, transparent)'
+                    : '3px solid var(--b-ink-15, color-mix(in srgb, var(--b-ink) 18%, transparent))',
+                background: isToday
+                  ? 'color-mix(in srgb, var(--b-accent) 6%, var(--b-paper))'
+                  : isWorkout
+                    ? 'transparent'
+                    : 'color-mix(in srgb, var(--b-ink) 4%, var(--b-paper))',
               }}
             >
-              <span
-                className="spread"
-                style={{
-                  fontSize: 9,
-                  color: isToday ? 'var(--b-accent)' : 'var(--b-ink-60)',
-                  letterSpacing: '0.16em',
-                }}
-              >
-                {WEEKDAY_LABEL[dKey]}
-              </span>
-              <span
-                aria-hidden
-                className="font-mono tabular"
-                style={{
-                  fontSize: 8.5,
-                  color: 'var(--b-ink-40)',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                {(() => {
-                  // Compute the calendar date for THIS weekday in the
-                  // current week (Mon-anchored).
-                  const now = new Date();
-                  const todayJsDay = now.getDay() === 0 ? 7 : now.getDay(); // 1..7, Mon=1
-                  const targetJsDay = WEEKDAY_ORDER.indexOf(dKey) + 1;       // 1..7, Mon=1
-                  const offset = targetJsDay - todayJsDay;
-                  const target = new Date(now);
-                  target.setDate(target.getDate() + offset);
-                  return String(target.getDate()).padStart(2, '0');
-                })()}
-              </span>
-
-              {isWorkout && day ? (
-                <>
-                  <span
-                    aria-hidden
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: 'var(--b-accent)',
-                      marginTop: 2,
-                    }}
-                  />
-                  <span
-                    className="font-display"
-                    style={{
-                      fontSize: 10.5,
-                      fontStyle: 'italic',
-                      fontWeight: 500,
-                      lineHeight: 1.15,
-                      textAlign: 'center',
-                      color: 'var(--b-ink)',
-                      marginTop: 2,
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {day.name}
-                  </span>
-                  <span
-                    className="font-mono tabular"
-                    style={{
-                      fontSize: 8.5,
-                      color: 'var(--b-ink-60)',
-                      letterSpacing: '0.04em',
-                      marginTop: 'auto',
-                    }}
-                  >
-                    {day.exercises.length} ex
-                  </span>
-                </>
-              ) : (
+              {/* Left column — weekday + date stacked */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                 <span
-                  className="font-body"
+                  className="spread"
                   style={{
-                    fontSize: 10,
-                    color: 'var(--b-ink-40)',
-                    fontStyle: 'italic',
-                    marginTop: 'auto',
+                    fontSize: 9,
+                    color: isToday ? 'var(--b-accent)' : 'var(--b-ink-60)',
+                    letterSpacing: '0.18em',
+                    fontWeight: 700,
                   }}
                 >
-                  rest
+                  {WEEKDAY_LABEL[dKey]}
+                  {isToday && <span style={{ marginLeft: 4 }}>· Today</span>}
                 </span>
-              )}
+                <span
+                  className="font-display tabular"
+                  style={{
+                    fontSize: 22,
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                    lineHeight: 1,
+                    marginTop: 2,
+                    color: isWorkout ? 'var(--b-ink)' : 'var(--b-ink-40)',
+                  }}
+                >
+                  {dateNum}
+                </span>
+              </div>
+
+              {/* Middle column — workout name + muscles, OR REST DAY */}
+              <div style={{ minWidth: 0 }}>
+                {isWorkout && day ? (
+                  <>
+                    <div
+                      className="font-display"
+                      style={{
+                        fontSize: 16,
+                        fontStyle: 'italic',
+                        fontWeight: 500,
+                        lineHeight: 1.1,
+                        color: 'var(--b-ink)',
+                      }}
+                    >
+                      {day.name}
+                    </div>
+                    {muscles.length > 0 && (
+                      <div
+                        style={{
+                          marginTop: 5,
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 4,
+                        }}
+                      >
+                        {muscles.slice(0, 4).map((m) => (
+                          <span
+                            key={m}
+                            className="font-mono tabular"
+                            style={{
+                              padding: '2px 7px',
+                              fontSize: 9,
+                              fontWeight: 600,
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                              color: 'var(--b-accent)',
+                              border: '1px solid color-mix(in srgb, var(--b-accent) 45%, transparent)',
+                              background: 'color-mix(in srgb, var(--b-accent) 8%, var(--b-paper))',
+                            }}
+                          >
+                            {m}
+                          </span>
+                        ))}
+                        {muscles.length > 4 && (
+                          <span
+                            className="font-mono"
+                            style={{
+                              padding: '2px 7px',
+                              fontSize: 9,
+                              color: 'var(--b-ink-60)',
+                            }}
+                          >
+                            +{muscles.length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                    }}
+                  >
+                    {/* Rest-day glyph — small "Z" / moon mark in caps */}
+                    <span
+                      aria-hidden
+                      className="font-display"
+                      style={{
+                        fontSize: 22,
+                        fontStyle: 'italic',
+                        fontWeight: 500,
+                        color: 'var(--b-ink-40)',
+                        lineHeight: 1,
+                      }}
+                    >
+                      ◌
+                    </span>
+                    <div>
+                      <div
+                        className="spread"
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: 'var(--b-ink-60)',
+                          letterSpacing: '0.22em',
+                        }}
+                      >
+                        Rest Day
+                      </div>
+                      <div
+                        className="font-body"
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--b-ink-40)',
+                          fontStyle: 'italic',
+                          marginTop: 2,
+                        }}
+                      >
+                        Recovery — no workout today.
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right column — exercise count for workout days */}
+              <div style={{ textAlign: 'right' }}>
+                {isWorkout && day ? (
+                  <>
+                    <div
+                      className="font-display tabular"
+                      style={{
+                        fontSize: 18,
+                        fontStyle: 'italic',
+                        fontWeight: 500,
+                        color: 'var(--b-ink)',
+                        lineHeight: 1,
+                      }}
+                    >
+                      {day.exercises.length}
+                    </div>
+                    <div
+                      className="spread"
+                      style={{
+                        fontSize: 8,
+                        color: 'var(--b-ink-60)',
+                        letterSpacing: '0.18em',
+                        marginTop: 2,
+                      }}
+                    >
+                      Exercises
+                    </div>
+                  </>
+                ) : (
+                  <span
+                    className="font-mono"
+                    style={{ fontSize: 9, color: 'var(--b-ink-40)' }}
+                  >
+                    —
+                  </span>
+                )}
+              </div>
             </li>
           );
         })}
-      </ol>
+      </ul>
     </section>
   );
 }

@@ -14,6 +14,11 @@ const db = admin.firestore();
  *   • **Sleep wind-down**: a single push 30 minutes before the user's
  *     chosen bedtime (default 23:00). Idempotent per local-date.
  *
+ *   • **Workout**: a single push at the user's chosen
+ *     `workoutReminderTime` (HH:MM 24h on the user doc) — only on
+ *     days that match the user's `workoutDays` array (or every day
+ *     if no specific days are set). Idempotent per local-date.
+ *
  * Reads sensible defaults from the user doc's `pillarSettings` field
  * (see types/user.ts). All fields optional — if the doc has nothing,
  * defaults apply. Set `pillarSettings.disabled = true` to fully opt
@@ -23,6 +28,8 @@ const db = admin.firestore();
  *   • Water: stores `pillarSettings.waterLastFiredAt` (unix ms). Next
  *     fire is gated on `now - lastFired >= cadence`.
  *   • Sleep: stores `pillarSettings.sleepReminderLastFiredDate`
+ *     (YYYY-MM-DD in user's local TZ). One per day, max.
+ *   • Workout: stores `pillarSettings.workoutReminderLastFiredDate`
  *     (YYYY-MM-DD in user's local TZ). One per day, max.
  *
  * Notifications go to `notifications/{uid}/items` like every other
@@ -44,7 +51,12 @@ interface LocalSnap {
   minute: number;
   dateKey: string;       // YYYY-MM-DD in user's local TZ
   totalMinutes: number;  // hour*60 + minute
+  weekdayKey: string;    // 'mon' | 'tue' | ... in user's local TZ
 }
+
+const WEEKDAY_LOOKUP: Record<string, string> = {
+  Mon: 'mon', Tue: 'tue', Wed: 'wed', Thu: 'thu', Fri: 'fri', Sat: 'sat', Sun: 'sun',
+};
 
 function toLocal(date: Date, tz: string): LocalSnap | null {
   try {
@@ -55,17 +67,20 @@ function toLocal(date: Date, tz: string): LocalSnap | null {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      weekday: 'short',
       hour12: false,
     }).formatToParts(date);
     const m: Record<string, string> = {};
     for (const p of parts) m[p.type] = p.value;
     const hour = parseInt(m.hour || '0', 10) % 24;
     const minute = parseInt(m.minute || '0', 10);
+    const weekdayKey = WEEKDAY_LOOKUP[m.weekday || ''] || 'mon';
     return {
       hour,
       minute,
       dateKey: `${m.year}-${m.month}-${m.day}`,
       totalMinutes: hour * 60 + minute,
+      weekdayKey,
     };
   } catch {
     return null;
@@ -88,6 +103,8 @@ interface PillarSettings {
   sleepBedtimeAt?: string;
   sleepWindDownMinutes?: number;
   sleepReminderLastFiredDate?: string;
+  workoutReminderEnabled?: boolean;
+  workoutReminderLastFiredDate?: string;
 }
 
 export const pillarReminders = functions.pubsub
@@ -172,6 +189,50 @@ export const pillarReminders = functions.pubsub
             });
           } catch (err) {
             console.error(`sleep reminder failed for ${userId}`, err);
+          }
+        }
+      }
+
+      // ----- Workout reminder -----
+      // Reads `workoutReminderTime` (HH:MM 24h) + `workoutDays`
+      // (array of 'mon'..'sun') OFF the user doc — these are written
+      // straight from onboarding phase 5/8, no pillarSettings nesting.
+      // Defaults: enabled if a time exists; fires every day if no
+      // workoutDays were picked.
+      const workoutReminderTime = (user.workoutReminderTime as string | undefined) || '';
+      const workoutEnabled = settings.workoutReminderEnabled ?? !!workoutReminderTime;
+      if (workoutEnabled && workoutReminderTime) {
+        const workoutMin = timeToMinutes(workoutReminderTime);
+        const diff = (local.totalMinutes - workoutMin + 24 * 60) % (24 * 60);
+        // 15-minute fire window mirrors the sleep wind-down's logic.
+        const inFireWindow = diff >= 0 && diff < 15;
+
+        // Only fire on a workout day. If `workoutDays` is empty / not
+        // set, treat every day as a workout day (the user picked
+        // "by count" rather than specific days).
+        const workoutDays = (user.workoutDays as string[] | undefined) || [];
+        const isWorkoutDay = workoutDays.length === 0 || workoutDays.includes(local.weekdayKey);
+
+        if (
+          inFireWindow
+          && isWorkoutDay
+          && settings.workoutReminderLastFiredDate !== local.dateKey
+        ) {
+          try {
+            await userDoc.ref.update({
+              'pillarSettings.workoutReminderLastFiredDate': local.dateKey,
+            });
+            await db.collection(`notifications/${userId}/items`).add({
+              type: 'pillar_reminder',
+              message: `Workout time, ${username} — your session is queued. Tap to start.`,
+              isRead: false,
+              relatedId: 'workout',
+              actorId: '',
+              actorAvatar: '',
+              createdAt: admin.firestore.Timestamp.now(),
+            });
+          } catch (err) {
+            console.error(`workout reminder failed for ${userId}`, err);
           }
         }
       }

@@ -91,14 +91,14 @@ const SPLIT_MUSCLES: Record<SplitDay, { name: string; muscles: MuscleGroup[]; pr
   lower: { name: 'Lower Body', muscles: ['quads', 'hamstrings', 'glutes', 'calves', 'core'],         primaryCount: 2, isolationCount: 3 },
 };
 
-/** Pick the split sequence for the user's days-per-week. */
+/** Pick the split sequence for the user's days-per-week. Capped at
+ *  5 days so every plan keeps at least 2 rest days for recovery. */
 function pickSplit(daysPerWeek: number, beginner: boolean): SplitDay[] {
-  const days = Math.max(1, Math.min(6, daysPerWeek || 3));
-  if (days <= 2)         return ['full', 'full'].slice(0, days) as SplitDay[];
-  if (days === 3)        return beginner ? ['full', 'full', 'full'] : ['push', 'pull', 'legs'];
-  if (days === 4)        return ['upper', 'lower', 'upper', 'lower'];
-  if (days === 5)        return ['push', 'pull', 'legs', 'upper', 'lower'];
-  return ['push', 'pull', 'legs', 'push', 'pull', 'legs'];
+  const days = Math.max(1, Math.min(5, daysPerWeek || 3));
+  if (days <= 2)  return ['full', 'full'].slice(0, days) as SplitDay[];
+  if (days === 3) return beginner ? ['full', 'full', 'full'] : ['push', 'pull', 'legs'];
+  if (days === 4) return ['upper', 'lower', 'upper', 'lower'];
+  return ['push', 'pull', 'legs', 'upper', 'lower'];
 }
 
 /** Exercises whose equipment is in the user's available set. Empty
@@ -237,7 +237,9 @@ export interface TailoredProgramResult {
 export function buildTailoredProgram(draft: OnboardingDraft): TailoredProgramResult {
   const reasons: string[] = [];
   const beginner = draft.experienceLevel === 'never' || draft.experienceLevel === 'beginner';
-  const days = Math.max(1, Math.min(6, draft.workoutDaysPerWeek ?? 3));
+  // 5-day cap guarantees ≥2 rest days regardless of what the user
+  // entered in onboarding (older drafts may carry 6 or 7).
+  const days = Math.max(1, Math.min(5, draft.workoutDaysPerWeek ?? 3));
   const duration = draft.workoutDuration ?? 60;
   const goals = new Set<string>(draft.goals || []);
   const struggles = (draft.struggles || []) as Array<keyof typeof STRUGGLE_EXCLUDE>;
