@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useTodaysDraft, useYesterdaysRecap } from '@/hooks/useRecap';
 import { countPillarsLogged, getPublishReward } from '@/constants/publishReward';
+import { PILLARS } from '@/constants/pillars';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/store/uiStore';
 import { publishRecap, canEdit, canPublishYesterday } from '@/lib/recap';
@@ -137,6 +138,29 @@ function EmptyDraft() {
 }
 
 // ─── Draft state ─────────────────────────────────────────────────────
+//
+// Visual richness scales with the count of distinct pillars logged
+// (0..5). Each tier adds a small ledger flourish — thicker accent
+// stripe, corner ornaments, top-edge shine, then a "FULL DAY" seal
+// at tier 5. The card never restructures; each tier just intensifies
+// what's already there so the user sees the same surface "fill in"
+// as they log through the day.
+
+const TIER_HEADLINE: Record<number, string> = {
+  1: 'Day in motion.',
+  2: 'Picking up steam.',
+  3: 'Solid day building.',
+  4: 'Strong day — almost there.',
+  5: 'A complete day.',
+};
+
+const TIER_KICKER: Record<number, string> = {
+  1: '1 of 5 pillars covered',
+  2: '2 of 5 pillars covered',
+  3: '3 of 5 pillars covered',
+  4: '4 of 5 pillars — one to go',
+  5: 'Every pillar covered',
+};
 
 function DraftState({
   recap,
@@ -152,14 +176,42 @@ function DraftState({
   const upcoming = pillars > 0 ? getPublishReward(pillars) : null;
   const fullPayout = getPublishReward(5);
 
+  // Which of the five pillar slugs the user has touched today. Drives
+  // the PillarTrack fill and the kicker copy.
+  const loggedSlugs = new Set(recap.entries.map((e) => e.habitSlug));
+  const tier = pillars; // 0..5
+  const stripeWidth = tier >= 4 ? 4 : tier >= 2 ? 3 : 2;
+  const showTopAccent  = tier >= 4;
+  const showCornerMarks = tier >= 3;
+  const showBottomMarks = tier >= 4;
+  const showFullSeal   = tier >= 5;
+  const showTopShine   = tier >= 5;
+
+  // Tint the +XP figure at higher tiers. No background-clip gradient —
+  // just the same accent ink the eyebrows already use.
+  const xpColor =
+    tier >= 5 ? 'var(--b-accent)'
+    : tier >= 4 ? 'color-mix(in srgb, var(--b-accent) 65%, var(--b-ink))'
+    : 'var(--b-ink)';
+
   return (
     <div
       style={{
-        borderTop: '2px solid var(--b-ink)',
+        position: 'relative',
+        borderTop: showTopAccent
+          ? '2px solid var(--b-accent)'
+          : '2px solid var(--b-ink)',
         borderBottom: '1px solid var(--b-ink)',
-        padding: '14px 0',
+        borderLeft: `${stripeWidth}px solid var(--b-accent)`,
+        padding: '14px 14px 14px 14px',
       }}
     >
+      {showTopShine && <div className="record-top-shine" />}
+      {showCornerMarks && <CornerMark pos="tl" />}
+      {showCornerMarks && <CornerMark pos="tr" />}
+      {showBottomMarks && <CornerMark pos="bl" />}
+      {showBottomMarks && <CornerMark pos="br" />}
+
       <div
         style={{
           display: 'flex',
@@ -186,7 +238,7 @@ function DraftState({
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 8 }}>
         <span
           className="font-display tabular"
-          style={{ fontSize: 42, fontWeight: 500, lineHeight: 1, color: 'var(--b-ink)' }}
+          style={{ fontSize: 42, fontWeight: 500, lineHeight: 1, color: xpColor }}
         >
           +{recap.totalXP}
         </span>
@@ -198,6 +250,44 @@ function DraftState({
           {recap.proofCount > 0 && ` · ${recap.proofCount} photo${recap.proofCount === 1 ? '' : 's'}`}
         </span>
       </div>
+
+      {/* Tier-driven headline + kicker — tells the user how today is
+          shaping up without making them count chips. */}
+      {tier > 0 && (
+        <div style={{ marginTop: 6 }}>
+          <p
+            className="font-display"
+            style={{
+              fontSize: 14,
+              fontStyle: 'italic',
+              fontWeight: 500,
+              margin: 0,
+              color: 'var(--b-ink)',
+              lineHeight: 1.2,
+            }}
+          >
+            {TIER_HEADLINE[tier]}
+          </p>
+          <p
+            className="font-mono"
+            style={{
+              fontSize: 9,
+              color: tier >= 5 ? 'var(--b-accent)' : 'var(--b-ink-60)',
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              margin: '2px 0 0',
+              fontWeight: tier >= 5 ? 700 : 500,
+            }}
+          >
+            {TIER_KICKER[tier]}
+          </p>
+        </div>
+      )}
+
+      {/* Pillar progress track — five hairline cells, accent-filled
+          for each pillar slug that's been logged today. Stays visible
+          from tier 1+ so the day's spine is always legible. */}
+      {tier > 0 && <PillarTrack loggedSlugs={loggedSlugs} />}
 
       {/* Category chips — minimal, inline */}
       {recap.entries.length > 0 && (
@@ -297,6 +387,10 @@ function DraftState({
         </div>
       )}
 
+      {/* Full-day seal — only at tier 5. Sits above the submit CTA so
+          the eye lands on it before the action button. */}
+      {showFullSeal && <FullDaySeal />}
+
       <button
         onClick={onPublish}
         disabled={publishing || recap.logCount === 0}
@@ -331,6 +425,158 @@ function DraftState({
     </div>
   );
 }
+
+// ─── Pillar progress track ───────────────────────────────────────────
+//
+// Five hairline cells in canonical pillar order. Each cell is the
+// pillar's short name; covered cells get an accent fill + ink text.
+// The fill animates in once when first becoming covered (the .record-
+// pillar-fill class is keyed off the slug so a new pillar getting
+// logged plays the entrance fresh).
+
+function PillarTrack({ loggedSlugs }: { loggedSlugs: Set<string> }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        gap: 4,
+        marginTop: 10,
+      }}
+      aria-label="Pillars covered today"
+    >
+      {PILLARS.map((p) => {
+        const covered = loggedSlugs.has(p.slug);
+        return (
+          <div
+            key={p.slug}
+            style={{
+              position: 'relative',
+              padding: '5px 4px',
+              border: covered
+                ? '1px solid var(--b-accent)'
+                : '1px solid var(--b-rule)',
+              background: 'transparent',
+              textAlign: 'center',
+              minHeight: 22,
+              overflow: 'hidden',
+            }}
+          >
+            {covered && (
+              <div
+                key={`fill-${p.slug}`}
+                className="record-pillar-fill"
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background:
+                    'color-mix(in srgb, var(--b-accent) 18%, transparent)',
+                }}
+              />
+            )}
+            <span
+              className="font-mono"
+              style={{
+                position: 'relative',
+                fontSize: 9,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                fontWeight: covered ? 700 : 500,
+                color: covered ? 'var(--b-accent)' : 'var(--b-ink-40)',
+              }}
+            >
+              {p.shortName}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Tier ornaments ──────────────────────────────────────────────────
+//
+// Tiny ink hairlines at the corners. Pure decoration — no semantics —
+// they just frame the card more formally as the day fills out.
+
+function CornerMark({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
+  const top    = pos.startsWith('t');
+  const left   = pos.endsWith('l');
+  const len    = 10;
+  return (
+    <span
+      aria-hidden
+      style={{
+        position: 'absolute',
+        [top ? 'top' : 'bottom']: -1,
+        [left ? 'left' : 'right']: -1,
+        width: len,
+        height: len,
+        pointerEvents: 'none',
+        borderTop:    top  ? '1px solid var(--b-accent)' : 'none',
+        borderBottom: !top ? '1px solid var(--b-accent)' : 'none',
+        borderLeft:   left  ? '1px solid var(--b-accent)' : 'none',
+        borderRight:  !left ? '1px solid var(--b-accent)' : 'none',
+      }}
+    />
+  );
+}
+
+// ─── Full-day seal ───────────────────────────────────────────────────
+//
+// Tier-5 only. A small typographic seal that anchors the bottom of
+// the card before the submit CTA. Settles in then breathes gently —
+// the breath is transform-only so it doesn't hammer paint.
+
+function FullDaySeal() {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        padding: '10px 12px',
+        border: '1px solid var(--b-accent)',
+        background: 'color-mix(in srgb, var(--b-accent) 10%, transparent)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <span
+        className="record-seal"
+        style={{ display: 'inline-flex', color: 'var(--b-accent)' }}
+        aria-hidden
+      >
+        <BCheckGlyph size={16} />
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          className="spread"
+          style={{
+            fontSize: 9,
+            color: 'var(--b-accent)',
+            letterSpacing: '0.18em',
+            fontWeight: 700,
+          }}
+        >
+          Full day · 5 of 5 pillars
+        </div>
+        <div
+          className="font-body"
+          style={{
+            fontSize: 10,
+            color: 'var(--b-ink-60)',
+            marginTop: 1,
+            fontStyle: 'italic',
+          }}
+        >
+          Submit to lock in the full-day reward.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 // ─── Published state ─────────────────────────────────────────────────
 

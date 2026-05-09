@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { EditorialTabBar } from '@/components/editorial/EditorialTabBar';
 import { DailyLoginChest } from '@/components/progression/DailyLoginChest';
 import { RecapLogFlight } from '@/components/recap/RecapLogFlight';
+import { RecapScrollHint } from '@/components/recap/RecapScrollHint';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -30,6 +31,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <EditorialTabBar />
       <DailyLoginChest />
       <RecapLogFlight />
+      <RecapScrollHint />
     </div>
   );
 }
