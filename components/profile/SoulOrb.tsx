@@ -28,9 +28,28 @@ interface SoulOrbProps {
   /** When false, disables drag, evolve/ascend/awaken buttons, and related UI.
    *  Meant for static previews (shop modal, nav FAB). Defaults to true. */
   interactive?: boolean;
+  /** Optional hook that lets the parent fire the evolve animation from
+   *  an external button (e.g. the orb page's primary EVOLVE row).
+   *  SoulOrb calls this once on mount, passing in its internal evolve
+   *  trigger; the parent can stash it in a ref and invoke on click.
+   *  When unused (every other call site), nothing changes. */
+  registerEvolveTrigger?: (trigger: () => void) => void;
+  /** Like registerEvolveTrigger, but for Ascend. Calling the registered
+   *  trigger opens the SoulOrb's confirm modal; confirming runs the
+   *  ritual animation and fires onAscend at the flash apex. */
+  registerAscendTrigger?: (trigger: () => void) => void;
+  /** Like registerEvolveTrigger, but for Full Awaken. */
+  registerFullAwakenTrigger?: (trigger: () => void) => void;
+  /** When true, SoulOrb does NOT render its own Full Awaken / Ascend /
+   *  Evolve buttons under the awakening bar. The parent provides its
+   *  own external action surface and uses the registered triggers
+   *  above to fire animations. The awakening bar still renders, so
+   *  it remains the last visual element in SoulOrb — letting the
+   *  parent's button row sit literally underneath it. */
+  suppressInternalActions?: boolean;
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true, registerEvolveTrigger, registerAscendTrigger, registerFullAwakenTrigger, suppressInternalActions = false }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -98,22 +117,44 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     setEvolving(true);
     evolveRef.current = true;
     evolveTimeRef.current = 0;
-    // Phase 1 (0-1.5s): rapid spin accelerating, scale grows to 1.14
-    // Phase 2 (1.5-1.65s): EXPLOSION — flash + shockwaves + burst dots
+    // Phase 1 (0-2.0s):   rapid spin accelerating, scale grows to 1.14
+    // Phase 2 (2.0-2.15s): EXPLOSION — flash + shockwaves + burst dots
     //                      canvas fades to white as the bloom peaks
-    setTimeout(() => setFadeOut(true), 1500);
-    // Phase 3 (1.65s): tier swap masked behind the white peak
+    setTimeout(() => setFadeOut(true), 2000);
+    // Phase 3 (2.15s):    tier swap masked behind the white peak
     setTimeout(() => {
       onEvolve?.();
-    }, 1650);
-    // Phase 4 (2.0s): canvas fades back in at the new tier
+    }, 2150);
+    // Phase 4 (2.5s):     canvas fades back in at the new tier. The
+    //                     orb page schedules its loot modal to land
+    //                     ~850ms after the onEvolve callback (so the
+    //                     reward shows roughly one second after the
+    //                     spin ends, per the requested cadence).
     setTimeout(() => {
       setFadeOut(false);
       setEvolving(false);
       evolveRef.current = false;
       evolveTimeRef.current = 0;
-    }, 2000);
+    }, 2500);
   }, [canEvolve, onEvolve]);
+
+  // Hand the evolve trigger up to a parent that wants to drive the
+  // animation from an external button. Re-registers when handleEvolve
+  // changes so the latest closure (with the current `canEvolve` etc)
+  // is always the one that runs.
+  useEffect(() => {
+    registerEvolveTrigger?.(() => handleEvolve());
+  }, [registerEvolveTrigger, handleEvolve]);
+
+  // Same pattern for Ascend / Full Awaken — the registered trigger
+  // opens the existing confirm modals so the ritual animations still
+  // run, but the entry point is now the parent's external button.
+  useEffect(() => {
+    registerAscendTrigger?.(() => setShowAscendConfirm(true));
+  }, [registerAscendTrigger]);
+  useEffect(() => {
+    registerFullAwakenTrigger?.(() => setShowFullAwakenConfirm(true));
+  }, [registerFullAwakenTrigger]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -919,7 +960,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
 
         {/* Full Awaken takes top billing when available — even ahead of Ascend.
             This is the long-road 100% payoff and should feel like THE button. */}
-        {canFullAwaken && !evolving && !ascending && !awakening && (
+        {!suppressInternalActions && canFullAwaken && !evolving && !ascending && !awakening && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <button
               onClick={(e) => { e.stopPropagation(); setShowFullAwakenConfirm(true); }}
@@ -942,7 +983,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         )}
 
         {/* Ascend only when at tier cap AND Full Awaken isn't taking focus. */}
-        {tier >= MAX_ORB_TIER && onAscend && !canFullAwaken && !evolving && !ascending && !awakening && (
+        {!suppressInternalActions && tier >= MAX_ORB_TIER && onAscend && !canFullAwaken && !evolving && !ascending && !awakening && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <button
               onClick={(e) => { e.stopPropagation(); setShowAscendConfirm(true); }}
@@ -953,7 +994,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
           </motion.div>
         )}
 
-        {canEvolve && !evolving && !awakening && tier < MAX_ORB_TIER && (
+        {!suppressInternalActions && canEvolve && !evolving && !awakening && tier < MAX_ORB_TIER && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3">
             <Button size="sm" onClick={handleEvolve} className="animate-pulse">
               Evolve

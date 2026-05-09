@@ -2022,23 +2022,33 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   will-change: opacity, transform;
 }
 
-/* frame_eternal — gold and black opposite arcs trade brightness in
-   an infinite cycle. No rotation; the duality is the motion. */
-@keyframes mythic-eternal-gold {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.25; }
+/* frame_eternal — yin/yang ring rotates as a unit (gold + dark
+   sigils sweeping around the rim) while a center lemniscate (∞)
+   draws and erases itself perpetually. The duality is no longer
+   static; it's eternally in motion. */
+@keyframes mythic-eternal-rotate {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
 }
-@keyframes mythic-eternal-dark {
-  0%, 100% { opacity: 0.25; }
-  50%      { opacity: 1; }
+.animate-mythic-eternal-rotate {
+  animation: mythic-eternal-rotate 14s linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
 }
-.animate-mythic-eternal-gold {
-  animation: mythic-eternal-gold 4.4s ease-in-out infinite;
-  will-change: opacity;
+@keyframes mythic-eternal-infinity {
+  /* pathLength=100 normalizes the path so dasharray/offset values
+     work at any avatar size. Draws in 0-50%, holds, then continues
+     drawing the dash forward to erase the head — gives a clean
+     never-ending "drawing" feel. */
+  0%   { stroke-dashoffset:  100; opacity: 0.0; }
+  10%  { opacity: 1; }
+  50%  { stroke-dashoffset:    0; opacity: 1; }
+  60%  { stroke-dashoffset:    0; opacity: 1; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
 }
-.animate-mythic-eternal-dark {
-  animation: mythic-eternal-dark 4.4s ease-in-out infinite;
-  will-change: opacity;
+.animate-mythic-eternal-infinity {
+  animation: mythic-eternal-infinity 5.4s ease-in-out infinite;
+  will-change: stroke-dashoffset, opacity;
 }
 
 /* frame_cosmic — pulsing nebula center + a slow spiral pinwheel. */
@@ -2245,6 +2255,89 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   will-change: top, opacity;
 }
 
+/* frame_serpent — an ouroboros that slithers around the rim. The
+   whole snake (body + head + tongue) rotates as one unit; the
+   tongue flicks on a faster, separate beat. */
+@keyframes mythic-serpent-rotate {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+.animate-mythic-serpent-rotate {
+  animation: mythic-serpent-rotate 11s linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+@keyframes mythic-serpent-tongue {
+  /* Tongue forks out and retracts. Anchored at the tip of the head
+     via transform-origin set inline. */
+  0%, 70%   { transform: scaleY(0); opacity: 0; }
+  78%       { transform: scaleY(1); opacity: 1; }
+  82%       { transform: scaleY(0.85); opacity: 1; }
+  88%       { transform: scaleY(1); opacity: 1; }
+  95%, 100% { transform: scaleY(0); opacity: 0; }
+}
+.animate-mythic-serpent-tongue {
+  animation: mythic-serpent-tongue 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* frame_comet — a comet head plus a fading dot trail. The whole
+   group rotates around the avatar as a single unit, so the trail
+   drifts with the head. */
+@keyframes mythic-comet-orbit {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+.animate-mythic-comet-orbit {
+  animation: mythic-comet-orbit 8.5s linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+/* frame_crystal — six hexagon facets shimmering on staggered phases
+   plus a periodic center glint. Pure opacity/transform animation. */
+@keyframes mythic-crystal-shimmer {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  40%      { opacity: 1;    transform: scale(1.08); }
+  60%      { opacity: 0.7;  transform: scale(1); }
+}
+.animate-mythic-crystal-shimmer {
+  animation: mythic-crystal-shimmer 2.6s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+@keyframes mythic-crystal-glint {
+  0%, 60%, 100% { opacity: 0.2; transform: scale(0.6); }
+  72%           { opacity: 1;   transform: scale(1.4); }
+  82%           { opacity: 0.6; transform: scale(1);   }
+}
+.animate-mythic-crystal-glint {
+  animation: mythic-crystal-glint 3.2s ease-in-out infinite;
+  transform-origin: 50% 50%;
+  will-change: opacity, transform;
+}
+
+/* frame_runes — eight glyphs flash sequentially in a chasing
+   pattern around the rim. The center sigil pulses on a slower
+   cycle so the eye drifts between perimeter and center. */
+@keyframes mythic-rune-flash {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(1); }
+  88%           { opacity: 1;    transform: scale(1.18); }
+  93%           { opacity: 0.85; transform: scale(1);    }
+}
+.animate-mythic-rune-flash {
+  animation: mythic-rune-flash 2.8s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+@keyframes mythic-rune-center {
+  0%, 100% { opacity: 0.55; transform: scale(0.9) rotate(0deg); }
+  50%      { opacity: 1;    transform: scale(1.15) rotate(180deg); }
+}
+.animate-mythic-rune-center {
+  animation: mythic-rune-center 4.6s ease-in-out infinite;
+  transform-origin: 50% 50%;
+  will-change: opacity, transform;
+}
+
 /* ─── Battle pass animations ───────────────────────────────────────
    Editorial polish for the season-pass page — none of these animate
    filter or box-shadow so the long ladder stays smooth on scroll. */
@@ -2438,3 +2531,76 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   50%      { opacity: 0.85; transform: scale(1.08); }
 }
 .bp-capstone-halo { animation: bp-capstone-halo 3.4s ease-in-out infinite; }
+
+/* ─── Today's Record (recap draft) progressive polish ──────────────
+   Visual richness scales with `pillars` (1..5) inside RecapDraftPanel.
+   Direction B keeps things hairline + typography; the keyframes below
+   only animate transform/opacity/background-position to stay friendly
+   on the paint budget (laggy filter/box-shadow animations are banned
+   per CLAUDE.md). */
+
+/* Slow shine sweep across the top accent border at full-day tier 5. */
+@keyframes record-top-shine {
+  0%   { background-position: -120% 0; }
+  100% { background-position:  220% 0; }
+}
+.record-top-shine {
+  position: absolute;
+  inset: -2px 0 auto 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--b-accent) 90%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 35% 100%;
+  background-repeat: no-repeat;
+  animation: record-top-shine 4.5s linear infinite;
+  opacity: 0.9;
+}
+
+/* Pillar-segment fill — runs once when a track segment becomes covered. */
+@keyframes record-pillar-fill {
+  0%   { transform: scaleX(0); opacity: 0; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+.record-pillar-fill {
+  transform-origin: left center;
+  animation: record-pillar-fill 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) 1 both;
+}
+
+/* Full-day seal — settles in then breathes gently. */
+@keyframes record-seal-rise {
+  0%   { transform: translateY(4px) scale(0.92); opacity: 0; }
+  60%  { transform: translateY(0)   scale(1.04); opacity: 1; }
+  100% { transform: translateY(0)   scale(1);    opacity: 1; }
+}
+@keyframes record-seal-breathe {
+  0%, 100% { transform: scale(1);    }
+  50%      { transform: scale(1.03); }
+}
+.record-seal {
+  animation:
+    record-seal-rise 0.55s cubic-bezier(0.34, 1.0, 0.64, 1) 1 both,
+    record-seal-breathe 3.4s ease-in-out infinite 0.6s;
+}
+
+/* ─── Recap scroll hint chevron ────────────────────────────────────
+   Brief down-pointing chevron that appears at the bottom of the
+   viewport after a habit log lands in the recap panel — but only
+   when the panel is below the fold, so the user knows where their
+   day-record went. Auto-hides after ~1.8s. */
+@keyframes recap-scroll-hint-in {
+  0%   { transform: translate(-50%, 8px); opacity: 0; }
+  100% { transform: translate(-50%, 0);   opacity: 1; }
+}
+@keyframes recap-scroll-hint-bounce {
+  0%, 100% { transform: translateY(0);    }
+  50%      { transform: translateY(5px);  }
+}
+.recap-scroll-hint-chevron {
+  display: inline-flex;
+  animation: recap-scroll-hint-bounce 0.85s ease-in-out infinite;
+}

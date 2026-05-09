@@ -616,6 +616,10 @@ function MythicTreatment({ frameId, ...rest }: { frameId: string } & MythicProps
     case 'frame_tempest':     return <TempestStrike {...rest} />;
     case 'frame_bloom_myth':  return <BloomPetals {...rest} />;
     case 'frame_glitch_myth': return <RealityShard {...rest} />;
+    case 'frame_serpent':     return <SerpentCoil {...rest} />;
+    case 'frame_comet':       return <CometTrail {...rest} />;
+    case 'frame_crystal':     return <CrystalFacets {...rest} />;
+    case 'frame_runes':       return <RuneCircle {...rest} />;
     default:                  return <DefaultMythicGlow {...rest} />;
   }
 }
@@ -709,45 +713,94 @@ function RainbowPrism({ colors, outer }: MythicProps) {
   );
 }
 
-/** Eternal — top semicircle gold, bottom semicircle black. Their
- *  brightness trades on a slow infinite cycle. The duality IS the
- *  motion — no rotation, no orbiting. */
+/** Eternal — yin/yang in motion. A gold semicircle and a dark
+ *  semicircle (with a thin gold trim so it stays visible against
+ *  paper or ink backdrops) ROTATE together as one ring, the meeting
+ *  points sweeping around the rim. At the center, a lemniscate (∞)
+ *  is perpetually traced and erased via stroke-dashoffset, making
+ *  "eternity" the literal motion. Diamond sigils orbit with the
+ *  arcs. Stays inside the avatar circle thanks to the parent clip. */
 function EternalDuality({ outer }: MythicProps) {
   const gold = '#fbbf24';
   const dark = '#0c0a09';
+  const r = outer / 2 - 2;
+  const cx = outer / 2;
+  const cy = outer / 2;
+  // Lemniscate (figure-8) drawn with two cubic-bezier loops crossing
+  // at the center. Compact horizontal ∞ sized to ~36% of the outer.
+  const ir = outer * 0.18;
+  const dy = ir * 0.65;
+  const infinityD =
+    `M ${cx} ${cy} ` +
+    `C ${cx - ir * 0.4} ${cy - dy}, ${cx - ir} ${cy - dy}, ${cx - ir} ${cy} ` +
+    `C ${cx - ir} ${cy + dy}, ${cx - ir * 0.4} ${cy + dy}, ${cx} ${cy} ` +
+    `C ${cx + ir * 0.4} ${cy - dy}, ${cx + ir} ${cy - dy}, ${cx + ir} ${cy} ` +
+    `C ${cx + ir} ${cy + dy}, ${cx + ir * 0.4} ${cy + dy}, ${cx} ${cy} Z`;
   return (
-    <svg
-      className="absolute inset-0 pointer-events-none"
-      width={outer}
-      height={outer}
-      viewBox={`0 0 ${outer} ${outer}`}
-      style={{ zIndex: 2 }}
-    >
-      {/* Top gold half */}
-      <path
-        className="animate-mythic-eternal-gold"
-        d={`M ${outer / 2 - outer / 2 + 2} ${outer / 2} A ${outer / 2 - 2} ${outer / 2 - 2} 0 0 1 ${outer - 2} ${outer / 2}`}
-        fill="none"
-        stroke={gold}
-        strokeWidth="3"
-        strokeLinecap="round"
-        style={{ filter: `drop-shadow(0 0 4px ${gold})` }}
-      />
-      {/* Bottom dark half */}
-      <path
-        className="animate-mythic-eternal-dark"
-        d={`M 2 ${outer / 2} A ${outer / 2 - 2} ${outer / 2 - 2} 0 0 0 ${outer - 2} ${outer / 2}`}
-        fill="none"
-        stroke={dark}
-        strokeWidth="3"
-        strokeLinecap="round"
-        style={{ filter: `drop-shadow(0 0 4px ${gold}66)` }}
-      />
-      {/* Hairline diamond sigil where the two halves meet, marking
-          the cycle's pivot. */}
-      <circle cx={2} cy={outer / 2} r={2.5} fill={gold} />
-      <circle cx={outer - 2} cy={outer / 2} r={2.5} fill={gold} />
-    </svg>
+    <>
+      {/* Rotating duality ring — both arcs + sigils sweep together. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none animate-mythic-eternal-rotate"
+        style={{ zIndex: 2 }}
+      >
+        <svg width={outer} height={outer} viewBox={`0 0 ${outer} ${outer}`}>
+          {/* Gold upper half */}
+          <path
+            d={`M 2 ${cy} A ${r} ${r} 0 0 1 ${outer - 2} ${cy}`}
+            fill="none"
+            stroke={gold}
+            strokeWidth="3"
+            strokeLinecap="round"
+            style={{ filter: `drop-shadow(0 0 5px ${gold})` }}
+          />
+          {/* Dark lower half — with a thin gold inline so it doesn't
+              vanish on dark paper; it's still readably "the dark half". */}
+          <path
+            d={`M 2 ${cy} A ${r} ${r} 0 0 0 ${outer - 2} ${cy}`}
+            fill="none"
+            stroke={dark}
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <path
+            d={`M 2 ${cy} A ${r} ${r} 0 0 0 ${outer - 2} ${cy}`}
+            fill="none"
+            stroke={gold}
+            strokeWidth="0.8"
+            strokeLinecap="round"
+            opacity="0.7"
+            style={{ filter: `drop-shadow(0 0 3px ${gold}88)` }}
+          />
+          {/* Two diamond sigils where the arcs meet — orbit with them. */}
+          <circle cx={2} cy={cy}      r={3} fill={gold} style={{ filter: `drop-shadow(0 0 4px ${gold})` }} />
+          <circle cx={outer - 2} cy={cy} r={3} fill={gold} style={{ filter: `drop-shadow(0 0 4px ${gold})` }} />
+        </svg>
+      </div>
+      {/* Center ∞ sigil — perpetually drawn then erased. The path
+          uses pathLength=100 so the dashoffset keyframe works at any
+          avatar size without recalibration. */}
+      <svg
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        width={outer}
+        height={outer}
+        viewBox={`0 0 ${outer} ${outer}`}
+        style={{ zIndex: 3 }}
+      >
+        <path
+          d={infinityD}
+          pathLength={100}
+          fill="none"
+          stroke={gold}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeDasharray="100"
+          className="animate-mythic-eternal-infinity"
+          style={{ filter: `drop-shadow(0 0 4px ${gold})` }}
+        />
+      </svg>
+    </>
   );
 }
 
@@ -1317,6 +1370,304 @@ function RealityShard({ outer }: MythicProps) {
         }}
       />
     </>
+  );
+}
+
+/** Serpent Coil — an ouroboros snake winds around the avatar rim.
+ *  The whole snake (segmented body + head + tongue) rotates as a
+ *  unit, so it reads as "slithering" around the orb. Tongue flicks
+ *  on its own faster beat. Body is a near-full circular arc with
+ *  scale dashes; head sits at the leading end with two eyes. */
+function SerpentCoil({ outer, colors }: MythicProps) {
+  const bodyDark   = colors[0] || '#052e16';
+  const bodyLight  = colors[1] || '#65a30d';
+  const accentEye  = colors[2] || '#fde047';
+  const headColor  = colors[3] || '#16a34a';
+  const r = outer * 0.40;
+  const cx = outer / 2;
+  const cy = outer / 2;
+  // Arc covers ~340deg, leaving a 20deg gap where the snake's head
+  // and tail almost meet — the ouroboros reading.
+  const startA = 10;   // degrees (CCW from 12 o'clock when y is down)
+  const endA   = 350;
+  const startRad = (startA * Math.PI) / 180;
+  const endRad   = (endA   * Math.PI) / 180;
+  const sx = cx + Math.cos(startRad) * r;
+  const sy = cy + Math.sin(startRad) * r;
+  const ex = cx + Math.cos(endRad)   * r;
+  const ey = cy + Math.sin(endRad)   * r;
+  const bodyD = `M ${sx} ${sy} A ${r} ${r} 0 1 1 ${ex} ${ey}`;
+  // Head sits at the END of the body and points along the tangent
+  // (CW direction = endA + 90). Translated into SVG transform.
+  const headRot = endA + 90;
+  const sw = Math.max(2.5, outer * 0.06);
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0 pointer-events-none animate-mythic-serpent-rotate"
+      style={{ zIndex: 2 }}
+    >
+      <svg width={outer} height={outer} viewBox={`0 0 ${outer} ${outer}`}>
+        {/* Body — outer dark stroke + lighter inline + scale dashes */}
+        <path
+          d={bodyD}
+          fill="none"
+          stroke={bodyDark}
+          strokeWidth={sw}
+          strokeLinecap="round"
+        />
+        <path
+          d={bodyD}
+          fill="none"
+          stroke={bodyLight}
+          strokeWidth={sw * 0.45}
+          strokeLinecap="round"
+          strokeDasharray={`${sw * 0.9} ${sw * 0.5}`}
+          style={{ filter: `drop-shadow(0 0 3px ${bodyLight})` }}
+        />
+        {/* Head — diamond shape with eyes + flicking tongue. Sized
+            relative to outer so it scales with avatar size. */}
+        <g transform={`translate(${ex} ${ey}) rotate(${headRot})`}>
+          {/* Diamond head */}
+          <path
+            d={`M 0 ${-sw * 1.4} L ${sw} 0 L 0 ${sw * 0.7} L ${-sw} 0 Z`}
+            fill={headColor}
+            stroke={bodyDark}
+            strokeWidth="0.6"
+            style={{ filter: `drop-shadow(0 0 3px ${bodyLight})` }}
+          />
+          {/* Two beady eyes */}
+          <circle cx={-sw * 0.4} cy={-sw * 0.2} r={sw * 0.18} fill={accentEye} />
+          <circle cx={ sw * 0.4} cy={-sw * 0.2} r={sw * 0.18} fill={accentEye} />
+          {/* Tongue — forked, flicks via opacity + scaleY */}
+          <g
+            className="animate-mythic-serpent-tongue"
+            style={{ transformOrigin: `0 ${-sw * 1.4}px` }}
+          >
+            <path
+              d={`M -${sw * 0.25} ${-sw * 1.4} L -${sw * 0.55} ${-sw * 2.3} M ${sw * 0.25} ${-sw * 1.4} L ${sw * 0.55} ${-sw * 2.3}`}
+              stroke="#ef4444"
+              strokeWidth={Math.max(0.7, sw * 0.18)}
+              strokeLinecap="round"
+              fill="none"
+            />
+          </g>
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+/** Comet Trail — a bright head orbits the rim with a fading dot
+ *  trail behind it. The dots rotate as a single unit so the whole
+ *  comet drifts cleanly around the avatar. */
+function CometTrail({ outer, colors }: MythicProps) {
+  const tailColor = colors[1] || '#22d3ee';
+  const auraColor = colors[3] || '#a78bfa';
+  const orbitR = outer * 0.42;
+  const cx = outer / 2;
+  const cy = outer / 2;
+  const headSize = Math.max(6, outer * 0.11);
+  // Index 0 = head; the rest trail behind at decreasing angles +
+  // sizes + opacities. Angles negative = CCW from head; CW rotation
+  // of the whole div makes the head leading edge "forward".
+  const trail = [
+    { angle:   0, scale: 1.00, opacity: 1.00, isHead: true  },
+    { angle:  -8, scale: 0.78, opacity: 0.78, isHead: false },
+    { angle: -18, scale: 0.60, opacity: 0.55, isHead: false },
+    { angle: -30, scale: 0.45, opacity: 0.38, isHead: false },
+    { angle: -45, scale: 0.32, opacity: 0.22, isHead: false },
+    { angle: -65, scale: 0.22, opacity: 0.12, isHead: false },
+  ];
+  return (
+    <div
+      aria-hidden
+      className="absolute inset-0 pointer-events-none animate-mythic-comet-orbit"
+      style={{ zIndex: 2 }}
+    >
+      {trail.map((t, i) => {
+        const rad = (t.angle * Math.PI) / 180;
+        const x = cx + Math.cos(rad) * orbitR;
+        const y = cy + Math.sin(rad) * orbitR;
+        const sz = headSize * t.scale;
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: x - sz / 2,
+              top:  y - sz / 2,
+              width:  sz,
+              height: sz,
+              borderRadius: '50%',
+              opacity: t.opacity,
+              background: t.isHead
+                ? `radial-gradient(circle, #ffffff 0%, ${tailColor}cc 45%, transparent 80%)`
+                : `radial-gradient(circle, ${tailColor}cc 0%, ${auraColor}55 60%, transparent 100%)`,
+              boxShadow: t.isHead
+                ? `0 0 8px #ffffff, 0 0 18px ${tailColor}`
+                : `0 0 6px ${tailColor}88`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** Crystal Facets — six hexagonal facets at fixed positions just
+ *  inside the rim. Each shimmers via opacity on staggered phases,
+ *  and a single bright glint pulses at the center. Static layout
+ *  but the lighting reads as "fractured light catching the faces". */
+function CrystalFacets({ outer, colors }: MythicProps) {
+  const facetFill = colors[1] || '#67e8f9';
+  const facetEdge = colors[2] || '#ffffff';
+  const accent    = colors[3] || '#a78bfa';
+  const r = outer * 0.36;
+  const cx = outer / 2;
+  const cy = outer / 2;
+  const faceSize = Math.max(4, outer * 0.075);
+  const facets = Array.from({ length: 6 }).map((_, i) => {
+    const angle = (i / 6) * Math.PI * 2 - Math.PI / 2;
+    return {
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      // Tint varies between blue and violet at alternate positions
+      // so the ring reads as multifaceted, not monochrome.
+      fill: i % 2 === 0 ? facetFill : accent,
+    };
+  });
+  return (
+    <svg
+      aria-hidden
+      className="absolute inset-0 pointer-events-none"
+      width={outer}
+      height={outer}
+      viewBox={`0 0 ${outer} ${outer}`}
+      style={{ zIndex: 2 }}
+    >
+      {facets.map((f, i) => {
+        // Hexagon polygon points around (f.x, f.y).
+        const points = Array.from({ length: 6 })
+          .map((_, j) => {
+            const a = (j / 6) * Math.PI * 2;
+            return `${f.x + Math.cos(a) * faceSize},${f.y + Math.sin(a) * faceSize}`;
+          })
+          .join(' ');
+        return (
+          <polygon
+            key={i}
+            points={points}
+            fill={f.fill}
+            fillOpacity="0.25"
+            stroke={facetEdge}
+            strokeWidth="0.9"
+            className="animate-mythic-crystal-shimmer"
+            style={{
+              animationDelay: `${(i / 6) * 1.6}s`,
+              filter: `drop-shadow(0 0 3px ${f.fill})`,
+              transformOrigin: `${f.x}px ${f.y}px`,
+            }}
+          />
+        );
+      })}
+      {/* Center bright glint — periodic pop. */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={Math.max(2, outer * 0.025)}
+        fill={facetEdge}
+        className="animate-mythic-crystal-glint"
+        style={{ filter: `drop-shadow(0 0 4px ${accent}) drop-shadow(0 0 2px ${facetEdge})` }}
+      />
+    </svg>
+  );
+}
+
+/** Rune Circle — eight runic glyphs at fixed positions around the
+ *  inside of the rim. They light up in a chasing sequence, each
+ *  with a brief glow flash. Stays inside the avatar bounds. */
+function RuneCircle({ outer, colors }: MythicProps) {
+  const runeColor = colors[1] || '#a78bfa';
+  const flashColor = colors[2] || '#c084fc';
+  const accent     = colors[3] || '#fde047';
+  const count = 8;
+  const r = outer * 0.40;
+  const cx = outer / 2;
+  const cy = outer / 2;
+  // Eight abstract rune glyphs. Each is centered on (0,0) with a
+  // ±3 unit footprint so they all visually balance.
+  const glyphs = [
+    'M -3 -3 L 3 3 M 3 -3 L -3 3',                       // X
+    'M 0 -3 L 0 3 M -3 0 L 3 0',                         // +
+    'M -3 -2 L 3 -2 L 0 3 Z',                            // △
+    'M -3 0 A 3 3 0 1 0 3 0 M -3 0 L 3 0',               // half-circle with diameter
+    'M -2.5 -3 L 2.5 -3 M -2.5 0 L 2.5 0 M -2.5 3 L 2.5 3', // ≡
+    'M 0 -3 L 3 0 L 0 3 L -3 0 Z',                       // ◇
+    'M -3 3 L 0 -3 L 3 3 M -1.5 0 L 1.5 0',              // A-shape
+    'M -3 -2 L 3 -2 L 3 2 L -3 2 Z M 0 -2 L 0 2',        // boxed-bar
+  ];
+  const sz = Math.max(3, outer * 0.07);
+  return (
+    <svg
+      aria-hidden
+      className="absolute inset-0 pointer-events-none"
+      width={outer}
+      height={outer}
+      viewBox={`0 0 ${outer} ${outer}`}
+      style={{ zIndex: 2 }}
+    >
+      {/* Faint guide circle behind the runes — just a thin hairline
+          so the runes read as "on a circle" even when most are dim. */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={r}
+        fill="none"
+        stroke={runeColor}
+        strokeWidth="0.5"
+        opacity="0.25"
+        strokeDasharray="2 3"
+      />
+      {Array.from({ length: count }).map((_, i) => {
+        const angle = (i / count) * Math.PI * 2 - Math.PI / 2;
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        return (
+          <g
+            key={i}
+            transform={`translate(${x} ${y}) scale(${sz / 6})`}
+            className="animate-mythic-rune-flash"
+            style={{
+              animationDelay: `${(i / count) * 1.6}s`,
+              filter: `drop-shadow(0 0 3px ${flashColor})`,
+              color: runeColor,
+            }}
+          >
+            <path
+              d={glyphs[i % glyphs.length]}
+              stroke="currentColor"
+              strokeWidth="1.2"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </g>
+        );
+      })}
+      {/* Center sigil — small accent diamond, quietly pulsing. */}
+      <g
+        transform={`translate(${cx} ${cy})`}
+        className="animate-mythic-rune-center"
+        style={{ filter: `drop-shadow(0 0 3px ${accent})` }}
+      >
+        <path
+          d="M 0 -3 L 3 0 L 0 3 L -3 0 Z"
+          fill={accent}
+          opacity="0.85"
+        />
+      </g>
+    </svg>
   );
 }
 

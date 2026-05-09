@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -60,6 +60,17 @@ export default function OrbPage() {
   const [lootReveal, setLootReveal] = useState<OrbLoot | null>(null);
   const addToast = useUIStore((s) => s.addToast);
 
+  // SoulOrb hands us its internal evolve / ascend / full-awaken
+  // triggers via these refs so the page-level action row can fire
+  // each animation. Without this wiring, clicking an external button
+  // would skip straight to the Firestore write with no animation.
+  // Also: SoulOrb is told to suppress its own duplicate buttons under
+  // the awakening bar so the external row sits literally directly
+  // beneath the awakening bar with nothing in between.
+  const evolveTriggerRef     = useRef<(() => void) | null>(null);
+  const ascendTriggerRef     = useRef<(() => void) | null>(null);
+  const fullAwakenTriggerRef = useRef<(() => void) | null>(null);
+
   useEffect(() => { setLocalTier(realTier); }, [realTier]);
   useEffect(() => { setLocalCharges(evolveCharges); }, [evolveCharges]);
   useEffect(() => { setLocalAwakening(storedAwakening); }, [storedAwakening]);
@@ -77,18 +88,20 @@ export default function OrbPage() {
   // The three useEffect hooks above already sync localTier /
   // localCharges / localAwakening from the Firestore snapshot
   // (per CLAUDE.md "evolve once, lose two charges" gotcha).
-  // SoulOrb's evolve animation runs 2.0s end-to-end: rapid spin
-  // (1.5s), explosion burst with shockwaves + flying sparkles
-  // (1.5s-1.65s), tier swap masked by the white flash (1.65s),
-  // canvas fade back in (1.65-2.0s). The onEvolve callback fires
-  // here at 1.65s; we wait ~400ms more so the modal lands AFTER the
-  // orb has resettled to the new tier rather than during the flash.
+  //
+  // SoulOrb's evolve animation runs 2.5s end-to-end: rapid spin
+  // (0-2.0s), explosion burst with shockwaves + flying sparkles
+  // (2.0-2.15s), tier swap masked by the white flash (2.15s),
+  // canvas fade back in (2.15-2.5s). The onEvolve callback fires
+  // here at 2.15s; we wait ~850ms more so the loot modal lands
+  // ~3s after the spin started — i.e. ~1s after the spin ends,
+  // per the requested cadence ("spin lasts 2s, reward after 1s").
   const handleEvolve = async () => {
     if (localCharges <= 0) return;
     const ownedCosmetics = (userAny as unknown as { ownedCosmetics?: string[] } | null)?.ownedCosmetics ?? [];
     const loot = rollOrbLoot(ownedCosmetics);
     const startedAt = Date.now();
-    const POST_WRITE_DELAY_MS = 400;
+    const POST_WRITE_DELAY_MS = 850;
     try {
       const { updateDocument } = await import('@/lib/firestore');
       const { increment, arrayUnion } = await import('firebase/firestore');
@@ -239,8 +252,163 @@ export default function OrbPage() {
               baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
               pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
               ringColorId={(user as unknown as Record<string, string>).orbRingColor}
+              suppressInternalActions
+              registerEvolveTrigger={(trigger) => { evolveTriggerRef.current = trigger; }}
+              registerAscendTrigger={(trigger) => { ascendTriggerRef.current = trigger; }}
+              registerFullAwakenTrigger={(trigger) => { fullAwakenTriggerRef.current = trigger; }}
             />
           </div>
+
+          {/* Primary action row — sits literally directly under the
+              awakening bar (SoulOrb is told to suppress its own button
+              cluster, so the awakening bar is the last visual element
+              inside it). EVOLVE + CUSTOMIZE always; a third button
+              (FULL AWAKEN at 100%, otherwise ASCEND at max tier) slots
+              in alongside them. Each button fires SoulOrb's matching
+              animation via the registered trigger refs. */}
+          {(() => {
+            const fullAwakenable = localAwakening >= 100;
+            const ascendable     = localTier >= MAX_ORB_TIER && !fullAwakenable;
+            const showThird      = fullAwakenable || ascendable;
+            const ascensions     = (user as unknown as { orbAscensions?: number }).orbAscensions ?? 0;
+            const nextAscendReward = 500 + ascensions * 250;
+            return (
+              <div
+                style={{
+                  marginTop: 8,
+                  display: 'grid',
+                  gridTemplateColumns: showThird ? '1fr 1fr 1fr' : '1fr 1fr',
+                  gap: 8,
+                  textAlign: 'left',
+                }}
+              >
+                <button
+                  onClick={() => {
+                    if (localCharges <= 0) return;
+                    if (evolveTriggerRef.current) {
+                      evolveTriggerRef.current();
+                    } else {
+                      // Fallback — if SoulOrb hasn't registered yet
+                      // (mount race), call the write directly so the
+                      // button still works (loses the spin only).
+                      void handleEvolve();
+                    }
+                  }}
+                  disabled={localCharges <= 0}
+                  className="font-body"
+                  style={{
+                    height: 48,
+                    border: '1px solid var(--b-ink)',
+                    background: localCharges > 0 ? 'var(--b-ink)' : 'var(--b-paper-2)',
+                    color: localCharges > 0 ? 'var(--b-paper)' : 'var(--b-ink-40)',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.08em',
+                    cursor: localCharges > 0 ? 'pointer' : 'not-allowed',
+                    fontFamily: 'var(--font-inter)',
+                  }}
+                >
+                  EVOLVE — {localCharges} ▶
+                </button>
+                <Link
+                  href="/shop"
+                  className="font-body"
+                  style={{
+                    height: 48,
+                    border: '1px solid var(--b-ink)',
+                    background: 'transparent',
+                    color: 'var(--b-ink)',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.08em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textDecoration: 'none',
+                    fontFamily: 'var(--font-inter)',
+                  }}
+                >
+                  CUSTOMIZE
+                </Link>
+                {fullAwakenable && (
+                  <button
+                    onClick={() => {
+                      if (fullAwakenTriggerRef.current) {
+                        fullAwakenTriggerRef.current();
+                      } else {
+                        void handleFullAwaken();
+                      }
+                    }}
+                    className="font-body"
+                    style={{
+                      height: 48,
+                      border: '1px solid var(--b-accent)',
+                      background: 'var(--b-accent)',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      letterSpacing: '0.08em',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-inter)',
+                    }}
+                    aria-label="Full Awaken — permanent XP bonus"
+                  >
+                    FULL AWAKEN ✦
+                  </button>
+                )}
+                {ascendable && (
+                  <button
+                    onClick={() => {
+                      if (ascendTriggerRef.current) {
+                        ascendTriggerRef.current();
+                      } else {
+                        void handleAscend();
+                      }
+                    }}
+                    className="font-body"
+                    style={{
+                      height: 48,
+                      border: '1px solid var(--b-accent)',
+                      background: 'transparent',
+                      color: 'var(--b-accent)',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      letterSpacing: '0.08em',
+                      cursor: 'pointer',
+                      fontFamily: 'var(--font-inter)',
+                    }}
+                    aria-label={`Ascend for +${nextAscendReward} fragments`}
+                  >
+                    ASCEND ◆
+                  </button>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Hint line — sits with the action row so the explanation
+              tracks the buttons. Mirrors the prior copy verbatim. */}
+          <p
+            className="font-body"
+            style={{
+              fontSize: 10,
+              color: 'var(--b-ink-60)',
+              textAlign: 'center',
+              marginTop: 10,
+              lineHeight: 1.6,
+            }}
+          >
+            {localCharges === 0 && localAwakening < 100 ? (
+              <>Log <b style={{ color: 'var(--b-accent)' }}>every pillar today</b> to earn an evolution charge.</>
+            ) : localAwakening >= 100 ? (
+              <>
+                <b style={{ color: 'var(--b-accent)' }}>100% awakening reached.</b>{' '}
+                Tap the orb to fully awaken — permanent XP bonus + exclusive frame.
+              </>
+            ) : (
+              <>Each evolution rolls a drop. Higher rarities are rare; the math is on your side over time.</>
+            )}
+          </p>
         </div>
 
         {/* Spec table — naturalist field-guide style. Each row hairline
@@ -284,80 +452,10 @@ export default function OrbPage() {
             </span>
           </div>
 
-          {/* Action row — EVOLVE filled black, CUSTOMIZE outlined */}
-          <div
-            style={{
-              marginTop: 18,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 8,
-            }}
-          >
-            <button
-              onClick={handleEvolve}
-              disabled={localCharges <= 0}
-              className="font-body"
-              style={{
-                height: 48,
-                border: '1px solid var(--b-ink)',
-                background: localCharges > 0 ? 'var(--b-ink)' : 'var(--b-paper-2)',
-                color: localCharges > 0 ? 'var(--b-paper)' : 'var(--b-ink-40)',
-                fontWeight: 700,
-                fontSize: 12,
-                letterSpacing: '0.08em',
-                cursor: localCharges > 0 ? 'pointer' : 'not-allowed',
-                fontFamily: 'var(--font-inter)',
-              }}
-            >
-              EVOLVE — {localCharges} ▶
-            </button>
-            <Link
-              href="/shop"
-              className="font-body"
-              style={{
-                height: 48,
-                border: '1px solid var(--b-ink)',
-                background: 'transparent',
-                color: 'var(--b-ink)',
-                fontWeight: 700,
-                fontSize: 12,
-                letterSpacing: '0.08em',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textDecoration: 'none',
-                fontFamily: 'var(--font-inter)',
-              }}
-            >
-              CUSTOMIZE
-            </Link>
-          </div>
-
-          {/* Hint line — context-sensitive */}
-          <p
-            className="font-body"
-            style={{
-              fontSize: 10,
-              color: 'var(--b-ink-60)',
-              textAlign: 'center',
-              marginTop: 12,
-              lineHeight: 1.6,
-            }}
-          >
-            {localCharges === 0 && localAwakening < 100 ? (
-              <>Log <b style={{ color: 'var(--b-accent)' }}>every pillar today</b> to earn an evolution charge.</>
-            ) : localAwakening >= 100 ? (
-              <>
-                <b style={{ color: 'var(--b-accent)' }}>100% awakening reached.</b>{' '}
-                Tap the orb to fully awaken — permanent XP bonus + exclusive frame.
-              </>
-            ) : (
-              <>Each evolution rolls a drop. Higher rarities are rare; the math is on your side over time.</>
-            )}
-          </p>
-
-          {/* Ascend — only at tier 10. Unlimited cycles; each ascension
-              scales the fragment payout (500, 750, 1000, ...). */}
+          {/* Ascension context — only when at tier 10. The actual
+              Ascend button lives in the primary action row up top now;
+              this section just narrates what it does + tracks how
+              many cycles the user has completed. */}
           {localTier >= MAX_ORB_TIER && (() => {
             const ascensions = (user as unknown as { orbAscensions?: number }).orbAscensions ?? 0;
             const nextReward = 500 + ascensions * 250;
@@ -381,7 +479,7 @@ export default function OrbPage() {
                   style={{
                     fontSize: 11,
                     color: 'var(--b-ink-60)',
-                    marginBottom: 10,
+                    marginBottom: 6,
                     lineHeight: 1.5,
                     maxWidth: 320,
                     marginInline: 'auto',
@@ -390,31 +488,24 @@ export default function OrbPage() {
                   Ascending resets the ladder to tier I — your level, cosmetics, and
                   fragments stay. Each cycle awards more than the last.
                 </p>
-                <button
-                  onClick={handleAscend}
-                  className="font-body"
+                <p
+                  className="font-mono tabular"
                   style={{
-                    height: 40,
-                    padding: '0 24px',
-                    border: '1px solid var(--b-accent)',
-                    background: 'transparent',
-                    color: 'var(--b-accent)',
-                    fontWeight: 700,
                     fontSize: 11,
-                    letterSpacing: '0.12em',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-inter)',
+                    color: 'var(--b-accent)',
+                    letterSpacing: '0.06em',
+                    marginBottom: 4,
                   }}
                 >
-                  ASCEND · +{nextReward} ◆
-                </button>
+                  Next ascension · +{nextReward} ◆
+                </p>
                 {ascensions > 0 && (
                   <p
                     className="font-body"
                     style={{
                       fontSize: 10,
                       color: 'var(--b-ink-40)',
-                      marginTop: 8,
+                      marginTop: 4,
                       letterSpacing: '0.05em',
                     }}
                   >

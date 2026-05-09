@@ -124,6 +124,15 @@ export const PFP_FRAMES: PfpFrame[] = [
   { id: 'frame_tempest',     name: 'Tempest Crown', rarity: 'mythic', colors: ['#1e293b', '#60a5fa', '#fde047', '#ffffff'], style: 'conic', animated: true, description: 'Storm-charged. Lightning at the rim.' },
   { id: 'frame_bloom_myth',  name: 'Bloom Halo',    rarity: 'mythic', colors: ['#f9a8d4', '#86efac', '#ffffff', '#f472b6'], style: 'halo',  animated: true, description: 'Petals open at every breath.' },
   { id: 'frame_glitch_myth', name: 'Reality Shard', rarity: 'mythic', colors: ['#22d3ee', '#ec4899', '#fbbf24', '#ffffff'], style: 'conic', animated: true, description: 'Reality, slightly out of phase.' },
+
+  // Mythic v3 — four new signature treatments. Each one is dispatched
+  // off the frame id in MythicTreatment so the motion is hand-crafted
+  // rather than a generic ring/halo. The `style` is just the base ring
+  // beneath; the personality is in the dispatched component.
+  { id: 'frame_serpent',     name: 'Serpent Coil',   rarity: 'mythic', colors: ['#052e16', '#65a30d', '#fde047', '#16a34a'], style: 'halo',  animated: true, description: 'A serpent eternally chasing its own tail.' },
+  { id: 'frame_comet',       name: 'Comet Trail',    rarity: 'mythic', colors: ['#0c1728', '#22d3ee', '#ffffff', '#a78bfa'], style: 'halo',  animated: true, description: 'A solitary comet, painting the sky.' },
+  { id: 'frame_crystal',     name: 'Crystal Facets', rarity: 'mythic', colors: ['#0e7490', '#67e8f9', '#ffffff', '#a78bfa'], style: 'halo',  animated: true, description: 'Light fractures across six faces.' },
+  { id: 'frame_runes',       name: 'Rune Circle',    rarity: 'mythic', colors: ['#1e1b4b', '#a78bfa', '#c084fc', '#fde047'], style: 'halo',  animated: true, description: 'Glyphs older than the alphabet.' },
 ];
 
 // ---------------------------------------------------------------------------
