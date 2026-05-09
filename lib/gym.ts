@@ -173,16 +173,29 @@ function exercisesForDuration(minutes: number | undefined): number {
   return 9;
 }
 
-/** Pick rep range + set count based on goals + experience. */
+/** Pick rep range + set count based on goals + experience + energy.
+ *  Reads more onboarding fields so the prescription shifts to match
+ *  what the user actually told us about themselves. */
 function prescriptionFor(
   ex: Exercise,
   isPrimary: boolean,
   goals: Set<string>,
   beginner: boolean,
+  energy: 'low' | 'medium' | 'high' = 'medium',
 ): { sets: number; repsMin: number; repsMax: number } {
-  // Compounds get heavier work: 4 sets for non-beginners, 3 for
-  // beginners. Isolation sticks to 3 sets.
-  const sets = isPrimary && !beginner ? 4 : 3;
+  // Base set count: compounds get heavier work for non-beginners.
+  let sets = isPrimary && !beginner ? 4 : 3;
+
+  // Energy override — low energy users cap at 3 sets across the board
+  // so the session is sustainable. High energy users get a 4th set on
+  // primaries even as beginners.
+  if (energy === 'low') sets = Math.min(sets, 3);
+  if (energy === 'high' && isPrimary) sets = 4;
+
+  // 'consistency' goal — user explicitly chose "show up regularly"
+  // over "push hard". Cap at 3 sets so the session is short enough
+  // to keep doing.
+  if (goals.has('consistency')) sets = Math.min(sets, 3);
 
   // Bodyweight holds (l-sit, plank) keep their hold-as-reps style
   // unchanged from the static catalogue.
@@ -190,17 +203,26 @@ function prescriptionFor(
     return { sets: 3, repsMin: 30, repsMax: 60 };
   }
 
-  // Goal bias.
+  // Goal bias on rep ranges.
+  //   lose_fat   - higher reps, conditioning bias
+  //   energy     - moderate range (8-12), balanced volume
+  //   build_muscle (default for primaries with no fat-loss goal) -
+  //                 hypertrophy 8-12 on isolation, strength 5-8 on
+  //                 compounds
   let repsMin = 8;
   let repsMax = 12;
   if (goals.has('lose_fat')) {
     repsMin = 12;
     repsMax = 15;
+  } else if (goals.has('energy')) {
+    repsMin = 8;
+    repsMax = 12;
   } else if (isPrimary) {
     // Strength bias for compounds when the goal isn't fat loss.
     repsMin = 5;
     repsMax = 8;
   }
+
   return { sets, repsMin, repsMax };
 }
 
@@ -243,6 +265,7 @@ export function buildTailoredProgram(draft: OnboardingDraft): TailoredProgramRes
   const duration = draft.workoutDuration ?? 60;
   const goals = new Set<string>(draft.goals || []);
   const struggles = (draft.struggles || []) as Array<keyof typeof STRUGGLE_EXCLUDE>;
+  const energy = (draft.energyLevels ?? 'medium') as 'low' | 'medium' | 'high';
   const { available, openGym, bodyweightOnly } = resolveEquipment(draft);
 
   // Build exclusion set from all reported struggles
@@ -289,7 +312,7 @@ export function buildTailoredProgram(draft: OnboardingDraft): TailoredProgramRes
       const fallbackPool = usable.filter((ex) => ex.primaryMuscle === muscle);
       const picks = pickFromPool(pool.length > 0 ? pool : fallbackPool, 1, alreadyPicked);
       for (const ex of picks) {
-        const presc = prescriptionFor(ex, true, goals, beginner);
+        const presc = prescriptionFor(ex, true, goals, beginner, energy);
         exercises.push({ exerciseId: ex.id, ...presc });
       }
     }
@@ -312,7 +335,7 @@ export function buildTailoredProgram(draft: OnboardingDraft): TailoredProgramRes
         continue;
       }
       const ex = picks[0];
-      const presc = prescriptionFor(ex, false, goals, beginner);
+      const presc = prescriptionFor(ex, false, goals, beginner, energy);
       exercises.push({ exerciseId: ex.id, ...presc });
       isoBudget -= 1;
       cursor += 1;
@@ -333,6 +356,10 @@ export function buildTailoredProgram(draft: OnboardingDraft): TailoredProgramRes
   if (struggles.length > 0) reasons.push(`Avoiding moves that aggravate: ${struggles.map((s) => s.replace('sensitive_', '')).join(', ')}`);
   if (goals.has('lose_fat')) reasons.push('Higher rep ranges for fat loss');
   else if (goals.has('build_muscle')) reasons.push('Hypertrophy rep ranges (8–12)');
+  else if (goals.has('energy')) reasons.push('Balanced volume for energy');
+  if (goals.has('consistency')) reasons.push('Capped at 3 sets so showing up stays easy');
+  if (energy === 'low')  reasons.push('Sets capped to keep sessions sustainable on low-energy days');
+  if (energy === 'high') reasons.push('Extra primary set per lift — your energy can take it');
   if (beginner) reasons.push('Beginner-friendly — 3 sets across the board');
   if (lastWorked.size > 0) reasons.push(`Cycle reordered to rest your last-worked muscles first`);
 
