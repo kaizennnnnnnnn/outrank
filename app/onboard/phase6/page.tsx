@@ -395,22 +395,21 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
   // attached at clear shoulder and hip points.
 
   if (id === 'pushups') {
-    // Side view plank: body horizontal, arms perpendicular down to floor,
-    // toes touching floor at the back. Head + spine + 1 arm + 1 leg
-    // visible (other side hidden behind body).
+    // Side view, top of push-up: body forms one continuous slope from
+    // toes-on-floor (back) up to shoulders (front), head off the front,
+    // both arms perpendicular down to the floor. The single body+legs
+    // line keeps the silhouette legible at small sizes.
     return (
       <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        <line x1="20" y1="118" x2="200" y2="118" stroke={dim} strokeWidth="2" strokeLinecap="round" />
-        {/* Spine — head end (right) to feet end (left), slightly downward */}
-        <line x1="50" y1="80" x2="146" y2="68" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Head */}
-        <circle cx="154" cy="62" r={HEAD_R} fill={accent} />
-        {/* Front arm — perpendicular down from shoulder to floor */}
-        <line x1="138" y1="71" x2="138" y2="115" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Back arm — perpendicular down from mid-spine */}
-        <line x1="74" y1="76" x2="74" y2="115" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Back leg — extended back at slight angle, toe touching */}
-        <line x1="50" y1="80" x2="34" y2="115" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="20" y1="120" x2="200" y2="120" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        {/* Body + legs — diagonal from heel-on-floor to neck */}
+        <line x1="34" y1="120" x2="150" y2="74" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Head — front-top end */}
+        <circle cx="160" cy="68" r={HEAD_R} fill={accent} />
+        {/* Front arm — perpendicular down to floor */}
+        <line x1="146" y1="78" x2="146" y2="120" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Back arm — slight depth offset, also perpendicular to floor */}
+        <line x1="128" y1="86" x2="128" y2="120" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
@@ -457,30 +456,32 @@ function ExerciseIllustration({ id }: { id: ExerciseId }) {
   }
 
   if (id === 'bench') {
-    // Body lying flat, arms pressing bar up.
+    // Side view, head end right. Person flat on bench, knees bent with
+    // feet planted on the floor, arms pressing the barbell straight up.
     return (
       <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
         <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
         {/* Bench top */}
         <rect x="40" y="78" width="140" height="6" rx="2" fill={dim} />
-        {/* Bench legs (A-frame) */}
+        {/* Bench legs (A-frame, both sides) */}
         <line x1="50" y1="84" x2="44" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
         <line x1="54" y1="84" x2="60" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
         <line x1="166" y1="84" x2="160" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
         <line x1="170" y1="84" x2="176" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
         {/* Body — flat on bench, head end right */}
-        <line x1="60" y1="74" x2="140" y2="74" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="68" y1="74" x2="140" y2="74" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
         <circle cx="148" cy="70" r={HEAD_R} fill={accent} />
-        {/* Legs hanging off the foot end */}
-        <line x1="60" y1="74" x2="48" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Bent leg — hip → knee (raised) → foot on floor */}
+        <line x1="68" y1="78" x2="78" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="78" y1="100" x2="68" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Arms pressing barbell up */}
-        <line x1="98" y1="74" x2="98" y2="44" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="118" y1="74" x2="118" y2="44" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="100" y1="74" x2="100" y2="46" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="120" y1="74" x2="120" y2="46" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Barbell */}
-        <line x1="50" y1="40" x2="170" y2="40" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-        <ellipse cx="40" cy="40" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
-        <ellipse cx="180" cy="40" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
+        <line x1="50" y1="42" x2="170" y2="42" stroke={dim} strokeWidth="4" strokeLinecap="round" />
+        <ellipse cx="40" cy="42" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
+        <ellipse cx="180" cy="42" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
       </svg>
     );
   }
