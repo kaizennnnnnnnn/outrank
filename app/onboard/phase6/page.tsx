@@ -377,163 +377,158 @@ function ExerciseChip({ name, active, dim }: { name: string; active?: boolean; d
 }
 
 /**
- * Properly proportional stick figures. Body is one continuous spine
- * line, arms/legs branch from clear shoulder + hip joints. Head ~1/7
- * of body height. Each pose drawn for clarity at small sizes.
- *
- * Editorial palette: ink figures on paper, accent for the head.
+ * Compact stick figures — small viewBoxes keep the proportions
+ * (head ~1 unit, torso ~3 units, legs ~4 units) and natural poses
+ * legible. Editorial palette: ink figures on paper, accent for the
+ * head, dim ink for floor + equipment.
  */
 function ExerciseIllustration({ id }: { id: ExerciseId }) {
   const lim = 'var(--b-ink)';
   const dim = 'var(--b-ink-40)';
   const plate = 'var(--b-ink-15)';
   const accent = 'var(--b-accent)';
-  const SW = 4.5;
-  const HEAD_R = 6;
-
-  // Stick body: head circle + neck stub + spine line + 2 arms + 2 legs
-  // attached at clear shoulder and hip points.
+  const SW = 3;
+  const HEAD_R = 4;
 
   if (id === 'pushups') {
-    // Side view, top of push-up: body forms one continuous slope from
-    // toes-on-floor (back) up to shoulders (front), head off the front,
-    // both arms perpendicular down to the floor. The single body+legs
-    // line keeps the silhouette legible at small sizes.
+    // Side view — body+legs as one diagonal from heel-on-floor (back)
+    // up to shoulder (front), head off the front, both arms perpendicular
+    // down to the floor.
     return (
-      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        <line x1="20" y1="120" x2="200" y2="120" stroke={dim} strokeWidth="2" strokeLinecap="round" />
-        {/* Body + legs — diagonal from heel-on-floor to neck */}
-        <line x1="34" y1="120" x2="150" y2="74" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Head — front-top end */}
-        <circle cx="160" cy="68" r={HEAD_R} fill={accent} />
-        {/* Front arm — perpendicular down to floor */}
-        <line x1="146" y1="78" x2="146" y2="120" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Back arm — slight depth offset, also perpendicular to floor */}
-        <line x1="128" y1="86" x2="128" y2="120" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <svg width="200" height="120" viewBox="0 0 140 80" fill="none">
+        <line x1="6" y1="76" x2="134" y2="76" stroke={dim} strokeWidth="1.5" strokeLinecap="round" />
+        <line x1="22" y1="74" x2="92" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <circle cx="100" cy="38" r={HEAD_R} fill={accent} />
+        <line x1="88" y1="46" x2="88" y2="76" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="74" y1="52" x2="74" y2="76" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
   if (id === 'pullups') {
-    // Body hanging straight down from bar, arms going up to bar at angle.
+    // Front view — wide-grip hands on bar, arms angle up to bar, body
+    // hanging straight, legs together below.
     return (
-      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        {/* Bar */}
-        <rect x="40" y="20" width="140" height="4" rx="1" fill={dim} />
-        <rect x="46" y="14" width="3" height="10" fill={dim} />
-        <rect x="171" y="14" width="3" height="10" fill={dim} />
-        {/* Arms up to bar */}
-        <line x1="106" y1="44" x2="98" y2="24" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="114" y1="44" x2="122" y2="24" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <svg width="120" height="140" viewBox="0 0 80 110" fill="none">
+        <rect x="8" y="6" width="64" height="2.5" rx="0.5" fill={dim} />
+        <rect x="10" y="3" width="2" height="6" fill={dim} />
+        <rect x="68" y="3" width="2" height="6" fill={dim} />
+        {/* Arms up to bar (slight outward grip) */}
+        <line x1="36" y1="32" x2="28" y2="9" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="44" y1="32" x2="52" y2="9" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="110" cy="50" r={HEAD_R} fill={accent} />
+        <circle cx="40" cy="28" r={HEAD_R} fill={accent} />
         {/* Spine */}
-        <line x1="110" y1="56" x2="110" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Legs hanging */}
-        <line x1="110" y1="98" x2="102" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="110" y1="98" x2="118" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="40" y1="32" x2="40" y2="68" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Legs hanging slightly apart */}
+        <line x1="40" y1="68" x2="34" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="40" y1="68" x2="46" y2="98" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
   if (id === 'situps') {
-    // Curl up at 45°, knees bent up. Head + diagonal torso + bent legs.
+    // Side view — feet on floor, knees bent up, butt on floor, torso
+    // curled up at ~45°, bent arm tucked behind head.
     return (
-      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        <line x1="20" y1="118" x2="200" y2="118" stroke={dim} strokeWidth="2" strokeLinecap="round" />
-        {/* Lower legs (foot on floor, knee up) */}
-        <line x1="62" y1="118" x2="80" y2="84" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="80" y1="84" x2="100" y2="118" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Spine — diagonal up from hips */}
-        <line x1="100" y1="118" x2="138" y2="68" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <svg width="200" height="120" viewBox="0 0 140 80" fill="none">
+        <line x1="6" y1="76" x2="134" y2="76" stroke={dim} strokeWidth="1.5" strokeLinecap="round" />
+        {/* Lower leg (foot on floor → knee up) */}
+        <line x1="34" y1="74" x2="46" y2="50" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Upper leg (knee → hip) */}
+        <line x1="46" y1="50" x2="68" y2="72" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Spine — angled up from hip */}
+        <line x1="68" y1="72" x2="98" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="142" cy="60" r={HEAD_R} fill={accent} />
-        {/* Arm — crossed behind head */}
-        <line x1="138" y1="68" x2="124" y2="50" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="124" y1="50" x2="148" y2="50" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <circle cx="104" cy="36" r={HEAD_R} fill={accent} />
+        {/* Bent arm: shoulder → elbow up → hand at temple */}
+        <line x1="98" y1="44" x2="86" y2="32" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="86" y1="32" x2="100" y2="32" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
   if (id === 'bench') {
-    // Side view, head end right. Person flat on bench, knees bent with
-    // feet planted on the floor, arms pressing the barbell straight up.
+    // Side view, head end right. Flat on bench, bent leg with foot on
+    // floor, arms pressing barbell straight up.
     return (
-      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+      <svg width="200" height="130" viewBox="0 0 160 100" fill="none">
+        <line x1="6" y1="96" x2="154" y2="96" stroke={dim} strokeWidth="1.5" strokeLinecap="round" />
         {/* Bench top */}
-        <rect x="40" y="78" width="140" height="6" rx="2" fill={dim} />
-        {/* Bench legs (A-frame, both sides) */}
-        <line x1="50" y1="84" x2="44" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        <line x1="54" y1="84" x2="60" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        <line x1="166" y1="84" x2="160" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        <line x1="170" y1="84" x2="176" y2="120" stroke={dim} strokeWidth="3" strokeLinecap="round" />
-        {/* Body — flat on bench, head end right */}
-        <line x1="68" y1="74" x2="140" y2="74" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <rect x="36" y="58" width="100" height="3" fill={dim} />
+        {/* Bench legs */}
+        <line x1="42" y1="61" x2="38" y2="92" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        <line x1="46" y1="61" x2="50" y2="92" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        <line x1="124" y1="61" x2="120" y2="92" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        <line x1="128" y1="61" x2="132" y2="92" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+        {/* Body — flat on bench */}
+        <line x1="58" y1="55" x2="106" y2="55" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Head */}
-        <circle cx="148" cy="70" r={HEAD_R} fill={accent} />
-        {/* Bent leg — hip → knee (raised) → foot on floor */}
-        <line x1="68" y1="78" x2="78" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="78" y1="100" x2="68" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Arms pressing barbell up */}
-        <line x1="100" y1="74" x2="100" y2="46" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="120" y1="74" x2="120" y2="46" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <circle cx="113" cy="51" r={HEAD_R} fill={accent} />
+        {/* Bent leg — hip → raised knee → foot on floor */}
+        <line x1="58" y1="58" x2="64" y2="72" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="64" y1="72" x2="56" y2="94" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Arms pressing barbell up — at chest/shoulder area */}
+        <line x1="94" y1="55" x2="94" y2="32" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="104" y1="55" x2="104" y2="32" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
         {/* Barbell */}
-        <line x1="50" y1="42" x2="170" y2="42" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-        <ellipse cx="40" cy="42" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
-        <ellipse cx="180" cy="42" rx="6" ry="16" fill={plate} stroke={dim} strokeWidth="1" />
+        <line x1="44" y1="30" x2="138" y2="30" stroke={dim} strokeWidth="2.5" strokeLinecap="round" />
+        <ellipse cx="38" cy="30" rx="4" ry="11" fill={plate} stroke={dim} strokeWidth="0.8" />
+        <ellipse cx="144" cy="30" rx="4" ry="11" fill={plate} stroke={dim} strokeWidth="0.8" />
       </svg>
     );
   }
 
   if (id === 'squat') {
-    // Front-facing squat with bar across shoulders.
+    // Front view — bar across shoulders, arms gripping bar slightly
+    // outside head, knees bent out, shins close to vertical.
     return (
-      <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-        <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+      <svg width="160" height="140" viewBox="0 0 100 120" fill="none">
+        <line x1="6" y1="116" x2="94" y2="116" stroke={dim} strokeWidth="1.5" strokeLinecap="round" />
         {/* Bar + plates */}
-        <line x1="38" y1="42" x2="182" y2="42" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-        <ellipse cx="28" cy="42" rx="5" ry="14" fill={plate} stroke={dim} strokeWidth="1" />
-        <ellipse cx="192" cy="42" rx="5" ry="14" fill={plate} stroke={dim} strokeWidth="1" />
-        {/* Head under bar */}
-        <circle cx="110" cy="36" r={HEAD_R} fill={accent} />
-        {/* Spine — vertical */}
-        <line x1="110" y1="42" x2="110" y2="80" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Arms gripping bar (slight outward angle) */}
-        <line x1="110" y1="48" x2="88" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="110" y1="48" x2="132" y2="42" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        {/* Legs bent into squat (clear knee bend) */}
-        <line x1="110" y1="80" x2="86" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="86" y1="100" x2="86" y2="126" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="110" y1="80" x2="134" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-        <line x1="134" y1="100" x2="134" y2="126" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="14" y1="22" x2="86" y2="22" stroke={dim} strokeWidth="2.5" strokeLinecap="round" />
+        <ellipse cx="10" cy="22" rx="4" ry="10" fill={plate} stroke={dim} strokeWidth="0.8" />
+        <ellipse cx="90" cy="22" rx="4" ry="10" fill={plate} stroke={dim} strokeWidth="0.8" />
+        {/* Head */}
+        <circle cx="50" cy="14" r={HEAD_R} fill={accent} />
+        {/* Spine */}
+        <line x1="50" y1="26" x2="50" y2="58" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Arms gripping bar (outward angle) */}
+        <line x1="50" y1="28" x2="36" y2="22" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="50" y1="28" x2="64" y2="22" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        {/* Legs — hip → knee out → shin vertical to foot */}
+        <line x1="50" y1="58" x2="36" y2="78" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="36" y1="78" x2="36" y2="114" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="50" y1="58" x2="64" y2="78" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+        <line x1="64" y1="78" x2="64" y2="114" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
       </svg>
     );
   }
 
-  // deadlift
+  // deadlift — front-ish view, slight knee bend, arms reach down past
+  // legs to grip bar that rests on the floor between bumper plates.
   return (
-    <svg width="220" height="140" viewBox="0 0 220 140" fill="none">
-      <line x1="20" y1="128" x2="200" y2="128" stroke={dim} strokeWidth="2" strokeLinecap="round" />
+    <svg width="200" height="130" viewBox="0 0 160 110" fill="none">
+      <line x1="6" y1="104" x2="154" y2="104" stroke={dim} strokeWidth="1.5" strokeLinecap="round" />
+      {/* Bumper plates resting on floor */}
+      <circle cx="22" cy="91" r="13" fill={plate} stroke={dim} strokeWidth="0.8" />
+      <circle cx="138" cy="91" r="13" fill={plate} stroke={dim} strokeWidth="0.8" />
+      <circle cx="22" cy="91" r="2" fill={dim} />
+      <circle cx="138" cy="91" r="2" fill={dim} />
+      {/* Bar */}
+      <line x1="35" y1="91" x2="125" y2="91" stroke={dim} strokeWidth="2.5" strokeLinecap="round" />
       {/* Head */}
-      <circle cx="110" cy="40" r={HEAD_R} fill={accent} />
-      {/* Spine — slight forward lean */}
-      <line x1="110" y1="46" x2="110" y2="84" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      {/* Arms — straight down to bar */}
-      <line x1="110" y1="58" x2="92" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      <line x1="110" y1="58" x2="128" y2="100" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      {/* Legs — slight bend, knees forward */}
-      <line x1="110" y1="84" x2="98" y2="106" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      <line x1="98" y1="106" x2="100" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      <line x1="110" y1="84" x2="122" y2="106" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      <line x1="122" y1="106" x2="120" y2="124" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
-      {/* Bar on floor */}
-      <line x1="40" y1="100" x2="180" y2="100" stroke={dim} strokeWidth="4" strokeLinecap="round" />
-      {/* Big bumper plates */}
-      <circle cx="32" cy="100" r="18" fill={plate} stroke={dim} strokeWidth="1.2" />
-      <circle cx="188" cy="100" r="18" fill={plate} stroke={dim} strokeWidth="1.2" />
-      <circle cx="32" cy="100" r="3" fill={dim} />
-      <circle cx="188" cy="100" r="3" fill={dim} />
+      <circle cx="80" cy="22" r={HEAD_R} fill={accent} />
+      {/* Spine */}
+      <line x1="80" y1="26" x2="80" y2="56" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      {/* Arms — straight down outside legs to grip bar */}
+      <line x1="74" y1="30" x2="64" y2="91" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="86" y1="30" x2="96" y2="91" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      {/* Legs — hip → knee (slight forward bend) → foot on floor */}
+      <line x1="80" y1="56" x2="72" y2="76" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="72" y1="76" x2="72" y2="104" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="80" y1="56" x2="88" y2="76" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
+      <line x1="88" y1="76" x2="88" y2="104" stroke={lim} strokeWidth={SW} strokeLinecap="round" />
     </svg>
   );
 }

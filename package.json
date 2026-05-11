@@ -10,6 +10,8 @@
     "reset-inventory": "node scripts/reset-inventory.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.1",
+    "@elevenlabs/client": "^1.7.0",
     "@hookform/resolvers": "^5.2.2",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",

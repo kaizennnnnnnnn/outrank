@@ -5,7 +5,9 @@ const securityHeaders = [
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
-  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+  // microphone=(self) allows mic access on our own origin only (needed for
+  // the Soul Orb voice chat via ElevenLabs). Camera + geolocation stay denied.
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=()' },
 ];
 
 const nextConfig: NextConfig = {
