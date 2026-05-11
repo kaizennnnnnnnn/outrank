@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { SoulOrb } from '@/components/profile/SoulOrb';
 import { OrbHistory } from '@/components/profile/OrbHistory';
 import { OrbNickname } from '@/components/profile/OrbNickname';
+import { OrbVoicePanel } from '@/components/profile/OrbVoicePanel';
 import { rollOrbLoot, lootColors, type OrbLoot } from '@/lib/orbLoot';
 import { ORB_TIERS, MAX_ORB_TIER, getOrbTier } from '@/constants/orbTiers';
 import { useUIStore } from '@/store/uiStore';
@@ -70,6 +71,15 @@ export default function OrbPage() {
   const evolveTriggerRef     = useRef<(() => void) | null>(null);
   const ascendTriggerRef     = useRef<(() => void) | null>(null);
   const fullAwakenTriggerRef = useRef<(() => void) | null>(null);
+
+  // Shared mutable ref the voice panel writes to ~60Hz and SoulOrb reads
+  // each render frame. While a voice session is live, the orb itself
+  // visibly pulses with the mic/TTS amplitude.
+  const audioLevelRef = useRef(0);
+  // Flipped to true while a voice session is connected so SoulOrb can
+  // apply a constant baseline expansion — listening reads as "alive"
+  // even when no audio is flowing.
+  const voiceActiveRef = useRef(false);
 
   useEffect(() => { setLocalTier(realTier); }, [realTier]);
   useEffect(() => { setLocalCharges(evolveCharges); }, [evolveCharges]);
@@ -256,6 +266,8 @@ export default function OrbPage() {
               registerEvolveTrigger={(trigger) => { evolveTriggerRef.current = trigger; }}
               registerAscendTrigger={(trigger) => { ascendTriggerRef.current = trigger; }}
               registerFullAwakenTrigger={(trigger) => { fullAwakenTriggerRef.current = trigger; }}
+              audioLevelRef={audioLevelRef}
+              voiceActiveRef={voiceActiveRef}
             />
           </div>
 
@@ -385,6 +397,11 @@ export default function OrbPage() {
               </div>
             );
           })()}
+
+          {/* Voice + text chat surface. Writes amplitude into the
+              shared ref so the orb above visibly pulses with the
+              voice during a live session. */}
+          <OrbVoicePanel audioLevelRef={audioLevelRef} voiceActiveRef={voiceActiveRef} />
 
           {/* Hint line — sits with the action row so the explanation
               tracks the buttons. Mirrors the prior copy verbatim. */}

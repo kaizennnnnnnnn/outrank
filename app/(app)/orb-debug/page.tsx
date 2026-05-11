@@ -14,7 +14,7 @@ import { auth } from '@/lib/firebase';
 interface UIMessage {
   role: 'user' | 'assistant';
   content: string;
-  source?: 'text' | 'voice';
+  source?: 'text' | 'voice' | 'voice-long-form';
   pending?: boolean;
   usage?: { input: number; output: number; cacheRead: number; cacheCreated: number };
 }
@@ -348,6 +348,24 @@ export default function OrbDebugPage() {
           agent: {
             prompt: { prompt: systemPrompt },
             firstMessage,
+          },
+        },
+        clientTools: {
+          // The orb calls this when an answer is too long for voice.
+          // Text lands directly in the chat panel; the orb speaks only
+          // a one-sentence summary instead of reading the full thing.
+          send_long_form: ({ text }: { text: string }) => {
+            const detail = typeof text === 'string' ? text.trim() : '';
+            if (!detail) return 'empty';
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: 'assistant',
+                content: detail,
+                source: 'voice-long-form',
+              },
+            ]);
+            return 'delivered';
           },
         },
         onConnect: () => {
@@ -720,6 +738,9 @@ export default function OrbDebugPage() {
               {m.source === 'voice' && (
                 <span style={{ color: 'var(--b-ink-40)', fontSize: 8 }}>· voice</span>
               )}
+              {m.source === 'voice-long-form' && (
+                <span style={{ color: 'var(--b-accent)', fontSize: 8 }}>· text-only detail</span>
+              )}
             </span>
             <p
               className="font-body"
@@ -730,6 +751,13 @@ export default function OrbDebugPage() {
                 margin: 0,
                 whiteSpace: 'pre-wrap',
                 opacity: m.pending && !m.content ? 0.4 : 1,
+                // Long-form replies get a subtle left rule so the eye
+                // catches "this was the detail, not the spoken bit."
+                borderLeft:
+                  m.source === 'voice-long-form'
+                    ? '2px solid var(--b-accent)'
+                    : 'none',
+                paddingLeft: m.source === 'voice-long-form' ? 10 : 0,
               }}
             >
               {m.content || '…'}

@@ -47,9 +47,20 @@ interface SoulOrbProps {
    *  it remains the last visual element in SoulOrb — letting the
    *  parent's button row sit literally underneath it. */
   suppressInternalActions?: boolean;
+  /** Optional 0..1 ref the parent updates ~60Hz from a voice-session
+   *  audio analyser. When provided, the render loop reads it each
+   *  frame and uses it to push particles outward + brighten the body
+   *  so the orb visibly "speaks" with the voice. 0 outside a session
+   *  → no visual change. */
+  audioLevelRef?: { current: number };
+  /** Optional boolean ref the parent sets to true while a voice
+   *  session is connected. When true, the orb sits at a constantly
+   *  enlarged baseline so even silent listening reads as "alive."
+   *  Stacks with audioLevelRef for the dynamic motion. */
+  voiceActiveRef?: { current: boolean };
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true, registerEvolveTrigger, registerAscendTrigger, registerFullAwakenTrigger, suppressInternalActions = false }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true, registerEvolveTrigger, registerAscendTrigger, registerFullAwakenTrigger, suppressInternalActions = false, audioLevelRef, voiceActiveRef }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -164,13 +175,19 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     const ctx: CanvasRenderingContext2D = maybeCtx;
 
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width = size + 'px';
-    canvas.style.height = size + 'px';
+    // Render onto a canvas larger than the apparent orb so the voice
+    // splash has room to scatter beyond R without clipping at the
+    // edges. The outer wrapper stays at `size`, so page layout is
+    // unaffected — only the canvas pixels grow.
+    const CANVAS_BUFFER = 1.35;
+    const canvasW = size * CANVAS_BUFFER;
+    canvas.width = canvasW * dpr;
+    canvas.height = canvasW * dpr;
+    canvas.style.width = canvasW + 'px';
+    canvas.style.height = canvasW + 'px';
     ctx.scale(dpr, dpr);
 
-    const W = size, H = size, cx = W / 2, cy = H / 2;
+    const W = canvasW, H = canvasW, cx = W / 2, cy = H / 2;
     const config = getOrbTier(tier);
     // Apply custom colors if set
     const customBase = baseColorId ? getOrbBaseColor(baseColorId) : null;
@@ -190,7 +207,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       core: config.colors.core,
       glow: config.colors.glow,
     };
-    const pct = Math.min(intensity, 100) / 100;
+    // Visuals are decoupled from awakening: the orb always renders as
+    // if fully awakened (pct=1), so the body/glow/pulse/arcs all run
+    // at peak strength regardless of progress. The awakening bar below
+    // still displays the real percentage via the intensity prop.
+    const pct = 1;
     const R = size * config.radius;
     const brightness = 0.4 + pct * 0.6;
     const isSmall = size <= 100;
@@ -235,7 +256,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     // hideRings skips allocating AND drawing rings — for "base only" and
     // "pulse only" previews. For previews rings still render even at small
     // sizes, so we only gate on the explicit hideRings flag there.
-    const ringCount = hideRings ? 0 : (isSmall && interactive ? 0 : config.rings);
+    // Capped at 6 so the max-tier render isn't visually noisy with concentric
+    // rings — felt too busy around the body. Lower tiers (< 6 rings) are
+    // unaffected.
+    const ringCount = hideRings ? 0 : (isSmall && interactive ? 0 : Math.min(config.rings, 6));
     for (let r = 0; r < ringCount; r++) {
       const tiltX = (r - 1) * 0.5 + Math.random() * 0.3;
       const radius = R + 10 + r * 8;
@@ -386,6 +410,17 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       // Core glow — brighter during burst. Part of the BODY signature, so
       // skip when hideBody (ring-only / pulse-only previews) so the
       // isolated layer reads clearly.
+      // Voice-driven particle splash. No uniform scaling — instead
+      // each particle in the draw loop gets its own random direction
+      // and magnitude derived from its index, so the body visibly
+      // SCATTERS with the voice instead of inflating like a balloon.
+      // Outer particles fly further than inner ones, giving the
+      // "bead with particles splashing" feel the orb is meant to
+      // have. Skipped entirely below the threshold so silent voice
+      // sessions look identical to idle.
+      const audioSplash = audioLevelRef?.current ?? 0;
+      const splashOn = audioSplash > 0.03;
+
       if (!hideBody) {
         const glowBoost = burstPhase ? 2.5 : (contractPhase ? 1.5 : 1.0);
         const gp = (sin(t * 1.2) * 0.02 + 0.06 + pct * config.glowIntensity * 0.08) * glowBoost;
@@ -410,7 +445,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         const beatRadius = beatT * R * 1.3;
         // Boost alpha when body is hidden (pulse-only preview) so the wave is
         // clearly visible against empty space instead of half-transparent.
-        const pulseAlphaMult = hideBody ? 2.2 : pct;
+        // Floor at 0.45 so the cosmetic pulse is always visible — even
+        // at 0% awakening — since the user paid for the pulse colour
+        // in the shop and expects to see it. Higher awakening still
+        // strengthens the pulse linearly above the floor.
+        const pulseAlphaMult = hideBody ? 2.2 : Math.max(0.45, pct);
         const beatAlpha = (1 - beatT) * 0.45 * pulseAlphaMult;
         if (beatAlpha > 0.01) {
           const pw = ctx.createRadialGradient(cx, cy, Math.max(0, beatRadius - R * 0.2), cx, cy, beatRadius + R * 0.1);
@@ -447,7 +486,9 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       const cry = cos(ry), sry = sin(ry), crx = cos(rx), srx = sin(rx);
 
       // Spawn — gated so preview modes don't churn on arrays they'll never draw.
-      if (!hidePulse && pulses.length < 6 && random() < config.pulseChance * pct && !isEvolving) {
+      // Spawn rate floored at 0.45 of full so the cosmetic pulse keeps
+      // travelling through the orb at any awakening, including 0%.
+      if (!hidePulse && pulses.length < 6 && random() < config.pulseChance * Math.max(0.45, pct) && !isEvolving) {
         pulses.push({ lat: (random() - 0.5) * PI, lon: random() * PI2, radius: 0, speed: 1.5 + random() * 2, maxRadius: 1.2 });
       }
       if (!hideBody && arcs.length < config.maxArcs && random() < config.arcChance * pct) {
@@ -613,6 +654,43 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
 
         const sz = d.sz * d.s * (1 + d.pBoost * 2);
 
+        // Per-particle splash on top of d.px/d.py. Each particle's
+        // direction and magnitude are derived from its stable idx so
+        // it looks chaotic but stays consistent across frames (no
+        // jitter). Outer particles (d.layer near 1) splash much more
+        // than inner ones, so the orb's core stays compact while the
+        // outside scatters — that's the "bead with particles
+        // splashing all over" feel.
+        let ex = d.px;
+        let ey = d.py;
+        if (splashOn) {
+          const dx = d.px - cx;
+          const dy = d.py - cy;
+          const len = sqrt(dx * dx + dy * dy) || 1;
+          // Deterministic per-particle random unit vector.
+          const seed = d.idx * 2.39996;
+          const randX = cos(seed);
+          const randY = sin(seed);
+          // 40% radial + 60% random — leans into chaos so the splash
+          // reads as scattering rather than uniform expansion.
+          const pushX = (dx / len) * 0.4 + randX * 0.6;
+          const pushY = (dy / len) * 0.4 + randY * 0.6;
+          // Outer particles fly nearly twice as far as inner ones, so
+          // the core stays compact like a bead while the surface
+          // shells erupt.
+          const layerWeight = 0.2 + d.layer * 1.15;
+          const variance = 0.5 + ((d.idx * 7) % 13) / 13 * 0.6;
+          // Magnitude bumped 0.22 → 0.34 for clearly aggressive splash.
+          const mag = audioSplash * R * 0.34 * layerWeight * variance;
+          ex = d.px + pushX * mag;
+          ey = d.py + pushY * mag;
+          // Clamp inside canvas. 3px margin keeps the dot fully drawn.
+          if (ex < 3) ex = 3;
+          else if (ex > W - 3) ex = W - 3;
+          if (ey < 3) ey = 3;
+          else if (ey > H - 3) ey = H - 3;
+        }
+
         // Radial halo is the single most expensive op in this loop. Skip it
         // entirely in heavy mode — the visual impact is minor because the
         // solid fill + connections + arcs still read as a glowing sphere.
@@ -622,18 +700,18 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         if (!heavyMode && sz > 0.5 && alpha > 0.05) {
           const haloRadius = sz * (isSmall ? 1.3 : 4);
           const haloAlpha = alpha * (isSmall ? 0.12 : 0.2);
-          const grd = ctx.createRadialGradient(d.px, d.py, 0, d.px, d.py, haloRadius);
+          const grd = ctx.createRadialGradient(ex, ey, 0, ex, ey, haloRadius);
           grd.addColorStop(0, `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${haloAlpha})`);
           grd.addColorStop(1, 'transparent');
-          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(d.px, d.py, haloRadius, 0, PI2); ctx.fill();
+          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(ex, ey, haloRadius, 0, PI2); ctx.fill();
         }
 
         ctx.fillStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${alpha})`;
-        ctx.beginPath(); ctx.arc(d.px, d.py, max(isSmall ? 0.22 : 0.3, sz), 0, PI2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex, ey, max(isSmall ? 0.22 : 0.3, sz), 0, PI2); ctx.fill();
 
         if (d.pBoost > 0.5) {
           ctx.fillStyle = `rgba(${pulseMidRgb[0]}, ${pulseMidRgb[1]}, ${pulseMidRgb[2]}, ${(d.pBoost - 0.5) * 0.7})`;
-          ctx.beginPath(); ctx.arc(d.px, d.py, sz * 0.3, 0, PI2); ctx.fill();
+          ctx.beginPath(); ctx.arc(ex, ey, sz * 0.3, 0, PI2); ctx.fill();
         }
       }
 
@@ -718,6 +796,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
           }}
         />
 
+        {/* Spin wrapper sized to canvas-buffer (1.35x size) and
+            absolutely centered inside the size-bound parent so the
+            voice splash has room to scatter past the orb radius
+            without clipping. Page layout still sees `size`. */}
         <div
           className={
             ascending ? 'animate-ascend-collapse'
@@ -725,16 +807,20 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
             : ''
           }
           style={{
-            width: size,
-            height: size,
+            width: size * 1.35,
+            height: size * 1.35,
             transformOrigin: 'center',
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
           }}
         >
           <canvas
             ref={canvasRef}
             className={isMythicBaseColor(baseColorId) ? 'orb-mythic-pulse' : ''}
             style={{
-              width: size, height: size, maxWidth: '100%', cursor: 'grab', touchAction: 'none',
+              width: size * 1.35, height: size * 1.35, maxWidth: '100%', cursor: 'grab', touchAction: 'none',
               opacity: fadeOut ? 0 : 1,
               transition: 'opacity 0.5s ease-in-out',
               position: 'relative',
