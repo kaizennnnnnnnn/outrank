@@ -78,7 +78,10 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
   // callback. The profile page only sets onEvolve when the user has an
   // evolution charge, so this keeps evolve-availability in sync with charges
   // without needing SoulOrb to know about the awakening mechanic.
-  const canEvolve = tier < MAX_ORB_TIER && !!onEvolve;
+  // No internal `tier < MAX_ORB_TIER` check — /orb pins tier to MAX for
+  // visual uniformity regardless of the user's real tier, so gating on it
+  // here would lock evolve off even when charges are available.
+  const canEvolve = !!onEvolve;
   const canFullAwaken = !!onFullAwaken;
 
   const triggerAscend = useCallback(() => {
