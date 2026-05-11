@@ -11,9 +11,7 @@ import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 export type VoiceTier = 'free' | 'plus' | 'pro';
 
 export const DAILY_CAP_SECONDS: Record<VoiceTier, number> = {
-  // TEMP: bumped from 60 to 600 for dev testing of the orb voice
-  // visuals. Revert to 60 before shipping the free tier.
-  free: 600,
+  free: 60,
   plus: 240,
   pro: 600,
 };
