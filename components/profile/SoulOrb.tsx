@@ -802,7 +802,11 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         {/* Spin wrapper sized to canvas-buffer (1.35x size) and
             absolutely centered inside the size-bound parent so the
             voice splash has room to scatter past the orb radius
-            without clipping. Page layout still sees `size`. */}
+            without clipping. Page layout still sees `size`.
+            Centered via negative offsets (not translate) — the spin
+            keyframe writes its own `transform: rotate(...) scale(...)`,
+            and using translate here would get clobbered and snap the
+            wrapper's top-left corner to the parent center mid-spin. */}
         <div
           className={
             ascending ? 'animate-ascend-collapse'
@@ -814,9 +818,8 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
             height: size * 1.35,
             transformOrigin: 'center',
             position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
+            left: -size * 0.175,
+            top: -size * 0.175,
           }}
         >
           <canvas
