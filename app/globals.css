@@ -568,19 +568,17 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
 }
 .orb-mythic-pulse { animation: orb-mythic-pulse 3.4s ease-in-out infinite; }
 
-/* Orb evolve spin — fast windup then explosion. The orb accelerates
-   into a 6-revolution spin (peak at ~1.5s), then a sharp compress-
-   and-release at ~78% syncs with the explosion bloom. Total 2s. */
+/* Orb evolve spin — scale pump only. The actual rotation is driven
+   inside the canvas via the render loop's `speedBoost`, so the
+   particles themselves spin. Rotating the whole wrapper here used
+   to spin the 1.35x canvas as a rigid square, which read as a stiff
+   "rotating disc" instead of a swirl of orbs. */
 @keyframes orb-evolving-spin {
-  0%   { transform: rotate(0deg)    scale(1); }
-  10%  { transform: rotate(120deg)  scale(1.04); }
-  25%  { transform: rotate(540deg)  scale(1.07); }
-  45%  { transform: rotate(1260deg) scale(1.10); }
-  65%  { transform: rotate(1980deg) scale(1.12); }
-  76%  { transform: rotate(2160deg) scale(1.14); }
-  82%  { transform: rotate(2160deg) scale(0.92); }   /* compress */
-  88%  { transform: rotate(2160deg) scale(1.06); }   /* burst */
-  100% { transform: rotate(2160deg) scale(1.0); }    /* settle */
+  0%   { transform: scale(1); }
+  76%  { transform: scale(1.14); }   /* peak grow at spin apex */
+  82%  { transform: scale(0.92); }   /* compress */
+  88%  { transform: scale(1.06); }   /* burst */
+  100% { transform: scale(1.0); }    /* settle */
 }
 .orb-evolving-spin {
   animation: orb-evolving-spin 2s cubic-bezier(0.4, 0, 0.55, 1);

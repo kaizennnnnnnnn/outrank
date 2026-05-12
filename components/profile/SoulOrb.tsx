@@ -391,7 +391,12 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
       // 1-1.5s: particles pull inward (contract)
       // 1.5-2s: particles push outward slightly then snap back (contained explosion)
       // 2-3s: settle into new form
-      const speedBoost = isEvolving ? min(1 + eT * 6, 8) : 1;
+      // Drives both the global yaw (ry) and each particle's theta orbit
+      // during evolve. Capped at 24 (was 8) so the particles visibly
+      // whip around — the prior cap relied on the wrapper's CSS spin
+      // for the dramatic rotation, but that rotated the canvas as a
+      // rigid square. Now the rotation is intrinsic to the particles.
+      const speedBoost = isEvolving ? min(1 + eT * 18, 24) : 1;
       const contractPhase = isEvolving && eT > 0.8 && eT <= 1.4;
       const burstPhase = isEvolving && eT > 1.4 && eT <= 2.0;
       const settlePhase = isEvolving && eT > 2.0;
