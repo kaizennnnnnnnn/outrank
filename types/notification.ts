@@ -7,6 +7,7 @@ export type NotificationType =
   | 'duel_accepted'
   | 'duel_declined'
   | 'duel_ended'
+  | 'duel_score_update'
   | 'leaderboard_overtaken'
   | 'streak_at_risk'
   | 'streak_broken'

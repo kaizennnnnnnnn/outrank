@@ -40,6 +40,7 @@ const tones: Record<string, Tone> = {
   duel_accepted:         { icon: <BCheckGlyph size={14} />,      color: '#22c55e', title: 'Duel accepted',      to: '/compete' },
   duel_declined:         { icon: <BTrophyGlyph size={14} />,     color: '#94a3b8', title: 'Duel declined',      to: '/compete' },
   duel_ended:            { icon: <BTrophyGlyph size={14} />,     color: '#fbbf24', title: 'Duel ended',         to: '/compete' },
+  duel_score_update:     { icon: <BTrophyGlyph size={14} />,     color: '#ef4444', title: 'Duel update' },
   leaderboard_overtaken: { icon: <BTrophyGlyph size={14} />,     color: '#f97316', title: 'Passed on board',    to: '/leaderboard' },
   streak_at_risk:        { icon: <BFlameGlyph size={14} />,      color: '#fbbf24', title: 'Streak at risk' },
   streak_broken:         { icon: <BFlameGlyph size={14} />,      color: '#64748b', title: 'Streak broken' },
@@ -80,6 +81,12 @@ export default function NotificationsPage() {
 
   const handleClick = (notif: NotifType) => {
     if (notif.id && !notif.isRead) handleMarkRead(notif.id);
+    // Mid-duel pushes deep-link to the specific duel (relatedId) so the
+    // recipient lands on the live HUD, not the duel list.
+    if (notif.type === 'duel_score_update' && notif.relatedId) {
+      router.push(`/compete/duel/${notif.relatedId}`);
+      return;
+    }
     const t = tones[notif.type];
     if (t?.to) router.push(t.to);
   };

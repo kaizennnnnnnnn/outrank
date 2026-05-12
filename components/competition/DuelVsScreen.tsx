@@ -9,9 +9,13 @@ interface DuelVsScreenProps {
   player2: CompetitionParticipant;
   title: string;
   timeRemaining?: string;
+  /** Which player's score just changed — drives the brief scale pulse on
+   *  the matching score number. Set on each onSnapshot tick, cleared a
+   *  beat later by the parent. */
+  pulseSide?: 'p1' | 'p2' | null;
 }
 
-export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsScreenProps) {
+export function DuelVsScreen({ player1, player2, title, timeRemaining, pulseSide }: DuelVsScreenProps) {
   const total = Math.max(1, player1.score + player2.score);
   const p1Pct = (player1.score / total) * 100;
   const p2Pct = (player2.score / total) * 100;
@@ -71,6 +75,7 @@ export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsS
           score={player1.score}
           isLeader={leader === 'p1'}
           slideFrom={-40}
+          pulse={pulseSide === 'p1'}
         />
 
         {/* VS Center — bigger italic display + a hairline halo
@@ -145,6 +150,7 @@ export function DuelVsScreen({ player1, player2, title, timeRemaining }: DuelVsS
           score={player2.score}
           isLeader={leader === 'p2'}
           slideFrom={40}
+          pulse={pulseSide === 'p2'}
         />
       </div>
 
@@ -199,12 +205,14 @@ function PlayerSide({
   score,
   isLeader,
   slideFrom,
+  pulse,
 }: {
   username: string;
   avatarUrl: string;
   score: number;
   isLeader: boolean;
   slideFrom: number;
+  pulse?: boolean;
 }) {
   const isLeft = slideFrom < 0;
   return (
@@ -274,7 +282,7 @@ function PlayerSide({
       </p>
 
       <p
-        className="font-display tabular"
+        className={`font-display tabular${pulse ? ' score-pulse' : ''}`}
         style={{
           fontStyle: 'italic',
           fontWeight: 600,
@@ -284,6 +292,7 @@ function PlayerSide({
           margin: 0,
           letterSpacing: '-0.02em',
           textShadow: isLeader ? '0 0 20px color-mix(in srgb, var(--b-accent) 35%, transparent)' : 'none',
+          transformOrigin: 'center',
         }}
       >
         {score}

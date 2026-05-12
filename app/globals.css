@@ -585,6 +585,17 @@ html[data-theme='light'] .orb-light-backdrop { opacity: 1; }
   will-change: transform;
 }
 
+/* Live duel HUD — pulses a participant's score number on each onSnapshot
+   tick where their score increased. Transform-only so it stays cheap. */
+@keyframes scorePulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.score-pulse {
+  animation: scorePulse 600ms ease-out;
+}
+
 /* Evolve flash bloom — sits dark for the spin-up, then SLAMS open at
    ~78% with a peak-bright pulse, then fades. The fast onset is what
    reads as an explosion rather than a slow grow. */

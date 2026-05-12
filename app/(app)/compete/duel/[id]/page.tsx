@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDocument } from '@/hooks/useFirestore';
 import { DuelVsScreen } from '@/components/competition/DuelVsScreen';
@@ -15,6 +15,32 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
   const { id } = use(params);
   const { user } = useAuth();
   const { data: competition, loading } = useDocument<Competition>('competitions', id);
+
+  // Detect which participant's score just changed on the latest onSnapshot
+  // tick so we can pulse the matching score number in DuelVsScreen. Stores
+  // each participant's last-seen score keyed by userId; on every render with
+  // a fresh competition we diff and fire a brief 'p1'/'p2' pulse.
+  const prevScoresRef = useRef<Record<string, number>>({});
+  const [pulseSide, setPulseSide] = useState<'p1' | 'p2' | null>(null);
+
+  const me = competition?.participants.find((p) => p.userId === user?.uid);
+  const opponent = competition?.participants.find((p) => p.userId !== user?.uid);
+
+  useEffect(() => {
+    if (!competition || !me || !opponent) return;
+    const prevMine = prevScoresRef.current[me.userId];
+    const prevOpp = prevScoresRef.current[opponent.userId];
+    let side: 'p1' | 'p2' | null = null;
+    if (prevMine !== undefined && me.score > prevMine) side = 'p1';
+    else if (prevOpp !== undefined && opponent.score > prevOpp) side = 'p2';
+    prevScoresRef.current[me.userId] = me.score;
+    prevScoresRef.current[opponent.userId] = opponent.score;
+    if (side) {
+      setPulseSide(side);
+      const handle = window.setTimeout(() => setPulseSide(null), 700);
+      return () => window.clearTimeout(handle);
+    }
+  }, [competition, me, opponent]);
 
   if (loading) {
     return (
@@ -46,9 +72,6 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
       </div>
     );
   }
-
-  const me = competition.participants.find((p) => p.userId === user?.uid);
-  const opponent = competition.participants.find((p) => p.userId !== user?.uid);
 
   if (!me || !opponent) {
     return (
@@ -107,6 +130,7 @@ export default function DuelPage({ params }: { params: Promise<{ id: string }> }
             player1={me}
             player2={opponent}
             title={competition.title}
+            pulseSide={pulseSide}
           />
 
           {/* Status */}

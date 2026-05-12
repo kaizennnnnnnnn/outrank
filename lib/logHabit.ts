@@ -343,7 +343,15 @@ export async function logHabit(params: LogHabitParams) {
       });
     }
   }
-  // 6b. Update active duel scores for this category
+  // 6b. Update active duel scores for this category + emit mid-duel
+  // pushes to opponents. Throttled by a 15-min cooldown stored on the
+  // actor's own participant entry, with two bypasses: the first log of
+  // the duel and a lead-flip (the most engaging event in a head-to-head).
+  // Per CLAUDE.md trust precedent — same pattern as duel_challenge: the
+  // actor's tab writes a notification doc into the opponent's
+  // /notifications subcollection, and onNotificationCreated fans out to
+  // FCM. firestore.rules already allows any authenticated user to create
+  // a notification doc for any other user.
   try {
     const duelsSnap = await getDocs(
       query(
@@ -354,11 +362,85 @@ export async function logHabit(params: LogHabitParams) {
     );
     for (const duelDoc of duelsSnap.docs) {
       const duel = duelDoc.data();
-      const participants = duel.participants || [];
-      const myIdx = participants.findIndex((p: { userId: string }) => p.userId === userId);
-      if (myIdx >= 0) {
-        participants[myIdx].score = (participants[myIdx].score || 0) + value;
-        await updateDoc(doc(db, 'competitions', duelDoc.id), { participants });
+      const participants: Array<{
+        userId: string;
+        username: string;
+        avatarUrl: string;
+        score: number;
+        rank: number;
+        lastNotifiedScore?: number;
+        lastNotifiedAt?: Timestamp;
+      }> = duel.participants || [];
+      const myIdx = participants.findIndex((p) => p.userId === userId);
+      if (myIdx < 0) continue;
+
+      const me = participants[myIdx];
+      const oldScore = me.score || 0;
+      const newScore = oldScore + value;
+      me.score = newScore;
+
+      const lastNotifiedScore = me.lastNotifiedScore;
+      const lastNotifiedAt = me.lastNotifiedAt;
+      const now = Timestamp.now();
+      const FIFTEEN_MIN_MS = 15 * 60 * 1000;
+      const timeGateOpen = !lastNotifiedAt
+        || (now.toMillis() - lastNotifiedAt.toMillis()) >= FIFTEEN_MIN_MS;
+
+      let fireForAny = false;
+      const opponents = participants.filter((p) => p.userId !== userId);
+      const notifPayloads: Array<{ recipientId: string; message: string }> = [];
+
+      for (const opp of opponents) {
+        const oppScore = opp.score || 0;
+        const oldGap = oldScore - oppScore;  // actor's lead before
+        const newGap = newScore - oppScore;  // actor's lead after
+        const isFirstLog = lastNotifiedScore === undefined;
+        const isLeadFlip = oldGap < 0 && newGap > 0;
+        if (!isFirstLog && !isLeadFlip && !timeGateOpen) continue;
+
+        const recipientLead = -newGap; // positive = opp ahead, negative = opp behind
+        const leadFragment = recipientLead > 0
+          ? `you're up ${recipientLead}`
+          : recipientLead < 0
+          ? `you're down ${-recipientLead}`
+          : `tied`;
+        const timeLeft = formatDuelTimeLeft(duel.endDate as Timestamp);
+        const slug = (duel.categorySlug as string) || 'their habit';
+
+        let message: string;
+        if (isFirstLog) {
+          message = `${username} logged ${slug} — duel is live. ${leadFragment}. ${timeLeft} left.`;
+        } else if (isLeadFlip) {
+          message = `${username} took the lead. You're down ${-recipientLead}. ${timeLeft} left.`;
+        } else {
+          message = `${username} logged ${slug}. ${leadFragment}. ${timeLeft} left.`;
+        }
+        notifPayloads.push({ recipientId: opp.userId, message });
+        fireForAny = true;
+      }
+
+      if (fireForAny) {
+        me.lastNotifiedScore = newScore;
+        me.lastNotifiedAt = now;
+      }
+      await updateDoc(doc(db, 'competitions', duelDoc.id), { participants });
+
+      // Write notification docs after the score update lands so the
+      // recipient's tap opens a duel with the latest score visible.
+      for (const payload of notifPayloads) {
+        try {
+          await addDoc(collection(db, `notifications/${payload.recipientId}/items`), {
+            type: 'duel_score_update',
+            message: payload.message,
+            isRead: false,
+            relatedId: duelDoc.id,
+            actorId: userId,
+            actorAvatar: avatarUrl,
+            createdAt: Timestamp.now(),
+          });
+        } catch (err) {
+          console.error('Duel push write failed:', err);
+        }
       }
     }
   } catch (err) { console.error('Duel score update failed:', err); }
@@ -436,4 +518,18 @@ function calculateLevel(xp: number): { level: number; title: string } {
     else break;
   }
   return { level: result.level, title: result.title };
+}
+
+/** Compact two-unit remaining-time format for mid-duel pushes — matches
+ *  the shape used by the on-screen CompetitionTimer. */
+function formatDuelTimeLeft(end: Timestamp): string {
+  const ms = end.toDate().getTime() - Date.now();
+  if (ms <= 0) return '0m';
+  const totalMin = Math.floor(ms / 60000);
+  const days = Math.floor(totalMin / (60 * 24));
+  const hours = Math.floor((totalMin - days * 60 * 24) / 60);
+  const mins = totalMin % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
 }

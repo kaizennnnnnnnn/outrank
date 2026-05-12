@@ -81,7 +81,7 @@ export const onNotificationCreated = functions.firestore
             requireInteraction: false,
             silent: false,
           },
-          fcmOptions: { link: getNotificationLink(notification.type) },
+          fcmOptions: { link: getNotificationLink(notification.type, notification.relatedId) },
         },
         apns: {
           payload: {
@@ -107,8 +107,13 @@ export const onNotificationCreated = functions.firestore
     }
   });
 
-function getNotificationLink(type: string): string {
+function getNotificationLink(type: string, relatedId?: string): string {
   switch (type) {
+    case 'duel_score_update':
+      // Deep-link to the specific duel so the recipient lands on the live
+      // HUD with the updated score, not the duel list. relatedId is the
+      // competition doc id.
+      return relatedId ? `/compete/duel/${relatedId}` : '/compete';
     case 'duel_challenge':
     case 'duel_accepted':
     case 'duel_ended':
@@ -155,6 +160,7 @@ function categoryFor(type: string): string | null {
     case 'duel_challenge':
     case 'duel_accepted':
     case 'duel_ended':
+    case 'duel_score_update':
       return 'duelUpdates';
     case 'pact_invite':
     case 'pact_accepted':

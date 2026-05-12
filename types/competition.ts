@@ -9,6 +9,14 @@ export interface CompetitionParticipant {
   avatarUrl: string;
   score: number;
   rank: number;
+  /** Score at which we last pushed a mid-duel notification to this user's
+   *  opponents. Used to throttle pushes — a fresh log only notifies when
+   *  the delta from this value crosses the threshold (or it's the first
+   *  log of the duel, or it caused a lead flip). Absent on legacy docs. */
+  lastNotifiedScore?: number;
+  /** When the most recent mid-duel push was emitted on this participant's
+   *  behalf. Pairs with `lastNotifiedScore` for the time + delta gate. */
+  lastNotifiedAt?: Timestamp;
 }
 
 export interface Competition {

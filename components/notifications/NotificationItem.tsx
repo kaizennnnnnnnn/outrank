@@ -23,6 +23,7 @@ const typeIconMap: Record<string, ReactNode> = {
   duel_accepted:         <CheckCircleFullIcon size={16} />,
   duel_declined:         <SwordsCrossIcon size={16} />,
   duel_ended:            <TrophyIconFull size={16} />,
+  duel_score_update:     <SwordsCrossIcon size={16} />,
   leaderboard_overtaken: <ChartBarIcon size={16} />,
   streak_at_risk:        <FireIcon size={16} />,
   streak_broken:         <FireIcon size={16} />,
