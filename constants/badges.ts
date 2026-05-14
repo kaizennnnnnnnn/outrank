@@ -28,6 +28,7 @@ export const BADGES: Badge[] = [
   { id: 'deep-work', name: 'Deep Work', description: '50 hours of deep work logged', icon: '🧠', rarity: 'epic', xpReward: 100, condition: 'deep_work_50h', category: 'deep-work' },
   { id: 'duel-king', name: 'Duel King', description: 'Win 10 duels', icon: '👑', rarity: 'epic', xpReward: 100, condition: 'duel_wins_10' },
   { id: 'arch-rival', name: 'Arch-Rival', description: 'Beat the same opponent 5 times', icon: '👹', rarity: 'epic', xpReward: 150, condition: 'wins_vs_one_5' },
+  { id: 'tournament-champion', name: 'Tournament Champion', description: 'Win your first tournament', icon: '🏆', rarity: 'epic', xpReward: 200, condition: 'tournament_wins_1' },
   { id: 'philanthropist', name: 'Philanthropist', description: 'React to 50 friends\' logs', icon: '❤️', rarity: 'epic', xpReward: 100, condition: 'reactions_50' },
   { id: 'league-champion', name: 'League Champion', description: 'Win a monthly league', icon: '🏆', rarity: 'epic', xpReward: 100, condition: 'league_monthly_win' },
 

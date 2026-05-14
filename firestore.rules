@@ -274,10 +274,15 @@ service cloud.firestore {
       allow update: if isOwner(userId);
     }
 
-    // TOURNAMENTS
+    // TOURNAMENTS — mirrors the competitions trust model: any signed-in
+    // user can create/update/read. Field-level discipline lives in the
+    // client (lib/tournament.ts). Updates needed for accept/decline and
+    // for round advancement (auto-creating the R2 final).
     match /tournaments/{tournamentId} {
       allow read: if isAuthenticated();
-      allow write: if false;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if false;
     }
 
     // AUDIT LOGS

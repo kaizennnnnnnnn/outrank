@@ -46,7 +46,9 @@ const tones: Record<string, Tone> = {
   streak_broken:         { icon: <BFlameGlyph size={14} />,      color: '#64748b', title: 'Streak broken' },
   badge_earned:          { icon: <BCrownGlyph size={14} />,      color: '#f97316', title: 'Badge earned' },
   level_up:              { icon: <BCrownGlyph size={14} />,      color: '#f59e0b', title: 'Leveled up' },
+  tournament_invite:     { icon: <BTrophyGlyph size={14} />,     color: '#60a5fa', title: 'Tournament invite' },
   tournament_starting:   { icon: <BTrophyGlyph size={14} />,     color: '#60a5fa', title: 'Tournament' },
+  tournament_completed:  { icon: <BTrophyGlyph size={14} />,     color: '#fbbf24', title: 'Tournament won' },
   weekly_recap:          { icon: <BCheckGlyph size={14} />,      color: '#fb923c', title: 'Weekly recap' },
   league_winner:         { icon: <BCrownGlyph size={14} />,      color: '#fde047', title: 'League winner' },
   friend_logged:         { icon: <BHeartGlyph size={14} />,      color: '#a78bfa', title: 'Friend activity',    to: '/feed' },
@@ -85,6 +87,14 @@ export default function NotificationsPage() {
     // recipient lands on the live HUD, not the duel list.
     if (notif.type === 'duel_score_update' && notif.relatedId) {
       router.push(`/compete/duel/${notif.relatedId}`);
+      return;
+    }
+    // Tournament notifs deep-link to the specific bracket.
+    if (
+      (notif.type === 'tournament_invite' || notif.type === 'tournament_starting' || notif.type === 'tournament_completed')
+      && notif.relatedId
+    ) {
+      router.push(`/tournaments/${notif.relatedId}`);
       return;
     }
     const t = tones[notif.type];

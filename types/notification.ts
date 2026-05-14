@@ -13,7 +13,9 @@ export type NotificationType =
   | 'streak_broken'
   | 'badge_earned'
   | 'level_up'
+  | 'tournament_invite'
   | 'tournament_starting'
+  | 'tournament_completed'
   | 'weekly_recap'
   | 'league_winner'
   | 'friend_logged';

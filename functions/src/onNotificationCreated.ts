@@ -114,6 +114,12 @@ function getNotificationLink(type: string, relatedId?: string): string {
       // HUD with the updated score, not the duel list. relatedId is the
       // competition doc id.
       return relatedId ? `/compete/duel/${relatedId}` : '/compete';
+    case 'tournament_invite':
+    case 'tournament_starting':
+    case 'tournament_completed':
+      // Deep-link to the specific tournament bracket — same shape as
+      // duel_score_update. relatedId is the tournament doc id.
+      return relatedId ? `/tournaments/${relatedId}` : '/tournaments';
     case 'duel_challenge':
     case 'duel_accepted':
     case 'duel_ended':

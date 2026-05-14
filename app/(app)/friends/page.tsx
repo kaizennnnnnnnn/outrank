@@ -369,6 +369,45 @@ export default function FriendsPage() {
                   ENTER →
                 </span>
               </Link>
+              <Link
+                href="/tournaments"
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  padding: '10px 0',
+                  borderBottom: '1px solid var(--b-rule)',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <div>
+                  <div
+                    className="spread"
+                    style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                  >
+                    Bracket
+                  </div>
+                  <div
+                    className="font-display"
+                    style={{ fontSize: 16, fontStyle: 'italic', fontWeight: 500, marginTop: 2 }}
+                  >
+                    Tournaments
+                  </div>
+                  <div
+                    className="font-body"
+                    style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
+                  >
+                    4-player single elimination
+                  </div>
+                </div>
+                <span
+                  className="font-body"
+                  style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.08em' }}
+                >
+                  ENTER →
+                </span>
+              </Link>
             </div>
           )}
 

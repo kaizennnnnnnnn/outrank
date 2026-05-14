@@ -12,6 +12,7 @@ export type FeedItemType =
   | 'levelup'
   | 'duel_win'
   | 'duel_ended'
+  | 'tournament_completed'
   | 'streak_milestone';
 
 export type ReactionEmoji = '🔥' | '💪' | '👏' | '⚡' | '🤝';
