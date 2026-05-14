@@ -76,18 +76,27 @@ export const scheduleNotifier = functions.pubsub
       }
 
       // Split entries into habits vs meals. We fire one consolidated
-      // habit reminder + one meal reminder per meal type at this hour,
-      // because "Time for water and dinner" reads weirdly. Each entry
-      // gets its own idempotency stamp so they stay independent.
+      // habit reminder + one meal reminder per unique meal label at this
+      // hour. Two meal entries with the same label at the same hour
+      // (shouldn't happen via the UI, but defend) collapse to one push.
+      // Each entry still gets its own idempotency stamp so docs stay
+      // independent.
       const dueHabits: { name: string; doc: typeof entriesSnap.docs[number] }[] = [];
-      const dueMealsByType: Record<string, { doc: typeof entriesSnap.docs[number] }[]> = {};
+      const dueMealsByLabel: Record<string, { mealType?: string; docs: typeof entriesSnap.docs[number][] }> = {};
       for (const entryDoc of entriesSnap.docs) {
         const entry = entryDoc.data();
         if (entry.lastFiredDateKey === local.dateKey) continue;
-        if (entry.kind === 'meal' && typeof entry.mealType === 'string') {
-          const bucket = dueMealsByType[entry.mealType] || [];
-          bucket.push({ doc: entryDoc });
-          dueMealsByType[entry.mealType] = bucket;
+        if (entry.kind === 'meal') {
+          // Prefer user-supplied label; fall back to legacy mealType
+          // (capitalized) for entries written before mealLabel landed.
+          const label = (typeof entry.mealLabel === 'string' && entry.mealLabel.trim())
+            ? entry.mealLabel.trim()
+            : typeof entry.mealType === 'string'
+              ? entry.mealType.charAt(0).toUpperCase() + entry.mealType.slice(1)
+              : 'Meal';
+          const bucket = dueMealsByLabel[label] || { mealType: entry.mealType, docs: [] };
+          bucket.docs.push(entryDoc);
+          dueMealsByLabel[label] = bucket;
         } else {
           dueHabits.push({
             name: entry.habitName || 'your habit',
@@ -98,7 +107,7 @@ export const scheduleNotifier = functions.pubsub
 
       const allDueDocs = [
         ...dueHabits.map((h) => h.doc),
-        ...Object.values(dueMealsByType).flat().map((m) => m.doc),
+        ...Object.values(dueMealsByLabel).flatMap((b) => b.docs),
       ];
       if (allDueDocs.length === 0) continue;
 
@@ -142,21 +151,25 @@ export const scheduleNotifier = functions.pubsub
         }
       }
 
-      // Meal messages — one per mealType, deep-links to /diet.
-      const MEAL_COPY: Record<string, string> = {
+      // Meal messages — one per unique label, deep-links to /diet.
+      // Use the canonical type copy when the label maps cleanly to one
+      // of the original four types; otherwise just say "Time for {label}"
+      // so custom labels like "Pre-gym snack" read naturally.
+      const TYPE_COPY: Record<string, string> = {
         breakfast: 'Breakfast time — log it before it slips.',
         lunch: "Lunch — what's on the plate?",
         snack: 'Snack time — keep the macros honest.',
         dinner: 'Dinner — log it when you finish.',
       };
-      for (const mealType of Object.keys(dueMealsByType)) {
-        const message = MEAL_COPY[mealType] || `${mealType} — log it when you finish.`;
+      for (const [label, bucket] of Object.entries(dueMealsByLabel)) {
+        const lc = label.toLowerCase();
+        const message = TYPE_COPY[lc] || `${label} — log it when you finish.`;
         try {
           await db.collection(`notifications/${userId}/items`).add({
             type: 'meal_reminder',
             message,
             isRead: false,
-            relatedId: mealType,
+            relatedId: bucket.mealType || lc,
             actorId: '',
             actorAvatar: '',
             createdAt: admin.firestore.Timestamp.now(),

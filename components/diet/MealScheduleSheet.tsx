@@ -2,20 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { collection, getDocs, query, where, addDoc, deleteDoc, doc, Timestamp, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, doc, Timestamp, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useUIStore } from '@/store/uiStore';
-import { MealType, ScheduleEntry } from '@/types/schedule';
-import { BCheckGlyph, BCalendarGlyph } from '@/components/editorial/BGlyphs';
+import { ScheduleEntry } from '@/types/schedule';
+import { BCalendarGlyph, BPlusGlyph } from '@/components/editorial/BGlyphs';
 
 /**
- * Meal scheduler — sets recurring daily reminders for each meal type.
- * Reuses the scheduleEntries collection (one doc per dayOfWeek per
- * enabled mealType, so seven docs per enabled meal). The existing
- * scheduleNotifier Cloud Function fires the push at the local hour.
+ * Meal scheduler — user-defined recurring daily reminders. Each row is
+ * a {label, hour} pair; users add as many as they want ("Breakfast",
+ * "Pre-gym snack", "Late dinner", etc.). The notifier pushes the
+ * label as part of the copy.
  *
- * Granularity is hour-only because the notifier only checks the
- * dayOfWeek + hour pair (sub-hour timing would be silently rounded).
+ * Storage reuses the existing scheduleEntries collection — one doc per
+ * dayOfWeek per row (7 per enabled row). Save wipes all kind='meal'
+ * entries first to avoid drift.
+ *
+ * Granularity is hour-only because the underlying notifier checks
+ * (dayOfWeek, hour) pairs.
  */
 
 interface Props {
@@ -24,17 +28,16 @@ interface Props {
   onClose: () => void;
 }
 
-const MEAL_TYPES: { key: MealType; label: string; defaultHour: number }[] = [
-  { key: 'breakfast', label: 'Breakfast', defaultHour: 8 },
-  { key: 'lunch',     label: 'Lunch',     defaultHour: 12 },
-  { key: 'snack',     label: 'Snack',     defaultHour: 15 },
-  { key: 'dinner',    label: 'Dinner',    defaultHour: 19 },
-];
-
-interface MealRowState {
-  enabled: boolean;
+interface MealRow {
+  label: string;
   hour: number;
 }
+
+const DEFAULT_ROWS: MealRow[] = [
+  { label: 'Breakfast', hour: 8 },
+  { label: 'Lunch',     hour: 12 },
+  { label: 'Dinner',    hour: 19 },
+];
 
 function formatHour(h: number): string {
   if (h === 0) return '12:00 AM';
@@ -45,20 +48,13 @@ function formatHour(h: number): string {
 
 export function MealScheduleSheet({ uid, open, onClose }: Props) {
   const addToast = useUIStore((s) => s.addToast);
-  const [rows, setRows] = useState<Record<MealType, MealRowState>>({
-    breakfast: { enabled: false, hour: 8 },
-    lunch:     { enabled: false, hour: 12 },
-    snack:     { enabled: false, hour: 15 },
-    dinner:    { enabled: false, hour: 19 },
-  });
+  const [rows, setRows] = useState<MealRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // On open, pull the user's current meal-schedule entries and
-  // collapse them down to one row per mealType (hour + enabled flag).
-  // If the seven daily entries somehow disagree on hour, take the
-  // most recent — but in practice they should all match because save
-  // wipes + rewrites.
+  // Load existing meal entries → collapse to unique (label, hour) pairs.
+  // Each saved row writes 7 docs (one per dayOfWeek), so we read any
+  // doc and pull the (label, hour) without worrying about duplicates.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -71,20 +67,21 @@ export function MealScheduleSheet({ uid, open, onClose }: Props) {
             where('kind', '==', 'meal'),
           ),
         );
-        const hoursByType: Partial<Record<MealType, number>> = {};
+        const seen = new Map<string, MealRow>();
         snap.docs.forEach((d) => {
           const e = d.data() as ScheduleEntry;
-          if (e.mealType) hoursByType[e.mealType] = e.hour;
+          const label = (e.mealLabel?.trim())
+            || (e.mealType ? e.mealType.charAt(0).toUpperCase() + e.mealType.slice(1) : 'Meal');
+          const key = `${label}|${e.hour}`;
+          if (!seen.has(key)) seen.set(key, { label, hour: e.hour });
         });
         if (cancelled) return;
-        setRows({
-          breakfast: { enabled: hoursByType.breakfast !== undefined, hour: hoursByType.breakfast ?? 8 },
-          lunch:     { enabled: hoursByType.lunch     !== undefined, hour: hoursByType.lunch     ?? 12 },
-          snack:     { enabled: hoursByType.snack     !== undefined, hour: hoursByType.snack     ?? 15 },
-          dinner:    { enabled: hoursByType.dinner    !== undefined, hour: hoursByType.dinner    ?? 19 },
-        });
+        const loaded = Array.from(seen.values());
+        // First-time users get sensible defaults so they can save and go.
+        setRows(loaded.length > 0 ? loaded : DEFAULT_ROWS);
       } catch (err) {
         console.error('load meal schedule failed', err);
+        if (!cancelled) setRows(DEFAULT_ROWS);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -92,12 +89,29 @@ export function MealScheduleSheet({ uid, open, onClose }: Props) {
     return () => { cancelled = true; };
   }, [open, uid]);
 
+  const updateRow = (idx: number, patch: Partial<MealRow>) => {
+    setRows((cur) => cur.map((r, i) => i === idx ? { ...r, ...patch } : r));
+  };
+  const removeRow = (idx: number) => {
+    setRows((cur) => cur.filter((_, i) => i !== idx));
+  };
+  const addRow = () => {
+    // Default new row sits 1-2h after the latest, so reminders space
+    // out instead of stacking on the same hour by default.
+    const maxHour = rows.reduce((m, r) => Math.max(m, r.hour), 6);
+    const nextHour = Math.min(23, maxHour + 2);
+    setRows((cur) => [...cur, { label: '', hour: nextHour }]);
+  };
+
   const onSave = async () => {
     if (saving) return;
+    const cleaned = rows
+      .map((r) => ({ label: r.label.trim(), hour: r.hour }))
+      .filter((r) => r.label.length > 0);
     setSaving(true);
     try {
       // Wipe existing meal entries, then re-create from current rows.
-      // Cheap (max 28 docs) and avoids drift.
+      // Cheap (max 7 × N docs, N typically <10) and avoids drift.
       const existing = await getDocs(
         query(
           collection(db, `scheduleEntries/${uid}/items`),
@@ -110,33 +124,30 @@ export function MealScheduleSheet({ uid, open, onClose }: Props) {
       }
       await wipe.commit();
 
-      // Write fresh entries — 7 per enabled meal type, one per day.
-      // Habit fields are filled with mealType-derived placeholders so
-      // existing schedule UI doesn't crash on missing fields.
-      for (const mt of MEAL_TYPES) {
-        const row = rows[mt.key];
-        if (!row.enabled) continue;
+      // Write fresh entries — 7 per row, one per day. Habit fields stay
+      // filled with row-derived placeholders so the legacy schedule UI
+      // doesn't crash on missing fields if it ever lists meal entries.
+      for (const r of cleaned) {
         for (let dow = 0; dow < 7; dow++) {
           await addDoc(collection(db, `scheduleEntries/${uid}/items`), {
             kind: 'meal',
-            mealType: mt.key,
-            habitSlug: `meal-${mt.key}`,
-            habitName: mt.label,
+            mealLabel: r.label,
+            habitSlug: `meal-${r.label.toLowerCase().replace(/\s+/g, '-')}`,
+            habitName: r.label,
             habitIcon: '',
             habitColor: '#f97316',
             dayOfWeek: dow,
-            hour: row.hour,
+            hour: r.hour,
             createdAt: Timestamp.now(),
           });
         }
       }
 
-      const enabledCount = Object.values(rows).filter((r) => r.enabled).length;
       addToast({
         type: 'success',
-        message: enabledCount === 0
+        message: cleaned.length === 0
           ? 'Meal reminders cleared.'
-          : `${enabledCount} meal reminder${enabledCount === 1 ? '' : 's'} set.`,
+          : `${cleaned.length} meal reminder${cleaned.length === 1 ? '' : 's'} set.`,
       });
       onClose();
     } catch (err) {
@@ -181,11 +192,11 @@ export function MealScheduleSheet({ uid, open, onClose }: Props) {
                 Meal schedule
               </h2>
               <p className="font-body" style={{ fontSize: 12, color: 'var(--b-ink-60)', marginTop: 6 }}>
-                Pick which meals get a push at what time. Reminders fire every day at the local hour.
+                Add a row for each meal or snack you want a daily push for. Name it whatever — "Pre-gym snack", "Late dinner", anything.
               </p>
             </div>
 
-            <div style={{ padding: '14px 22px 22px', overflowY: 'auto', flex: 1 }}>
+            <div style={{ padding: '14px 22px 6px', overflowY: 'auto', flex: 1 }}>
               {loading ? (
                 <p
                   className="font-body"
@@ -195,79 +206,113 @@ export function MealScheduleSheet({ uid, open, onClose }: Props) {
                 </p>
               ) : (
                 <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                  {MEAL_TYPES.map((mt) => {
-                    const row = rows[mt.key];
-                    return (
-                      <li
-                        key={mt.key}
+                  {rows.length === 0 && (
+                    <li>
+                      <p
+                        className="font-body"
+                        style={{ fontSize: 12, color: 'var(--b-ink-60)', textAlign: 'center', padding: '20px 0', fontStyle: 'italic' }}
+                      >
+                        No reminders yet. Add one below.
+                      </p>
+                    </li>
+                  )}
+                  {rows.map((r, idx) => (
+                    <li
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '10px 0',
+                        borderBottom: '1px solid var(--b-rule)',
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={r.label}
+                        onChange={(e) => updateRow(idx, { label: e.target.value })}
+                        placeholder="e.g. Lunch"
+                        maxLength={32}
+                        className="font-body"
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          padding: '14px 0',
-                          borderBottom: '1px solid var(--b-rule)',
+                          flex: 1,
+                          minWidth: 0,
+                          background: 'var(--b-paper)',
+                          color: 'var(--b-ink)',
+                          border: '1px solid var(--b-ink)',
+                          padding: '8px 10px',
+                          fontSize: 13,
+                        }}
+                      />
+                      <select
+                        value={r.hour}
+                        onChange={(e) => updateRow(idx, { hour: parseInt(e.target.value, 10) })}
+                        className="font-mono tabular"
+                        style={{
+                          background: 'var(--b-paper)',
+                          color: 'var(--b-ink)',
+                          border: '1px solid var(--b-ink)',
+                          padding: '8px 8px',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          flexShrink: 0,
                         }}
                       >
-                        <button
-                          type="button"
-                          aria-pressed={row.enabled}
-                          onClick={() => setRows((cur) => ({
-                            ...cur,
-                            [mt.key]: { ...cur[mt.key], enabled: !cur[mt.key].enabled },
-                          }))}
-                          style={{
-                            width: 22,
-                            height: 22,
-                            border: `1.5px solid ${row.enabled ? 'var(--b-accent)' : 'var(--b-ink-40)'}`,
-                            background: row.enabled ? 'var(--b-accent)' : 'transparent',
-                            color: '#ffffff',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: 0,
-                          }}
-                        >
-                          {row.enabled && <BCheckGlyph size={12} />}
-                        </button>
-                        <div
-                          className="font-display"
-                          style={{
-                            fontSize: 18,
-                            fontStyle: 'italic',
-                            fontWeight: 500,
-                            flex: 1,
-                            opacity: row.enabled ? 1 : 0.55,
-                          }}
-                        >
-                          {mt.label}
-                        </div>
-                        <select
-                          value={row.hour}
-                          onChange={(e) => setRows((cur) => ({
-                            ...cur,
-                            [mt.key]: { ...cur[mt.key], hour: parseInt(e.target.value, 10) },
-                          }))}
-                          disabled={!row.enabled}
-                          className="font-mono tabular"
-                          style={{
-                            background: 'var(--b-paper)',
-                            color: 'var(--b-ink)',
-                            border: '1px solid var(--b-ink)',
-                            padding: '6px 8px',
-                            fontSize: 12,
-                            opacity: row.enabled ? 1 : 0.45,
-                            cursor: row.enabled ? 'pointer' : 'not-allowed',
-                          }}
-                        >
-                          {Array.from({ length: 24 }, (_, h) => (
-                            <option key={h} value={h}>{formatHour(h)}</option>
-                          ))}
-                        </select>
-                      </li>
-                    );
-                  })}
+                        {Array.from({ length: 24 }, (_, h) => (
+                          <option key={h} value={h}>{formatHour(h)}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => removeRow(idx)}
+                        aria-label="Remove reminder"
+                        style={{
+                          width: 28,
+                          height: 28,
+                          border: '1px solid var(--b-ink-40)',
+                          background: 'transparent',
+                          color: 'var(--b-ink-60)',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          fontSize: 14,
+                          lineHeight: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
                 </ul>
+              )}
+
+              {!loading && (
+                <button
+                  type="button"
+                  onClick={addRow}
+                  className="font-body"
+                  style={{
+                    marginTop: 12,
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'transparent',
+                    color: 'var(--b-ink)',
+                    border: '1px dashed var(--b-ink-40)',
+                    fontSize: 12,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <BPlusGlyph size={12} /> Add reminder
+                </button>
               )}
             </div>
 
@@ -301,7 +346,7 @@ export function MealScheduleSheet({ uid, open, onClose }: Props) {
                 className="font-body"
                 style={{ fontSize: 10, color: 'var(--b-ink-60)', textAlign: 'center', marginTop: 6, fontStyle: 'italic' }}
               >
-                Disable meals via the Pillar Reminders toggle in Settings.
+                Toggle off in Settings → Pillar Reminders if you want a break.
               </p>
             </div>
           </motion.div>

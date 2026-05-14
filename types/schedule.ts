@@ -20,6 +20,12 @@ export interface ScheduleEntry {
   habitIcon: string;
   habitColor: string;
   // Meal fields — present when kind === 'meal'.
+  /** User-supplied display name ("Breakfast", "Pre-gym snack", "Late
+   *  dinner"). The notifier uses this in the push copy. */
+  mealLabel?: string;
+  /** Legacy from the fixed-4-types era. Kept optional for backward
+   *  compatibility with existing rows; new entries write `mealLabel`
+   *  instead. */
   mealType?: MealType;
   dayOfWeek: number;
   hour: number;
