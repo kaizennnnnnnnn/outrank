@@ -16,6 +16,8 @@ export const BADGES: Badge[] = [
   { id: 'team-player', name: 'Team Player', description: 'Join 3 leagues', icon: '🤝', rarity: 'rare', xpReward: 50, condition: 'leagues_3' },
   { id: 'century', name: 'Century', description: '100 total habit logs', icon: '💯', rarity: 'rare', xpReward: 50, condition: 'total_logs_100' },
   { id: 'duel-starter', name: 'Duel Starter', description: 'Complete 5 duels', icon: '🗡️', rarity: 'rare', xpReward: 50, condition: 'duels_5' },
+  { id: 'first-blood', name: 'First Blood', description: 'Win your first duel', icon: '🩸', rarity: 'rare', xpReward: 50, condition: 'first_duel_win' },
+  { id: 'triple-threat', name: 'Triple Threat', description: 'Beat the same opponent 3 times', icon: '🎯', rarity: 'rare', xpReward: 75, condition: 'wins_vs_one_3' },
 
   // EPIC (purple)
   { id: 'unstoppable', name: 'Unstoppable', description: '30-day streak in any habit', icon: '⚡', rarity: 'epic', xpReward: 100, condition: 'streak_30' },
@@ -25,6 +27,7 @@ export const BADGES: Badge[] = [
   { id: 'sober', name: 'Sober', description: 'Alcohol-free logged 30 days', icon: '🧘', rarity: 'epic', xpReward: 100, condition: 'alcohol_free_30', category: 'alcohol-free' },
   { id: 'deep-work', name: 'Deep Work', description: '50 hours of deep work logged', icon: '🧠', rarity: 'epic', xpReward: 100, condition: 'deep_work_50h', category: 'deep-work' },
   { id: 'duel-king', name: 'Duel King', description: 'Win 10 duels', icon: '👑', rarity: 'epic', xpReward: 100, condition: 'duel_wins_10' },
+  { id: 'arch-rival', name: 'Arch-Rival', description: 'Beat the same opponent 5 times', icon: '👹', rarity: 'epic', xpReward: 150, condition: 'wins_vs_one_5' },
   { id: 'philanthropist', name: 'Philanthropist', description: 'React to 50 friends\' logs', icon: '❤️', rarity: 'epic', xpReward: 100, condition: 'reactions_50' },
   { id: 'league-champion', name: 'League Champion', description: 'Win a monthly league', icon: '🏆', rarity: 'epic', xpReward: 100, condition: 'league_monthly_win' },
 

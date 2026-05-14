@@ -26,6 +26,7 @@ import { UserProfile } from '@/types/user';
 import { Masthead } from '@/components/editorial/Masthead';
 import { BTrophyGlyph } from '@/components/editorial/BGlyphs';
 import { getDuelRewards } from '@/lib/duelRewards';
+import { awardBadge } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 
 /**
@@ -201,6 +202,24 @@ export default function CompetePage() {
           }
         } catch (err) {
           console.error('Duel feed fan-out failed:', err);
+        }
+      }
+
+      // Rivalry badges — only award on a win. Read pre-claim state from
+      // the live useAuth snapshot (the post-claim increment hasn't landed
+      // yet at this point, so we compute "new count" as old + 1). awardBadge
+      // is idempotent on the userBadges doc, so re-claims won't re-award.
+      if (r.won && opponent) {
+        try {
+          const userExtra = user as unknown as { duelWins?: number };
+          const oldDuelWins = userExtra.duelWins || 0;
+          const oldWinsVsOpp = user.duelRecord?.[opponent.userId]?.wins || 0;
+          const newWinsVsOpp = oldWinsVsOpp + 1;
+          if (oldDuelWins === 0) await awardBadge(user.uid, 'first-blood');
+          if (newWinsVsOpp === 3) await awardBadge(user.uid, 'triple-threat');
+          if (newWinsVsOpp === 5) await awardBadge(user.uid, 'arch-rival');
+        } catch (err) {
+          console.error('Rivalry badge award failed:', err);
         }
       }
 
