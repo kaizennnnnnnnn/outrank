@@ -214,7 +214,7 @@ export async function acceptTournamentInvite(tournamentId: string, userId: strin
  * 'cancelled' and notifies the other 3 participants so they know not
  * to wait. Idempotent — re-decline is a no-op.
  */
-export async function declineTournamentInvite(tournamentId: string, decliner: { uid: string; username: string }): Promise<void> {
+export async function declineTournamentInvite(tournamentId: string, decliner: { uid: string; username: string; avatarUrl: string }): Promise<void> {
   const ref = doc(db, 'tournaments', tournamentId);
   const snap = await getDoc(ref);
   if (!snap.exists()) throw new Error('Tournament not found.');
@@ -230,7 +230,7 @@ export async function declineTournamentInvite(tournamentId: string, decliner: { 
         isRead: false,
         relatedId: tournamentId,
         actorId: decliner.uid,
-        actorAvatar: '',
+        actorAvatar: decliner.avatarUrl,
         createdAt: Timestamp.now(),
       });
     } catch (err) {
@@ -504,6 +504,22 @@ async function crownChampion(t: Tournament, championId: string): Promise<void> {
   });
   if (!wasFirst) return;
 
+  // Pre-read the user's tournamentWins so we can decide on the grand-
+  // champion badge using the value we'll have AFTER this win. A
+  // read-after-write on `increment()` isn't safe — the SDK may still
+  // hold the unresolved sentinel locally. Reading first + adding 1 is
+  // consistent. If two crownings race for the same user, both might
+  // read N=2 and qualify at willBe=3 — awardBadge is idempotent so the
+  // second call is a no-op.
+  let willBeTournamentWins = 1;
+  try {
+    const pre = await getDoc(doc(db, 'users', championId));
+    const current = ((pre.data() || {}).tournamentWins as number) || 0;
+    willBeTournamentWins = current + 1;
+  } catch (err) {
+    console.error('Pre-read tournamentWins failed:', err);
+  }
+
   // Grant champion reward — fragments + XP + the tournament wins counter
   // (which feeds the existing grand-champion at 3 wins) + the tiered
   // cosmetics for this duration (bronze/silver/gold). arrayUnion is
@@ -526,15 +542,11 @@ async function crownChampion(t: Tournament, championId: string): Promise<void> {
     console.error('Champion reward grant failed:', err);
   }
 
-  // Badges — award tournament-champion always; grand-champion fires
-  // when this is the 3rd tournament win. We compute the new total by
-  // reading the user doc back (post-increment, eventual consistency
-  // is fine here since duplicates are dropped by awardBadge).
+  // Badges — tournament-champion always; grand-champion at the 3rd win,
+  // computed from the pre-read count + 1.
   try {
     await awardBadge(championId, 'tournament-champion');
-    const userSnap = await getDoc(doc(db, 'users', championId));
-    const winsAfter = ((userSnap.data() || {}).tournamentWins as number) || 0;
-    if (winsAfter >= 3) {
+    if (willBeTournamentWins >= 3) {
       await awardBadge(championId, 'grand-champion');
     }
   } catch (err) {

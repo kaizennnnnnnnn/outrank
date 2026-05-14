@@ -37,19 +37,24 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
   const addToast = useUIStore((s) => s.addToast);
   const [actionPending, setActionPending] = useState(false);
 
-  // Auto-advance while active.
+  // Auto-advance while active. Deps are narrowed to the signals that
+  // matter — anything that should trigger another advance attempt:
+  // status changes (recruiting → active), or matches array grows
+  // (R1 spawn or R2 spawn). A wider [tournament] dep would re-fire on
+  // every onSnapshot tick (including the writes we just made), which
+  // is wasteful even with transactional dedupe inside the helper.
+  const tId = tournament?.id;
+  const tStatus = tournament?.status;
+  const tMatchCount = tournament?.matches.length ?? 0;
   useEffect(() => {
-    if (!tournament || !tournament.id) return;
-    if (tournament.status !== 'active') return;
+    if (!tId || tStatus !== 'active') return;
     const tick = () => {
-      advanceTournament(tournament.id as string).catch((err) =>
-        console.error('advance failed', err),
-      );
+      advanceTournament(tId).catch((err) => console.error('advance failed', err));
     };
     tick();
     const handle = window.setInterval(tick, 30000);
     return () => window.clearInterval(handle);
-  }, [tournament]);
+  }, [tId, tStatus, tMatchCount]);
 
   if (loading) {
     return (
@@ -86,8 +91,20 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
     if (!tournament.id || !user) return;
     setActionPending(true);
     try {
-      await acceptTournamentInvite(tournament.id, user.uid);
-      addToast({ type: 'success', message: 'You\'re in. Waiting on the others.' });
+      const { started } = await acceptTournamentInvite(tournament.id, user.uid);
+      addToast({
+        type: 'success',
+        message: started ? 'All in. Round 1 starting now.' : "You're in. Waiting on the others.",
+      });
+      // If this acceptance flipped the tournament to active, kick R1
+      // creation immediately — don't wait for the next page visit /
+      // 30-second tick. ensureR1Matches is idempotent so a duplicate
+      // call from the snapshot-driven useEffect is harmless.
+      if (started) {
+        advanceTournament(tournament.id).catch((err) =>
+          console.error('post-accept advance failed', err),
+        );
+      }
     } catch (err) {
       const m = err instanceof Error ? err.message : 'Could not accept';
       addToast({ type: 'error', message: m });
@@ -100,7 +117,11 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
     if (!tournament.id || !user) return;
     setActionPending(true);
     try {
-      await declineTournamentInvite(tournament.id, { uid: user.uid, username: user.username });
+      await declineTournamentInvite(tournament.id, {
+        uid: user.uid,
+        username: user.username,
+        avatarUrl: user.avatarUrl || '',
+      });
       addToast({ type: 'info', message: 'Declined. Tournament cancelled.' });
     } catch (err) {
       const m = err instanceof Error ? err.message : 'Could not decline';
