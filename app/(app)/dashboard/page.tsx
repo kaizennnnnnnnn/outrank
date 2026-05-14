@@ -15,6 +15,7 @@ import { getLevelForXP, getXPProgress } from '@/constants/levels';
 import { UserHabit } from '@/types/habit';
 import { RecapDraftPanel } from '@/components/recap/RecapDraftPanel';
 import { StreakRepairBanner } from '@/components/habits/StreakRepairBanner';
+import { FriendPresenceRail } from '@/components/social/FriendPresenceRail';
 import { PILLARS, isPillarSlug, type Pillar } from '@/constants/pillars';
 import { Masthead } from '@/components/editorial/Masthead';
 import { getCategoryIconComponent } from '@/components/ui/CategoryIcons';
@@ -298,6 +299,16 @@ export default function DashboardPage() {
             <Stat value={league.name.toUpperCase()} label="league" small toneColor={league.color} />
             <Stat value={String(friendCount)} label="friends" />
           </div>
+
+          {/* Friend presence rail — pulls top accepted friends from
+              useFriends, sorts by weekly XP desc, renders top 5 with
+              live duel chip. Sits here as the transition from the
+              user's own stats above to their action surface below. */}
+          <FriendPresenceRail
+            viewerId={user.uid}
+            viewerWeeklyXP={user.weeklyXP || 0}
+            viewerDuelRecord={user.duelRecord}
+          />
 
           {/* Streak repair banner — preserved from old layout */}
           <div className="mt-4">
