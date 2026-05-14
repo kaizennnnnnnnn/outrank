@@ -214,6 +214,39 @@ export async function acceptTournamentInvite(tournamentId: string, userId: strin
  * 'cancelled' and notifies the other 3 participants so they know not
  * to wait. Idempotent — re-decline is a no-op.
  */
+/**
+ * Creator-initiated cancel — kills a recruiting tournament that's
+ * stuck waiting on slow invitees. Only the creator can call this and
+ * only while status is 'recruiting'. Notifies the other three so they
+ * know not to expect it. Behaves like decline but with creator-flavored
+ * copy.
+ */
+export async function cancelTournamentByCreator(tournamentId: string, canceller: { uid: string; username: string; avatarUrl: string }): Promise<void> {
+  const ref = doc(db, 'tournaments', tournamentId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) throw new Error('Tournament not found.');
+  const t = snap.data() as Tournament;
+  if (t.creatorId !== canceller.uid) throw new Error('Only the creator can cancel.');
+  if (t.status !== 'recruiting') throw new Error('Tournament has already started.');
+  await setDoc(ref, { status: 'cancelled' }, { merge: true });
+  for (const p of t.participants) {
+    if (p.userId === canceller.uid) continue;
+    try {
+      await addDoc(collection(db, `notifications/${p.userId}/items`), {
+        type: 'tournament_invite',
+        message: `${canceller.username} cancelled the ${t.categorySlug} tournament.`,
+        isRead: false,
+        relatedId: tournamentId,
+        actorId: canceller.uid,
+        actorAvatar: canceller.avatarUrl,
+        createdAt: Timestamp.now(),
+      });
+    } catch (err) {
+      console.error('Tournament cancel notif failed:', err);
+    }
+  }
+}
+
 export async function declineTournamentInvite(tournamentId: string, decliner: { uid: string; username: string; avatarUrl: string }): Promise<void> {
   const ref = doc(db, 'tournaments', tournamentId);
   const snap = await getDoc(ref);

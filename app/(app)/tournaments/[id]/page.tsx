@@ -12,10 +12,12 @@ import { useUIStore } from '@/store/uiStore';
 import {
   acceptTournamentInvite,
   advanceTournament,
+  cancelTournamentByCreator,
   declineTournamentInvite,
   durationLabel,
   rewardForDuration,
 } from '@/lib/tournament';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { TournamentBracket } from '@/components/competition/TournamentBracket';
 
 /**
@@ -36,6 +38,7 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
   const { data: tournament, loading } = useDocument<Tournament>('tournaments', id);
   const addToast = useUIStore((s) => s.addToast);
   const [actionPending, setActionPending] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Auto-advance while active. Deps are narrowed to the signals that
   // matter — anything that should trigger another advance attempt:
@@ -107,6 +110,25 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
       }
     } catch (err) {
       const m = err instanceof Error ? err.message : 'Could not accept';
+      addToast({ type: 'error', message: m });
+    } finally {
+      setActionPending(false);
+    }
+  };
+
+  const onCancelTournament = async () => {
+    if (!tournament.id || !user) return;
+    setActionPending(true);
+    try {
+      await cancelTournamentByCreator(tournament.id, {
+        uid: user.uid,
+        username: user.username,
+        avatarUrl: user.avatarUrl || '',
+      });
+      addToast({ type: 'info', message: 'Tournament cancelled.' });
+      setShowCancelConfirm(false);
+    } catch (err) {
+      const m = err instanceof Error ? err.message : 'Could not cancel';
       addToast({ type: 'error', message: m });
     } finally {
       setActionPending(false);
@@ -208,8 +230,41 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
           <div style={{ marginTop: 18 }}>
             <TournamentBracket tournament={tournament} />
           </div>
+
+          {/* Creator-only cancel — only while recruiting, so a stuck
+              tournament waiting on slow invitees can be reclaimed. */}
+          {tournament.status === 'recruiting' && user && tournament.creatorId === user.uid && (
+            <div style={{ marginTop: 18, textAlign: 'center' }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCancelConfirm(true)}
+                disabled={actionPending}
+              >
+                Cancel tournament
+              </Button>
+              <p
+                className="font-body"
+                style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 6, fontStyle: 'italic' }}
+              >
+                Pulls the bracket. Invitees get a notification.
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={onCancelTournament}
+        title="Cancel tournament?"
+        description="Pulls the bracket and notifies the invitees. This can't be undone — you can always start a fresh one."
+        confirmText="Cancel tournament"
+        cancelText="Keep waiting"
+        variant="danger"
+        loading={actionPending}
+      />
     </div>
   );
 }
