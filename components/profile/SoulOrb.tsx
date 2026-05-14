@@ -281,6 +281,14 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
     const pulses: Pulse[] = [];
     const arcs: Arc[] = [];
 
+    // Voice-emit particles — tiny dots that spawn at the orb's perimeter
+    // and drift outward while a voice session is active. Additive to the
+    // existing voice splash; the splash perturbs the body particles in
+    // place while these are independent specks released into space.
+    type EmitParticle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number };
+    const emitParticles: EmitParticle[] = [];
+    const EMIT_PARTICLE_CAP = 80;
+
     // Satellites — orbiting micro-orbs introduced at tier 6+
     type Satellite = { angle: number; radius: number; tiltX: number; tiltY: number; speed: number; size: number; trail: { x: number; y: number; a: number }[] };
     const satellites: Satellite[] = [];
@@ -760,6 +768,39 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
         flashG.addColorStop(0, `rgba(${colCore[0]}, ${colCore[1]}, ${colCore[2]}, ${flashAlpha})`);
         flashG.addColorStop(1, 'transparent');
         ctx.fillStyle = flashG; ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, PI2); ctx.fill();
+      }
+
+      // Voice-emit particles — only spawn while a session is active.
+      // Spawn count scales with amplitude so quiet listening drips and
+      // loud TTS sprays. Cap keeps the array bounded under sustained loud.
+      const voiceLive = voiceActiveRef?.current === true;
+      if (voiceLive && audioSplash > 0.05 && emitParticles.length < EMIT_PARTICLE_CAP) {
+        const spawnTarget = Math.min(3, Math.ceil(audioSplash * 4));
+        for (let s = 0; s < spawnTarget; s++) {
+          const theta = random() * PI2;
+          const speed = 0.6 + audioSplash * 1.4 + random() * 0.4;
+          emitParticles.push({
+            x: cx + cos(theta) * (R + 1),
+            y: cy + sin(theta) * (R + 1),
+            vx: cos(theta) * speed,
+            vy: sin(theta) * speed,
+            life: 0,
+            maxLife: 40 + Math.floor(random() * 30),
+            size: 0.6 + random() * 0.9,
+          });
+        }
+      }
+      // Step + draw + cull. Linear fade so the trail reads clearly without
+      // an animated filter or shadow (CLAUDE.md animation-discipline rule).
+      for (let i = emitParticles.length - 1; i >= 0; i--) {
+        const ep = emitParticles[i];
+        ep.x += ep.vx;
+        ep.y += ep.vy;
+        ep.life += 1;
+        if (ep.life >= ep.maxLife) { emitParticles.splice(i, 1); continue; }
+        const fade = 1 - ep.life / ep.maxLife;
+        ctx.fillStyle = `rgba(${pulseRgb[0]}, ${pulseRgb[1]}, ${pulseRgb[2]}, ${fade * 0.9})`;
+        ctx.beginPath(); ctx.arc(ep.x, ep.y, ep.size, 0, PI2); ctx.fill();
       }
 
       animRef.current = requestAnimationFrame(frame);
