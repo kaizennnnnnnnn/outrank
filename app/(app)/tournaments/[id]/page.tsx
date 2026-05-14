@@ -136,7 +136,7 @@ export default function TournamentPage({ params }: { params: Promise<{ id: strin
               style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 6, letterSpacing: '0.04em' }}
             >
               Champion takes <span style={{ color: 'var(--b-accent)' }}>+{reward.fragments.toLocaleString()} ◆</span>
-              {' · '}+{reward.xp} XP{' · '}Tournament Champion badge
+              {' · '}+{reward.xp} XP{' · '}{reward.cosmeticLabel} frame + name{' · '}Tournament Champion badge
             </p>
           </div>
 

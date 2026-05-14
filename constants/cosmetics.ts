@@ -102,6 +102,13 @@ export const PFP_FRAMES: PfpFrame[] = [
   { id: 'frame_tide',        name: 'Tide Wreath',     rarity: 'legendary', colors: ['#0891b2', '#67e8f9', '#ffffff'], style: 'wreath', animated: true, description: 'Crashing ocean halo.' },
   { id: 'frame_royal',       name: 'Royal Halo',      rarity: 'legendary', colors: ['#4c1d95', '#fbbf24', '#f9a8d4'], style: 'halo',   animated: true, description: 'King of kings.' },
 
+  // Tournament champion tiers — earned by winning a tournament, with
+  // tier set by the bracket's round duration (3d = bronze, 7d = silver,
+  // 14d = gold). All three are grantOnly so they can't be bought.
+  { id: 'frame_champion_bronze', name: 'Bronze Champion Halo', rarity: 'legendary', colors: ['#7c2d12', '#b45309', '#fbbf24', '#fde68a'],            style: 'halo',   animated: true, grantOnly: true, description: 'Earned by winning a 3-day tournament.' },
+  { id: 'frame_champion_silver', name: 'Silver Champion Halo', rarity: 'legendary', colors: ['#475569', '#94a3b8', '#cbd5e1', '#ffffff'],            style: 'conic',  animated: true, grantOnly: true, description: 'Earned by winning a 7-day tournament.' },
+  { id: 'frame_champion_gold',   name: 'Gold Champion Wreath', rarity: 'legendary', colors: ['#854d0e', '#d97706', '#fbbf24', '#fef3c7', '#ffffff'], style: 'wreath', animated: true, grantOnly: true, description: 'Earned by winning a 14-day tournament.' },
+
   // ---- MYTHIC (maximum layers — conic + wreath, always animated) ----
   { id: 'frame_ascension',   name: 'Ascension Wreath', rarity: 'mythic',   colors: ['#f9a8d4', '#ec4899', '#ffffff'], style: 'wreath', animated: true, description: 'Earned by ascending your orb.' },
   { id: 'frame_rainbow',     name: 'Rainbow Crown',   rarity: 'mythic',    colors: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'], style: 'conic', animated: true, description: 'Full spectrum, always shifting.' },
@@ -182,6 +189,12 @@ export const NAME_EFFECTS: NameEffect[] = [
   { id: 'name_sandstorm',  name: 'Sandstorm',    rarity: 'legendary', colors: ['#fbbf24', '#fef3c7', '#a16207', '#fde68a'], animated: 'molten',   description: 'Wind-blown gold. Always moving.' },
   { id: 'name_glacier',    name: 'Glacier',      rarity: 'legendary', colors: ['#7dd3fc', '#bae6fd', '#0ea5e9', '#e0f2fe'], animated: 'aurora',   description: 'Slow, ancient ice.' },
   { id: 'name_radium',     name: 'Radium',       rarity: 'legendary', colors: ['#a3e635', '#facc15', '#bef264'],            animated: 'electric', description: 'Glowing hot. Faintly humming.' },
+
+  // Tournament champion tiers — tier set by the winning bracket's round
+  // duration. Granted-only via the tournament crowning path.
+  { id: 'name_champion_bronze', name: 'Bronze Champion', rarity: 'legendary', colors: ['#7c2d12', '#b45309', '#fbbf24', '#fde68a'],            animated: 'ember',    description: 'Earned by winning a 3-day tournament.' },
+  { id: 'name_champion_silver', name: 'Silver Champion', rarity: 'legendary', colors: ['#475569', '#94a3b8', '#cbd5e1', '#ffffff'],            animated: 'electric', description: 'Earned by winning a 7-day tournament.' },
+  { id: 'name_champion_gold',   name: 'Gold Champion',   rarity: 'legendary', colors: ['#854d0e', '#d97706', '#fbbf24', '#fef3c7', '#ffffff'], animated: 'molten',   description: 'Earned by winning a 14-day tournament.' },
 
   // ---- MYTHIC (top tier: cosmic / prismatic / holographic / glitch / void / mythic) ----
   { id: 'name_rainbow',    name: 'Rainbow',      rarity: 'mythic',    colors: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7'], animated: 'rainbow-shift', description: 'Every color, cycling.' },

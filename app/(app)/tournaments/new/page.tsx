@@ -174,6 +174,9 @@ export default function NewTournamentPage() {
                       +{r.fragments.toLocaleString()} ◆
                     </span>
                     <span style={{ fontSize: 9, opacity: 0.8 }}>+{r.xp} XP</span>
+                    <span style={{ fontSize: 9, opacity: 0.8, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                      {r.cosmeticLabel}
+                    </span>
                   </button>
                 );
               })}
@@ -182,7 +185,7 @@ export default function NewTournamentPage() {
               className="font-body"
               style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 6, fontStyle: 'italic' }}
             >
-              Longer brackets pay more. Champion also unlocks the Tournament Champion badge.
+              Longer brackets pay more — champion unlocks a tiered frame + name effect, plus the Tournament Champion badge.
             </p>
           </Field>
 

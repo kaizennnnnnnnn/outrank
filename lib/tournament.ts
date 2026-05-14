@@ -44,16 +44,37 @@ export type RoundDuration = 3 | 7 | 14;
 export interface TournamentRewardTier {
   fragments: number;
   xp: number;
-  /** Cosmetic IDs ship in Phase 5b (frame_champion_bronze etc.).
-   *  Empty in 5a so the champion only gets fragments+XP+badge. */
+  /** Granted-only cosmetics that unlock on the champion's user doc when
+   *  they win. One frame + one name effect per tier. */
   cosmeticIds: string[];
+  /** Human-readable cosmetic tier for UI copy (e.g., "Bronze"). */
+  cosmeticLabel: 'Bronze' | 'Silver' | 'Gold';
 }
 
 /** Tiered champion reward — scales with how grueling the tournament is. */
 export function rewardForDuration(days: RoundDuration): TournamentRewardTier {
-  if (days === 3) return { fragments: 2500, xp: 250, cosmeticIds: [] };
-  if (days === 7) return { fragments: 5000, xp: 500, cosmeticIds: [] };
-  return { fragments: 10000, xp: 1000, cosmeticIds: [] };
+  if (days === 3) {
+    return {
+      fragments: 2500,
+      xp: 250,
+      cosmeticIds: ['frame_champion_bronze', 'name_champion_bronze'],
+      cosmeticLabel: 'Bronze',
+    };
+  }
+  if (days === 7) {
+    return {
+      fragments: 5000,
+      xp: 500,
+      cosmeticIds: ['frame_champion_silver', 'name_champion_silver'],
+      cosmeticLabel: 'Silver',
+    };
+  }
+  return {
+    fragments: 10000,
+    xp: 1000,
+    cosmeticIds: ['frame_champion_gold', 'name_champion_gold'],
+    cosmeticLabel: 'Gold',
+  };
 }
 
 /** Compact "X days" label for UI + notification copy. */
@@ -483,9 +504,10 @@ async function crownChampion(t: Tournament, championId: string): Promise<void> {
   });
   if (!wasFirst) return;
 
-  // Grant champion reward. Cosmetics deferred to Phase 5b — for now
-  // just fragments + XP + the tournament wins counter (which feeds
-  // the existing grand-champion at 3 wins).
+  // Grant champion reward — fragments + XP + the tournament wins counter
+  // (which feeds the existing grand-champion at 3 wins) + the tiered
+  // cosmetics for this duration (bronze/silver/gold). arrayUnion is
+  // idempotent so a re-issued reward grant won't duplicate cosmetics.
   try {
     await setDoc(
       doc(db, 'users', championId),
@@ -496,6 +518,7 @@ async function crownChampion(t: Tournament, championId: string): Promise<void> {
         monthlyXP: increment(reward.xp),
         seasonPassXP: increment(reward.xp),
         tournamentWins: increment(1),
+        ownedCosmetics: arrayUnion(...reward.cosmeticIds),
       },
       { merge: true },
     );
