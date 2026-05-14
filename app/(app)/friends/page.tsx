@@ -571,6 +571,13 @@ export default function FriendsPage() {
             <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
               {resolvedFriends.map((friend) => {
                 const activePact = activePactByFriend.get(friend.friendId);
+                // Viewer's head-to-head record vs this friend (their POV).
+                // Lives on the viewer's own user doc, denormalized at duel-
+                // claim time. Absent until the first completed duel.
+                const record = user?.duelRecord?.[friend.friendId];
+                const totalDuels = record
+                  ? (record.wins || 0) + (record.losses || 0) + (record.ties || 0)
+                  : 0;
                 return (
                   <li
                     key={friend.friendId}
@@ -621,6 +628,29 @@ export default function FriendsPage() {
                         >
                           Lv.{friend.profile?.level || 1} {friend.profile?.currentTitle || 'Rookie'} · {(friend.profile?.totalXP || 0).toLocaleString()} XP
                         </div>
+                        {totalDuels > 0 && record && (
+                          <div
+                            className="font-mono tabular"
+                            style={{
+                              fontSize: 10,
+                              marginTop: 2,
+                              letterSpacing: '0.06em',
+                              textTransform: 'uppercase',
+                              color: 'var(--b-ink-60)',
+                            }}
+                          >
+                            <span>Duels · </span>
+                            <span style={{ color: '#34d399' }}>{record.wins || 0}W</span>
+                            <span style={{ color: 'var(--b-ink-40)' }}> / </span>
+                            <span style={{ color: '#f87171' }}>{record.losses || 0}L</span>
+                            {(record.ties || 0) > 0 && (
+                              <>
+                                <span style={{ color: 'var(--b-ink-40)' }}> / </span>
+                                <span style={{ color: '#fbbf24' }}>{record.ties}T</span>
+                              </>
+                            )}
+                          </div>
+                        )}
                         <div
                           className="font-mono"
                           style={{ fontSize: 9, color: 'var(--b-ink-40)', marginTop: 2, letterSpacing: '0.04em' }}

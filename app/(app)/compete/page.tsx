@@ -7,7 +7,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Avatar } from '@/components/ui/Avatar';
 import { updateDocument, getDocument, getCollection } from '@/lib/firestore';
-import { increment, arrayUnion, orderBy as fbOrderBy, limit as fbLimit } from 'firebase/firestore';
+import {
+  increment,
+  arrayUnion,
+  orderBy as fbOrderBy,
+  limit as fbLimit,
+  where as fbWhere,
+  Timestamp,
+  addDoc,
+  collection,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useUIStore } from '@/store/uiStore';
 import { DuelResultModal } from '@/components/competition/DuelResultModal';
 import { Competition, CompetitionStatus } from '@/types/competition';
@@ -133,7 +143,16 @@ export default function CompetePage() {
         status: 'completed',
         claimedBy: arrayUnion(user.uid),
       });
-      const userUpdate: Record<string, ReturnType<typeof increment>> = {
+
+      // Find self + opponent for the denormalized record + feed copy.
+      // Claim is one-step (each user claims independently) so we only
+      // touch the claimer's own duelRecord — "MY head-to-head vs them"
+      // from each user's POV. No cross-user writes needed.
+      const me = comp.participants.find((p) => p.userId === user.uid);
+      const opponent = comp.participants.find((p) => p.userId !== user.uid);
+      const outcomeField = r.won ? 'wins' : r.tie ? 'ties' : 'losses';
+
+      const userUpdate: Record<string, ReturnType<typeof increment> | Timestamp> = {
         totalXP: increment(r.xp),
         weeklyXP: increment(r.xp),
         monthlyXP: increment(r.xp),
@@ -141,7 +160,50 @@ export default function CompetePage() {
         seasonPassXP: increment(r.xp),
       };
       if (r.won) userUpdate.duelWins = increment(1);
+      if (opponent) {
+        userUpdate[`duelRecord.${opponent.userId}.${outcomeField}`] = increment(1);
+        userUpdate[`duelRecord.${opponent.userId}.lastDuelAt`] = Timestamp.now();
+      }
       await updateDocument('users', user.uid, userUpdate);
+
+      // Fan out a duel_ended feed item to claimer + each accepted friend.
+      // Same pattern as the legacy onLogCreated fan-out; firestore.rules
+      // allows any authenticated user to create feed items for anyone.
+      // If both participants claim, friends mutual to both will see two
+      // items (one framed from each side) — acceptable for v1.
+      if (me && opponent) {
+        const slug = comp.categorySlug || 'duel';
+        const days = comp.durationDays ? `${comp.durationDays}-day ` : '';
+        const scoreLine = `${me.score} to ${opponent.score}`;
+        const message = r.tie
+          ? `${me.username} tied with ${opponent.username} — ${scoreLine} in a ${days}${slug} duel.`
+          : r.won
+          ? `${me.username} beat ${opponent.username} — ${scoreLine} in a ${days}${slug} duel.`
+          : `${me.username} lost to ${opponent.username} — ${scoreLine} in a ${days}${slug} duel.`;
+        const feedItem = {
+          type: 'duel_ended',
+          actorId: user.uid,
+          actorUsername: me.username,
+          actorAvatar: me.avatarUrl,
+          categorySlug: slug,
+          message,
+          reactions: {},
+          createdAt: Timestamp.now(),
+        };
+        try {
+          await addDoc(collection(db, `feed/${user.uid}/items`), feedItem);
+          const friends = await getCollection<{ id: string }>(
+            `friendships/${user.uid}/friends`,
+            [fbWhere('status', '==', 'accepted')],
+          );
+          for (const f of friends) {
+            await addDoc(collection(db, `feed/${f.id}/items`), feedItem);
+          }
+        } catch (err) {
+          console.error('Duel feed fan-out failed:', err);
+        }
+      }
+
       addToast({ type: 'success', message: r.won ? `Victory! +${r.xp} XP, +${r.fragments} fragments` : `+${r.xp} XP, +${r.fragments} fragments` });
     } catch {
       addToast({ type: 'error', message: 'Could not claim — try again' });

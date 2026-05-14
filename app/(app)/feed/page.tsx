@@ -471,7 +471,8 @@ function glyphForType(item: FeedItem): React.ComponentType<{ size?: number; styl
   switch (item.type) {
     case 'levelup': return BCheerGlyph;
     case 'badge':
-    case 'duel_win':         return BTrophyGlyph;
+    case 'duel_win':
+    case 'duel_ended':       return BTrophyGlyph;
     case 'streak_milestone': return BFlameGlyph;
     case 'recap':            return BCheckGlyph;
     default:        return BFlameGlyph;
@@ -518,6 +519,8 @@ function LeadDispatch({
     ? 'BADGE UNLOCKED'
     : item.type === 'duel_win'
     ? 'DUEL WON'
+    : item.type === 'duel_ended'
+    ? 'DUEL ENDED'
     : 'DISPATCH';
   const originId = (item as unknown as { originId?: string }).originId;
   const commentCount = (item as unknown as { commentCount?: number }).commentCount ?? 0;

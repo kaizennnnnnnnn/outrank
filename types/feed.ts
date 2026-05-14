@@ -2,7 +2,17 @@ import { Timestamp } from 'firebase/firestore';
 
 // 'log' is legacy — kept so existing items render. New activity comes
 // through 'recap' (one feed item per published daily recap, not per log).
-export type FeedItemType = 'log' | 'recap' | 'badge' | 'levelup' | 'duel_win' | 'streak_milestone';
+// 'duel_win' is legacy — kept so existing items render. New duel results
+// come through 'duel_ended' which is written once per claim (not once per
+// win) and includes both participants' final scores in the message.
+export type FeedItemType =
+  | 'log'
+  | 'recap'
+  | 'badge'
+  | 'levelup'
+  | 'duel_win'
+  | 'duel_ended'
+  | 'streak_milestone';
 
 export type ReactionEmoji = '🔥' | '💪' | '👏' | '⚡' | '🤝';
 

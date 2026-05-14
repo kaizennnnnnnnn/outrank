@@ -63,6 +63,19 @@ export interface UserProfile {
   monthlyXP: number;
   settings: UserSettings;
   integrations?: UserIntegrations;
+  /** Per-opponent head-to-head record, updated when the owner claims an
+   *  ended duel. Stores the owner's perspective only — wins counts this
+   *  user's wins against `{opponentUserId}`. Absent on accounts that
+   *  haven't claimed a duel yet. Used by the FriendCard "3W-2L" line and
+   *  the profile head-to-head stat. */
+  duelRecord?: Record<string, DuelRecordEntry>;
+}
+
+export interface DuelRecordEntry {
+  wins: number;
+  losses: number;
+  ties: number;
+  lastDuelAt: Timestamp;
 }
 
 export interface UsernameDoc {
