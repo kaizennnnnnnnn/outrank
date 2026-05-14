@@ -52,6 +52,7 @@ const tones: Record<string, Tone> = {
   weekly_recap:          { icon: <BCheckGlyph size={14} />,      color: '#fb923c', title: 'Weekly recap' },
   league_winner:         { icon: <BCrownGlyph size={14} />,      color: '#fde047', title: 'League winner' },
   friend_logged:         { icon: <BHeartGlyph size={14} />,      color: '#a78bfa', title: 'Friend activity',    to: '/feed' },
+  meal_reminder:         { icon: <BCheckGlyph size={14} />,      color: '#f97316', title: 'Meal reminder',       to: '/diet' },
 };
 
 const defaultTone: Tone = {

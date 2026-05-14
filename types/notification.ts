@@ -18,7 +18,8 @@ export type NotificationType =
   | 'tournament_completed'
   | 'weekly_recap'
   | 'league_winner'
-  | 'friend_logged';
+  | 'friend_logged'
+  | 'meal_reminder';
 
 export interface NotificationItem {
   id?: string;

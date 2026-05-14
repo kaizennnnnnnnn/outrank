@@ -6,11 +6,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { CalorieRing } from '@/components/diet/CalorieRing';
 import { AddMealSheet } from '@/components/diet/AddMealSheet';
+import { MealScheduleSheet } from '@/components/diet/MealScheduleSheet';
 import { subscribeMealsForDate, deleteMeal, summarizeDay } from '@/lib/diet';
 import { recommendCalories, guessActivityLevel, guessDietGoal } from '@/lib/dietCalculator';
 import type { MealEntry, MealType } from '@/types/diet';
 import { Masthead } from '@/components/editorial/Masthead';
-import { BPlusGlyph } from '@/components/editorial/BGlyphs';
+import { BPlusGlyph, BCalendarGlyph } from '@/components/editorial/BGlyphs';
 
 /**
  * Diet — editorial Direction B v2 conversion. "Today's Plate" front
@@ -49,6 +50,7 @@ export default function DietPage() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<MealEntry[]>([]);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   // viewDate drives which day's meals we render. Defaults to today;
   // arrow buttons step backward through history. Stored as a startOfDay
   // Date so re-subscribes only fire when the calendar day actually changes.
@@ -350,6 +352,32 @@ export default function DietPage() {
         </div>
       </div>
 
+      {/* Floating action cluster — primary "log a meal" plus a sibling
+          "schedule" button that opens the recurring-reminder sheet. The
+          schedule button sits to the left of the plus so the dominant
+          (log) action stays anchored bottom-right. Inverted treatment
+          (ink fill, paper glyph) so it reads as secondary. */}
+      <button
+        onClick={() => setScheduleOpen(true)}
+        className="fixed bottom-24 sm:bottom-8 right-[80px] z-30"
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          background: 'var(--b-paper)',
+          boxShadow: '0 6px 16px -6px rgba(0,0,0,0.35), 0 0 0 1px var(--b-ink)',
+          color: 'var(--b-ink)',
+          border: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+        }}
+        aria-label="Schedule meal reminders"
+      >
+        <BCalendarGlyph size={20} />
+      </button>
+
       {/* Floating add button — solid accent red, no orange gradient.
           A 1px ink ring keeps it on the editorial register, the soft
           shadow grounds it without the previous orange glow. */}
@@ -379,6 +407,12 @@ export default function DietPage() {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         onLogged={() => { /* live subscription updates the list */ }}
+      />
+
+      <MealScheduleSheet
+        uid={user.uid}
+        open={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
       />
     </div>
   );

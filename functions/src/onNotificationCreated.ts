@@ -145,6 +145,8 @@ function getNotificationLink(type: string, relatedId?: string): string {
       return '/friends-league';
     case 'pillar_reminder':
       return '/dashboard';
+    case 'meal_reminder':
+      return '/diet';
     default:
       return '/notifications';
   }
@@ -178,6 +180,11 @@ function categoryFor(type: string): string | null {
     case 'friends_league_settled':
       return 'leagueUpdates';
     case 'pillar_reminder':
+    case 'meal_reminder':
+      // Meal reminders share the pillarReminders preference because
+      // they're conceptually the same kind of daily nag ("log this
+      // regular thing"). If users want them separated, add a dedicated
+      // mealReminders key later.
       return 'pillarReminders';
     case 'leaderboard_overtaken':
       return 'leaderboardChanges';

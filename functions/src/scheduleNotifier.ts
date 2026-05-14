@@ -75,29 +75,39 @@ export const scheduleNotifier = functions.pubsub
         continue;
       }
 
-      // Collect all entries for this hour that haven't fired today, and
-      // send ONE consolidated notification covering all of them. Marking
-      // each entry's lastFiredDateKey is still per-entry so the
-      // idempotency guarantee holds even if a future fire moves an entry
-      // to a different hour mid-day.
-      const dueEntries: { name: string; doc: typeof entriesSnap.docs[number] }[] = [];
+      // Split entries into habits vs meals. We fire one consolidated
+      // habit reminder + one meal reminder per meal type at this hour,
+      // because "Time for water and dinner" reads weirdly. Each entry
+      // gets its own idempotency stamp so they stay independent.
+      const dueHabits: { name: string; doc: typeof entriesSnap.docs[number] }[] = [];
+      const dueMealsByType: Record<string, { doc: typeof entriesSnap.docs[number] }[]> = {};
       for (const entryDoc of entriesSnap.docs) {
         const entry = entryDoc.data();
         if (entry.lastFiredDateKey === local.dateKey) continue;
-        dueEntries.push({
-          name: entry.habitName || 'your habit',
-          doc: entryDoc,
-        });
+        if (entry.kind === 'meal' && typeof entry.mealType === 'string') {
+          const bucket = dueMealsByType[entry.mealType] || [];
+          bucket.push({ doc: entryDoc });
+          dueMealsByType[entry.mealType] = bucket;
+        } else {
+          dueHabits.push({
+            name: entry.habitName || 'your habit',
+            doc: entryDoc,
+          });
+        }
       }
 
-      if (dueEntries.length === 0) continue;
+      const allDueDocs = [
+        ...dueHabits.map((h) => h.doc),
+        ...Object.values(dueMealsByType).flat().map((m) => m.doc),
+      ];
+      if (allDueDocs.length === 0) continue;
 
       // Stamp idempotency keys first so the digest can fail without
       // double-firing on the next minute's cron.
       try {
         const stampBatch = db.batch();
-        for (const { doc } of dueEntries) {
-          stampBatch.update(doc.ref, { lastFiredDateKey: local.dateKey });
+        for (const d of allDueDocs) {
+          stampBatch.update(d.ref, { lastFiredDateKey: local.dateKey });
         }
         await stampBatch.commit();
       } catch (err) {
@@ -105,31 +115,55 @@ export const scheduleNotifier = functions.pubsub
         continue;
       }
 
-      // Compose one message. Singular for one habit, name-list for two
-      // or three, count + first three for more.
-      const names = dueEntries.map((e) => e.name);
-      let message: string;
-      if (names.length === 1) {
-        message = `Time for ${names[0]} — let's go.`;
-      } else if (names.length <= 3) {
-        message = `Time for ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}.`;
-      } else {
-        const head = names.slice(0, 3).join(', ');
-        message = `Time for ${names.length} habits — ${head} and ${names.length - 3} more.`;
+      // Habit message — singular / list / count, same as before.
+      if (dueHabits.length > 0) {
+        const names = dueHabits.map((e) => e.name);
+        let habitMessage: string;
+        if (names.length === 1) {
+          habitMessage = `Time for ${names[0]} — let's go.`;
+        } else if (names.length <= 3) {
+          habitMessage = `Time for ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}.`;
+        } else {
+          const head = names.slice(0, 3).join(', ');
+          habitMessage = `Time for ${names.length} habits — ${head} and ${names.length - 3} more.`;
+        }
+        try {
+          await db.collection(`notifications/${userId}/items`).add({
+            type: 'schedule_reminder',
+            message: habitMessage,
+            isRead: false,
+            relatedId: '',
+            actorId: '',
+            actorAvatar: '',
+            createdAt: admin.firestore.Timestamp.now(),
+          });
+        } catch (err) {
+          console.error(`fire habit notify failed for ${userId}`, err);
+        }
       }
 
-      try {
-        await db.collection(`notifications/${userId}/items`).add({
-          type: 'schedule_reminder',
-          message,
-          isRead: false,
-          relatedId: '',
-          actorId: '',
-          actorAvatar: '',
-          createdAt: admin.firestore.Timestamp.now(),
-        });
-      } catch (err) {
-        console.error(`fire schedule notify failed for ${userId}`, err);
+      // Meal messages — one per mealType, deep-links to /diet.
+      const MEAL_COPY: Record<string, string> = {
+        breakfast: 'Breakfast time — log it before it slips.',
+        lunch: "Lunch — what's on the plate?",
+        snack: 'Snack time — keep the macros honest.',
+        dinner: 'Dinner — log it when you finish.',
+      };
+      for (const mealType of Object.keys(dueMealsByType)) {
+        const message = MEAL_COPY[mealType] || `${mealType} — log it when you finish.`;
+        try {
+          await db.collection(`notifications/${userId}/items`).add({
+            type: 'meal_reminder',
+            message,
+            isRead: false,
+            relatedId: mealType,
+            actorId: '',
+            actorAvatar: '',
+            createdAt: admin.firestore.Timestamp.now(),
+          });
+        } catch (err) {
+          console.error(`fire meal notify failed for ${userId}`, err);
+        }
       }
     }
   });

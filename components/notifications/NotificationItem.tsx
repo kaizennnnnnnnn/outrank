@@ -35,6 +35,7 @@ const typeIconMap: Record<string, ReactNode> = {
   weekly_recap:          <ChartBarIcon size={16} />,
   league_winner:         <CrownIcon size={16} />,
   friend_logged:         <ClockIcon size={16} />,
+  meal_reminder:         <ClockIcon size={16} />,
   admin_announcement:    <SparklesIcon size={16} />,
 };
 
