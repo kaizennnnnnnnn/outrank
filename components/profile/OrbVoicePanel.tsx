@@ -449,43 +449,55 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
     error: 'TRY AGAIN',
   };
 
+  const dotAnimClass =
+    voiceState === 'speaking'
+      ? 'talk-dot-speaking'
+      : voiceState === 'listening'
+        ? 'talk-dot-listening'
+        : voiceState === 'connecting'
+          ? 'talk-dot-connecting'
+          : '';
+
   return (
     <div style={{ marginTop: 16, textAlign: 'left' }}>
-      {/* Talk button + status + budget chip — sits centered below the
-          orb's primary action row. */}
+      {/* Talk button centered with status/budget chips on a smaller row
+          below. The button breathes while idle to read as the primary
+          call-to-action; live states animate the dot, not the button. */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          justifyContent: 'space-between',
-          marginBottom: 12,
-          flexWrap: 'wrap',
+          justifyContent: 'center',
+          marginBottom: 8,
         }}
       >
         <button
           onClick={() => (voiceActive ? void stopVoice() : void startVoice())}
           disabled={voiceState === 'connecting'}
-          className="font-body"
+          className={`font-body ${voiceState === 'idle' ? 'talk-btn-idle' : ''}`}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 8,
-            padding: '10px 16px',
+            gap: 10,
+            padding: '12px 24px',
             background: voiceActive ? 'var(--b-accent)' : 'transparent',
             color: voiceActive ? 'var(--b-paper)' : 'var(--b-ink)',
             border: `1px solid ${voiceActive ? 'var(--b-accent)' : 'var(--b-ink)'}`,
             fontWeight: 700,
-            fontSize: 11,
-            letterSpacing: '0.14em',
+            fontSize: 12,
+            letterSpacing: '0.18em',
             cursor: voiceState === 'connecting' ? 'wait' : 'pointer',
             fontFamily: 'var(--font-inter)',
+            minWidth: 200,
+            justifyContent: 'center',
+            transformOrigin: 'center',
+            transition: 'background 180ms ease, color 180ms ease, border-color 180ms ease',
           }}
         >
           <span
+            className={dotAnimClass}
             style={{
-              width: 8,
-              height: 8,
+              width: 9,
+              height: 9,
               borderRadius: '50%',
               background:
                 voiceState === 'speaking' || voiceState === 'listening'
@@ -497,11 +509,25 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
                 voiceState === 'idle' || voiceState === 'error'
                   ? '1px solid var(--b-ink-60)'
                   : 'none',
+              flexShrink: 0,
             }}
           />
           {voiceLabel[voiceState]}
         </button>
+      </div>
 
+      {/* Sub-row: live status + daily budget. Centered and quiet. */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 14,
+          flexWrap: 'wrap',
+          marginBottom: 12,
+          minHeight: 14,
+        }}
+      >
         {voiceActive && (
           <span
             className="spread"
@@ -527,7 +553,6 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
                   : usage.remainingSeconds < 15
                     ? 'var(--b-ink)'
                     : 'var(--b-ink-60)',
-              marginLeft: 'auto',
               fontVariantNumeric: 'tabular-nums',
             }}
           >

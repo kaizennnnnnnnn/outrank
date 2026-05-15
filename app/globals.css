@@ -409,6 +409,27 @@ body {
   50%      { opacity: 0.3; transform: scale(0.7); }
 }
 
+/* Orb voice TALK button — ambient breathing while idle so the button
+   reads as the primary call-to-action without a flashy accent fill.
+   Live state animates only the inner dot (kept off the button itself
+   so the click target doesn't twitch under the user's finger). */
+@keyframes talk-idle-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.035); }
+}
+@keyframes talk-dot-active {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.75); }
+}
+@keyframes talk-dot-speaking {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.5); }
+}
+.talk-btn-idle { animation: talk-idle-breathe 2.4s ease-in-out infinite; }
+.talk-dot-connecting { animation: talk-dot-active 0.7s ease-in-out infinite; }
+.talk-dot-listening  { animation: talk-dot-active 1.4s ease-in-out infinite; }
+.talk-dot-speaking   { animation: talk-dot-speaking 0.7s ease-in-out infinite; }
+
 /* Soul Orb light-theme backdrop. The orb is a particle system designed
    to glow against empty dark space; on cream paper its outer glow and
    white-ish core stops blend into the page and the orb reads washed
