@@ -88,10 +88,6 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
   const capTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  // DOM-driven readouts so we can see audio activity without a React
-  // re-render on every animation frame. Removed before final ship.
-  const debugLevelRef = useRef<HTMLSpanElement>(null);
-  const debugBarRef = useRef<HTMLDivElement>(null);
 
   // Keep transcript auto-scrolled to latest message.
   useEffect(() => {
@@ -159,16 +155,6 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
       // Light smoothing so the visual doesn't strobe between frames.
       // 0.5 mix keeps responsiveness while killing single-frame spikes.
       audioLevelRef.current = audioLevelRef.current * 0.5 + boosted * 0.5;
-      // Live readouts so we can diagnose whether the SDK is producing
-      // amplitude at all. Updated via DOM ref to avoid re-rendering
-      // the whole panel 60x per second.
-      if (debugLevelRef.current) {
-        debugLevelRef.current.textContent =
-          `in ${input.toFixed(2)} · out ${output.toFixed(2)} · lift ${audioLevelRef.current.toFixed(2)}`;
-      }
-      if (debugBarRef.current) {
-        debugBarRef.current.style.width = `${audioLevelRef.current * 100}%`;
-      }
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -562,53 +548,6 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
         >
           {voiceError}
         </p>
-      )}
-
-      {voiceActive && (
-        <div
-          style={{
-            border: '1px dashed var(--b-rule)',
-            padding: '6px 10px',
-            marginBottom: 10,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-          }}
-        >
-          <span
-            ref={debugLevelRef}
-            className="font-body"
-            style={{
-              fontSize: 10,
-              color: 'var(--b-ink-60)',
-              fontFamily:
-                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            in 0.00 · out 0.00 · lift 0.00
-          </span>
-          <div
-            style={{
-              width: '100%',
-              height: 4,
-              background: 'var(--b-rule)',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              ref={debugBarRef}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '0%',
-                background: 'var(--b-accent)',
-                transition: 'width 80ms linear',
-              }}
-            />
-          </div>
-        </div>
       )}
 
       {/* Transcript — only renders when there's content, otherwise the
