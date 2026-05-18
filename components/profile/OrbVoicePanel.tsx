@@ -472,7 +472,6 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
           justifyContent: 'center',
           gap: 10,
           marginBottom: 8,
-          flexWrap: 'wrap',
         }}
       >
         <button
@@ -480,10 +479,12 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
           disabled={voiceState === 'connecting'}
           className={`font-body ${voiceState === 'idle' ? 'talk-btn-idle' : ''}`}
           style={{
+            flex: 1,
+            maxWidth: 200,
             display: 'inline-flex',
             alignItems: 'center',
             gap: 10,
-            padding: '12px 24px',
+            padding: '12px 18px',
             background: voiceActive ? 'var(--b-accent)' : 'transparent',
             color: voiceActive ? 'var(--b-paper)' : 'var(--b-ink)',
             border: `1px solid ${voiceActive ? 'var(--b-accent)' : 'var(--b-ink)'}`,
@@ -492,7 +493,6 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
             letterSpacing: '0.18em',
             cursor: voiceState === 'connecting' ? 'wait' : 'pointer',
             fontFamily: 'var(--font-inter)',
-            minWidth: 160,
             justifyContent: 'center',
             transformOrigin: 'center',
             transition: 'background 180ms ease, color 180ms ease, border-color 180ms ease',
@@ -532,10 +532,12 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
           }}
           className="font-body"
           style={{
+            flex: 1,
+            maxWidth: 200,
             display: 'inline-flex',
             alignItems: 'center',
             gap: 10,
-            padding: '12px 24px',
+            padding: '12px 18px',
             background: 'transparent',
             color: 'var(--b-ink)',
             border: '1px solid var(--b-ink)',
@@ -544,7 +546,6 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
             letterSpacing: '0.18em',
             cursor: 'pointer',
             fontFamily: 'var(--font-inter)',
-            minWidth: 160,
             justifyContent: 'center',
             transition: 'background 180ms ease, color 180ms ease',
           }}
