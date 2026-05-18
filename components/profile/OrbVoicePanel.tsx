@@ -88,6 +88,7 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
   const capTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartRef = useRef<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Keep transcript auto-scrolled to latest message.
   useEffect(() => {
@@ -460,14 +461,18 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
 
   return (
     <div style={{ marginTop: 16, textAlign: 'left' }}>
-      {/* Talk button centered with status/budget chips on a smaller row
-          below. The button breathes while idle to read as the primary
-          call-to-action; live states animate the dot, not the button. */}
+      {/* Talk + Chat — two equal options centered side-by-side. Talk
+          breathes while idle to read as the primary call-to-action;
+          Chat is a quieter sibling that drops focus into the typed
+          input below. Live voice states animate the dot, not the
+          button, so the click target stays still under the thumb. */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'center',
+          gap: 10,
           marginBottom: 8,
+          flexWrap: 'wrap',
         }}
       >
         <button
@@ -487,7 +492,7 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
             letterSpacing: '0.18em',
             cursor: voiceState === 'connecting' ? 'wait' : 'pointer',
             fontFamily: 'var(--font-inter)',
-            minWidth: 200,
+            minWidth: 160,
             justifyContent: 'center',
             transformOrigin: 'center',
             transition: 'background 180ms ease, color 180ms ease, border-color 180ms ease',
@@ -513,6 +518,52 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
             }}
           />
           {voiceLabel[voiceState]}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            // Scroll the typed input into view in case it's offscreen,
+            // then drop focus into it so the user can start typing.
+            const el = inputRef.current;
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.focus({ preventScroll: true });
+          }}
+          className="font-body"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 24px',
+            background: 'transparent',
+            color: 'var(--b-ink)',
+            border: '1px solid var(--b-ink)',
+            fontWeight: 700,
+            fontSize: 12,
+            letterSpacing: '0.18em',
+            cursor: 'pointer',
+            fontFamily: 'var(--font-inter)',
+            minWidth: 160,
+            justifyContent: 'center',
+            transition: 'background 180ms ease, color 180ms ease',
+          }}
+        >
+          <svg
+            width={14}
+            height={14}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+            aria-hidden="true"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          CHAT
         </button>
       </div>
 
@@ -637,6 +688,7 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
 
       <div style={{ display: 'flex', gap: 6 }}>
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
