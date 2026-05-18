@@ -288,26 +288,12 @@ export default function FriendsPage() {
             )}
           </div>
 
-          {/* Friends League + Pacts shortcut rows */}
+          {/* Friends League + Pacts + Tournaments shortcut buttons */}
           {friendCount > 0 && (
             <div style={{ marginTop: 18 }}>
-              <Link
-                href="/friends-league"
-                style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'space-between',
-                  padding: '10px 0',
-                  borderBottom: '1px solid var(--b-rule)',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                }}
-              >
+              <Link href="/friends-league" className="b-shortcut-btn">
                 <div>
-                  <div
-                    className="spread"
-                    style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
-                  >
+                  <div className="spread" style={{ fontSize: 9, opacity: 0.7 }}>
                     Weekly
                   </div>
                   <div
@@ -316,32 +302,13 @@ export default function FriendsPage() {
                   >
                     Friends League
                   </div>
-                  <div
-                    className="font-body"
-                    style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
-                  >
+                  <div className="font-body" style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>
                     Top 3 split fragments
                   </div>
                 </div>
-                <span
-                  className="font-body"
-                  style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.08em' }}
-                >
-                  ENTER →
-                </span>
+                <span className="font-body b-shortcut-chip">ENTER →</span>
               </Link>
-              <Link
-                href="/pacts"
-                style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'space-between',
-                  padding: '10px 0',
-                  borderBottom: '1px solid var(--b-rule)',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                }}
-              >
+              <Link href="/pacts" className="b-shortcut-btn">
                 <div>
                   <div
                     className="spread"
@@ -355,37 +322,15 @@ export default function FriendsPage() {
                   >
                     {activePacts.length} active
                   </div>
-                  <div
-                    className="font-body"
-                    style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
-                  >
+                  <div className="font-body" style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>
                     Both win or both lose
                   </div>
                 </div>
-                <span
-                  className="font-body"
-                  style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.08em' }}
-                >
-                  ENTER →
-                </span>
+                <span className="font-body b-shortcut-chip">ENTER →</span>
               </Link>
-              <Link
-                href="/tournaments"
-                style={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  justifyContent: 'space-between',
-                  padding: '10px 0',
-                  borderBottom: '1px solid var(--b-rule)',
-                  textDecoration: 'none',
-                  color: 'inherit',
-                }}
-              >
+              <Link href="/tournaments" className="b-shortcut-btn">
                 <div>
-                  <div
-                    className="spread"
-                    style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
-                  >
+                  <div className="spread" style={{ fontSize: 9, opacity: 0.7 }}>
                     Bracket
                   </div>
                   <div
@@ -394,19 +339,11 @@ export default function FriendsPage() {
                   >
                     Tournaments
                   </div>
-                  <div
-                    className="font-body"
-                    style={{ fontSize: 10, color: 'var(--b-ink-60)', marginTop: 2 }}
-                  >
+                  <div className="font-body" style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>
                     4-player single elimination
                   </div>
                 </div>
-                <span
-                  className="font-body"
-                  style={{ fontSize: 10, color: 'var(--b-ink-60)', letterSpacing: '0.08em' }}
-                >
-                  ENTER →
-                </span>
+                <span className="font-body b-shortcut-chip">ENTER →</span>
               </Link>
             </div>
           )}

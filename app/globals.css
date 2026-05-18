@@ -430,6 +430,42 @@ body {
 .talk-dot-listening  { animation: talk-dot-active 1.4s ease-in-out infinite; }
 .talk-dot-speaking   { animation: talk-dot-speaking 0.7s ease-in-out infinite; }
 
+/* Editorial Direction B card-style shortcut buttons. Inverts the
+   paper/ink palette on hover so the row reads as a tappable card
+   instead of a divided list. Used on /friends for the Friends League /
+   Pacts / Tournaments shortcuts. */
+.b-shortcut-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--b-ink);
+  background: var(--b-paper);
+  color: var(--b-ink);
+  text-decoration: none;
+  margin-bottom: 10px;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.b-shortcut-btn:last-child { margin-bottom: 0; }
+.b-shortcut-btn:hover { background: var(--b-ink); color: var(--b-paper); }
+.b-shortcut-btn:active { transform: translateY(1px); }
+.b-shortcut-chip {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  padding: 8px 12px;
+  border: 1px solid currentColor;
+  background: transparent;
+  flex-shrink: 0;
+  white-space: nowrap;
+  transition: background 160ms ease, color 160ms ease;
+}
+.b-shortcut-btn:hover .b-shortcut-chip {
+  background: var(--b-paper);
+  color: var(--b-ink);
+}
+
 /* Soul Orb light-theme backdrop. The orb is a particle system designed
    to glow against empty dark space; on cream paper its outer glow and
    white-ish core stops blend into the page and the orb reads washed
