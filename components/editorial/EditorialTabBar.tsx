@@ -1,16 +1,9 @@
 'use client';
 
 /**
- * Editorial bottom tab bar. Same shape as the existing MobileNav (5
- * slots, orb-FAB-as-center) but typeset as a periodical:
- *   - serif italic for the active tab
- *   - sans body for inactive
- *   - tiny accent dot under the active tab
- *
- * Routes match the existing MobileNav so deep links keep working. The
- * orb FAB still routes to /orb but the editorial design treats it as
- * a textual "Orb" tab rather than the raised pedestal — the visual
- * uniformity is part of the magazine grammar.
+ * Editorial bottom tab bar — 4 textual tabs. Mirrors MobileNav. The
+ * orb command center fuses into /dashboard now, so no dedicated Orb
+ * tab; Home is the entry.
  */
 
 import Link from 'next/link';
@@ -25,7 +18,6 @@ interface Tab {
 const TABS: Tab[] = [
   { href: '/dashboard', label: 'Home' },
   { href: '/friends',   label: 'Friends' },
-  { href: '/orb',       label: 'Orb' },
   { href: '/feed',      label: 'Feed' },
   { href: '/profile',   label: 'You' },
 ];

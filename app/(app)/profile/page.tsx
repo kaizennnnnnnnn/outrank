@@ -7,7 +7,9 @@ import { useHabits } from '@/hooks/useHabits';
 import { useFriends } from '@/hooks/useFriends';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SoulOrb } from '@/components/profile/SoulOrb';
-import { MAX_ORB_TIER } from '@/constants/orbTiers';
+import { OrbNickname } from '@/components/profile/OrbNickname';
+import { OrbHistory } from '@/components/profile/OrbHistory';
+import { MAX_ORB_TIER, getOrbTier } from '@/constants/orbTiers';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { TitleDisplay } from '@/components/profile/TitleDisplay';
 import { ProfileRecapCalendar } from '@/components/profile/ProfileRecapCalendar';
@@ -39,6 +41,7 @@ export default function ProfilePage() {
   const { friends } = useFriends();
 
   const [perDay, setPerDay] = useState<number[]>(Array(28).fill(0));
+  const [showOrbHistory, setShowOrbHistory] = useState(false);
 
   // Pull 28-day per-day log counts for the "FOUR WEEKS, IN INK" grid.
   useEffect(() => {
@@ -87,6 +90,16 @@ export default function ProfilePage() {
   const ownedBadges  = (user as unknown as { ownedBadges?: string[] }).ownedBadges?.length ?? 0;
   const orbIntensity = Math.min(100, userAny.awakening || 0);
   const weeklyXP     = userAny.weeklyXP ?? 0;
+  // Orb field-guide values — moved here from the deleted /orb page.
+  // Spec rows reflect the user's CURRENT tier so the ladder still
+  // feels like progression even though the canvas always renders at
+  // MAX_ORB_TIER.
+  const orbTier       = Math.min(MAX_ORB_TIER, Math.max(1, userAny.orbTier || 1));
+  const orbAscensions = userAny.orbAscensions ?? 0;
+  const orbCharges    = userAny.orbEvolutionCharges ?? 0;
+  const fragments     = userAny.fragments ?? 0;
+  const tierConfig    = getOrbTier(orbTier);
+  const nextAscendReward = 500 + orbAscensions * 250;
 
   // Member-since string from createdAt
   const createdAt = (user as unknown as { createdAt?: { toDate: () => Date } }).createdAt?.toDate?.();
@@ -216,6 +229,165 @@ export default function ProfilePage() {
             <StatRow label="Badges earned"    value={`${ownedBadges} / 40`} last />
           </div>
 
+          {/* Soul Orb — field-guide details moved here from the deleted
+              /orb page. Tier card, spec table, ascension narrative,
+              nickname, history modal. The action surface (evolve /
+              ascend / awaken / voice) lives on /dashboard now. */}
+          <section style={{ marginTop: 28 }}>
+            <div className="spread" style={{ fontSize: 9, color: 'var(--b-ink-60)' }}>
+              Soul Orb · Field Guide
+            </div>
+            <div style={{ marginTop: 4, textAlign: 'center', paddingTop: 6 }}>
+              <div
+                className="spread"
+                style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+              >
+                Specimen · Tier {ROMAN[orbTier] ?? orbTier} of X
+              </div>
+              <h2
+                className="font-display"
+                style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, margin: '4px 0 0' }}
+              >
+                <em
+                  className={`tier-name-${orbTier}`}
+                  style={{ fontStyle: 'italic' }}
+                >
+                  {tierConfig.name}
+                </em>
+              </h2>
+              <p
+                className="font-body"
+                style={{
+                  fontSize: 12,
+                  color: 'var(--b-ink-60)',
+                  marginTop: 6,
+                  maxWidth: 280,
+                  marginInline: 'auto',
+                  lineHeight: 1.5,
+                }}
+              >
+                {TIER_FLAVOR[orbTier] ?? TIER_FLAVOR[10]}
+              </p>
+            </div>
+
+            <div
+              style={{
+                marginTop: 14,
+                borderTop: '1px solid var(--b-ink)',
+                borderBottom: '1px solid var(--b-ink)',
+              }}
+            >
+              <OrbSpecRow label="Awakening"        value={`${orbIntensity}%`} accent={orbIntensity >= 100} />
+              <OrbSpecRow label="Particles"        value={String(tierConfig.particles)} />
+              <OrbSpecRow label="Connection arcs"  value={`${tierConfig.maxArcs} max`} />
+              <OrbSpecRow label="Glow intensity"   value={tierConfig.glowIntensity.toFixed(1)} />
+              <OrbSpecRow
+                label="Charges available"
+                value={String(orbCharges).padStart(2, '0')}
+                accent={orbCharges > 0}
+              />
+              <OrbSpecRow
+                label="Ascensions"
+                value={String(orbAscensions).padStart(2, '0')}
+                last
+              />
+            </div>
+
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                textAlign: 'right',
+                fontFamily: 'var(--font-inter)',
+              }}
+            >
+              <span className="tabular">◆ {fragments.toLocaleString()}</span>{' '}
+              <span style={{ letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                fragments
+              </span>
+            </div>
+
+            {orbTier >= MAX_ORB_TIER && (
+              <div
+                style={{
+                  marginTop: 22,
+                  paddingTop: 14,
+                  borderTop: '1px solid var(--b-rule)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-accent)', marginBottom: 6 }}
+                >
+                  {orbAscensions === 0 ? 'Ladder complete' : `${ordinal(orbAscensions + 1)} ascension`}
+                </div>
+                <p
+                  className="font-body"
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--b-ink-60)',
+                    marginBottom: 6,
+                    lineHeight: 1.5,
+                    maxWidth: 320,
+                    marginInline: 'auto',
+                  }}
+                >
+                  Ascending resets the ladder to tier I — your level, cosmetics, and
+                  fragments stay. Each cycle awards more than the last.
+                </p>
+                <p
+                  className="font-mono tabular"
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--b-accent)',
+                    letterSpacing: '0.06em',
+                    marginBottom: 4,
+                  }}
+                >
+                  Next ascension · +{nextAscendReward} ◆
+                </p>
+                {orbAscensions > 0 && (
+                  <p
+                    className="font-body"
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--b-ink-40)',
+                      marginTop: 4,
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    You&apos;ve ascended {orbAscensions} time{orbAscensions === 1 ? '' : 's'} already.
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginTop: 22 }}>
+              <OrbNickname user={user} />
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
+              <button
+                onClick={() => setShowOrbHistory(true)}
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--b-ink-60)',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                View Orb history
+              </button>
+            </div>
+          </section>
+
           {/* 28-day "FOUR WEEKS, IN INK" grid */}
           <div style={{ marginTop: 22 }}>
             <div
@@ -282,6 +454,79 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <OrbHistory isOpen={showOrbHistory} onClose={() => setShowOrbHistory(false)} />
+    </div>
+  );
+}
+
+// ─── Orb field-guide helpers (moved from /orb) ──────────────────────
+
+const ROMAN: Record<number, string> = {
+  1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V',
+  6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X',
+};
+
+const TIER_FLAVOR: Record<number, string> = {
+  1:  'A faint coal — barely a flicker. The first stirring of habit.',
+  2:  'A small, steady flame. Practice catches.',
+  3:  'A roaring fire — heat enough to feel from across the room.',
+  4:  'A churning core of arcs and embers. The world bends, slightly.',
+  5:  'A burst of new light. Detonation in slow motion.',
+  6:  'Spiraling arms of cosmic dust, ordered into something with purpose.',
+  7:  'A cloud of stars compressed inward, holding shape against the void.',
+  8:  'A point so dense the rules quietly stop applying.',
+  9:  'The first thing — older than time, brighter than memory.',
+  10: 'Beyond category. The orb is the user; the user is the orb.',
+};
+
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function OrbSpecRow({
+  label,
+  value,
+  accent,
+  last,
+}: {
+  label:  string;
+  value:  string;
+  accent?: boolean;
+  last?:   boolean;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        padding: '10px 0',
+        borderBottom: last ? 'none' : '1px solid var(--b-rule)',
+        fontFamily: 'var(--font-inter)',
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12,
+          color: 'var(--b-ink-60)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className="font-mono tabular"
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: accent ? 'var(--b-accent)' : 'var(--b-ink)',
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 }

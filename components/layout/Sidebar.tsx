@@ -33,7 +33,6 @@ interface NavLink {
 const PRIMARY: NavLink[] = [
   { href: '/dashboard', label: 'Home' },
   { href: '/friends',   label: 'Friends' },
-  { href: '/orb',       label: 'Orb' },
   { href: '/feed',      label: 'Feed' },
   { href: '/profile',   label: 'You' },
 ];

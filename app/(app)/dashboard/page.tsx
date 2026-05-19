@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,8 @@ import { useFriends } from '@/hooks/useFriends';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { QuickLogModal } from '@/components/habits/QuickLogModal';
 import { SoulOrb } from '@/components/profile/SoulOrb';
+import { OrbVoicePanel } from '@/components/profile/OrbVoicePanel';
+import { OrbLootReveal } from '@/components/profile/OrbLootReveal';
 import { MAX_ORB_TIER } from '@/constants/orbTiers';
 import { getLeague } from '@/constants/seasons';
 import { getLevelForXP, getXPProgress } from '@/constants/levels';
@@ -20,6 +22,8 @@ import { PILLARS, isPillarSlug, type Pillar } from '@/constants/pillars';
 import { Masthead } from '@/components/editorial/Masthead';
 import { getCategoryIconComponent } from '@/components/ui/CategoryIcons';
 import { resolveSlug } from '@/constants/categories';
+import { rollOrbLoot, type OrbLoot } from '@/lib/orbLoot';
+import { useUIStore } from '@/store/uiStore';
 import {
   BCheckGlyph,
   BArrowRightGlyph,
@@ -78,9 +82,39 @@ export default function DashboardPage() {
   // around. friends.length is the source of truth.
   const { friends } = useFriends();
   const router = useRouter();
+  const addToast = useUIStore((s) => s.addToast);
 
   const [logModal, setLogModal] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState<UserHabit | null>(null);
+
+  // Orb command state — folded in from the deleted /orb page. Local
+  // copies sync from the useAuth snapshot so the optimistic write +
+  // server confirm don't double-apply (per CLAUDE.md gotcha).
+  const userAny = user as unknown as Record<string, number> | null;
+  const realTier = userAny?.orbTier || 1;
+  const evolveCharges = userAny?.orbEvolutionCharges || 0;
+  const storedAwakening = Math.min(100, userAny?.awakening || 0);
+
+  const [localTier, setLocalTier] = useState(realTier);
+  const [localCharges, setLocalCharges] = useState(evolveCharges);
+  const [localAwakening, setLocalAwakening] = useState(storedAwakening);
+  const [lootReveal, setLootReveal] = useState<OrbLoot | null>(null);
+
+  // SoulOrb hands us its evolve/ascend/full-awaken triggers via these
+  // refs so the external action row can fire each animation. Without
+  // them, clicking a button skips straight to the Firestore write
+  // with no animation.
+  const evolveTriggerRef     = useRef<(() => void) | null>(null);
+  const ascendTriggerRef     = useRef<(() => void) | null>(null);
+  const fullAwakenTriggerRef = useRef<(() => void) | null>(null);
+  // Shared with OrbVoicePanel — voice writes ~60Hz amplitude, the
+  // SoulOrb canvas reads each render frame and pulses in sync.
+  const audioLevelRef = useRef(0);
+  const voiceActiveRef = useRef(false);
+
+  useEffect(() => { setLocalTier(realTier); }, [realTier]);
+  useEffect(() => { setLocalCharges(evolveCharges); }, [evolveCharges]);
+  useEffect(() => { setLocalAwakening(storedAwakening); }, [storedAwakening]);
 
   // Safety net: if Firebase user exists but no Firestore profile after 3s,
   // the user likely signed in before profile creation was fixed — redirect to onboarding
@@ -105,6 +139,100 @@ export default function DashboardPage() {
   const level = getLevelForXP(user.totalXP);
   const xpProgress = getXPProgress(user.totalXP);
   const league = getLeague(user.weeklyXP || 0);
+
+  // Orb action handlers — folded in from /orb. SoulOrb's evolve
+  // animation runs 2.5s end-to-end; the loot modal lands ~3s after
+  // the spin starts so it follows the post-explosion beat.
+  const handleEvolve = async () => {
+    if (localCharges <= 0) return;
+    const ownedCosmetics = (userAny as unknown as { ownedCosmetics?: string[] } | null)?.ownedCosmetics ?? [];
+    const loot = rollOrbLoot(ownedCosmetics);
+    const startedAt = Date.now();
+    const POST_WRITE_DELAY_MS = 850;
+    try {
+      const { updateDocument } = await import('@/lib/firestore');
+      const { increment, arrayUnion } = await import('firebase/firestore');
+      const updates: Record<string, unknown> = {
+        orbEvolutionCharges: increment(-1),
+      };
+      if (localTier < 10) updates.orbTier = localTier + 1;
+      if (loot.fragments) updates.fragments = increment(loot.fragments);
+      if (loot.xp) {
+        updates.totalXP      = increment(loot.xp);
+        updates.weeklyXP     = increment(loot.xp);
+        updates.monthlyXP    = increment(loot.xp);
+        updates.seasonPassXP = increment(loot.xp);
+      }
+      if (loot.awakening) {
+        const next = Math.min(100, localAwakening + loot.awakening);
+        updates.awakening = next;
+      }
+      if (loot.cosmeticId) {
+        updates.ownedCosmetics = arrayUnion(loot.cosmeticId);
+      }
+      await updateDocument('users', user.uid, updates);
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, POST_WRITE_DELAY_MS - elapsed);
+      window.setTimeout(() => setLootReveal(loot), remaining);
+    } catch {
+      addToast({ type: 'error', message: 'Evolution failed — try again' });
+    }
+  };
+
+  // Ascend only at MAX tier. Resets orbTier to 1, grants ascension
+  // cosmetics on first ascension, pays out increasing fragments per
+  // cycle (500 / 750 / 1000 / …).
+  const handleAscend = async () => {
+    if (localTier < MAX_ORB_TIER) return;
+    const ascensions = ((user as unknown as { orbAscensions?: number }).orbAscensions ?? 0) + 1;
+    const fragmentReward = 500 + (ascensions - 1) * 250;
+    try {
+      const { updateDocument } = await import('@/lib/firestore');
+      const { increment, arrayUnion } = await import('firebase/firestore');
+      await updateDocument('users', user.uid, {
+        orbTier: 1,
+        orbAscensions: increment(1),
+        fragments: increment(fragmentReward),
+        ownedCosmetics: arrayUnion('frame_ascension', 'name_ascendant'),
+      });
+      addToast({
+        type: 'success',
+        message: ascensions === 1
+          ? `First ascension. +${fragmentReward} fragments + Ascension wreath unlocked.`
+          : `Ascension ${ascensions}. +${fragmentReward} fragments. The cycle begins again.`,
+      });
+    } catch {
+      addToast({ type: 'error', message: 'Ascension failed' });
+    }
+  };
+
+  const handleFullAwaken = async () => {
+    if (localAwakening < 100) return;
+    const userRaw = user as unknown as Record<string, number>;
+    const firstTime = (userRaw.fullAwakenings || 0) === 0;
+    try {
+      const { updateDocument } = await import('@/lib/firestore');
+      const { increment, arrayUnion } = await import('firebase/firestore');
+      await updateDocument('users', user.uid, {
+        awakening: 0,
+        fullAwakenings: increment(1),
+        awakeningBonus: increment(0.05),
+        fragments: increment(2000),
+        totalXP: increment(1000),
+        weeklyXP: increment(1000),
+        monthlyXP: increment(1000),
+        seasonPassXP: increment(1000),
+        orbEvolutionCharges: increment(2),
+        ...(firstTime
+          ? {
+              ownedCosmetics: arrayUnion('frame_awakened', 'name_awakened'),
+              equippedFrame: 'frame_awakened',
+              equippedNameEffect: 'name_awakened',
+            }
+          : {}),
+      });
+    } catch { /* silent */ }
+  };
 
   // Split user's habits into the 5 pillars vs personal/custom.
   const pillarHabitsBySlug = new Map<string, UserHabit>();
@@ -199,90 +327,235 @@ export default function DashboardPage() {
               : ' Day complete.'}
           </p>
 
-          {/* Hero — Level / XP / SoulOrb */}
+          {/* Orb hero — folded in from the deleted /orb page. The big
+              interactive canvas is now the dashboard's centerpiece;
+              evolve/ascend/awaken actions sit directly below it, then
+              the TALK + CHAT voice panel. Field-guide details (tier
+              card, specs, ascension narrative, nickname, history) live
+              on /profile so the home page stays focused on action. */}
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 100px',
-              gap: 14,
               paddingTop: 14,
               borderTop: '1px solid var(--b-ink)',
-              alignItems: 'start',
+              textAlign: 'center',
             }}
           >
-            <div>
-              <div
-                className="spread"
-                style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
-              >
-                Level
-              </div>
-              <div
-                className="font-display tabular shine-light shine-alt-offset"
-                style={{ fontSize: 64, fontWeight: 500, lineHeight: 0.95, marginTop: 2 }}
-              >
-                {level.level}
-              </div>
-              <div
-                className="font-display"
-                style={{
-                  fontSize: 14,
-                  fontStyle: 'italic',
-                  color: 'var(--b-ink-60)',
-                  marginTop: -2,
-                }}
-              >
-                {level.title}
-              </div>
-              <div
-                style={{
-                  marginTop: 14,
-                  height: 2,
-                  background: 'var(--b-rule)',
-                  position: 'relative',
-                }}
-              >
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0' }}>
+              <SoulOrb
+                intensity={localAwakening}
+                tier={MAX_ORB_TIER}
+                size={210}
+                onEvolve={localCharges > 0 ? handleEvolve : undefined}
+                onAscend={localTier >= MAX_ORB_TIER ? handleAscend : undefined}
+                onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
+                baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
+                pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+                ringColorId={(user as unknown as Record<string, string>).orbRingColor}
+                suppressInternalActions
+                registerEvolveTrigger={(t) => { evolveTriggerRef.current = t; }}
+                registerAscendTrigger={(t) => { ascendTriggerRef.current = t; }}
+                registerFullAwakenTrigger={(t) => { fullAwakenTriggerRef.current = t; }}
+                audioLevelRef={audioLevelRef}
+                voiceActiveRef={voiceActiveRef}
+              />
+            </div>
+
+            {(() => {
+              const fullAwakenable = localAwakening >= 100;
+              const ascendable     = localTier >= MAX_ORB_TIER && !fullAwakenable;
+              const showThird      = fullAwakenable || ascendable;
+              const ascensions     = (user as unknown as { orbAscensions?: number }).orbAscensions ?? 0;
+              const nextAscendReward = 500 + ascensions * 250;
+              return (
                 <div
                   style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: `${Math.round((xpProgress.current / xpProgress.needed) * 100)}%`,
-                    background: 'var(--b-ink)',
+                    display: 'grid',
+                    gridTemplateColumns: showThird ? '1fr 1fr 1fr' : '1fr 1fr',
+                    gap: 8,
+                    textAlign: 'left',
                   }}
-                />
-              </div>
-              <div
-                className="tabular"
-                style={{
-                  marginTop: 4,
-                  fontSize: 10,
-                  color: 'var(--b-ink-60)',
-                  fontFamily: 'var(--font-inter)',
-                }}
+                >
+                  <button
+                    onClick={() => {
+                      if (localCharges <= 0) return;
+                      if (evolveTriggerRef.current) {
+                        evolveTriggerRef.current();
+                      } else {
+                        void handleEvolve();
+                      }
+                    }}
+                    disabled={localCharges <= 0}
+                    className="font-body"
+                    style={{
+                      height: 48,
+                      border: '1px solid var(--b-ink)',
+                      background: localCharges > 0 ? 'var(--b-ink)' : 'var(--b-paper-2)',
+                      color: localCharges > 0 ? 'var(--b-paper)' : 'var(--b-ink-40)',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      letterSpacing: '0.08em',
+                      cursor: localCharges > 0 ? 'pointer' : 'not-allowed',
+                      fontFamily: 'var(--font-inter)',
+                    }}
+                  >
+                    EVOLVE — {localCharges} ▶
+                  </button>
+                  <Link
+                    href="/shop"
+                    className="font-body"
+                    style={{
+                      height: 48,
+                      border: '1px solid var(--b-ink)',
+                      background: 'transparent',
+                      color: 'var(--b-ink)',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      letterSpacing: '0.08em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      textDecoration: 'none',
+                      fontFamily: 'var(--font-inter)',
+                    }}
+                  >
+                    CUSTOMIZE
+                  </Link>
+                  {fullAwakenable && (
+                    <button
+                      onClick={() => {
+                        if (fullAwakenTriggerRef.current) {
+                          fullAwakenTriggerRef.current();
+                        } else {
+                          void handleFullAwaken();
+                        }
+                      }}
+                      className="font-body"
+                      style={{
+                        height: 48,
+                        border: '1px solid var(--b-accent)',
+                        background: 'var(--b-accent)',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        letterSpacing: '0.08em',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-inter)',
+                      }}
+                      aria-label="Full Awaken — permanent XP bonus"
+                    >
+                      FULL AWAKEN ✦
+                    </button>
+                  )}
+                  {ascendable && (
+                    <button
+                      onClick={() => {
+                        if (ascendTriggerRef.current) {
+                          ascendTriggerRef.current();
+                        } else {
+                          void handleAscend();
+                        }
+                      }}
+                      className="font-body"
+                      style={{
+                        height: 48,
+                        border: '1px solid var(--b-accent)',
+                        background: 'transparent',
+                        color: 'var(--b-accent)',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        letterSpacing: '0.08em',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-inter)',
+                      }}
+                      aria-label={`Ascend for +${nextAscendReward} fragments`}
+                    >
+                      ASCEND ◆
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
+            <OrbVoicePanel audioLevelRef={audioLevelRef} voiceActiveRef={voiceActiveRef} />
+
+            <p
+              className="font-body"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                textAlign: 'center',
+                marginTop: 10,
+                lineHeight: 1.6,
+              }}
+            >
+              {localCharges === 0 && localAwakening < 100 ? (
+                <>Log <b style={{ color: 'var(--b-accent)' }}>every pillar today</b> to earn an evolution charge.</>
+              ) : localAwakening >= 100 ? (
+                <>
+                  <b style={{ color: 'var(--b-accent)' }}>100% awakening reached.</b>{' '}
+                  Tap the orb to fully awaken — permanent XP bonus + exclusive frame.
+                </>
+              ) : (
+                <>Each evolution rolls a drop. Higher rarities are rare; the math is on your side over time.</>
+              )}
+            </p>
+          </div>
+
+          {/* Level + XP strip — full-width slim row below the orb hero. */}
+          <div
+            style={{
+              marginTop: 18,
+              paddingTop: 14,
+              borderTop: '1px solid var(--b-rule)',
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 14,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+              <span
+                className="font-display tabular shine-light shine-alt-offset"
+                style={{ fontSize: 38, fontWeight: 500, lineHeight: 0.95 }}
               >
-                {xpProgress.current.toLocaleString()} / {xpProgress.needed.toLocaleString()} XP
-              </div>
+                {level.level}
+              </span>
+              <span
+                className="font-display"
+                style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--b-ink-60)' }}
+              >
+                {level.title}
+              </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Link href="/profile">
-                <SoulOrb
-                  intensity={Math.min(100, Math.round(
-                    Math.min(user.totalXP / 500, 40) +
-                    Math.min(habits.reduce((s, h) => s + h.currentStreak, 0) / 10, 30) +
-                    Math.min(habits.reduce((s, h) => s + h.totalLogs, 0) / 20, 20) +
-                    Math.min(level.level / 10, 10),
-                  ))}
-                  tier={MAX_ORB_TIER}
-                  size={88}
-                  hideLabel
-                  baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
-                  pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
-                  ringColorId={(user as unknown as Record<string, string>).orbRingColor}
-                />
-              </Link>
-            </div>
+            <span
+              className="tabular"
+              style={{
+                fontSize: 10,
+                color: 'var(--b-ink-60)',
+                fontFamily: 'var(--font-inter)',
+              }}
+            >
+              {xpProgress.current.toLocaleString()} / {xpProgress.needed.toLocaleString()} XP
+            </span>
+          </div>
+          <div
+            style={{
+              marginTop: 6,
+              height: 2,
+              background: 'var(--b-rule)',
+              position: 'relative',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: `${Math.round((xpProgress.current / xpProgress.needed) * 100)}%`,
+                background: 'var(--b-ink)',
+              }}
+            />
           </div>
 
           {/* 3-stat strip */}
@@ -773,6 +1046,10 @@ export default function DashboardPage() {
         habit={selectedHabit}
         userId={user.uid}
       />
+
+      {/* Evolution loot — fires after a successful evolve, ~3s after
+          the spin starts so it follows the explosion beat. */}
+      <OrbLootReveal loot={lootReveal} onClose={() => setLootReveal(null)} />
     </div>
   );
 }
