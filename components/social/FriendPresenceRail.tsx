@@ -43,7 +43,7 @@ interface FriendPresenceRailProps {
 }
 
 const MAX_TILES = 5;
-const TILE_WIDTH = 124;
+const TILE_WIDTH = 78;
 
 export function FriendPresenceRail({ viewerId, viewerWeeklyXP, viewerDuelRecord }: FriendPresenceRailProps) {
   const { friends, loading } = useFriends();
@@ -68,12 +68,12 @@ export function FriendPresenceRail({ viewerId, viewerWeeklyXP, viewerDuelRecord 
     return () => { cancelled = true; };
   }, [friends, loading]);
 
-  const sectionStyle: React.CSSProperties = { marginTop: 18 };
+  const sectionStyle: React.CSSProperties = { marginTop: 14 };
   const headerRow: React.CSSProperties = {
     display: 'flex',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 5,
   };
 
   if (loading || !resolved) {
@@ -194,8 +194,8 @@ function SkeletonTile() {
         width: TILE_WIDTH,
         flexShrink: 0,
         border: '1px solid var(--b-rule)',
-        padding: 10,
-        height: 132,
+        padding: 6,
+        height: 76,
         background: 'var(--b-paper)',
         opacity: 0.6,
       }}
@@ -236,18 +236,17 @@ function FriendTile({
         width: TILE_WIDTH,
         flexShrink: 0,
         border: '1px solid var(--b-ink)',
-        padding: 10,
+        padding: 6,
         background: 'var(--b-paper)',
         color: 'var(--b-ink)',
         textDecoration: 'none',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 6,
+        gap: 3,
         position: 'relative',
       }}
     >
-      {/* Active-duel chip — pinned top-right when present */}
       {activeDuel && (
         <span
           aria-label="Active duel between you"
@@ -256,27 +255,27 @@ function FriendTile({
             position: 'absolute',
             top: -1,
             right: -1,
-            padding: '2px 4px',
+            padding: '1px 3px',
             background: 'var(--b-accent)',
             color: '#ffffff',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 3,
-            fontSize: 8,
-            letterSpacing: '0.14em',
+            gap: 2,
+            fontSize: 7,
+            letterSpacing: '0.12em',
             textTransform: 'uppercase',
             fontWeight: 700,
             fontFamily: 'var(--font-inter)',
           }}
         >
-          <SwordsCrossIcon size={9} /> LIVE
+          <SwordsCrossIcon size={7} /> LIVE
         </span>
       )}
 
       <FramedAvatar
         src={profile.avatarUrl}
         alt={profile.username}
-        size="md"
+        size="sm"
         frameId={profile.equippedFrame}
       />
       <span style={{ minWidth: 0, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -289,27 +288,15 @@ function FriendTile({
 
       <div
         className="font-mono tabular"
-        style={{ fontSize: 10, color: deltaColor, letterSpacing: '0.04em' }}
+        style={{ fontSize: 9, color: deltaColor, letterSpacing: '0.02em', lineHeight: 1 }}
       >
-        {deltaLabel} <span style={{ color: 'var(--b-ink-40)' }}>wk</span>
+        {deltaLabel}
+        {totalDuels > 0 && record && (
+          <span style={{ color: 'var(--b-ink-40)', marginLeft: 4 }}>
+            · {record.wins || 0}-{record.losses || 0}
+          </span>
+        )}
       </div>
-
-      {totalDuels > 0 && record && (
-        <div
-          className="font-mono tabular"
-          style={{ fontSize: 9, color: 'var(--b-ink-60)', letterSpacing: '0.06em' }}
-        >
-          <span style={{ color: '#34d399' }}>{record.wins || 0}W</span>
-          <span style={{ color: 'var(--b-ink-40)' }}>/</span>
-          <span style={{ color: '#f87171' }}>{record.losses || 0}L</span>
-          {(record.ties || 0) > 0 && (
-            <>
-              <span style={{ color: 'var(--b-ink-40)' }}>/</span>
-              <span style={{ color: '#fbbf24' }}>{record.ties}T</span>
-            </>
-          )}
-        </div>
-      )}
     </Link>
   );
 }

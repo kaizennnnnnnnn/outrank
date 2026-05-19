@@ -18,6 +18,7 @@ interface Tab {
 const TABS: Tab[] = [
   { href: '/dashboard', label: 'Home' },
   { href: '/friends',   label: 'Friends' },
+  { href: '/diet',      label: 'Diet' },
   { href: '/feed',      label: 'Feed' },
   { href: '/profile',   label: 'You' },
 ];

@@ -26,13 +26,11 @@ import { rollOrbLoot, type OrbLoot } from '@/lib/orbLoot';
 import { useUIStore } from '@/store/uiStore';
 import {
   BCheckGlyph,
-  BArrowRightGlyph,
   BGymGlyph,
   BWaterGlyph,
   BSleepGlyph,
   BFocusGlyph,
   BStepsGlyph,
-  BCaloriesGlyph,
 } from '@/components/editorial/BGlyphs';
 
 /**
@@ -340,24 +338,95 @@ export default function DashboardPage() {
               textAlign: 'center',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0' }}>
-              <SoulOrb
-                intensity={localAwakening}
-                tier={MAX_ORB_TIER}
-                size={210}
-                onEvolve={localCharges > 0 ? handleEvolve : undefined}
-                onAscend={localTier >= MAX_ORB_TIER ? handleAscend : undefined}
-                onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
-                baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
-                pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
-                ringColorId={(user as unknown as Record<string, string>).orbRingColor}
-                suppressInternalActions
-                registerEvolveTrigger={(t) => { evolveTriggerRef.current = t; }}
-                registerAscendTrigger={(t) => { ascendTriggerRef.current = t; }}
-                registerFullAwakenTrigger={(t) => { fullAwakenTriggerRef.current = t; }}
-                audioLevelRef={audioLevelRef}
-                voiceActiveRef={voiceActiveRef}
-              />
+            {/* Constellation — orb at center, 5 pillar habits orbiting
+                around it at 72° intervals. Each satellite is a 40px
+                button: pillar icon when pending, accent fill + check
+                when logged today. The orbital layout puts the day's
+                action surface front-and-center instead of buried
+                in a list below. */}
+            <div
+              style={{
+                position: 'relative',
+                width: 270,
+                height: 270,
+                margin: '14px auto 0',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <SoulOrb
+                  intensity={localAwakening}
+                  tier={MAX_ORB_TIER}
+                  size={160}
+                  onEvolve={localCharges > 0 ? handleEvolve : undefined}
+                  onAscend={localTier >= MAX_ORB_TIER ? handleAscend : undefined}
+                  onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
+                  baseColorId={(user as unknown as Record<string, string>).orbBaseColor}
+                  pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
+                  ringColorId={(user as unknown as Record<string, string>).orbRingColor}
+                  suppressInternalActions
+                  registerEvolveTrigger={(t) => { evolveTriggerRef.current = t; }}
+                  registerAscendTrigger={(t) => { ascendTriggerRef.current = t; }}
+                  registerFullAwakenTrigger={(t) => { fullAwakenTriggerRef.current = t; }}
+                  audioLevelRef={audioLevelRef}
+                  voiceActiveRef={voiceActiveRef}
+                />
+              </div>
+
+              {PILLARS.map((pillar: Pillar, i: number) => {
+                // -90° offset puts pillar 0 (gym) at the top; subsequent
+                // pillars space 72° clockwise.
+                const angle = (-90 + 72 * i) * Math.PI / 180;
+                const r = 110;
+                const dx = Math.round(r * Math.cos(angle));
+                const dy = Math.round(r * Math.sin(angle));
+                const habit = pillarHabitsBySlug.get(pillar.slug);
+                const done  = !!habit && isLoggedToday(habit);
+                const Glyph = PILLAR_GLYPH[pillar.slug];
+                const hasHabit = !!habit;
+                return (
+                  <button
+                    key={pillar.slug}
+                    type="button"
+                    onClick={() => { if (!done) handlePillarTap(pillar, habit); }}
+                    aria-label={`${pillar.name}${done ? ' — logged' : hasHabit ? ' — log' : ' — add'}`}
+                    title={pillar.name}
+                    style={{
+                      position: 'absolute',
+                      left: `calc(50% + ${dx}px)`,
+                      top:  `calc(50% + ${dy}px)`,
+                      transform: 'translate(-50%, -50%)',
+                      width: 42,
+                      height: 42,
+                      borderRadius: '50%',
+                      border: `1px ${hasHabit ? 'solid' : 'dashed'} ${done ? 'var(--b-accent)' : hasHabit ? 'var(--b-ink)' : 'var(--b-ink-40)'}`,
+                      background: done ? 'var(--b-accent)' : 'var(--b-paper)',
+                      color: done ? '#ffffff' : hasHabit ? 'var(--b-ink)' : 'var(--b-ink-40)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: done ? 'default' : 'pointer',
+                      padding: 0,
+                      transition: 'background 180ms ease, color 180ms ease, border-color 180ms ease',
+                      // Lift the node above the orb's glow so the
+                      // satellite reads as foreground.
+                      zIndex: 2,
+                    }}
+                  >
+                    {done ? (
+                      <BCheckGlyph size={18} />
+                    ) : Glyph ? (
+                      <Glyph size={18} />
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
 
             {(() => {
@@ -588,95 +657,6 @@ export default function DashboardPage() {
             <StreakRepairBanner />
           </div>
 
-          {/* Diet quick-link — clickable editorial CTA card. Hairline
-              perimeter + 3px accent left rule, italic display headline
-              with metallic-shine, ink-filled OPEN pill on the right.
-              Hover lifts the card and slides the arrow on the pill;
-              tap pushes 1px right (.diet-card class in globals.css). */}
-          <Link
-            href="/diet"
-            className="diet-card block"
-            style={{
-              position: 'relative',
-              marginTop: 18,
-              padding: '14px 14px 14px 14px',
-              borderTop: '1px solid var(--b-ink)',
-              borderBottom: '1px solid var(--b-ink)',
-              background: 'var(--b-paper)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              textDecoration: 'none',
-              color: 'var(--b-ink)',
-              overflow: 'hidden',
-            }}
-          >
-            {/* fork-flame mark */}
-            <span
-              aria-hidden
-              style={{
-                width: 38,
-                height: 38,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid var(--b-ink)',
-                color: 'var(--b-accent)',
-                flexShrink: 0,
-              }}
-            >
-              <BCaloriesGlyph size={20} />
-            </span>
-
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                className="spread"
-                style={{ fontSize: 8.5, color: 'var(--b-accent)', marginBottom: 2 }}
-              >
-                AI · New
-              </div>
-              <div
-                className="font-display"
-                style={{
-                  fontSize: 18,
-                  fontWeight: 500,
-                  fontStyle: 'italic',
-                  lineHeight: 1.1,
-                }}
-              >
-                <span className="metallic-shine">Track your diet.</span>
-              </div>
-              <div
-                className="font-body"
-                style={{ fontSize: 11, color: 'var(--b-ink-60)', marginTop: 3 }}
-              >
-                Type what you ate — we count the calories.
-              </div>
-            </div>
-
-            {/* OPEN pill — explicit clickable affordance */}
-            <span
-              className="diet-card-pill font-body tabular"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '7px 11px 7px 12px',
-                background: 'var(--b-ink)',
-                color: 'var(--b-paper)',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
-            >
-              Open
-              <BArrowRightGlyph size={11} />
-            </span>
-          </Link>
-
           {/* THE TOWN — directory strip linking to /town. Animated
               red headline + per-cell hover lift + bespoke ink badges
               instead of the old hourglass emoji. */}
@@ -790,142 +770,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </Link>
-
-          {/* Today's habits — five pillar rows, numbered */}
-          <section style={{ marginTop: 22 }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'baseline',
-                borderBottom: '1px solid var(--b-ink)',
-                paddingBottom: 6,
-              }}
-            >
-              <span
-                className="font-display"
-                style={{ fontSize: 18, fontStyle: 'italic', fontWeight: 500 }}
-              >
-                Today&rsquo;s habits
-              </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                <span
-                  className="font-body tabular"
-                  style={{ fontSize: 10, color: 'var(--b-ink-60)' }}
-                >
-                  {String(pillarsLoggedToday).padStart(2, '0')} / {String(PILLARS.length).padStart(2, '0')}
-                </span>
-                <Link
-                  href="/habits"
-                  className="font-body"
-                  style={{
-                    fontSize: 10,
-                    color: 'var(--b-accent)',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                  }}
-                >
-                  Roster →
-                </Link>
-              </div>
-            </div>
-
-            {habitsLoading ? (
-              <div className="space-y-3 mt-3">
-                {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
-              </div>
-            ) : (
-              <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                {PILLARS.map((pillar: Pillar, i: number) => {
-                  const habit = pillarHabitsBySlug.get(pillar.slug);
-                  const done  = !!habit && isLoggedToday(habit);
-                  const Glyph = PILLAR_GLYPH[pillar.slug];
-                  const goalText = habit
-                    ? (() => {
-                        // Lightweight goal display. UserHabit doesn't track today's
-                        // partial progress on the doc itself (lives in /logs), so
-                        // surface daily goal + status only.
-                        const g = habit.goal ?? 0;
-                        const u = habit.unit || '';
-                        if (done) return 'logged';
-                        if (g) return `0 / ${g}${u ? ' ' + u : ''}`;
-                        return 'log →';
-                      })()
-                    : 'tap to add';
-                  return (
-                    <li
-                      key={pillar.slug}
-                      onClick={() => handlePillarTap(pillar, habit)}
-                      aria-disabled={done}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        gap: 12,
-                        padding: '12px 0',
-                        borderBottom: '1px solid var(--b-rule)',
-                        cursor: done ? 'default' : 'pointer',
-                        pointerEvents: done ? 'none' : 'auto',
-                      }}
-                    >
-                      <span
-                        className="font-mono"
-                        style={{ fontSize: 10, color: 'var(--b-ink-40)', width: 22 }}
-                      >
-                        {String(i + 1).padStart(2, '0')}
-                      </span>
-                      {Glyph && (
-                        <Glyph size={18} style={{ color: done ? 'var(--b-ink-40)' : 'var(--b-ink-60)', flexShrink: 0 }} />
-                      )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          className="font-display"
-                          style={{
-                            fontSize: 17,
-                            fontWeight: 500,
-                            color: done ? 'var(--b-ink-40)' : 'var(--b-ink)',
-                            textDecoration: done ? 'line-through' : 'none',
-                          }}
-                        >
-                          {pillar.name}
-                        </div>
-                        <div
-                          className="font-body"
-                          style={{
-                            fontSize: 10,
-                            color: 'var(--b-ink-60)',
-                            marginTop: 1,
-                            letterSpacing: '0.06em',
-                          }}
-                        >
-                          {pillar.name.toUpperCase()}
-                          <span className="tabular"> · {goalText}</span>
-                        </div>
-                      </div>
-                      {done ? (
-                        <BCheckGlyph size={14} style={{ color: 'var(--b-accent)' }} />
-                      ) : habit ? (
-                        <span
-                          className="font-body"
-                          style={{ fontSize: 10, color: 'var(--b-ink)', fontWeight: 600 }}
-                        >
-                          LOG →
-                        </span>
-                      ) : (
-                        <span
-                          className="font-body"
-                          style={{ fontSize: 10, color: 'var(--b-ink-60)', fontWeight: 600 }}
-                        >
-                          ADD →
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
 
           {/* Personal habits — only when present */}
           {!habitsLoading && personalHabits.length > 0 && (

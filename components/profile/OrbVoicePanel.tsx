@@ -82,6 +82,9 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [usage, setUsage] = useState<UsageSnapshot | null>(null);
+  // Typed-input is hidden by default — the CHAT button reveals it.
+  // Keeps the surface quiet for the common voice-only case.
+  const [chatOpen, setChatOpen] = useState(false);
 
   const conversationRef = useRef<Conversation | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -523,12 +526,18 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
         <button
           type="button"
           onClick={() => {
-            // Scroll the typed input into view in case it's offscreen,
-            // then drop focus into it so the user can start typing.
-            const el = inputRef.current;
-            if (!el) return;
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.focus({ preventScroll: true });
+            const opening = !chatOpen;
+            setChatOpen(opening);
+            // When opening, wait a frame so the input row mounts, then
+            // scroll it into view and drop focus into it.
+            if (opening) {
+              requestAnimationFrame(() => {
+                const el = inputRef.current;
+                if (!el) return;
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.focus({ preventScroll: true });
+              });
+            }
           }}
           className="font-body"
           style={{
@@ -538,8 +547,8 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
             alignItems: 'center',
             gap: 10,
             padding: '12px 18px',
-            background: 'transparent',
-            color: 'var(--b-ink)',
+            background: chatOpen ? 'var(--b-ink)' : 'transparent',
+            color: chatOpen ? 'var(--b-paper)' : 'var(--b-ink)',
             border: '1px solid var(--b-ink)',
             fontWeight: 700,
             fontSize: 12,
@@ -687,50 +696,52 @@ export function OrbVoicePanel({ audioLevelRef, voiceActiveRef }: OrbVoicePanelPr
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 6 }}>
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void sendText();
-            }
-          }}
-          disabled={sending}
-          placeholder="Or type to the orb…"
-          className="font-body"
-          style={{
-            flex: 1,
-            padding: '9px 12px',
-            background: 'transparent',
-            border: '1px solid var(--b-rule)',
-            color: 'var(--b-ink)',
-            fontSize: 13,
-            outline: 'none',
-          }}
-        />
-        <button
-          onClick={() => void sendText()}
-          disabled={sending || !input.trim()}
-          className="font-body"
-          style={{
-            padding: '9px 14px',
-            background: sending || !input.trim() ? 'transparent' : 'var(--b-ink)',
-            color: sending || !input.trim() ? 'var(--b-ink-40)' : 'var(--b-paper)',
-            border: '1px solid var(--b-ink)',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
-            fontFamily: 'var(--font-inter)',
-          }}
-        >
-          {sending ? '…' : 'Send'}
-        </button>
-      </div>
+      {chatOpen && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void sendText();
+              }
+            }}
+            disabled={sending}
+            placeholder="Type to the orb…"
+            className="font-body"
+            style={{
+              flex: 1,
+              padding: '9px 12px',
+              background: 'transparent',
+              border: '1px solid var(--b-rule)',
+              color: 'var(--b-ink)',
+              fontSize: 13,
+              outline: 'none',
+            }}
+          />
+          <button
+            onClick={() => void sendText()}
+            disabled={sending || !input.trim()}
+            className="font-body"
+            style={{
+              padding: '9px 14px',
+              background: sending || !input.trim() ? 'transparent' : 'var(--b-ink)',
+              color: sending || !input.trim() ? 'var(--b-ink-40)' : 'var(--b-paper)',
+              border: '1px solid var(--b-ink)',
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              cursor: sending || !input.trim() ? 'not-allowed' : 'pointer',
+              fontFamily: 'var(--font-inter)',
+            }}
+          >
+            {sending ? '…' : 'Send'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
