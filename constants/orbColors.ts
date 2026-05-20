@@ -37,6 +37,10 @@ export const ORB_BASE_COLORS: OrbColorSet[] = [
   { id: 'teal',      name: 'Teal',      outer: '#134e4a', mid: '#0d9488', inner: '#2dd4bf', core: '#ccfbf1', glow: 'rgba(20,184,166,0.3)' },
   { id: 'slate',     name: 'Slate',     outer: '#1e293b', mid: '#475569', inner: '#94a3b8', core: '#e2e8f0', glow: 'rgba(100,116,139,0.3)' },
   { id: 'snow',      name: 'Snow',      outer: '#64748b', mid: '#cbd5e1', inner: '#f1f5f9', core: '#ffffff', glow: 'rgba(226,232,240,0.4)' },
+  // Pure white — neutral grey rim → white body → blown-out core. Snow
+  // reads cool-blue; this one stays true neutral so the orb feels like
+  // raw paper / ceramic / chrome instead of tinted ice.
+  { id: 'white',     name: 'White',     outer: '#9ca3af', mid: '#e5e7eb', inner: '#f9fafb', core: '#ffffff', glow: 'rgba(255,255,255,0.55)' },
   { id: 'midnight',  name: 'Midnight',  outer: '#020617', mid: '#1e293b', inner: '#334155', core: '#94a3b8', glow: 'rgba(51,65,85,0.4)' },
 
   // ---- EPIC (duotone mix, richer gradients) ----
