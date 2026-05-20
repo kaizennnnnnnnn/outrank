@@ -410,7 +410,7 @@ export default function DashboardPage() {
                 <SoulOrb
                   intensity={localAwakening}
                   tier={MAX_ORB_TIER}
-                  size={110}
+                  size={170}
                   onEvolve={localCharges > 0 ? handleEvolve : undefined}
                   onAscend={localTier >= MAX_ORB_TIER ? handleAscend : undefined}
                   onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
@@ -419,7 +419,6 @@ export default function DashboardPage() {
                   ringColorId={(user as unknown as Record<string, string>).orbRingColor}
                   suppressInternalActions
                   hideLabel
-                  hideRings
                   hideAwakeningBar
                   registerEvolveTrigger={(t) => { evolveTriggerRef.current = t; }}
                   registerAscendTrigger={(t) => { ascendTriggerRef.current = t; }}
@@ -459,7 +458,7 @@ export default function DashboardPage() {
                       alignItems: 'center',
                       gap: 4,
                       zIndex: 2,
-                      width: 64,
+                      width: 58,
                     }}
                   >
                     <button
@@ -468,8 +467,8 @@ export default function DashboardPage() {
                       aria-label={`${pillar.name}${done ? ' — logged' : hasHabit ? ' — log' : ' — add'}`}
                       title={pillar.name}
                       style={{
-                        width: 44,
-                        height: 44,
+                        width: 32,
+                        height: 32,
                         borderRadius: '50%',
                         border: `1px solid ${done ? 'var(--b-accent)' : 'var(--b-ink-40)'}`,
                         background: done ? 'var(--b-accent)' : 'var(--b-paper)',
@@ -484,9 +483,9 @@ export default function DashboardPage() {
                       }}
                     >
                       {done ? (
-                        <BCheckGlyph size={18} />
+                        <BCheckGlyph size={14} />
                       ) : Glyph ? (
-                        <Glyph size={18} />
+                        <Glyph size={14} />
                       ) : null}
                     </button>
                     <div style={{ textAlign: 'center', lineHeight: 1.15 }}>
