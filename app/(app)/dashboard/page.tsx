@@ -338,20 +338,67 @@ export default function DashboardPage() {
               textAlign: 'center',
             }}
           >
-            {/* Constellation — orb at center, 5 pillar habits orbiting
-                around it at 72° intervals. Each satellite is a 40px
-                button: pillar icon when pending, accent fill + check
-                when logged today. The orbital layout puts the day's
-                action surface front-and-center instead of buried
-                in a list below. */}
+            {/* Constellation — clean editorial layout. SoulOrb is the
+                pure glowing body (rings/awakening-bar/label all hidden);
+                a dashed SVG circle marks the orbital path; 5 pillar
+                nodes sit on the circle with a small label under each
+                showing today's status. Reference: hand-drawn mock. */}
             <div
               style={{
                 position: 'relative',
-                width: 270,
-                height: 270,
+                width: 280,
+                height: 280,
                 margin: '14px auto 0',
               }}
             >
+              {/* Orbital ring + ambient stars. Pure decoration — pointer
+                  events disabled so taps fall through to nodes/orb. */}
+              <svg
+                viewBox="0 0 280 280"
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                }}
+              >
+                <circle
+                  cx="140"
+                  cy="140"
+                  r="117"
+                  fill="none"
+                  stroke="var(--b-ink-40)"
+                  strokeWidth="0.6"
+                  strokeDasharray="2 5"
+                  opacity="0.55"
+                />
+                {/* Faint inner ring for depth. */}
+                <circle
+                  cx="140"
+                  cy="140"
+                  r="78"
+                  fill="none"
+                  stroke="var(--b-ink-40)"
+                  strokeWidth="0.4"
+                  strokeDasharray="1 4"
+                  opacity="0.3"
+                />
+                {/* Scattered ambient stars — hand-placed so they read
+                    organic rather than gridded. */}
+                {[
+                  [50, 60, 1, 0.55], [220, 50, 0.8, 0.4], [30, 180, 1.1, 0.6],
+                  [240, 170, 1, 0.5], [150, 18, 0.7, 0.4], [180, 240, 1, 0.55],
+                  [90, 250, 0.8, 0.4], [255, 110, 0.6, 0.35],
+                ].map(([x, y, r, o], i) => (
+                  <circle key={i} cx={x} cy={y} r={r} fill="var(--b-ink-60)" opacity={o} />
+                ))}
+              </svg>
+
+              {/* Soul orb — small, centered, just the body. Triggers
+                  still wired so the EVOLVE button below can fire the
+                  spin animation. */}
               <div
                 style={{
                   position: 'absolute',
@@ -363,7 +410,7 @@ export default function DashboardPage() {
                 <SoulOrb
                   intensity={localAwakening}
                   tier={MAX_ORB_TIER}
-                  size={160}
+                  size={110}
                   onEvolve={localCharges > 0 ? handleEvolve : undefined}
                   onAscend={localTier >= MAX_ORB_TIER ? handleAscend : undefined}
                   onFullAwaken={localAwakening >= 100 ? handleFullAwaken : undefined}
@@ -371,6 +418,9 @@ export default function DashboardPage() {
                   pulseColorId={(user as unknown as Record<string, string>).orbPulseColor}
                   ringColorId={(user as unknown as Record<string, string>).orbRingColor}
                   suppressInternalActions
+                  hideLabel
+                  hideRings
+                  hideAwakeningBar
                   registerEvolveTrigger={(t) => { evolveTriggerRef.current = t; }}
                   registerAscendTrigger={(t) => { ascendTriggerRef.current = t; }}
                   registerFullAwakenTrigger={(t) => { fullAwakenTriggerRef.current = t; }}
@@ -380,172 +430,282 @@ export default function DashboardPage() {
               </div>
 
               {PILLARS.map((pillar: Pillar, i: number) => {
-                // -90° offset puts pillar 0 (gym) at the top; subsequent
-                // pillars space 72° clockwise.
+                // -90° puts pillar 0 (gym) at top; rest space 72° clockwise.
                 const angle = (-90 + 72 * i) * Math.PI / 180;
-                const r = 110;
+                const r = 117;
                 const dx = Math.round(r * Math.cos(angle));
                 const dy = Math.round(r * Math.sin(angle));
                 const habit = pillarHabitsBySlug.get(pillar.slug);
                 const done  = !!habit && isLoggedToday(habit);
                 const Glyph = PILLAR_GLYPH[pillar.slug];
                 const hasHabit = !!habit;
+                const status = !hasHabit
+                  ? 'Add'
+                  : done
+                    ? 'Logged'
+                    : habit.goal
+                      ? `0 / ${habit.goal}${habit.unit ? ' ' + habit.unit : ''}`
+                      : 'Log';
                 return (
-                  <button
+                  <div
                     key={pillar.slug}
-                    type="button"
-                    onClick={() => { if (!done) handlePillarTap(pillar, habit); }}
-                    aria-label={`${pillar.name}${done ? ' — logged' : hasHabit ? ' — log' : ' — add'}`}
-                    title={pillar.name}
                     style={{
                       position: 'absolute',
                       left: `calc(50% + ${dx}px)`,
                       top:  `calc(50% + ${dy}px)`,
                       transform: 'translate(-50%, -50%)',
-                      width: 42,
-                      height: 42,
-                      borderRadius: '50%',
-                      border: `1px ${hasHabit ? 'solid' : 'dashed'} ${done ? 'var(--b-accent)' : hasHabit ? 'var(--b-ink)' : 'var(--b-ink-40)'}`,
-                      background: done ? 'var(--b-accent)' : 'var(--b-paper)',
-                      color: done ? '#ffffff' : hasHabit ? 'var(--b-ink)' : 'var(--b-ink-40)',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: done ? 'default' : 'pointer',
-                      padding: 0,
-                      transition: 'background 180ms ease, color 180ms ease, border-color 180ms ease',
-                      // Lift the node above the orb's glow so the
-                      // satellite reads as foreground.
+                      gap: 4,
                       zIndex: 2,
+                      width: 64,
                     }}
                   >
-                    {done ? (
-                      <BCheckGlyph size={18} />
-                    ) : Glyph ? (
-                      <Glyph size={18} />
-                    ) : null}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => { if (!done) handlePillarTap(pillar, habit); }}
+                      aria-label={`${pillar.name}${done ? ' — logged' : hasHabit ? ' — log' : ' — add'}`}
+                      title={pillar.name}
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        border: `1px solid ${done ? 'var(--b-accent)' : 'var(--b-ink-40)'}`,
+                        background: done ? 'var(--b-accent)' : 'var(--b-paper)',
+                        color: done ? '#ffffff' : 'var(--b-ink)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: done ? 'default' : 'pointer',
+                        padding: 0,
+                        flexShrink: 0,
+                        transition: 'background 180ms ease, color 180ms ease, border-color 180ms ease',
+                      }}
+                    >
+                      {done ? (
+                        <BCheckGlyph size={18} />
+                      ) : Glyph ? (
+                        <Glyph size={18} />
+                      ) : null}
+                    </button>
+                    <div style={{ textAlign: 'center', lineHeight: 1.15 }}>
+                      <div
+                        className="spread"
+                        style={{
+                          fontSize: 8,
+                          color: 'var(--b-ink-60)',
+                          letterSpacing: '0.14em',
+                        }}
+                      >
+                        {pillar.shortName.toUpperCase()}
+                      </div>
+                      <div
+                        className="font-mono tabular"
+                        style={{
+                          fontSize: 8,
+                          color: done ? 'var(--b-accent)' : 'var(--b-ink-40)',
+                          marginTop: 1,
+                        }}
+                      >
+                        {status}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
 
+            {/* Awakening bar — its own row outside the orb. Header
+                shows current % left + "+ X TO FULL" right. */}
+            <div style={{ marginTop: 22, textAlign: 'left' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  marginBottom: 5,
+                }}
+              >
+                <span
+                  className="spread"
+                  style={{ fontSize: 9, color: 'var(--b-ink-60)' }}
+                >
+                  Awakening · {localAwakening}
+                </span>
+                {localAwakening < 100 ? (
+                  <span
+                    className="font-mono tabular"
+                    style={{ fontSize: 9, color: 'var(--b-accent)', letterSpacing: '0.12em' }}
+                  >
+                    + {100 - localAwakening} TO FULL
+                  </span>
+                ) : (
+                  <span
+                    className="spread"
+                    style={{ fontSize: 9, color: 'var(--b-accent)' }}
+                  >
+                    Full — ready
+                  </span>
+                )}
+              </div>
+              <div
+                style={{
+                  height: 3,
+                  background: 'var(--b-rule)',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${Math.min(100, localAwakening)}%`,
+                    background: localAwakening >= 100 ? 'var(--b-accent)' : 'var(--b-ink)',
+                    transition: 'width 320ms ease',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Primary action — single full-width button. Full Awaken
+                takes the slot at 100% awakening; otherwise Ascend at
+                max tier; otherwise EVOLVE with charge count on the
+                right. Disabled stub when no action is available. */}
             {(() => {
               const fullAwakenable = localAwakening >= 100;
               const ascendable     = localTier >= MAX_ORB_TIER && !fullAwakenable;
-              const showThird      = fullAwakenable || ascendable;
-              const ascensions     = (user as unknown as { orbAscensions?: number }).orbAscensions ?? 0;
-              const nextAscendReward = 500 + ascensions * 250;
+              const evolveActive   = !fullAwakenable && !ascendable && localCharges > 0;
+              const noAction       = !fullAwakenable && !ascendable && localCharges <= 0;
+              const onClick = () => {
+                if (fullAwakenable) {
+                  if (fullAwakenTriggerRef.current) fullAwakenTriggerRef.current();
+                  else void handleFullAwaken();
+                } else if (ascendable) {
+                  if (ascendTriggerRef.current) ascendTriggerRef.current();
+                  else void handleAscend();
+                } else if (evolveActive) {
+                  if (evolveTriggerRef.current) evolveTriggerRef.current();
+                  else void handleEvolve();
+                }
+              };
+              const label = fullAwakenable
+                ? 'FULL AWAKEN'
+                : ascendable
+                  ? 'ASCEND THE ORB'
+                  : 'EVOLVE THE ORB';
+              const accent = fullAwakenable || ascendable;
+              const bg = accent
+                ? 'var(--b-accent)'
+                : evolveActive
+                  ? 'var(--b-ink)'
+                  : 'transparent';
+              const fg = accent
+                ? '#ffffff'
+                : evolveActive
+                  ? 'var(--b-paper)'
+                  : 'var(--b-ink-40)';
+              const border = accent ? 'var(--b-accent)' : 'var(--b-ink)';
               return (
-                <div
+                <button
+                  onClick={onClick}
+                  disabled={noAction}
+                  className="font-body"
                   style={{
-                    display: 'grid',
-                    gridTemplateColumns: showThird ? '1fr 1fr 1fr' : '1fr 1fr',
-                    gap: 8,
-                    textAlign: 'left',
+                    marginTop: 12,
+                    width: '100%',
+                    padding: '15px 18px',
+                    border: `1px solid ${border}`,
+                    background: bg,
+                    color: fg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: '0.18em',
+                    cursor: noAction ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-inter)',
                   }}
                 >
-                  <button
-                    onClick={() => {
-                      if (localCharges <= 0) return;
-                      if (evolveTriggerRef.current) {
-                        evolveTriggerRef.current();
-                      } else {
-                        void handleEvolve();
-                      }
-                    }}
-                    disabled={localCharges <= 0}
-                    className="font-body"
-                    style={{
-                      height: 48,
-                      border: '1px solid var(--b-ink)',
-                      background: localCharges > 0 ? 'var(--b-ink)' : 'var(--b-paper-2)',
-                      color: localCharges > 0 ? 'var(--b-paper)' : 'var(--b-ink-40)',
-                      fontWeight: 700,
-                      fontSize: 12,
-                      letterSpacing: '0.08em',
-                      cursor: localCharges > 0 ? 'pointer' : 'not-allowed',
-                      fontFamily: 'var(--font-inter)',
-                    }}
-                  >
-                    EVOLVE — {localCharges} ▶
-                  </button>
-                  <Link
-                    href="/shop"
-                    className="font-body"
-                    style={{
-                      height: 48,
-                      border: '1px solid var(--b-ink)',
-                      background: 'transparent',
-                      color: 'var(--b-ink)',
-                      fontWeight: 700,
-                      fontSize: 12,
-                      letterSpacing: '0.08em',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      textDecoration: 'none',
-                      fontFamily: 'var(--font-inter)',
-                    }}
-                  >
-                    CUSTOMIZE
-                  </Link>
-                  {fullAwakenable && (
-                    <button
-                      onClick={() => {
-                        if (fullAwakenTriggerRef.current) {
-                          fullAwakenTriggerRef.current();
-                        } else {
-                          void handleFullAwaken();
-                        }
-                      }}
-                      className="font-body"
-                      style={{
-                        height: 48,
-                        border: '1px solid var(--b-accent)',
-                        background: 'var(--b-accent)',
-                        color: '#ffffff',
-                        fontWeight: 700,
-                        fontSize: 12,
-                        letterSpacing: '0.08em',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-inter)',
-                      }}
-                      aria-label="Full Awaken — permanent XP bonus"
-                    >
-                      FULL AWAKEN ✦
-                    </button>
-                  )}
-                  {ascendable && (
-                    <button
-                      onClick={() => {
-                        if (ascendTriggerRef.current) {
-                          ascendTriggerRef.current();
-                        } else {
-                          void handleAscend();
-                        }
-                      }}
-                      className="font-body"
-                      style={{
-                        height: 48,
-                        border: '1px solid var(--b-accent)',
-                        background: 'transparent',
-                        color: 'var(--b-accent)',
-                        fontWeight: 700,
-                        fontSize: 12,
-                        letterSpacing: '0.08em',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-inter)',
-                      }}
-                      aria-label={`Ascend for +${nextAscendReward} fragments`}
-                    >
-                      ASCEND ◆
-                    </button>
-                  )}
-                </div>
+                  <span>{label}</span>
+                  <span className="font-mono tabular" style={{ fontSize: 11, opacity: noAction ? 0.5 : 1 }}>
+                    {String(localCharges).padStart(2, '0')} ▶
+                  </span>
+                </button>
               );
             })()}
 
+            {/* Pillar status dots — single row summary mirroring the
+                constellation state. Done = filled accent, pending =
+                hollow. Tap-through to /habits for the full roster. */}
+            <Link
+              href="/habits"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                marginTop: 12,
+                textDecoration: 'none',
+                color: 'inherit',
+              }}
+            >
+              {PILLARS.map((pillar: Pillar) => {
+                const habit = pillarHabitsBySlug.get(pillar.slug);
+                const done = !!habit && isLoggedToday(habit);
+                return (
+                  <span
+                    key={pillar.slug}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <span
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: done ? 'var(--b-accent)' : 'transparent',
+                        border: `1px solid ${done ? 'var(--b-accent)' : 'var(--b-ink-40)'}`,
+                      }}
+                    />
+                    <span
+                      className="spread"
+                      style={{
+                        fontSize: 8,
+                        color: done ? 'var(--b-ink)' : 'var(--b-ink-40)',
+                        letterSpacing: '0.12em',
+                      }}
+                    >
+                      {pillar.shortName.toUpperCase()}
+                    </span>
+                  </span>
+                );
+              })}
+            </Link>
+
             <OrbVoicePanel audioLevelRef={audioLevelRef} voiceActiveRef={voiceActiveRef} />
+
+            {/* Customize — small secondary link, decoupled from the
+                primary EVOLVE action. */}
+            <div style={{ marginTop: 4, textAlign: 'center' }}>
+              <Link
+                href="/shop"
+                className="font-body"
+                style={{
+                  fontSize: 10,
+                  color: 'var(--b-ink-60)',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  textDecoration: 'underline',
+                  fontWeight: 600,
+                }}
+              >
+                Customize orb
+              </Link>
+            </div>
 
             <p
               className="font-body"

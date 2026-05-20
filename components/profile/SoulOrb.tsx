@@ -47,6 +47,11 @@ interface SoulOrbProps {
    *  it remains the last visual element in SoulOrb — letting the
    *  parent's button row sit literally underneath it. */
   suppressInternalActions?: boolean;
+  /** When true, SoulOrb does NOT render the awakening progress bar
+   *  under the canvas. Use when the parent renders its own bar
+   *  outside the orb (e.g. the dashboard constellation, where the
+   *  bar lives below the orbiting habit nodes). */
+  hideAwakeningBar?: boolean;
   /** Optional 0..1 ref the parent updates ~60Hz from a voice-session
    *  audio analyser. When provided, the render loop reads it each
    *  frame and uses it to push particles outward + brighten the body
@@ -60,7 +65,7 @@ interface SoulOrbProps {
   voiceActiveRef?: { current: boolean };
 }
 
-export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true, registerEvolveTrigger, registerAscendTrigger, registerFullAwakenTrigger, suppressInternalActions = false, audioLevelRef, voiceActiveRef }: SoulOrbProps) {
+export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFullAwaken, baseColorId, pulseColorId, ringColorId, hideLabel, hideBody, hideRings, hidePulse, interactive = true, registerEvolveTrigger, registerAscendTrigger, registerFullAwakenTrigger, suppressInternalActions = false, hideAwakeningBar = false, audioLevelRef, voiceActiveRef }: SoulOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0, rotX: 0, rotY: 0 });
@@ -1090,7 +1095,7 @@ export function SoulOrb({ intensity, tier, size = 300, onEvolve, onAscend, onFul
             full-awakening unlock. Rendered above the action buttons
             so the bar and the eventual Full Awaken button read as a
             stacked unit. */}
-        {interactive && !evolving && !ascending && !awakening && (
+        {interactive && !hideAwakeningBar && !evolving && !ascending && !awakening && (
           <div className="mt-3" style={{ width: '100%', maxWidth: 280 }}>
             <EditorialAwakeningBar awakening={intensity} />
           </div>
