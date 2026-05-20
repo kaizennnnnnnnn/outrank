@@ -3,35 +3,26 @@
     Notification small-icon / badge for Android & PWA.
     Android renders the badge by using ONLY the alpha channel — the
     OS replaces every non-transparent pixel with its system color.
-    So this MUST stay a white-on-transparent silhouette: the girl
-    shape is opaque, everything else is fully transparent.
+    So this MUST stay a white-on-transparent silhouette.
 
-    Stylized to the app-icon character — bob hair flaring at the
-    jawline, narrow neck, shoulders cropped at the bottom of the
-    96-grid so the badge reads as a portrait at any size from
-    18-32px (typical badge render sizes).
+    Just the bob haircut from the app icon — no face, no neck, no
+    shoulders. A clean helmet/dome shape so it reads as a hair mass
+    at the 18-32px sizes Android renders badges at. Slight flair at
+    the bottom corners gives the bob its character.
   -->
   <path d="
-    M 48 8
-    C 32 8 23 18 21 32
-    C 19.5 42 21 50 28 54
-    L 32 54
-    L 32 56
-    C 33 60 35 64 38 67
-    L 38 73
-    C 32 75 26 78 21 82
-    L 16 86
-    L 14 96
-    L 82 96
-    L 80 86
-    L 75 82
-    C 70 78 64 75 58 73
-    L 58 67
-    C 61 64 63 60 64 56
-    L 64 54
-    L 68 54
-    C 75 50 76.5 42 75 32
-    C 73 18 64 8 48 8
+    M 48 12
+    C 27 12 18 24 18 42
+    L 18 58
+    C 18 67 22 72 30 72
+    C 33 72 35 70 35 67
+    L 35 63
+    L 61 63
+    L 61 67
+    C 61 70 63 72 66 72
+    C 74 72 78 67 78 58
+    L 78 42
+    C 78 24 69 12 48 12
     Z
   "/>
 </svg>
